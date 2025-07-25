@@ -1,0 +1,81 @@
+<template>
+  <div id="app">
+    <!-- Logo al centro in alto -->
+    <img src="./assets/logo.jpg" alt="Logo" class="logo" />
+
+    <!-- Titolo della pagina Admin -->
+    <h1>Portail Admin</h1>
+
+    <!-- La parte centrale dove ci sono i pulsanti rettangolari -->
+    <div class="dashboard-sections">
+      <div class="section" @click="goTo('repertoires')">
+        <h3>Répertoires</h3>
+        <p>Gestion des Clients, Produits, Suppléments et Familles de Remises</p>
+      </div>
+
+      <div class="section" @click="goTo('devis')">
+        <h3>Devis</h3>
+        <p>Créer et Gérer les Devis</p>
+      </div>
+
+      <div class="section" @click="goTo('chantiers')">
+        <h3>Chantiers</h3>
+        <p>Gestion des Chantiers</p>
+      </div>
+
+      <div class="section" @click="goTo('bilans')">
+        <h3>Bilans</h3>
+        <p>Gestion des Bilans, Prime, Estimations</p>
+      </div>
+    </div>
+
+    <!-- Sezione principale dove caricheremo il contenuto specifico delle opzioni -->
+    <router-view></router-view>
+  </div>
+</template>
+
+<script>
+export default {
+  methods: {
+    goTo(section) {
+      this.$router.push(`/admin/${section}`); // Naviguer vers la section sélectionnée
+    }
+  }
+};
+</script>
+
+<style scoped>
+#app {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto;
+  max-width: 150px;
+}
+
+.dashboard-sections {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.section {
+  background-color: #f2f2f2;
+  padding: 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+}
+
+h3 {
+  margin: 0;
+}
+
+.section:hover {
+  background-color: #e0e0e0;
+}
+</style>
