@@ -121,6 +121,7 @@ const techniciens = ref([]);
 const familles = ref([]);
 const sousfamilles = ref([]);
 const remiseSelection = ref({});
+const formStorageKey = 'devisFormData';
 
 const addZone = () => {
   if (newZone.value.trim()) {
@@ -173,22 +174,49 @@ const formReady = computed(() => {
 });
 
 const continuerVersDevis = async () => {
-  const newDevis = {
-    nom: form.value.nom,
-    adresse: form.value.adresse,
-    clientId: form.value.client,
-    technicien: form.value.technicien,
-    zones: zones.value,
-    remises: remiseSelection.value,
-    createdAt: new Date()
-  };
+  navigatingInternally.value = true;
 
-  const docRef = await addDoc(collection(db, 'devis'), newDevis);
-  router.push(`/devis/produits/${docRef.id}`);
-};
+  try {
+    const newDevis = {
+      nom: form.value.nom,
+      adresse: form.value.adresse,
+      clientId: form.value.client,
+      technicien: form.value.technicien,
+      zones: zones.value,
+      remises: remiseSelection.value,
+      createdAt: new Date(),
+      produits: [],
+      total: 0
+    };
+
+    const docRef = await addDoc(collection(db, 'devis'), newDevis);
+
+    // ✅ Pulisce i dati temporanei salvati
+    localStorage.removeItem('zonesCantiere');
+    localStorage.removeItem(formStorageKey);
+
+    router.push(`/devis/produits/${docRef.id}`);
+  } catch (error) {
+    console.error("Errore durante la creazione del devis:", error);
+    alert("C'è stato un errore durante il salvataggio.");
+  }
+};watch(
+  [form, remiseSelection],
+  () => {
+    const dataToSave = {
+      nom: form.value.nom,
+      adresse: form.value.adresse,
+      client: form.value.client,
+      technicien: form.value.technicien,
+      remiseSelection: remiseSelection.value
+    };
+    localStorage.setItem(formStorageKey, JSON.stringify(dataToSave));
+  },
+  { deep: true }
+);
 
 onMounted(async () => {
-  // 🔁 Ripristino delle zone da localStorage
+  // Ripristina zones
   const savedZones = localStorage.getItem('zonesCantiere');
   if (savedZones) {
     try {
@@ -198,7 +226,22 @@ onMounted(async () => {
     }
   }
 
-  // 🔽 Caricamento dati da Firestore
+  // Ripristina form (nome, indirizzo, ecc.)
+  const savedForm = localStorage.getItem(formStorageKey);
+  if (savedForm) {
+    try {
+      const data = JSON.parse(savedForm);
+      form.value.nom = data.nom || '';
+      form.value.adresse = data.adresse || '';
+      form.value.client = data.client || '';
+      form.value.technicien = data.technicien || '';
+      remiseSelection.value = data.remiseSelection || {};
+    } catch (e) {
+      console.error('Erreur parsing form data:', e);
+    }
+  }
+
+  // Caricamento Firestore
   const [clientSnap, techSnap, famSnap, sousSnap] = await Promise.all([
     getDocs(collection(db, 'clients')),
     getDocs(collection(db, 'techniciens')),
