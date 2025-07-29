@@ -1,17 +1,19 @@
 <template>
   <div class="container py-4">
-    <h2 class="text-center mb-4">Ajout de Produits au Devis</h2>
+   <h2 class="text-center mb-4">Ajout de Produits au Devis</h2>
 
-    <!-- Boutons -->
-    <div class="mb-3 d-flex justify-content-between">
+<!-- ✅ Numéro Devis visibile -->
+<div v-if="numeroDevis" class="alert alert-info text-center mb-4">
+  <strong>Numéro Devis:</strong> {{ numeroDevis }}
+</div>
+
+<!-- Boutons -->
+<div class="mb-3 d-flex justify-content-between">
       <button class="btn btn-secondary" @click="$router.back()">← Retour</button>
       <button class="btn btn-success" @click="sauvegarderDevis">📥 Sauvegarder le devis</button>
     </div>
 
-    <div v-if="numeroDevis" class="alert alert-info">
-      <strong>Numéro Devis:</strong> {{ numeroDevis }}
-    </div>
-
+   
     <ProduitForm
       :editingItem="editingItem"
       :produits="produits"
@@ -77,39 +79,27 @@ import { doc, getDoc, setDoc, updateDoc, addDoc, collection } from 'firebase/fir
 import ProduitForm from '@/components/ProduitForm.vue';
 import SupplementDetails from '@/components/SupplementDetails.vue';
 
-const props = defineProps({
-  clientId: String,
-  chantierId: String
-});
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
+const devisId = route.params.id;
 const router = useRouter();
 const produits = ref([]);
 const devisItems = ref([]);
 const editingItem = ref(null);
 const numeroDevis = ref('');
 
-// Caricamento prodotti e numero devis
+// Carica numero devis
 onMounted(async () => {
+  const devisRef = doc(db, 'devis', devisId);
+  const devisSnap = await getDoc(devisRef);
+  if (devisSnap.exists()) {
+    numeroDevis.value = devisSnap.data().numero || '';
+  }
+
   const produitsSnap = await getDoc(doc(db, 'produits', 'liste'));
   if (produitsSnap.exists()) {
     produits.value = produitsSnap.data().items || [];
-  }
-
-  const counterRef = doc(db, 'counters', 'devis');
-  const counterSnap = await getDoc(counterRef);
-  let newNumber = 1;
-  if (counterSnap.exists()) {
-    newNumber = (counterSnap.data().lastNumber || 0) + 1;
-    await updateDoc(counterRef, { lastNumber: newNumber });
-  } else {
-    await setDoc(counterRef, { lastNumber: newNumber });
-  }
-  numeroDevis.value = `DEV-${newNumber.toString().padStart(4, '0')}`;
-
-  // Ripristino da localStorage se presente
-  const saved = localStorage.getItem('devisItems');
-  if (saved) {
-    devisItems.value = JSON.parse(saved);
   }
 });
 
@@ -205,14 +195,11 @@ const sauvegarderDevis = async () => {
       return;
     }
 
-    await addDoc(collection(db, 'devis'), {
-      numero: numeroDevis.value,
-      clientId: props.clientId,
-      chantierId: props.chantierId,
-      date: new Date().toISOString(),
-      produits: devisItems.value,
-      total: devisTotal.value
-    });
+    await updateDoc(doc(db, 'devis', props.devisId), {
+  produits: devisItems.value,
+  total: devisTotal.value,
+  updatedAt: new Date().toISOString()
+});
 
     localStorage.removeItem('devisItems');
     alert('Devis sauvegardé avec succès.');

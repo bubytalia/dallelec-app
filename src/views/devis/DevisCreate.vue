@@ -103,7 +103,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { db } from '@/firebase';
-import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 
 const router = useRouter();
 
@@ -165,7 +165,22 @@ const formReady = computed(() => {
 
 const continuerVersDevis = async () => {
   try {
+    // 🔢 Generazione numero devis progressivo
+    const counterRef = doc(db, 'counters', 'devis');
+    let numeroDevis = 'DEV-0001';
+
+    const counterSnap = await getDoc(counterRef);
+    if (counterSnap.exists()) {
+      const last = counterSnap.data().lastNumber || 0;
+      const next = last + 1;
+      numeroDevis = `DEV-${next.toString().padStart(4, '0')}`;
+      await updateDoc(counterRef, { lastNumber: next });
+    } else {
+      await setDoc(counterRef, { lastNumber: 1 });
+    }
+
     const newDevis = {
+      numero: numeroDevis,
       nom: form.value.nom,
       adresse: form.value.adresse,
       clientId: form.value.client,
