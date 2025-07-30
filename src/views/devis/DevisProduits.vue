@@ -3,8 +3,10 @@
    <h2 class="text-center mb-4">Ajout de Produits au Devis</h2>
 
 <!-- ✅ Numéro Devis visibile -->
-<div v-if="numeroDevis" class="alert alert-info text-center mb-4">
-  <strong>Numéro Devis:</strong> {{ numeroDevis }}
+<div class="alert alert-info text-center mb-4" v-if="numeroDevis || nomClient || nomChantier">
+  <div v-if="numeroDevis"><strong>Numéro Devis:</strong> {{ numeroDevis }}</div>
+  <div v-if="nomClient"><strong>Client:</strong> {{ nomClient }}</div>
+  <div v-if="nomChantier"><strong>Chantier:</strong> {{ nomChantier }}</div>
 </div>
 
 <!-- Boutons -->
@@ -88,13 +90,19 @@ const produits = ref([]);
 const devisItems = ref([]);
 const editingItem = ref(null);
 const numeroDevis = ref('');
+const nomClient = ref('');
+const nomChantier = ref('');
 
 // Carica numero devis
 onMounted(async () => {
   const devisRef = doc(db, 'devis', devisId);
   const devisSnap = await getDoc(devisRef);
+
   if (devisSnap.exists()) {
-    numeroDevis.value = devisSnap.data().numero || '';
+    const data = devisSnap.data();
+    numeroDevis.value = data.numero || '';
+    nomClient.value = data.nom || '';
+    nomChantier.value = data.adresse || '';
   }
 
   const produitsSnap = await getDoc(doc(db, 'produits', 'liste'));
