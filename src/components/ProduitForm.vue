@@ -50,26 +50,48 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted, computed, watchEffect } from 'vue';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '../firebase';
 
-const props = defineProps({ editingItem: Object });
+const { zones, devisId, editingItem } = defineProps<{
+  zones: string[]
+  devisId: string
+  editingItem: any
+}>()
+
 const emit = defineEmits(['update-item']);
 
-const produits = ref([]);
-const supplements = ref([]);
-const zones = ref([]);
+type Produit = {
+  id: string
+  code: string
+  description: string
+  taille: string
+  unite: string
+  prix: number
+  nom: string
+}
+
+type Supplement = {
+  nom: string
+  valeur: number
+}
+
+const produits = ref<Produit[]>([]);
+const supplements = ref<Supplement[]>([]);
+// 👇 zones viene da props, quindi non serve definirla qui
 
 const selectedProduitId = ref('');
 const selectedZone = ref('');
 const quantiteML = ref(0);
-const selectedSupplements = ref([]);
+const selectedSupplements = ref<string[]>([]);
 const suppQuantities = ref({});
 const localEditingItem = ref(null);
 
-const formValide = computed(() => selectedProduitId.value && selectedZone.value && quantiteML.value > 0);
+const formValide = computed(() =>
+  selectedProduitId.value && selectedZone.value && quantiteML.value > 0
+);
 
 // Caricamento prodotti e supplementi
 onMounted(async () => {
@@ -80,20 +102,8 @@ onMounted(async () => {
   supplements.value = supplementsSnap.docs.map(d => d.data());
 });
 
-// Caricamento dinamico delle zone da localStorage
-onMounted(() => {
-  const savedZones = localStorage.getItem('zonesCantiere');
-  if (savedZones) {
-    try {
-      zones.value = JSON.parse(savedZones);
-    } catch (e) {
-      console.error('Erreur parsing zonesCantiere:', e);
-      zones.value = [];
-    }
-  }
-});
 
-watch(() => props.editingItem, (item) => {
+watch(() => editingItem, (item) => {
   if (!item || JSON.stringify(item) === JSON.stringify(localEditingItem.value)) return;
   localEditingItem.value = { ...item };
   const produit = produits.value.find(p => p.code === item.article);

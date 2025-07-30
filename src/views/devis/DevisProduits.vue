@@ -17,10 +17,11 @@
 
    
     <ProduitForm
-      :editingItem="editingItem"
-      :produits="produits"
-      @update-item="handleUpdateItem"
-    />
+  :editingItem="editingItem"
+  :produits="produits"
+  :zones="zones"
+  @update-item="handleUpdateItem"
+/>
 
     <div class="card p-4 mb-4">
       <h5>Détails du Devis</h5>
@@ -72,7 +73,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { db } from '@/firebase';
@@ -93,6 +94,9 @@ const numeroDevis = ref('');
 const nomClient = ref('');
 const nomChantier = ref('');
 
+// ✅ AGGIUNTA QUI
+const zones = ref<string[]>([]);
+
 // Carica numero devis
 onMounted(async () => {
   const devisRef = doc(db, 'devis', devisId);
@@ -103,6 +107,7 @@ onMounted(async () => {
     numeroDevis.value = data.numero || '';
     nomClient.value = data.nom || '';
     nomChantier.value = data.adresse || '';
+    zones.value = data.zones || [];
   }
 
   const produitsSnap = await getDoc(doc(db, 'produits', 'liste'));
