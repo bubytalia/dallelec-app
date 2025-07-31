@@ -189,7 +189,9 @@ const continuerVersDevis = async () => {
       remises: remiseSelection.value,
       createdAt: new Date(),
       produits: [],
-      total: 0
+      total: 0,
+      draft: true,            // segnala che il preventivo è ancora in bozza
+      status: 'en cours'      // stato iniziale (potrai gestirlo in futuro)
     };
 
     const docRef = await addDoc(collection(db, 'devis'), newDevis);

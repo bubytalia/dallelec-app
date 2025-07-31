@@ -51,72 +51,86 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, watchEffect } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const { zones, devisId, editingItem } = defineProps<{
-  zones: string[]
-  devisId: string
-  editingItem: any
-}>()
+  zones: string[];
+  devisId: string;
+  editingItem: any;
+}>();
 
 const emit = defineEmits(['update-item']);
 
+/**
+ * Rappresenta un prodotto disponibile su Firestore.
+ */
 type Produit = {
-  id: string
-  code: string
-  description: string
-  taille: string
-  unite: string
-  prix: number
-  nom: string
-}
+  id: string;
+  article: string;
+  description: string;
+  taille: string;
+  unite: string;
+  prix: number;
+};
 
 type Supplement = {
-  nom: string
-  valeur: number
-}
+  nom: string;
+  valeur: number;
+};
 
 const produits = ref<Produit[]>([]);
 const supplements = ref<Supplement[]>([]);
-// 👇 zones viene da props, quindi non serve definirla qui
 
 const selectedProduitId = ref('');
 const selectedZone = ref('');
 const quantiteML = ref(0);
 const selectedSupplements = ref<string[]>([]);
-const suppQuantities = ref({});
-const localEditingItem = ref(null);
+const suppQuantities = ref<Record<string, number>>({});
+const localEditingItem = ref<any>(null);
 
-const formValide = computed(() =>
-  selectedProduitId.value && selectedZone.value && quantiteML.value > 0
-);
-
-// Caricamento prodotti e supplementi
-onMounted(async () => {
-  const produitsSnap = await getDocs(collection(db, 'produits'));
-  produits.value = produitsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-  const supplementsSnap = await getDocs(collection(db, 'supplements'));
-  supplements.value = supplementsSnap.docs.map(d => d.data());
+const formValide = computed(() => {
+  return selectedProduitId.value && selectedZone.value && quantiteML.value > 0;
 });
 
-
-watch(() => editingItem, (item) => {
-  if (!item || JSON.stringify(item) === JSON.stringify(localEditingItem.value)) return;
-  localEditingItem.value = { ...item };
-  const produit = produits.value.find(p => p.code === item.article);
-  selectedProduitId.value = produit?.id || '';
-  selectedZone.value = item.zone;
-  quantiteML.value = item.ml;
-  selectedSupplements.value = item.supplements?.map(s => s.supplement) || [];
-  suppQuantities.value = {};
-  item.supplements?.forEach(s => {
-    suppQuantities.value[s.supplement] = s.qte;
+// Caricamento prodotti e supplementi da Firestore con normalizzazione
+onMounted(async () => {
+  const produitsSnap = await getDocs(collection(db, 'produits'));
+  produits.value = produitsSnap.docs.map(d => {
+    const data = d.data() as any;
+    return {
+      id: d.id,
+      ...data,
+      article: data.article ?? data.code ?? '',
+      description: data.description ?? data.nom ?? ''
+    };
   });
-}, { immediate: true });
 
+  const supplementsSnap = await getDocs(collection(db, 'supplements'));
+  supplements.value = supplementsSnap.docs.map(d => d.data() as Supplement);
+});
+
+// Quando editingItem cambia, popoliamo il form con i dati della riga da modificare
+watch(
+  () => editingItem,
+  (item) => {
+    if (!item || JSON.stringify(item) === JSON.stringify(localEditingItem.value)) return;
+    localEditingItem.value = { ...item };
+    const produit = produits.value.find(p => p.article === item.article);
+    selectedProduitId.value = produit?.id || '';
+    selectedZone.value = item.zone;
+    quantiteML.value = item.ml;
+    selectedSupplements.value = item.supplements?.map((s: any) => s.supplement) || [];
+    suppQuantities.value = {};
+    item.supplements?.forEach((s: any) => {
+      suppQuantities.value[s.supplement] = s.qte;
+    });
+  },
+  { immediate: true }
+);
+
+// Aggiunge una nuova riga al devis
 const ajouterLigne = () => {
   const produit = produits.value.find(p => p.id === selectedProduitId.value);
   if (!produit) return;
@@ -125,7 +139,7 @@ const ajouterLigne = () => {
     const supp = supplements.value.find(s => s.nom === nom);
     const qte = suppQuantities.value[nom] || 0;
     return {
-      article: produit.code,
+      article: produit.article,
       nom: produit.description,
       taille: produit.taille,
       supplement: nom,
@@ -142,7 +156,8 @@ const ajouterLigne = () => {
 
   const newItem = {
     zone: selectedZone.value,
-    article: produit.code,
+    article: produit.article ?? produit.code ?? '',
+    article: produit.article,
     nom: produit.description,
     taille: produit.taille,
     unite: produit.unite,
@@ -158,6 +173,7 @@ const ajouterLigne = () => {
   resetForm();
 };
 
+// Modifica una riga esistente
 const modifierLigne = () => {
   if (!localEditingItem.value) return;
   const index = localEditingItem.value.index;
@@ -168,7 +184,7 @@ const modifierLigne = () => {
     const supp = supplements.value.find(s => s.nom === nom);
     const qte = suppQuantities.value[nom] || 0;
     return {
-      article: produit.code,
+      article: produit.article,
       nom: produit.description,
       taille: produit.taille,
       supplement: nom,
@@ -185,9 +201,9 @@ const modifierLigne = () => {
 
   const updatedItem = {
     zone: selectedZone.value,
-    article: produit.code,
+    article: produit.article,
     nom: produit.description,
-    taille: produit.taille,
+    taille: prodotto.taille,
     unite: produit.unite,
     ml: quantiteML.value,
     supplements: supplementDetails,
@@ -201,6 +217,7 @@ const modifierLigne = () => {
   resetForm();
 };
 
+// Ripristina il form allo stato iniziale
 const resetForm = () => {
   selectedProduitId.value = '';
   selectedZone.value = '';
@@ -210,3 +227,4 @@ const resetForm = () => {
   localEditingItem.value = null;
 };
 </script>
+
