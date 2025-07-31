@@ -92,6 +92,14 @@
 
     <!-- Continuer -->
     <div class="text-end">
+      <!-- Pulsante per tornare alla lista dei devis durante la modifica -->
+      <button
+        v-if="editingId"
+        class="btn btn-outline-secondary me-2"
+        @click="retourListe"
+      >
+        ← Retour
+      </button>
       <button class="btn btn-success" :disabled="!formReady" @click="continuerVersDevis">
         Continuer vers le devis
       </button>
@@ -101,12 +109,21 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { db } from '@/firebase';
 import { collection, getDocs, addDoc, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 
 const router = useRouter();
+const route = useRoute();
 
+// Se la rotta contiene un parametro id (edit), siamo in modalità modifica
+const editingId = computed(() => {
+  return route.params.id || null;
+});
+
+// Formulaire pour i dati del cantiere. Le informazioni vengono
+// salvate anche in localStorage per preservare lo stato quando si
+// ritorna dalla pagina dei prodotti o in caso di refresh del browser.
 const form = ref({
   nom: '',
   adresse: '',
@@ -165,10 +182,33 @@ const formReady = computed(() => {
 
 const continuerVersDevis = async () => {
   try {
-    // 🔢 Generazione numero devis progressivo
+    // Se stiamo modificando un devis esistente, aggiorniamolo e navighiamo alla pagina prodotti
+    if (editingId.value) {
+      const id = editingId.value;
+      await updateDoc(doc(db, 'devis', id), {
+        nom: form.value.nom,
+        adresse: form.value.adresse,
+        clientId: form.value.client,
+        technicien: form.value.technicien,
+        zones: zones.value,
+        remises: remiseSelection.value,
+        updatedAt: new Date()
+      });
+      // Pulizia localStorage (solo i dati del form)
+      try {
+        localStorage.removeItem('devisForm');
+        localStorage.removeItem('devisRemises');
+        localStorage.removeItem('zonesCantiere');
+      } catch (e) {
+        console.warn('Erreur lors du nettoyage du localStorage après la modification du devis', e);
+      }
+      router.push(`/devis/produits/${id}`);
+      return;
+    }
+
+    // Altrimenti si tratta di un nuovo devis: generiamo numero progressivo
     const counterRef = doc(db, 'counters', 'devis');
     let numeroDevis = 'DEV-0001';
-
     const counterSnap = await getDoc(counterRef);
     if (counterSnap.exists()) {
       const last = counterSnap.data().lastNumber || 0;
@@ -190,16 +230,29 @@ const continuerVersDevis = async () => {
       createdAt: new Date(),
       produits: [],
       total: 0,
-      draft: true,            // segnala che il preventivo è ancora in bozza
-      status: 'en cours'      // stato iniziale (potrai gestirlo in futuro)
+      draft: true,
+      status: 'En cours'
     };
-
     const docRef = await addDoc(collection(db, 'devis'), newDevis);
+    // Pulizia localStorage
+    try {
+      localStorage.removeItem('devisForm');
+      localStorage.removeItem('devisRemises');
+      localStorage.removeItem('zonesCantiere');
+    } catch (e) {
+      console.warn('Erreur lors du nettoyage du localStorage après la création du devis', e);
+    }
     router.push(`/devis/produits/${docRef.id}`);
   } catch (error) {
     console.error("Errore durante la creazione del devis:", error);
     alert("C'è stato un errore durante il salvataggio.");
   }
+};
+
+// Torna alla lista dei devis senza creare o modificare il documento.
+const retourListe = () => {
+  // Semplicemente reindirizza alla pagina dei devis
+  router.push('/admin/devis');
 };
 
 
@@ -215,13 +268,99 @@ onMounted(async () => {
   techniciens.value = techSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   familles.value = famSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   sousfamilles.value = sousSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // Carica dati dal localStorage solo se NON siamo in modalità modifica
+  if (!editingId.value) {
+    try {
+      const savedForm = localStorage.getItem('devisForm');
+      if (savedForm) {
+        const parsed = JSON.parse(savedForm);
+        form.value = { ...form.value, ...parsed };
+      }
+    } catch (e) {
+      console.warn('Impossible caricare devisForm da localStorage', e);
+    }
+    try {
+      const savedZones = localStorage.getItem('zonesCantiere');
+      if (savedZones) {
+        zones.value = JSON.parse(savedZones);
+      }
+    } catch (e) {
+      console.warn('Impossible caricare zonesCantiere da localStorage', e);
+    }
+    try {
+      const savedRemises = localStorage.getItem('devisRemises');
+      if (savedRemises) {
+        remiseSelection.value = JSON.parse(savedRemises);
+      }
+    } catch (e) {
+      console.warn('Impossible caricare devisRemises da localStorage', e);
+    }
+  }
+
+  // Se siamo in modalità modifica, carichiamo il devis esistente e popoliamo i campi
+  if (editingId.value) {
+    try {
+      const devisRef = doc(db, 'devis', editingId.value);
+      const devisSnap = await getDoc(devisRef);
+      if (devisSnap.exists()) {
+        const data = devisSnap.data();
+        // Popola i campi del form
+        form.value.nom = data.nom || '';
+        form.value.adresse = data.adresse || '';
+        form.value.client = data.clientId || '';
+        form.value.technicien = data.technicien || '';
+        zones.value = Array.isArray(data.zones) ? [...data.zones] : [];
+        remiseSelection.value = data.remises || {};
+        // Salva anche nei localStorage per mantenere i dati se l'utente naviga via router (retour)
+        try {
+          localStorage.setItem('devisForm', JSON.stringify({
+            nom: form.value.nom,
+            adresse: form.value.adresse,
+            client: form.value.client,
+            technicien: form.value.technicien
+          }));
+          localStorage.setItem('zonesCantiere', JSON.stringify(zones.value));
+          localStorage.setItem('devisRemises', JSON.stringify(remiseSelection.value));
+        } catch (err) {
+          console.warn("Erreur lors de l'enregistrement des données du devis en édition dans le localStorage", err);
+        }
+      }
+    } catch (err) {
+      console.warn('Erreur lors du chargement du devis en édition:', err);
+    }
+  }
 });
 
 
 // Salva automaticamente le zone cantiere ogni volta che cambiano
-watch(() => form.zones, (newZones) => {
-  const zones = newZones?.filter(z => z?.trim?.() !== '') || [];
-  localStorage.setItem('zonesCantiere', JSON.stringify(zones));
+watch(zones, (newZones) => {
+  const validZones = (newZones ?? []).filter(z => z && z.trim && z.trim() !== '');
+  try {
+    localStorage.setItem('zonesCantiere', JSON.stringify(validZones));
+  } catch (e) {
+    console.warn('Impossible salvare zonesCantiere su localStorage', e);
+  }
+}, { deep: true });
+
+// Watcher per salvare automaticamente l'intero form nel localStorage.
+watch(form, (newForm) => {
+  // Evita di serializzare funzioni o riferimenti reattivi
+  localStorage.setItem('devisForm', JSON.stringify({
+    nom: newForm.nom,
+    adresse: newForm.adresse,
+    client: newForm.client,
+    technicien: newForm.technicien
+  }));
+}, { deep: true });
+
+// Watcher per salvare automaticamente la selezione delle remise nel localStorage
+watch(remiseSelection, (newRemises) => {
+  try {
+    localStorage.setItem('devisRemises', JSON.stringify(newRemises));
+  } catch (e) {
+    console.warn('Impossible salvare devisRemises su localStorage', e);
+  }
 }, { deep: true });
 </script>
 

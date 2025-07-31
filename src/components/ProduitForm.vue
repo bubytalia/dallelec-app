@@ -55,10 +55,15 @@ import { ref, watch, onMounted, computed } from 'vue';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const { zones, devisId, editingItem } = defineProps<{
+const { zones, devisId, editingItem, discountFamille } = defineProps<{
   zones: string[];
   devisId: string;
   editingItem: any;
+  /**
+   * Percentuale di sconto derivante dalle famiglie/sottofamiglie selezionate nella prima pagina.
+   * Questo valore verrà sottratto dal prezzo unitario del prodotto.
+   */
+  discountFamille: number;
 }>();
 
 const emit = defineEmits(['update-item']);
@@ -152,12 +157,14 @@ const ajouterLigne = () => {
 
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
-  const total = totalML * produit.prix;
+  // Applica lo sconto famiglia sul prezzo unitario del prodotto. Se discountFamille non è definito, usiamo 0.
+  const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+  const prixFinal = produit.prix * (1 - (remisePct / 100));
+  const total = totalML * prixFinal;
 
   const newItem = {
     zone: selectedZone.value,
     article: produit.article ?? produit.code ?? '',
-    article: produit.article,
     nom: produit.description,
     taille: produit.taille,
     unite: produit.unite,
@@ -165,7 +172,8 @@ const ajouterLigne = () => {
     supplements: supplementDetails,
     totalSuppML,
     totalML,
-    prix: produit.prix,
+    // Memorizziamo il prezzo finale (già scontato) per coerenza con l'importo applicato
+    prix: prixFinal,
     total
   };
 
@@ -197,19 +205,21 @@ const modifierLigne = () => {
 
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
-  const total = totalML * produit.prix;
+  const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+  const prixFinal = produit.prix * (1 - (remisePct / 100));
+  const total = totalML * prixFinal;
 
   const updatedItem = {
     zone: selectedZone.value,
     article: produit.article,
     nom: produit.description,
-    taille: prodotto.taille,
+    taille: produit.taille,
     unite: produit.unite,
     ml: quantiteML.value,
     supplements: supplementDetails,
     totalSuppML,
     totalML,
-    prix: produit.prix,
+    prix: prixFinal,
     total
   };
 

@@ -25,6 +25,9 @@ import Paiements from '@/views/repertoires/Paiements.vue';
 import Techniciens from '@/views/repertoires/Techniciens.vue';
 import Supplements from '@/views/repertoires/Supplements.vue';
 
+// Bilans
+import Bilans from '@/views/Bilans.vue';
+
 const routes = [
   { path: '/', name: 'Login', component: Login },
   { path: '/admin', name: 'AdminDashboard', component: AdminDashboard },
@@ -32,6 +35,8 @@ const routes = [
   // Devis
   { path: '/admin/devis', name: 'Devis', component: Devis },
   { path: '/admin/devis/create', name: 'DevisCreate', component: DevisCreate },
+  // Route per la modifica di un devis esistente: riutilizziamo DevisCreate ma con id
+  { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate },
   { path: '/admin/devis/list', name: 'DevisList', component: DevisList },
   { path: '/devis/produits/:id', name: 'DevisProduits', component: DevisProduits }, // ✅ Con :id
 
@@ -46,7 +51,9 @@ const routes = [
   { path: '/admin/repertoires/sousfamilles', name: 'SousFamilles', component: SousFamilles },
   { path: '/admin/repertoires/paiements', name: 'Paiements', component: Paiements },
   { path: '/admin/repertoires/supplements', name: 'Supplements', component: Supplements },
-  { path: '/admin/repertoires/techniciens', name: 'Techniciens', component: Techniciens }
+  { path: '/admin/repertoires/techniciens', name: 'Techniciens', component: Techniciens },
+  // Bilans
+  { path: '/admin/bilans', name: 'Bilans', component: Bilans }
 ];
 
 const router = createRouter({

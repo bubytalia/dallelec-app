@@ -11,7 +11,14 @@
 
 <!-- Pulsanti di navigazione e salvataggio -->
 <div class="mb-3 d-flex justify-content-between">
-  <button class="btn btn-secondary" @click="$router.back()">← Retour</button>
+    <!--
+          Bouton "Retour" :
+          Invece di richiamare direttamente $router.back(),
+          navighiamo esplicitamente alla pagina di modifica del devis
+          per permettere all'utente di tornare alla prima pagina del flusso.
+          Così l'utente potrà modificare sia la prima che la seconda pagina.
+        -->
+    <button class="btn btn-secondary" @click="retourPage">← Retour</button>
   <!-- Salvataggio definitivo -->
   <button class="btn btn-success" @click="sauvegarderDevis(false)">📥 Sauvegarder le devis</button>
   <!-- Salvataggio come bozza -->
@@ -23,11 +30,12 @@
 
    
     <ProduitForm
-  :editingItem="editingItem"
-  :devisId="devisId"
-  :zones="zones"
-  @update-item="handleUpdateItem"
-/>
+      :editingItem="editingItem"
+      :devisId="devisId"
+      :zones="zones"
+      :discountFamille="remiseFamilles"
+      @update-item="handleUpdateItem"
+    />
 
     <div class="card p-4 mb-4">
       <h5>Détails du Devis</h5>
@@ -71,6 +79,11 @@
         </div>
       </div>
       <div class="text-end fs-5 fw-bold mt-3">
+        <!-- Campo per la remise supplementaire -->
+        <div class="mb-2 d-flex justify-content-end align-items-center">
+          <label class="me-2 mb-0">Remise supplémentaire (%)</label>
+          <input type="number" class="form-control w-auto" v-model.number="remiseSupplementaire" min="0" max="100" style="width: 100px;" />
+        </div>
         Total Devis: {{ devisTotal.toFixed(2) }}€
       </div>
     </div>
@@ -81,10 +94,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { db } from '@/firebase';
 // Importiamo solo le funzioni necessarie per questo componente
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import ProduitForm from '@/components/ProduitForm.vue';
 import SupplementDetails from '@/components/SupplementDetails.vue';
 import { useRoute } from 'vue-router';
@@ -99,6 +112,14 @@ const numeroDevis = ref('');
 const nomClient = ref('');
 const nomChantier = ref('');
 
+// Remise supplémentaire (%), da applicare sull'importo totale del devis.
+const remiseSupplementaire = ref(0);
+
+// Somma degli sconti derivanti da famiglie/sottofamiglie selezionate nella pagina 1
+// Somma degli sconti derivanti dalle famiglie/sottofamiglie selezionate nella pagina 1.
+// Questa percentuale verrà applicata a ciascun prodotto inserito nel devis.
+const remiseFamilles = ref(0);
+
 /**
  * Salva il devis su Firestore.
  * Se asDraft è true, imposta draft: true (bozza); altrimenti draft: false.
@@ -109,14 +130,28 @@ const sauvegarderDevis = async (asDraft = false) => {
     await updateDoc(doc(db, 'devis', devisId), {
       produits: devisItems.value,
       total: devisTotal.value,
+      discount: Number(remiseSupplementaire.value) || 0,
       draft: asDraft,
       updatedAt: new Date()
     });
     localStorage.removeItem('devisItems');
-    alert(asDraft ? 'Brouillon sauvegardé.' : 'Devis sauvegardé avec succès.');
-    // Se non è più una bozza, torniamo alla lista dei devis
+    // quando viene salvato definitivamente eliminiamo anche i dati del form e delle remises
     if (!asDraft) {
-      router.push('/admin/devis/list');
+      try {
+        localStorage.removeItem('devisForm');
+        localStorage.removeItem('devisRemises');
+        localStorage.removeItem('zonesCantiere');
+        localStorage.removeItem('devisDiscount');
+      } catch (e) {
+        console.warn('Errore nella pulizia del localStorage dopo il salvataggio', e);
+      }
+    }
+    alert(asDraft ? 'Brouillon sauvegardé.' : 'Devis sauvegardé avec succès.');
+    // Se non è più una bozza, torniamo alla pagina principale dei devis
+    // che include il pulsante "Nouveau Devis".  Usiamo /admin/devis invece
+    // di /admin/devis/list per evitare di trovarci in una pagina senza il pulsante.
+    if (!asDraft) {
+      router.push('/admin/devis');
     }
   } catch (error) {
     console.error('Erreur Firestore:', error);
@@ -142,8 +177,31 @@ const abandonnerDevis = async () => {
   }
 };
 
+// Naviga esplicitamente alla pagina di modifica del devis per tornare alla prima pagina.
+const retourPage = async () => {
+  try {
+    // Salva come bozza le modifiche correnti per non perdere dati
+    await sauvegarderDevis(true);
+  } catch (e) {
+    console.warn('Erreur lors du sauvegarde en brouillon avant de retourner', e);
+  }
+  // Reindirizza alla pagina di modifica (prima pagina) del devis
+  router.push(`/admin/devis/edit/${devisId}`);
+};
+
 // ✅ AGGIUNTA QUI
 const zones = ref<string[]>([]);
+
+// Salvataggio automatico come bozza quando si lascia la pagina (navigazione interna).
+onBeforeRouteLeave(async (to, from, next) => {
+  try {
+    // Salva come bozza solo se non è già stato salvato definitivamente
+    await sauvegarderDevis(true);
+  } catch (e) {
+    console.warn('Errore nel salvataggio automatico della bozza', e);
+  }
+  next();
+});
 
 // Carica numero devis
 onMounted(async () => {
@@ -156,6 +214,35 @@ onMounted(async () => {
     nomClient.value = data.nom || '';
     nomChantier.value = data.adresse || '';
     zones.value = data.zones || [];
+
+    // Carica gli items del devis (prodotti) dal documento se esistenti
+    if (Array.isArray(data.produits) && data.produits.length > 0) {
+      devisItems.value = data.produits.map(item => ({ ...item }));
+    }
+    // Se esiste uno sconto salvato nel documento, caricalo come valore di default (verrà sovrascritto dal valore locale se presente)
+    if (data.discount !== undefined) {
+      remiseSupplementaire.value = Number(data.discount) || 0;
+    }
+
+    // Calcola la remise totale derivante dalle famiglie/sottofamiglie selezionate
+    // memorizzate nel campo `remises` del documento devis. Ogni chiave di `remises`
+    // rappresenta l'ID della famiglia e il valore è l'ID della sottofamiglia.
+    try {
+      const remisesObj = data.remises || {};
+      // Otteniamo tutti i documenti delle sousfamilles per poter leggerne il pourcentage.
+      const sousSnap = await getDocs(collection(db, 'sousfamilles'));
+      const allSous = sousSnap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      let totalPct = 0;
+      Object.values(remisesObj).forEach((sousId: any) => {
+        const sous = allSous.find(s => s.id === sousId);
+        if (sous && typeof sous.pourcentage !== 'undefined') {
+          totalPct += Number(sous.pourcentage) || 0;
+        }
+      });
+      remiseFamilles.value = totalPct;
+    } catch (e) {
+      console.warn('Errore nel calcolo della remise familière', e);
+    }
   }
 
   const produitsSnap = await getDoc(doc(db, 'produits', 'liste'));
@@ -169,12 +256,31 @@ if (produitsSnap.exists()) {
   }));
 }
 
+  // Carica eventuale remiseSupplementaire dal localStorage
+  try {
+    const savedDiscount = localStorage.getItem('devisDiscount');
+    if (savedDiscount) {
+      remiseSupplementaire.value = Number(JSON.parse(savedDiscount)) || 0;
+    }
+  } catch (e) {
+    console.warn('Impossible caricare devisDiscount da localStorage', e);
+  }
+
 });
 
 // Backup automatico locale
 watch(devisItems, (newVal) => {
   localStorage.setItem('devisItems', JSON.stringify(newVal));
 }, { deep: true });
+
+// Salvataggio della remiseSupplementaire nel localStorage per mantenere lo stato tra refresh/navigazioni
+watch(remiseSupplementaire, (val) => {
+  try {
+    localStorage.setItem('devisDiscount', JSON.stringify(val));
+  } catch (e) {
+    console.warn('Impossible salvare devisDiscount su localStorage', e);
+  }
+});
 
 // Aggiunta/modifica riga
 const handleUpdateItem = (index, item) => {
@@ -263,6 +369,14 @@ const supplementParZone = computed(() => {
 });
 
 const getSubtotal = (items) => items.reduce((sum, i) => sum + i.total, 0);
-const devisTotal = computed(() => devisItems.value.reduce((sum, i) => sum + i.total, 0));
+// Calcola il totale del devis applicando eventuale remise supplementaire.
+const devisTotal = computed(() => {
+  const subtotal = devisItems.value.reduce((sum, i) => sum + i.total, 0);
+  const discount = Number(remiseSupplementaire.value) || 0;
+  // Assicuriamoci che lo sconto sia compreso tra 0 e 100
+  const pct = Math.min(Math.max(discount, 0), 100);
+  const totaleScontato = subtotal * (1 - pct / 100);
+  return totaleScontato;
+});
 
 </script>
