@@ -25,6 +25,9 @@
   <button class="btn btn-outline-primary" @click="sauvegarderDevis(true)">💾 Sauver comme brouillon</button>
   <!-- Abbandono del preventivo -->
   <button class="btn btn-danger" @click="abandonnerDevis">❌ Abandonner</button>
+
+      <!-- Passa alla pagina delle condizioni (terza pagina) -->
+      <button class="btn btn-info" @click="gotoConditions">→ Conditions</button>
 </div>
 
 
@@ -105,6 +108,8 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 const devisId = route.params.id;
 const router = useRouter();
+// Verifica se stiamo modificando un devis esistente (presenza di un id)
+const isEditingExisting = computed(() => !!devisId);
 const produits = ref([]);
 const devisItems = ref([]);
 const editingItem = ref(null);
@@ -177,16 +182,26 @@ const abandonnerDevis = async () => {
   }
 };
 
+// Naviga alla terza pagina per impostare le condizioni del devis
+const gotoConditions = () => {
+  router.push(`/admin/devis/conditions/${devisId}`);
+};
+
 // Naviga esplicitamente alla pagina di modifica del devis per tornare alla prima pagina.
 const retourPage = async () => {
+  // Se stiamo modificando un devis esistente, torniamo alla prima pagina senza salvare come bozza
+  if (isEditingExisting.value) {
+    router.push(`/admin/devis/edit/${devisId}`);
+    return;
+  }
+  // Se siamo in fase di creazione (nessun id), salviamo come bozza per non perdere dati
   try {
-    // Salva come bozza le modifiche correnti per non perdere dati
     await sauvegarderDevis(true);
   } catch (e) {
     console.warn('Erreur lors du sauvegarde en brouillon avant de retourner', e);
   }
-  // Reindirizza alla pagina di modifica (prima pagina) del devis
-  router.push(`/admin/devis/edit/${devisId}`);
+  // Per i nuovi devis torniamo alla pagina principale
+  router.push('/admin/devis');
 };
 
 // ✅ AGGIUNTA QUI
@@ -194,11 +209,14 @@ const zones = ref<string[]>([]);
 
 // Salvataggio automatico come bozza quando si lascia la pagina (navigazione interna).
 onBeforeRouteLeave(async (to, from, next) => {
-  try {
-    // Salva come bozza solo se non è già stato salvato definitivamente
-    await sauvegarderDevis(true);
-  } catch (e) {
-    console.warn('Errore nel salvataggio automatico della bozza', e);
+  // Se stiamo creando un nuovo devis (nessun id), effettuiamo il salvataggio come bozza.
+  // Se stiamo modificando un devis esistente, non cambiamo il suo stato di bozza.
+  if (!isEditingExisting.value) {
+    try {
+      await sauvegarderDevis(true);
+    } catch (e) {
+      console.warn('Errore nel salvataggio automatico della bozza', e);
+    }
   }
   next();
 });

@@ -91,19 +91,22 @@
     </div>
 
     <!-- Continuer -->
-    <div class="text-end">
-      <!-- Pulsante per tornare alla lista dei devis durante la modifica -->
-      <button
-        v-if="editingId"
-        class="btn btn-outline-secondary me-2"
-        @click="retourListe"
-      >
-        ← Retour
-      </button>
-      <button class="btn btn-success" :disabled="!formReady" @click="continuerVersDevis">
-        Continuer vers le devis
-      </button>
-    </div>
+      <div class="text-end">
+        <!-- Pulsante per tornare alla lista dei devis. Visibile sia in creazione sia in modifica -->
+        <button
+          class="btn btn-outline-secondary me-2"
+          @click="retourListe"
+        >
+          ← Retour
+        </button>
+        <button
+          class="btn btn-success"
+          :disabled="!formReady"
+          @click="continuerVersDevis"
+        >
+          Continuer vers le devis
+        </button>
+      </div>
   </div>
 </template>
 

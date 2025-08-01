@@ -11,6 +11,7 @@ import Devis from '@/views/devis/Devis.vue';
 import DevisCreate from '@/views/devis/DevisCreate.vue';
 import DevisList from '@/views/devis/DevisList.vue';
 import DevisProduits from '@/views/devis/DevisProduits.vue'; // ✅ Import corretto
+import DevisConditions from '@/views/devis/DevisConditions.vue';
 
 // Répertoires
 import Repertoires from '@/views/Repertoires.vue';
@@ -24,6 +25,7 @@ import SousFamilles from '@/views/repertoires/SousFamilles.vue';
 import Paiements from '@/views/repertoires/Paiements.vue';
 import Techniciens from '@/views/repertoires/Techniciens.vue';
 import Supplements from '@/views/repertoires/Supplements.vue';
+import Conditions from '@/views/repertoires/Conditions.vue';
 
 // Bilans
 import Bilans from '@/views/Bilans.vue';
@@ -39,6 +41,8 @@ const routes = [
   { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate },
   { path: '/admin/devis/list', name: 'DevisList', component: DevisList },
   { path: '/devis/produits/:id', name: 'DevisProduits', component: DevisProduits }, // ✅ Con :id
+  // Terza pagina: condizioni del devis
+  { path: '/admin/devis/conditions/:id', name: 'DevisConditions', component: DevisConditions },
 
   // Répertoires
   { path: '/admin/repertoires', name: 'Repertoires', component: Repertoires },
@@ -52,6 +56,7 @@ const routes = [
   { path: '/admin/repertoires/paiements', name: 'Paiements', component: Paiements },
   { path: '/admin/repertoires/supplements', name: 'Supplements', component: Supplements },
   { path: '/admin/repertoires/techniciens', name: 'Techniciens', component: Techniciens },
+  { path: '/admin/repertoires/conditions', name: 'Conditions', component: Conditions },
   // Bilans
   { path: '/admin/bilans', name: 'Bilans', component: Bilans }
 ];

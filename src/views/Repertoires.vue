@@ -33,7 +33,8 @@ export default {
         { name: 'sousfamilles', label: 'Sous-familles', path: '/admin/repertoires/sousfamilles' },
         { name: 'paiements', label: 'Modes de paiement', path: '/admin/repertoires/paiements' },
         { name: 'techniciens', label: 'Techniciens', path: '/admin/repertoires/techniciens' },
-        { name: 'supplements', label: 'Suppléments', path: '/admin/repertoires/supplements' } 
+        { name: 'supplements', label: 'Suppléments', path: '/admin/repertoires/supplements' },
+        { name: 'conditions', label: 'Conditions de vente', path: '/admin/repertoires/conditions' }
       ]
     };
   }
