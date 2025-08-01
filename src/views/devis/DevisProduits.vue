@@ -263,6 +263,21 @@ onMounted(async () => {
     }
   }
 
+  // Dopo aver caricato eventuali dati dal documento, cerchiamo un backup locale degli items.
+  // Questo è utile quando l'utente sta creando un nuovo devis o sta modificando un devis
+  // e ritorna alla pagina dopo aver navigato via (ad esempio per aggiungere una zona), così da non perdere i prodotti già inseriti.
+  try {
+    const savedItems = localStorage.getItem('devisItems');
+    if (savedItems) {
+      const parsed = JSON.parse(savedItems);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        devisItems.value = parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Impossible caricare devisItems da localStorage', e);
+  }
+
   const produitsSnap = await getDoc(doc(db, 'produits', 'liste'));
 if (produitsSnap.exists()) {
   // Normalizziamo i prodotti in modo da avere sempre `article` e `description`

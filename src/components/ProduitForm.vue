@@ -157,9 +157,14 @@ const ajouterLigne = () => {
 
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
-  // Applica lo sconto famiglia sul prezzo unitario del prodotto. Se discountFamille non è definito, usiamo 0.
+  // Calcola il prezzo da utilizzare per questa riga. Quando si crea una nuova riga
+  // utilizziamo il prezzo del prodotto con lo sconto famiglie; quando si modifica
+  // una riga esistente manteniamo il prezzo salvato nel documento per evitare
+  // che modifiche ai listini o agli sconti alterino i preventivi già creati.
   const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
-  const prixFinal = produit.prix * (1 - (remisePct / 100));
+  // Se stiamo modificando un elemento esistente (localEditingItem definito),
+  // conserviamo il prezzo già presente nell'elemento, altrimenti lo calcoliamo.
+  const prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
   const total = totalML * prixFinal;
 
   const newItem = {
@@ -172,7 +177,8 @@ const ajouterLigne = () => {
     supplements: supplementDetails,
     totalSuppML,
     totalML,
-    // Memorizziamo il prezzo finale (già scontato) per coerenza con l'importo applicato
+    // Memorizziamo il prezzo finale (già scontato) per coerenza con l'importo applicato.
+    // Quando si modifica un elemento esistente il prezzo rimane quello salvato.
     prix: prixFinal,
     total
   };
@@ -206,7 +212,9 @@ const modifierLigne = () => {
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
   const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
-  const prixFinal = produit.prix * (1 - (remisePct / 100));
+  // Se stiamo modificando una riga esistente, manteniamo il prezzo salvato
+  // nell'item originale; altrimenti applichiamo lo sconto famiglie.
+  const prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
   const total = totalML * prixFinal;
 
   const updatedItem = {
@@ -219,6 +227,7 @@ const modifierLigne = () => {
     supplements: supplementDetails,
     totalSuppML,
     totalML,
+    // Manteniamo il prezzo applicato: se si modifica un item esistente resta lo stesso.
     prix: prixFinal,
     total
   };
