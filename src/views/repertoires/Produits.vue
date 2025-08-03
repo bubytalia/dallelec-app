@@ -103,7 +103,14 @@ export default {
 
     const fetchProduits = async () => {
       const querySnapshot = await getDocs(collection(db, 'produits'));
-      produits.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Ordina i prodotti per codice articolo in ordine crescente
+      produits.value = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => {
+          const aCode = (a.article || '').toString().toUpperCase();
+          const bCode = (b.article || '').toString().toUpperCase();
+          return aCode.localeCompare(bCode);
+        });
     };
 
     const addProduit = async () => {

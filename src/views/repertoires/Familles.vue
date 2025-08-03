@@ -16,6 +16,8 @@
       <thead>
         <tr>
           <th>Nom</th>
+          <th>Visible PDF</th>
+          <th>Ordre</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -25,6 +27,11 @@
             <td>
               <input v-model="editFamille.nom" class="form-control" />
             </td>
+            <td class="text-center">–</td>
+            <!-- Ordre en mode édition -->
+            <td>
+              <input v-model.number="editFamille.ordre" type="number" class="form-control" />
+            </td>
             <td>
               <button @click="updateFamille(famille.id)" class="btn btn-success btn-sm">✔</button>
               <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
@@ -32,6 +39,16 @@
           </template>
           <template v-else>
             <td>{{ famille.nom }}</td>
+            <td class="text-center">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                :checked="!!famille.visibleInPdf"
+                @change="toggleVisible(famille)"
+              />
+            </td>
+            <!-- Visualizziamo l'ordine, se presente -->
+            <td>{{ famille.ordre ?? '' }}</td>
             <td>
               <button @click="startEdit(famille)" class="btn btn-warning btn-sm">✎</button>
               <button @click="deleteFamille(famille.id)" class="btn btn-danger btn-sm">🗑</button>
@@ -56,10 +73,10 @@ export default {
   name: 'Familles',
   setup() {
     const familles = ref([]);
-    const newFamille = ref({ nom: '' });
+    const newFamille = ref({ nom: '', ordre: 0 });
 
     const editId = ref(null);
-    const editFamille = ref({ nom: '' });
+    const editFamille = ref({ nom: '', ordre: 0 });
 
     const fetchFamilles = async () => {
       const querySnapshot = await getDocs(collection(db, 'familles'));
@@ -75,7 +92,7 @@ export default {
 
     const startEdit = (famille) => {
       editId.value = famille.id;
-      editFamille.value = { nom: famille.nom };
+      editFamille.value = { nom: famille.nom, ordre: famille.ordre ?? 0 };
     };
 
     const cancelEdit = () => {
@@ -96,6 +113,24 @@ export default {
       }
     };
 
+    /**
+     * Toggle the visibility of a family in the PDF. When the checkbox is
+     * clicked the family document will be updated to either include or
+     * remove the `visibleInPdf` flag. This allows the business to decide
+     * which families should appear in the "Type de pose" section of the
+     * generated devis without affecting the underlying discount logic.
+     *
+     * @param {Object} famille - The family document to update
+     */
+    const toggleVisible = async (famille) => {
+      // Invert the current value (undefined is treated as false)
+      const newValue = !famille.visibleInPdf;
+      // Update the document in Firestore with the new visibility flag
+      await updateDoc(doc(db, 'familles', famille.id), { visibleInPdf: newValue });
+      // Refresh the list to reflect the change
+      fetchFamilles();
+    };
+
     onMounted(fetchFamilles);
 
     return {
@@ -108,6 +143,8 @@ export default {
       cancelEdit,
       updateFamille,
       deleteFamille
+      ,
+      toggleVisible
     };
   }
 };

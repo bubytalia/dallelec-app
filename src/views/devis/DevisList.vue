@@ -50,7 +50,8 @@
           <td>{{ getClientName(devis.clientId) }}</td>
           <td>{{ devis.technicien }}</td>
           <td>{{ devis.nom || devis.adresse }}</td>
-          <td>{{ formatMontant(devis.total) }}</td>
+          <!-- Affichiamo il montant en calculant le total à la volée si le champ total n'est pas défini -->
+          <td>{{ formatMontant(getMontant(devis)) }}</td>
           <td>{{ calculerRemise(devis.remises) }}%</td>
           <td>
             <!-- Se il devis è in bozza, mostriamo lo stato senza possibilità di modifica -->
@@ -169,6 +170,23 @@ const getStatus = (devisItem) => {
 const formatMontant = (val) => {
   const num = Number(val);
   return isNaN(num) ? '0.00' : num.toFixed(2);
+};
+
+// Calcola il totale del devis. Se il campo `total` è presente e maggiore di zero lo usa,
+// altrimenti somma i totali di tutti i prodotti inclusi nel devis. Questo permette
+// di visualizzare un montant corretto anche per i devis creati prima che il
+// calcolo del totale fosse implementato.
+const getMontant = (devisItem) => {
+  if (!devisItem) return 0;
+  const total = Number(devisItem.total);
+  if (total && !isNaN(total) && total > 0) {
+    return total;
+  }
+  // Calcola la somma dei totali dei prodotti se disponibile
+  if (Array.isArray(devisItem.produits)) {
+    return devisItem.produits.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+  }
+  return 0;
 };
 
 // Naviga alla pagina di visualizzazione/edizione del devis
