@@ -1,6 +1,9 @@
 <template>
-  <div class="container py-4">
-    <h2 class="mb-4">Chefs de chantier</h2>
+  <div class="container py-5">
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton to="/admin/repertoires" />
+
+    <h2 class="text-center mb-4">Chefs de Chantiers</h2>
 
     <form @submit.prevent="addChef" class="row g-3 mb-4">
       <div class="col-md-4">
@@ -77,7 +80,6 @@
       </tbody>
     </table>
 
-    <router-link to="/admin/repertoires" class="btn btn-secondary mt-3">Retour</router-link>
   </div>
 </template>
 
@@ -85,9 +87,13 @@
 import { ref, onMounted } from 'vue';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
+import RetourButton from '@/components/RetourButton.vue';
 
 export default {
   name: 'ChefDeChantiers',
+  components: {
+    RetourButton
+  },
   setup() {
     const chefs = ref([]);
     const newChef = ref({

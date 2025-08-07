@@ -59,7 +59,10 @@
               <option v-for="opt in statusOptions" :key="opt" :value="opt">{{ opt }}</option>
             </select>
           </td>
-          <td><button class="btn btn-sm btn-outline-secondary" @click="voirDevis(devis.id)">Voir</button></td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary me-2" @click="voirDevis(devis.id)">Voir</button>
+            <button class="btn btn-sm btn-danger" @click="effacerDevis(devis.id)" title="Effacer le devis">🗑️</button>
+          </td>
         </tr>
         <tr v-if="filteredDevis.length === 0">
           <td colspan="9" class="text-center">Aucun devis trouvé.</td>
@@ -73,7 +76,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { db } from '@/firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 // Prop per controllare se visualizzare il titolo
 defineProps({
@@ -183,6 +186,23 @@ const updateDevisStatus = async (id, newStatus) => {
     await updateDoc(doc(db, 'devis', id), { status: newStatus });
   } catch (error) {
     console.error('Erreur lors de la mise à jour du statut du devis:', error);
+  }
+};
+
+// ✅ AGGIUNTO: Funzione per eliminare un devis
+const effacerDevis = async (id) => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ce devis ? Cette action est irréversible.')) {
+    return;
+  }
+  
+  try {
+    await deleteDoc(doc(db, 'devis', id));
+    // Rimuovi il devis dalla lista locale
+    devis.value = devis.value.filter(d => d.id !== id);
+    alert('Devis supprimé avec succès.');
+  } catch (error) {
+    console.error('Erreur lors de la suppression du devis:', error);
+    alert('Erreur lors de la suppression du devis: ' + error.message);
   }
 };
 </script>

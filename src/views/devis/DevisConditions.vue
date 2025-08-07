@@ -1,5 +1,8 @@
 <template>
   <div class="container py-4">
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton :onClick="retourProduits" />
+
     <h2 class="text-center mb-4">Conditions du Devis</h2>
 
     <!-- Modalités de paiement -->
@@ -37,12 +40,9 @@
     </div>
 
     <!-- Boutons de navigation -->
-    <div class="mb-3 d-flex justify-content-between">
-      <button class="btn btn-secondary" @click="retourProduits">← Retour</button>
-      <div>
-        <button class="btn btn-outline-primary me-2" @click="sauvegarder(true)">💾 Sauver comme brouillon</button>
-        <button class="btn btn-success" @click="sauvegarder(false)">📥 Sauvegarder le devis</button>
-      </div>
+    <div class="mb-3 d-flex justify-content-center">
+      <button class="btn btn-outline-primary me-2" @click="sauvegarder(true)">💾 Sauver comme brouillon</button>
+      <button class="btn btn-success" @click="sauvegarder(false)">📥 Sauvegarder le devis</button>
     </div>
 
     <!-- Composant PDF et bouton de génération -->
@@ -75,6 +75,7 @@ import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore'
 
 // Composant PDF
 import DevisPdf from '@/components/DevisPdf.vue';
+import RetourButton from '@/components/RetourButton.vue';
 
 // Route and router
 const route = useRoute();

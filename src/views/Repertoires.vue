@@ -1,6 +1,9 @@
 <template>
-  <div class="container text-center py-5">
-    <h2 class="mb-4">Gestion des Répertoires</h2>
+  <div class="container py-5">
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton to="/admin" />
+
+    <h2 class="text-center mb-4">Gestion des Répertoires</h2>
     <div class="row justify-content-center">
       <div
         v-for="item in sections"
@@ -12,15 +15,17 @@
         </router-link>
       </div>
     </div>
-    <div class="mt-4">
-      <router-link to="/admin" class="btn btn-secondary">Retour</router-link>
-    </div>
   </div>
 </template>
 
 <script>
+import RetourButton from '@/components/RetourButton.vue';
+
 export default {
   name: 'Repertoires',
+  components: {
+    RetourButton
+  },
   data() {
     return {
       sections: [

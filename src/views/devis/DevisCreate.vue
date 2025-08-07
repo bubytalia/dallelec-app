@@ -1,6 +1,11 @@
 <template>
-  <div class="container py-5">
-    <h2 class="text-center mb-4">Nouveau Devis</h2>
+  <div class="container py-4">
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton :onClick="retourListe" />
+
+    <h2 class="text-center mb-4">
+      {{ editingId ? 'Modifier le Devis' : 'Nouveau Devis' }}
+    </h2>
 
     <!-- Informations du chantier -->
     <div class="card p-4 mb-4">
@@ -92,13 +97,6 @@
 
     <!-- Continuer -->
       <div class="text-end">
-        <!-- Pulsante per tornare alla lista dei devis. Visibile sia in creazione sia in modifica -->
-        <button
-          class="btn btn-outline-secondary me-2"
-          @click="retourListe"
-        >
-          ← Retour
-        </button>
         <button
           class="btn btn-success"
           :disabled="!formReady"
@@ -115,6 +113,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { db } from '@/firebase';
 import { collection, getDocs, addDoc, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import RetourButton from '@/components/RetourButton.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -202,6 +201,8 @@ const continuerVersDevis = async () => {
         localStorage.removeItem('devisForm');
         localStorage.removeItem('devisRemises');
         localStorage.removeItem('zonesCantiere');
+        localStorage.removeItem('devisItems'); // ✅ AGGIUNTO: pulizia dei prodotti
+        localStorage.removeItem('devisDiscount'); // ✅ AGGIUNTO: pulizia della remise supplémentaire
       } catch (e) {
         console.warn('Erreur lors du nettoyage du localStorage après la modification du devis', e);
       }
@@ -242,6 +243,8 @@ const continuerVersDevis = async () => {
       localStorage.removeItem('devisForm');
       localStorage.removeItem('devisRemises');
       localStorage.removeItem('zonesCantiere');
+      localStorage.removeItem('devisItems'); // ✅ AGGIUNTO: pulizia dei prodotti
+      localStorage.removeItem('devisDiscount'); // ✅ AGGIUNTO: pulizia della remise supplémentaire
     } catch (e) {
       console.warn('Erreur lors du nettoyage du localStorage après la création du devis', e);
     }

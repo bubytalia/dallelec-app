@@ -1,5 +1,8 @@
 <template>
   <div class="container py-5">
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton to="/admin/repertoires" />
+
     <h2 class="text-center mb-4">Conditions de Vente</h2>
 
     <!-- Formulaire d'ajout d'une nouvelle condition -->
@@ -77,20 +80,20 @@
         </tr>
       </tbody>
     </table>
-
-    <div class="text-center">
-      <button @click="$router.push('/admin/repertoires')" class="btn btn-secondary">Retour</button>
-    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
-import { db } from '@/firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/firebase';
+import RetourButton from '@/components/RetourButton.vue';
 
 export default {
   name: 'Conditions',
+  components: {
+    RetourButton
+  },
   setup() {
     const conditions = ref([]);
     const newCondition = ref({ texte: '', type: '', default: false });

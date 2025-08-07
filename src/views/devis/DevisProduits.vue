@@ -1,6 +1,9 @@
 <template>
   <div class="container py-4">
-   <h2 class="text-center mb-4">Ajout de Produits au Devis</h2>
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton :onClick="retourPage" />
+
+    <h2 class="text-center mb-4">Produits du Devis</h2>
 
 <!-- ✅ Numéro Devis visibile -->
 <div class="alert alert-info text-center mb-4" v-if="numeroDevis || nomClient || nomChantier">
@@ -10,24 +13,15 @@
 </div>
 
 <!-- Pulsanti di navigazione e salvataggio -->
-<div class="mb-3 d-flex justify-content-between">
-    <!--
-          Bouton "Retour" :
-          Invece di richiamare direttamente $router.back(),
-          navighiamo esplicitamente alla pagina di modifica del devis
-          per permettere all'utente di tornare alla prima pagina del flusso.
-          Così l'utente potrà modificare sia la prima che la seconda pagina.
-        -->
-    <button class="btn btn-secondary" @click="retourPage">← Retour</button>
+<div class="mb-3 d-flex justify-content-center">
   <!-- Salvataggio definitivo -->
-  <button class="btn btn-success" @click="sauvegarderDevis(false)">📥 Sauvegarder le devis</button>
+  <button class="btn btn-success me-2" @click="sauvegarderDevis(false)">📥 Sauvegarder le devis</button>
   <!-- Salvataggio come bozza -->
-  <button class="btn btn-outline-primary" @click="sauvegarderDevis(true)">💾 Sauver comme brouillon</button>
+  <button class="btn btn-outline-primary me-2" @click="sauvegarderDevis(true)">💾 Sauver comme brouillon</button>
   <!-- Abbandono del preventivo -->
-  <button class="btn btn-danger" @click="abandonnerDevis">❌ Abandonner</button>
-
-      <!-- Passa alla pagina delle condizioni (terza pagina) -->
-      <button class="btn btn-info" @click="gotoConditions">→ Conditions</button>
+  <button class="btn btn-danger me-2" @click="abandonnerDevis">❌ Abandonner</button>
+  <!-- Passa alla pagina delle condizioni (terza pagina) -->
+  <button class="btn btn-info" @click="gotoConditions">→ Conditions</button>
 </div>
 
 
@@ -104,6 +98,7 @@ import { doc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase
 import ProduitForm from '@/components/ProduitForm.vue';
 import SupplementDetails from '@/components/SupplementDetails.vue';
 import { useRoute } from 'vue-router';
+import RetourButton from '@/components/RetourButton.vue';
 
 const route = useRoute();
 const devisId = route.params.id;

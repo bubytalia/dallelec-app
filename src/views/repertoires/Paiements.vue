@@ -1,6 +1,9 @@
 <template>
   <div class="container py-5">
-    <h2 class="text-center mb-4">Modes de Paiement</h2>
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton to="/admin/repertoires" />
+
+    <h2 class="text-center mb-4">Modalités de Paiement</h2>
 
     <div class="row mb-3 justify-content-center">
       <div class="col-md-6">
@@ -38,20 +41,20 @@
         </tr>
       </tbody>
     </table>
-
-    <div class="text-center">
-      <button @click="$router.push('/admin/repertoires')" class="btn btn-secondary">Retour</button>
-    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
-import { db } from '@/firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/firebase';
+import RetourButton from '@/components/RetourButton.vue';
 
 export default {
   name: 'Paiements',
+  components: {
+    RetourButton
+  },
   setup() {
     const paiements = ref([]);
     const newPaiement = ref({ nom: '' });

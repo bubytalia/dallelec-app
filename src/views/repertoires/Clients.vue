@@ -1,5 +1,8 @@
 <template>
   <div class="container py-5">
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton to="/admin/repertoires" />
+
     <h2 class="text-center mb-4">Clients</h2>
 
     <div class="row mb-3">
@@ -69,20 +72,20 @@
         </tr>
       </tbody>
     </table>
-
-    <div class="text-center mt-3">
-      <button @click="$router.push('/admin/repertoires')" class="btn btn-secondary">Retour</button>
-    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
+import RetourButton from '@/components/RetourButton.vue';
 
 export default {
   name: 'Clients',
+  components: {
+    RetourButton
+  },
   setup() {
     const clients = ref([]);
     const newClient = ref({

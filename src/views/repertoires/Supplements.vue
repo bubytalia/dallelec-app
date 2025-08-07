@@ -1,5 +1,8 @@
 <template>
   <div class="container py-5">
+    <!-- Pulsante Retour standardizzato -->
+    <RetourButton to="/admin/repertoires" />
+
     <h2 class="text-center mb-4">Suppléments</h2>
 
     <form @submit.prevent="addSupplement" class="row g-3 mb-4 justify-content-center">
@@ -38,20 +41,20 @@
         </tr>
       </tbody>
     </table>
-
-    <div class="text-center">
-      <router-link to="/admin/repertoires" class="btn btn-secondary">Retour</router-link>
-    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
+import RetourButton from '@/components/RetourButton.vue';
 
 export default {
   name: 'Supplements',
+  components: {
+    RetourButton
+  },
   setup() {
     const supplements = ref([]);
     const newSupplement = ref({ nom: '', valeur: null });
@@ -93,11 +96,11 @@ export default {
       supplements,
       newSupplement,
       addSupplement,
-      deleteSupplement,
       editId,
       editData,
       startEdit,
-      confirmEdit
+      confirmEdit,
+      deleteSupplement
     };
   }
 };
