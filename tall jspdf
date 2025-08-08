@@ -1,0 +1,98 @@
+warning: in the working copy of 'src/router/index.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/views/AdminDashboard.vue', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/views/Login.vue', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/router/index.js b/src/router/index.js[m
+[1mindex 41fe8df..6968b2c 100644[m
+[1m--- a/src/router/index.js[m
+[1m+++ b/src/router/index.js[m
+[36m@@ -5,6 +5,11 @@[m [mimport Login from '@/views/Login.vue';[m
+ [m
+ // Dashboard[m
+ import AdminDashboard from '@/views/AdminDashboard.vue';[m
+[32m+[m[32mimport ChefDashboard from '@/views/ChefDashboard.vue';[m
+[32m+[m
+[32m+[m[32m// Chef pages[m
+[32m+[m[32mimport ChefHeures from '@/views/ChefHeures.vue';[m
+[32m+[m[32mimport ChefChantiers from '@/views/ChefChantiers.vue';[m
+ [m
+ // Devis[m
+ import Devis from '@/views/devis/Devis.vue';[m
+[36m@@ -32,19 +37,15 @@[m [mimport Bilans from '@/views/Bilans.vue';[m
+ [m
+ const routes = [[m
+   { path: '/', name: 'Login', component: Login },[m
+[32m+[m[41m  [m
+[32m+[m[32m  // Admin routes[m
+   { path: '/admin', name: 'AdminDashboard', component: AdminDashboard },[m
+[31m-[m
+[31m-  // Devis[m
+   { path: '/admin/devis', name: 'Devis', component: Devis },[m
+   { path: '/admin/devis/create', name: 'DevisCreate', component: DevisCreate },[m
+[31m-  // Route per la modifica di un devis esistente: riutilizziamo DevisCreate ma con id[m
+   { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate },[m
+   { path: '/admin/devis/list', name: 'DevisList', component: DevisList },[m
+[31m-  { path: '/devis/produits/:id', name: 'DevisProduits', component: DevisProduits }, // ✅ Con :id[m
+[31m-  // Terza pagina: condizioni del devis[m
+[32m+[m[32m  { path: '/devis/produits/:id', name: 'DevisProduits', component: DevisProduits },[m
+   { path: '/admin/devis/conditions/:id', name: 'DevisConditions', component: DevisConditions },[m
+[31m-[m
+[31m-  // Répertoires[m
+   { path: '/admin/repertoires', name: 'Repertoires', component: Repertoires },[m
+   { path: '/admin/repertoires/chantiers', name: 'Chantiers', component: Chantiers },[m
+   { path: '/admin/repertoires/collaborateurs', name: 'Collaborateurs', component: Collaborateurs },[m
+[36m@@ -57,8 +58,15 @@[m [mconst routes = [[m
+   { path: '/admin/repertoires/supplements', name: 'Supplements', component: Supplements },[m
+   { path: '/admin/repertoires/techniciens', name: 'Techniciens', component: Techniciens },[m
+   { path: '/admin/repertoires/conditions', name: 'Conditions', component: Conditions },[m
+[31m-  // Bilans[m
+[31m-  { path: '/admin/bilans', name: 'Bilans', component: Bilans }[m
+[32m+[m[32m  { path: '/admin/bilans', name: 'Bilans', component: Bilans },[m
+[32m+[m
+[32m+[m[32m  // Chef routes[m
+[32m+[m[32m  { path: '/chef', name: 'ChefDashboard', component: ChefDashboard },[m
+[32m+[m[32m  { path: '/chef/heures', name: 'ChefHeures', component: ChefHeures },[m
+[32m+[m[32m  { path: '/chef/chantiers', name: 'ChefChantiers', component: ChefChantiers },[m
+[32m+[m[32m  { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefChantiers }, // TODO: creare componente specifico[m
+[32m+[m[32m  { path: '/chef/chantiers/metrages', name: 'ChefMetrages', component: ChefChantiers }, // TODO: creare componente specifico[m
+[32m+[m[32m  { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers }, // TODO: creare componente specifico[m
+ ];[m
+ [m
+ const router = createRouter({[m
+[1mdiff --git a/src/views/Login.vue b/src/views/Login.vue[m
+[1mindex 3a71d12..99b2594 100644[m
+[1m--- a/src/views/Login.vue[m
+[1m+++ b/src/views/Login.vue[m
+[36m@@ -33,10 +33,32 @@[m [mexport default {[m
+     async handleLogin() {[m
+       try {[m
+         await signInWithEmailAndPassword(auth, this.email, this.password);[m
+[31m-        this.$router.push('/admin');[m
+[32m+[m[41m        [m
+[32m+[m[32m        // Determina il ruolo basato sull'email[m
+[32m+[m[32m        const role = this.getUserRole(this.email);[m
+[32m+[m[41m        [m
+[32m+[m[32m        // Reindirizza al dashboard appropriato[m
+[32m+[m[32m        if (role === 'chef') {[m
+[32m+[m[32m          this.$router.push('/chef');[m
+[32m+[m[32m        } else if (role === 'ouvrier') {[m
+[32m+[m[32m          this.$router.push('/ouvrier');[m
+[32m+[m[32m        } else {[m
+[32m+[m[32m          this.$router.push('/admin');[m
+[32m+[m[32m        }[m
+       } catch (error) {[m
+         alert('Erreur de connexion : ' + error.message);[m
+       }[m
+[32m+[m[32m    },[m
+[32m+[m[41m    [m
+[32m+[m[32m    getUserRole(email) {[m
+[32m+[m[32m      if (email.includes('chef@dallelec.com')) {[m
+[32m+[m[32m        return 'chef';[m
+[32m+[m[32m      } else if (email.includes('ouvrier@dallelec.com')) {[m
+[32m+[m[32m        return 'ouvrier';[m
+[32m+[m[32m      } else if (email.includes('admin@dallelec.com')) {[m
+[32m+[m[32m        return 'admin';[m
+[32m+[m[32m      }[m
+[32m+[m[32m      return 'admin'; // default[m
+     }[m
+   }[m
+ };[m

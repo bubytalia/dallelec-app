@@ -5,6 +5,19 @@ import Login from '@/views/Login.vue';
 
 // Dashboard
 import AdminDashboard from '@/views/AdminDashboard.vue';
+import ChefDashboard from '@/views/ChefDashboard.vue';
+import AdminReportMensuel from '@/views/AdminReportMensuel.vue';
+import AdminGestionFeries from '@/views/AdminGestionFeries.vue';
+import AdminBilanChantiers from '@/views/AdminBilanChantiers.vue';
+import AdminAssocierDevis from '@/views/AdminAssocierDevis.vue';
+
+// Chef pages
+import ChefHeures from '@/views/ChefHeures.vue';
+import ChefChantiers from '@/views/ChefChantiers.vue';
+import ChefAbsences from '@/views/ChefAbsences.vue';
+import ChefBilan from '@/views/ChefBilan.vue';
+import ChefMetrages from '@/views/ChefMetrages.vue';
+import ChefPremi from '@/views/ChefPremi.vue';
 
 // Devis
 import Devis from '@/views/devis/Devis.vue';
@@ -32,19 +45,15 @@ import Bilans from '@/views/Bilans.vue';
 
 const routes = [
   { path: '/', name: 'Login', component: Login },
+  
+  // Admin routes
   { path: '/admin', name: 'AdminDashboard', component: AdminDashboard },
-
-  // Devis
   { path: '/admin/devis', name: 'Devis', component: Devis },
   { path: '/admin/devis/create', name: 'DevisCreate', component: DevisCreate },
-  // Route per la modifica di un devis esistente: riutilizziamo DevisCreate ma con id
   { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate },
   { path: '/admin/devis/list', name: 'DevisList', component: DevisList },
-  { path: '/devis/produits/:id', name: 'DevisProduits', component: DevisProduits }, // ✅ Con :id
-  // Terza pagina: condizioni del devis
+  { path: '/devis/produits/:id', name: 'DevisProduits', component: DevisProduits },
   { path: '/admin/devis/conditions/:id', name: 'DevisConditions', component: DevisConditions },
-
-  // Répertoires
   { path: '/admin/repertoires', name: 'Repertoires', component: Repertoires },
   { path: '/admin/repertoires/chantiers', name: 'Chantiers', component: Chantiers },
   { path: '/admin/repertoires/collaborateurs', name: 'Collaborateurs', component: Collaborateurs },
@@ -57,8 +66,21 @@ const routes = [
   { path: '/admin/repertoires/supplements', name: 'Supplements', component: Supplements },
   { path: '/admin/repertoires/techniciens', name: 'Techniciens', component: Techniciens },
   { path: '/admin/repertoires/conditions', name: 'Conditions', component: Conditions },
-  // Bilans
-  { path: '/admin/bilans', name: 'Bilans', component: Bilans }
+  { path: '/admin/bilans', name: 'Bilans', component: Bilans },
+  { path: '/admin/report-mensuel', name: 'AdminReportMensuel', component: AdminReportMensuel },
+  { path: '/admin/gestion-feries', name: 'AdminGestionFeries', component: AdminGestionFeries },
+  { path: '/admin/bilan-chantiers', name: 'AdminBilanChantiers', component: AdminBilanChantiers },
+  { path: '/admin/associer-devis', name: 'AdminAssocierDevis', component: AdminAssocierDevis },
+
+  // Chef routes
+  { path: '/chef', name: 'ChefDashboard', component: ChefDashboard },
+  { path: '/chef/heures', name: 'ChefHeures', component: ChefHeures },
+  { path: '/chef/chantiers', name: 'ChefChantiers', component: ChefChantiers },
+  { path: '/chef/absences', name: 'ChefAbsences', component: ChefAbsences },
+  { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan }, // TODO: creare componente specifico
+  { path: '/chef/chantiers/metrages', name: 'ChefMetrages', component: ChefMetrages }, // TODO: creare componente specifico
+  { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
+  { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers }, // TODO: creare componente specifico
 ];
 
 const router = createRouter({

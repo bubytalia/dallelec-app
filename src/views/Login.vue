@@ -33,10 +33,32 @@ export default {
     async handleLogin() {
       try {
         await signInWithEmailAndPassword(auth, this.email, this.password);
-        this.$router.push('/admin');
+        
+        // Determina il ruolo basato sull'email
+        const role = this.getUserRole(this.email);
+        
+        // Reindirizza al dashboard appropriato
+        if (role === 'chef') {
+          this.$router.push('/chef');
+        } else if (role === 'ouvrier') {
+          this.$router.push('/ouvrier');
+        } else {
+          this.$router.push('/admin');
+        }
       } catch (error) {
         alert('Erreur de connexion : ' + error.message);
       }
+    },
+    
+    getUserRole(email) {
+      if (email.includes('chef@dallelec.com')) {
+        return 'chef';
+      } else if (email.includes('ouvrier@dallelec.com')) {
+        return 'ouvrier';
+      } else if (email.includes('admin@dallelec.com')) {
+        return 'admin';
+      }
+      return 'admin'; // default
     }
   }
 };
