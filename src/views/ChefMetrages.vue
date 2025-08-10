@@ -1,9 +1,16 @@
 <template>
-  <div class="container py-5">
-    <RetourButton to="/chef/chantiers" />
-    
-    <h2 class="text-center mb-4">Gestion des Métrages</h2>
-    
+  <div class="container py-4">
+    <RetourButton to="/chef" />
+
+    <h2 class="text-center mb-4">Métrages du Chantier</h2>
+
+    <!-- Info cantiere e devis -->
+    <div class="alert alert-info text-center mb-4" v-if="numeroDevis || nomClient || nomChantier">
+      <div v-if="numeroDevis"><strong>Numéro Devis:</strong> {{ numeroDevis }}</div>
+      <div v-if="nomClient"><strong>Client:</strong> {{ nomClient }}</div>
+      <div v-if="nomChantier"><strong>Chantier:</strong> {{ nomChantier }}</div>
+    </div>
+
     <!-- Selezione cantiere -->
     <div class="row mb-4">
       <div class="col-md-8 mx-auto">
@@ -12,7 +19,7 @@
             <h5>Sélectionner un chantier</h5>
           </div>
           <div class="card-body">
-            <select v-model="selectedChantierId" class="form-control" @change="loadDevisData">
+            <select v-model="selectedChantierId" class="form-control" @change="loadChantierData">
               <option value="">Choisir un chantier</option>
               <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
                 {{ chantier.nom }} - {{ chantier.adresse }}
@@ -23,696 +30,455 @@
       </div>
     </div>
 
-    <!-- Selezione zona -->
-    <div v-if="selectedChantierId && zones.length > 0" class="row mb-4">
-      <div class="col-md-8 mx-auto">
-        <div class="card">
-          <div class="card-header">
-            <h5>Sélectionner une zone</h5>
-          </div>
-          <div class="card-body">
-            <select v-model="selectedZone" class="form-control" @change="loadZoneProducts">
-              <option value="">Choisir une zone</option>
-              <option v-for="zone in zones" :key="zone" :value="zone">
-                Zone: {{ zone }}
-              </option>
-            </select>
-          </div>
+    <!-- Pulsanti di navigazione e salvataggio -->
+    <div class="mb-3 d-flex justify-content-center" v-if="selectedChantierId">
+      <button class="btn btn-success me-2" @click="sauvegarderMetrages">📥 Sauvegarder les métrages</button>
+      <button class="btn btn-outline-primary me-2" @click="sauvegarderBrouillon">💾 Sauver comme brouillon</button>
+      <button class="btn btn-info me-2" @click="voirHistorique">📊 Voir historique</button>
+      <button class="btn btn-warning" @click="nouveauMetrage" v-if="metrageItems.length > 0">🆕 Nouveau métrage</button>
+    </div>
+    
+    <!-- Info métrage en cours -->
+    <div v-if="selectedChantierId && currentMetrageInfo" class="alert alert-warning text-center mb-4">
+      <strong>Métrage en cours:</strong> {{ currentMetrageInfo }}
+    </div>
+
+    <!-- Form per aggiungere prodotti (identico a ProduitForm ma senza prezzi) -->
+    <MetrageForm
+      v-if="selectedChantierId && devisData"
+      :editingItem="editingItem"
+      :chantierId="selectedChantierId"
+      :zones="zones"
+      :devisData="devisData"
+      @update-item="handleUpdateItem"
+    />
+    
+    <!-- Debug info -->
+    <div v-if="selectedChantierId" class="alert alert-secondary mt-2">
+      <small>
+        <strong>Debug:</strong> 
+        Cantiere: {{ selectedChantierId }} | 
+        Zones: {{ zones.length }} | 
+        Produits devis: {{ devisData?.produits?.length || 0 }}
+      </small>
+    </div>
+
+    <!-- Détails des Métrages (identico a DevisProduits ma senza prezzi) -->
+    <div class="card p-4 mb-4" v-if="selectedChantierId && metrageItems.length > 0">
+      <h5>Détails des Métrages</h5>
+      <div v-for="(zone, zoneIndex) in metragesParZone" :key="zone.nom">
+        <h6 class="mt-3">Zone: {{ zone.nom }}</h6>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Code Article</th>
+              <th>Produit</th>
+              <th>Taille</th>
+              <th>Unité</th>
+              <th>Quantité ML Prévue</th>
+              <th>Quantité ML Posée</th>
+              <th>Total Suppl. (ML)</th>
+              <th>Total ML</th>
+              <th>Progression</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, itemIndex) in zone.produits" :key="itemIndex">
+              <td>{{ item.article }}</td>
+              <td>{{ item.nom }}</td>
+              <td>{{ item.taille }}</td>
+              <td>{{ item.unite }}</td>
+              <td>{{ item.mlPrevue }}</td>
+              <td>{{ item.mlPosee }}</td>
+              <td>{{ item.totalSuppML?.toFixed(2) || '0.00' }}</td>
+              <td><strong>{{ item.totalML?.toFixed(2) || '0.00' }}</strong></td>
+              <td>
+                <span class="badge" :class="getProgressClass(item)">
+                  {{ getProgressPercentage(item) }}%
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-warning me-2" @click="modifierItem(zone.nom, itemIndex)">✎</button>
+                <button class="btn btn-sm btn-danger" @click="supprimerItem(zone.nom, itemIndex)">🗑</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="text-end fw-bold">
+          Total ML zone: {{ getSubtotalTotalML(zone.produits).toFixed(2) }} ML
         </div>
+      </div>
+      <div class="text-end fs-5 fw-bold mt-3">
+        Total Général ML: {{ totalMLGeneral.toFixed(2) }} ML
       </div>
     </div>
 
-    <!-- Form inserimento quantità per zona -->
-    <div v-if="selectedZone && zoneProducts.length > 0" class="row mb-4">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h5>Saisir les quantités posées - Zone: {{ selectedZone }}</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-3">
-                <label>Période:</label>
-                <select v-model="selectedPeriod" class="form-control">
-                  <option value="month">Fin de mois</option>
-                  <option value="project">Fin de projet</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label>Date de saisie:</label>
-                <input v-model="saisieDate" type="date" class="form-control" />
-              </div>
-              <div class="col-md-6">
-                <label>Remarques:</label>
-                <input v-model="remarques" type="text" class="form-control" placeholder="Observations..." />
-              </div>
-            </div>
-            
-            <hr>
-            
-                         <!-- Prodotti principali -->
-             <h6>Produits principaux:</h6>
-             
-             <!-- Ajouter un nouveau produit -->
-             <div class="row mb-3">
-               <div class="col-md-12">
-                 <div class="card border-primary">
-                   <div class="card-header">
-                     <h6>Ajouter un produit principal</h6>
-                   </div>
-                   <div class="card-body">
-                                           <div class="row">
-                        <div class="col-md-5">
-                          <label>Sélectionner un produit:</label>
-                          <select v-model="newProduct.selectedId" class="form-control">
-                            <option value="">Choisir un produit</option>
-                            <option v-for="product in availableProducts" :key="product.id" :value="product.id">
-                              {{ product.codeArticle }} - {{ product.produit }}
-                            </option>
-                          </select>
-                        </div>
-                        <div class="col-md-4">
-                          <label>Quantité posée (ML):</label>
-                          <input v-model.number="newProduct.quantitePosee" type="number" step="0.01" class="form-control" placeholder="Qté posée" />
-                        </div>
-                        <div class="col-md-3">
-                          <label>&nbsp;</label>
-                          <button @click="addNewProduct" class="btn btn-primary w-100" :disabled="!canAddProduct">
-                            <i class="fas fa-plus"></i> Ajouter
-                          </button>
-                        </div>
-                      </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-             
-             <!-- Produits ajoutés -->
-             <div class="row">
-               <div v-for="product in selectedProducts" :key="product.id" class="col-md-6 mb-3">
-                 <div class="card">
-                   <div class="card-body">
-                     <div class="d-flex justify-content-between align-items-start">
-                       <h6>{{ product.codeArticle }} - {{ product.produit }}</h6>
-                       <button @click="removeProduct(product.id)" class="btn btn-danger btn-sm">
-                         <i class="fas fa-trash"></i>
-                       </button>
-                     </div>
-                     <p class="text-muted mb-2">Taille: {{ product.taille }} {{ product.unite }}</p>
-                     <div class="row">
-                       <div class="col-md-6">
-                         <label>Quantité prévue (ML):</label>
-                         <input :value="product.quantiteML" class="form-control" readonly />
-                       </div>
-                       <div class="col-md-6">
-                         <label>Quantité posée (ML):</label>
-                         <input v-model.number="product.quantitePosee" type="number" step="0.01" class="form-control" />
-                       </div>
-                     </div>
-                     <div class="row mt-2">
-                       <div class="col-md-6">
-                         <label>Progression:</label>
-                         <input :value="product.quantitePosee > 0 ? ((product.quantitePosee / product.quantiteML) * 100).toFixed(1) + '%' : '0%'" class="form-control" readonly />
-                       </div>
-                       <div class="col-md-6">
-                         <label>Unité:</label>
-                         <input :value="product.unite || 'm'" class="form-control" readonly />
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
+    <!-- Suppléments (identico a SupplementDetails ma senza prezzi) -->
+    <MetrageSupplementDetails 
+      v-if="selectedChantierId"
+      :supplementParZone="supplementParZone" 
+    />
 
-                         <!-- Suppléments -->
-             <h6 class="mt-4">Suppléments:</h6>
-             
-             <!-- Ajouter un nouveau supplément -->
-             <div class="row mb-3">
-               <div class="col-md-12">
-                 <div class="card border-warning">
-                   <div class="card-header">
-                     <h6>Ajouter un supplément</h6>
-                   </div>
-                   <div class="card-body">
-                                           <div class="row">
-                        <div class="col-md-6">
-                          <label>Type de supplément:</label>
-                          <select v-model="newSupplement.type" class="form-control">
-                            <option value="">Choisir un type</option>
-                            <option value="virage fabriqué">Virage fabriqué</option>
-                            <option value="virage avec CDC">Virage avec CDC</option>
-                            <option value="T CDC">T CDC</option>
-                            <option value="T fabriqué">T fabriqué</option>
-                            <option value="départ/arrivé">Départ/Arrivé</option>
-                            <option value="réduction">Réduction</option>
-                            <option value="autre">Autre</option>
-                          </select>
-                        </div>
-                        <div class="col-md-4">
-                          <label>Quantité:</label>
-                          <input v-model.number="newSupplement.qte" type="number" step="1" class="form-control" placeholder="Qté" />
-                        </div>
-                        <div class="col-md-2">
-                          <label>&nbsp;</label>
-                          <button @click="addNewSupplement" class="btn btn-success w-100" :disabled="!canAddSupplement">
-                            <i class="fas fa-plus"></i> Ajouter
-                          </button>
-                        </div>
-                      </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-             
-             <!-- Suppléments existants -->
-             <div class="row">
-               <div v-for="supplement in zoneSupplements" :key="supplement.id" class="col-md-6 mb-3">
-                 <div class="card border-info">
-                   <div class="card-body">
-                     <div class="d-flex justify-content-between align-items-start">
-                       <h6>{{ supplement.codeArticle }} - {{ supplement.supplement }}</h6>
-                       <button v-if="supplement.isNew" @click="removeSupplement(supplement.id)" class="btn btn-danger btn-sm">
-                         <i class="fas fa-trash"></i>
-                       </button>
-                     </div>
-                     <p class="text-muted mb-2">Produit: {{ supplement.produit }}</p>
-                     <div class="row">
-                       <div class="col-md-6">
-                         <label>Quantité prévue:</label>
-                         <input :value="supplement.qte" class="form-control" readonly />
-                       </div>
-                       <div class="col-md-6">
-                         <label>Quantité posée:</label>
-                         <input v-model.number="supplement.quantitePosee" type="number" step="0.01" class="form-control" />
-                       </div>
-                     </div>
-                     <div class="row mt-2">
-                       <div class="col-md-6">
-                         <label>Progression:</label>
-                         <input :value="supplement.quantitePosee > 0 ? ((supplement.quantitePosee / supplement.qte) * 100).toFixed(1) + '%' : '0%'" class="form-control" readonly />
-                       </div>
-                       
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-            
-            <div class="text-center mt-3">
-              <button @click="saveMetrages" class="btn btn-primary" :disabled="!canSave">
-                Enregistrer les métrages
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Riepilogo e calcolo premi -->
-    <div v-if="selectedChantierId && metragesData" class="row">
-      <div class="col-md-12 mb-4">
-        <div class="card">
-          <div class="card-header">
-            <h5>Résumé et calcul des primes</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 class="text-primary">{{ metragesData.totalHeuresPrevues.toFixed(1) }}h</h4>
-                  <p>Heures prévues</p>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 class="text-info">{{ metragesData.totalHeuresImployees.toFixed(1) }}h</h4>
-                  <p>Heures employées</p>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 class="text-success">{{ metragesData.heuresGagnees.toFixed(1) }}h</h4>
-                  <p>Heures gagnées</p>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 class="text-warning">{{ metragesData.heuresGagnees > 0 ? 'Oui' : 'Non' }}</h4>
-                  <p>Prime possible</p>
-                </div>
-              </div>
-            </div>
-            
-            <div class="row mt-3">
-              <div class="col-md-12">
-                <div class="alert alert-info">
-                  <strong>Formule de calcul:</strong> (Heures prévues - Heures employées) × Taux horaire
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Storico metrages -->
-    <div v-if="selectedChantierId" class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h5>Historique des métrages</h5>
-          </div>
-          <div class="card-body">
-            <div v-if="historiqueMetrages.length === 0" class="text-center text-muted">
-              Aucun métrage enregistré
-            </div>
-            <div v-else>
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Zone</th>
-                    <th>Période</th>
-                    <th>Produits</th>
-                    <th>Heures prévues</th>
-                    <th>Heures employées</th>
-                    <th>Prime possible</th>
-                    <th>Remarques</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="metrage in historiqueMetrages" :key="metrage.id">
-                    <td>{{ formatDate(metrage.dateSaisie) }}</td>
-                    <td>{{ metrage.zone }}</td>
-                    <td>{{ metrage.period === 'month' ? 'Fin de mois' : 'Fin de projet' }}</td>
-                    <td>{{ metrage.nombreProduits }}</td>
-                    <td>{{ metrage.heuresPrevues.toFixed(1) }}h</td>
-                    <td>{{ metrage.heuresImployees.toFixed(1) }}h</td>
-                    <td>{{ metrage.heuresGagnees > 0 ? 'Oui' : 'Non' }}</td>
-                    <td>{{ metrage.remarques || '-' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- Historique des métrages -->
+    <div v-if="showHistorique" class="card p-4 mb-4">
+      <h5>Historique des Métrages</h5>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Zone</th>
+            <th>Produits</th>
+            <th>ML Total</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="historique in historiqueMetrages" :key="historique.id">
+            <td>{{ formatDate(historique.createdAt) }}</td>
+            <td>{{ historique.zones?.join(', ') || 'Toutes' }}</td>
+            <td>{{ historique.totalProduits || 0 }}</td>
+            <td>{{ historique.totalML?.toFixed(2) || '0.00' }} ML</td>
+            <td>
+              <button class="btn btn-sm btn-info me-2" @click="chargerMetrage(historique)" title="Charger ce métrage">📥</button>
+              <button class="btn btn-sm btn-warning me-2" @click="dupliquerMetrage(historique)" title="Dupliquer ce métrage">📋</button>
+              <button class="btn btn-sm btn-danger" @click="supprimerMetrage(historique.id)" title="Supprimer ce métrage">🗑</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { collection, getDocs, addDoc, query, where, doc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'vue-router';
 import { db } from '@/firebase';
+import { doc, getDoc, collection, getDocs, addDoc, query, where, deleteDoc } from 'firebase/firestore';
 import RetourButton from '@/components/RetourButton.vue';
+import MetrageForm from '@/components/MetrageForm.vue';
+import MetrageSupplementDetails from '@/components/MetrageSupplementDetails.vue';
 
+const router = useRouter();
 const chantiers = ref([]);
+const selectedChantierId = ref('');
 const devisData = ref(null);
 const zones = ref([]);
-const zoneProducts = ref([]);
-const zoneSupplements = ref([]);
-const heuresPropres = ref([]);
-const heuresInterim = ref([]);
-const collaborateurs = ref([]);
-const selectedChantierId = ref('');
-const selectedZone = ref('');
-const selectedPeriod = ref('month');
-const saisieDate = ref('');
-const remarques = ref('');
-const metragesData = ref(null);
+const metrageItems = ref([]);
+const editingItem = ref(null);
+const numeroDevis = ref('');
+const nomClient = ref('');
+const nomChantier = ref('');
+const showHistorique = ref(false);
 const historiqueMetrages = ref([]);
-
-// Nouveau supplément
-const newSupplement = ref({
-  type: '',
-  qte: 0
-});
-
-// Nouveau produit
-const newProduct = ref({
-  selectedId: '',
-  quantitePosee: 0
-});
-
-// Produits disponibles et sélectionnés
-const availableProducts = ref([]);
-const selectedProducts = ref([]);
-
-// Imposta data di default
-const setDefaultDate = () => {
-  const today = new Date();
-  saisieDate.value = today.toISOString().split('T')[0];
-};
+const currentMetrageId = ref(null);
+const currentMetrageInfo = ref('');
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
   chantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-const fetchCollaborateurs = async () => {
-  const snapshot = await getDocs(collection(db, 'collaborateurs'));
-  collaborateurs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-};
-
-const fetchHeuresPropres = async () => {
-  const snapshot = await getDocs(collection(db, 'heures_chef_propres'));
-  heuresPropres.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-};
-
-const fetchHeuresInterim = async () => {
-  const snapshot = await getDocs(collection(db, 'heures_chef_interim'));
-  heuresInterim.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-};
-
-const loadDevisData = async () => {
+const loadChantierData = async () => {
   if (!selectedChantierId.value) return;
   
   try {
     // Trova il cantiere selezionato
     const chantier = chantiers.value.find(c => c.id === selectedChantierId.value);
     if (!chantier || !chantier.devisId) {
-      alert('Ce chantier n\'a pas de devis associé. Veuillez contacter l\'administrateur.');
-      devisData.value = null;
-      zones.value = [];
+      alert('Ce chantier n\'a pas de devis associé.');
       return;
     }
+    
+    nomChantier.value = `${chantier.nom} - ${chantier.adresse}`;
     
     // Carica il devis associato
     const devisDoc = await getDoc(doc(db, 'devis', chantier.devisId));
     if (!devisDoc.exists()) {
-      alert('Devis non trouvé. Veuillez contacter l\'administrateur.');
-      devisData.value = null;
-      zones.value = [];
+      alert('Devis non trouvé.');
       return;
     }
     
-    devisData.value = devisDoc.data();
+    const devisDocData = devisDoc.data();
+    devisData.value = devisDocData;
+    numeroDevis.value = devisDocData.numero || '';
+    nomClient.value = devisDocData.nom || '';
     
-    // Estrai le zone dai prodotti
-    if (devisData.value.produits && devisData.value.produits.length > 0) {
+    // Estrai le zone dai prodotti del devis
+    if (devisDocData.produits && devisDocData.produits.length > 0) {
       const zoneSet = new Set();
-      devisData.value.produits.forEach(produit => {
+      devisDocData.produits.forEach(produit => {
         if (produit.zone) {
           zoneSet.add(produit.zone);
         }
       });
       zones.value = Array.from(zoneSet).sort();
+      console.log('Zones trovate:', zones.value);
+      console.log('Produits devis:', devisDocData.produits);
     } else {
-      alert('Aucun produit trouvé dans ce devis.');
-      zones.value = [];
+      console.log('Nessun prodotto trovato nel devis');
     }
     
-    // Reset selezione zona
-    selectedZone.value = '';
-    zoneProducts.value = [];
-    zoneSupplements.value = [];
+    // Carica métrages esistenti per questo cantiere
+    await loadExistingMetrages();
     
   } catch (error) {
-    console.error('Erreur lors du chargement du devis:', error);
-    alert('Erreur lors du chargement du devis: ' + error.message);
-    devisData.value = null;
-    zones.value = [];
+    console.error('Erreur lors du chargement:', error);
+    alert('Erreur lors du chargement: ' + error.message);
   }
 };
 
-const loadZoneProducts = () => {
-  if (!selectedZone.value || !devisData.value) return;
-  
-  // Filtra prodotti per zona
-  zoneProducts.value = devisData.value.produits
-    .filter(produit => produit.zone === selectedZone.value)
-    .map(produit => ({
-      id: produit.id || `prod_${Math.random()}`,
-      codeArticle: produit.codeArticle || '',
-      produit: produit.produit || produit.article || '',
-      taille: produit.taille || '',
-      unite: produit.unite || 'm',
-      quantiteML: produit.quantiteML || produit.quantite || 0,
-      prixUnit: produit.prixUnit || produit.prixUnitaire || 0,
-      total: produit.total || 0,
-      quantitePosee: 0
-    }));
-
-  // Filtra suppléments per zona (se esistono)
-  if (devisData.value.supplements) {
-    zoneSupplements.value = devisData.value.supplements
-      .filter(supp => supp.zone === selectedZone.value)
-             .map(supp => ({
-         id: supp.id || `supp_${Math.random()}`,
-         codeArticle: supp.codeArticle || '',
-         produit: supp.produit || '',
-         supplement: supp.supplement || '',
-         taille: supp.taille || '',
-         qte: supp.qte || 0,
-         totalML: supp.totalML || 0,
-         quantitePosee: 0
-       }));
-  } else {
-    zoneSupplements.value = [];
-  }
-  
-  // Mise à jour des produits disponibles
-  availableProducts.value = zoneProducts.value;
-  selectedProducts.value = [];
-  
-  // Reset nouveau produit
-  newProduct.value = {
-    selectedId: '',
-    quantitePosee: 0
-  };
-  
-  calculateMetrages();
-};
-
-const addNewSupplement = () => {
-  if (!canAddSupplement.value) return;
-  
-  const supplement = {
-    id: `new_supp_${Date.now()}`,
-    codeArticle: 'N/A',
-    produit: 'Chemin de Câble 60',
-    supplement: newSupplement.value.type,
-    taille: '',
-    qte: newSupplement.value.qte,
-    totalML: newSupplement.value.qte,
-    quantitePosee: 0,
-    isNew: true
-  };
-  
-  zoneSupplements.value.push(supplement);
-  
-  // Reset form
-  newSupplement.value = {
-    type: '',
-    qte: 0
-  };
-  
-  calculateMetrages();
-};
-
-const removeSupplement = (supplementId) => {
-  const index = zoneSupplements.value.findIndex(s => s.id === supplementId);
-  if (index > -1) {
-    zoneSupplements.value.splice(index, 1);
-    calculateMetrages();
-  }
-};
-
-
-
-const addNewProduct = () => {
-  if (!canAddProduct.value) return;
-  
-  const selectedProduct = availableProducts.value.find(p => p.id === newProduct.value.selectedId);
-  if (!selectedProduct) return;
-  
-  const product = {
-    ...selectedProduct,
-    quantitePosee: newProduct.value.quantitePosee,
-    isNew: true
-  };
-  
-  selectedProducts.value.push(product);
-  
-  // Retirer du menu des produits disponibles
-  const index = availableProducts.value.findIndex(p => p.id === newProduct.value.selectedId);
-  if (index > -1) {
-    availableProducts.value.splice(index, 1);
-  }
-  
-  // Reset form
-  newProduct.value = {
-    selectedId: '',
-    quantitePosee: 0,
-    prixUnit: 0
-  };
-  
-  calculateMetrages();
-};
-
-const removeProduct = (productId) => {
-  const index = selectedProducts.value.findIndex(p => p.id === productId);
-  if (index > -1) {
-    const product = selectedProducts.value[index];
-    selectedProducts.value.splice(index, 1);
+const loadExistingMetrages = async () => {
+  try {
+    const q = query(collection(db, 'metrages'), where('chantierId', '==', selectedChantierId.value));
+    const snapshot = await getDocs(q);
     
-    // Remettre dans les produits disponibles
-    availableProducts.value.push({
-      ...product,
-      quantitePosee: 0,
-      isNew: false
-    });
-    
-    calculateMetrages();
+    if (!snapshot.empty) {
+      // Prendi l'ultimo métrage salvato
+      const docs = snapshot.docs.sort((a, b) => b.data().createdAt?.toDate() - a.data().createdAt?.toDate());
+      const latestDoc = docs[0];
+      const latestMetrage = latestDoc.data();
+      
+      if (latestMetrage.items) {
+        metrageItems.value = latestMetrage.items;
+        currentMetrageId.value = latestDoc.id;
+        const date = latestMetrage.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue';
+        const status = latestMetrage.draft ? 'Brouillon' : 'Sauvegardé';
+        currentMetrageInfo.value = `${status} le ${date} - ${latestMetrage.totalProduits || 0} produits - ${latestMetrage.totalML?.toFixed(2) || '0.00'} ML`;
+      }
+    } else {
+      // Aucun métrage existant
+      metrageItems.value = [];
+      currentMetrageId.value = null;
+      currentMetrageInfo.value = '';
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des métrages existants:', error);
   }
 };
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const canSave = computed(() => {
-  const hasProductQuantities = selectedProducts.value.some(p => p.quantitePosee > 0);
-  const hasSupplementQuantities = zoneSupplements.value.some(s => s.quantitePosee > 0);
-  return selectedChantierId.value && 
-         selectedZone.value &&
-         (hasProductQuantities || hasSupplementQuantities) &&
-         saisieDate.value;
-});
-
-const canAddSupplement = computed(() => {
-  return newSupplement.value.type && 
-         newSupplement.value.qte > 0;
-});
-
-const canAddProduct = computed(() => {
-  return newProduct.value.selectedId && 
-         newProduct.value.quantitePosee > 0;
-});
-
-const calculateMetrages = () => {
-  if (!selectedChantierId.value || (selectedProducts.value.length === 0 && zoneSupplements.value.length === 0)) {
-    metragesData.value = null;
+// Aggiunta/modifica riga (identico a DevisProduits)
+const handleUpdateItem = (index, item) => {
+  const duplicate = metrageItems.value.find(i =>
+    i.zone === item.zone && i.nom === item.nom && i.taille === item.taille && i !== metrageItems.value[index]
+  );
+  if (duplicate) {
+    alert("Ce produit existe déjà dans cette zone.");
     return;
   }
 
-  // Calcola ore previste basate sui metri lineari
-  const metresPerHour = 10; // Metri lineari per ora (valore standard)
-  
-  let totalMetresPrevu = 0;
-  let totalMetresPose = 0;
-  
-  // Calcola per prodotti principaux sélectionnés
-  selectedProducts.value.forEach(product => {
-    totalMetresPrevu += product.quantiteML || 0;
-    totalMetresPose += product.quantitePosee || 0;
-  });
-
-  // Calcola per suppléments
-  zoneSupplements.value.forEach(supplement => {
-    totalMetresPrevu += supplement.qte || 0;
-    totalMetresPose += supplement.quantitePosee || 0;
-  });
-  
-  // Calcola ore previste basate sui metri
-  const heuresPrevues = totalMetresPrevu / metresPerHour;
-  
-  // Calcola ore impiegate (dal cantiere selezionato)
-  const heuresChefChantier = heuresPropres.value.filter(h => h.chantierId === selectedChantierId.value);
-  const heuresCollaborateursChantier = heuresInterim.value.filter(h => h.chantierId === selectedChantierId.value);
-  
-  const totalHeuresChef = heuresChefChantier.reduce((sum, h) => sum + h.heuresPropres, 0);
-  const totalHeuresCollaborateurs = heuresCollaborateursChantier.reduce((sum, h) => sum + h.heuresInterim, 0);
-  const heuresImployees = totalHeuresChef + totalHeuresCollaborateurs;
-  
-  // Calcola ore guadagnate
-  const heuresGagnees = Math.max(0, heuresPrevues - heuresImployees);
-  
-  metragesData.value = {
-    totalHeuresPrevues: heuresPrevues,
-    totalHeuresImployees: heuresImployees,
-    heuresGagnees,
-    totalMetresPrevu,
-    totalMetresPose
-  };
+  if (index !== null && index !== undefined) {
+    metrageItems.value[index] = item;
+  } else {
+    metrageItems.value.push(item);
+  }
+  editingItem.value = null;
 };
 
-const saveMetrages = async () => {
-  if (!canSave.value) return;
-  
+// Modifica esistente (identico a DevisProduits)
+const modifierItem = (zoneNom, itemIndex) => {
+  const zoneItems = metragesParZone.value.find(z => z.nom === zoneNom)?.produits || [];
+  const targetItem = zoneItems[itemIndex];
+  const globalIndex = metrageItems.value.findIndex(i => i === targetItem);
+  if (globalIndex !== -1) {
+    const item = metrageItems.value[globalIndex];
+    editingItem.value = {
+      index: globalIndex,
+      zone: item.zone,
+      article: item.article,
+      nom: item.nom,
+      taille: item.taille,
+      unite: item.unite,
+      mlPrevue: item.mlPrevue,
+      mlPosee: item.mlPosee,
+      supplements: JSON.parse(JSON.stringify(item.supplements || []))
+    };
+  }
+};
+
+// Elimina riga (identico a DevisProduits)
+const supprimerItem = (zoneNom, itemIndex) => {
+  if (confirm('Sicuro di voler eliminare la riga?')) {
+    const zoneItems = metragesParZone.value.find(z => z.nom === zoneNom)?.produits || [];
+    const targetItem = zoneItems[itemIndex];
+    const indexToRemove = metrageItems.value.findIndex(i => i === targetItem);
+    if (indexToRemove !== -1) metrageItems.value.splice(indexToRemove, 1);
+  }
+};
+
+// Computed properties (identici a DevisProduits ma per ML invece di prezzi)
+const metragesParZone = computed(() => {
+  const grouped = {};
+  metrageItems.value.forEach(item => {
+    if (!grouped[item.zone]) grouped[item.zone] = [];
+    grouped[item.zone].push(item);
+  });
+  return Object.entries(grouped).map(([nom, produits]) => ({ nom, produits }));
+});
+
+const supplementParZone = computed(() => {
+  const grouped = {};
+  metrageItems.value.forEach(item => {
+    if (Array.isArray(item.supplements)) {
+      if (!grouped[item.zone]) grouped[item.zone] = [];
+      grouped[item.zone].push(...item.supplements.map(s => ({
+        ...s,
+        code: item.article,
+        nom: item.nom,
+        taille: item.taille
+      })));
+    }
+  });
+  return Object.entries(grouped).map(([nom, details]) => ({ nom, details }));
+});
+
+const getSubtotalML = (items) => items.reduce((sum, i) => sum + (i.mlPosee || 0), 0);
+
+const getSubtotalTotalML = (items) => items.reduce((sum, i) => sum + (i.totalML || 0), 0);
+
+const totalMLPose = computed(() => {
+  return metrageItems.value.reduce((sum, i) => sum + (i.mlPosee || 0), 0);
+});
+
+const totalMLGeneral = computed(() => {
+  return metrageItems.value.reduce((sum, i) => sum + (i.totalML || 0), 0);
+});
+
+const getProgressPercentage = (item) => {
+  const prevue = item.mlPrevue || 0;
+  const posee = item.mlPosee || 0;
+  return prevue > 0 ? Math.round((posee / prevue) * 100) : 0;
+};
+
+const getProgressClass = (item) => {
+  const percentage = getProgressPercentage(item);
+  if (percentage === 0) return 'bg-secondary';
+  if (percentage < 50) return 'bg-danger';
+  if (percentage < 100) return 'bg-warning';
+  return 'bg-success';
+};
+
+// Salvataggio (identico a DevisProduits)
+const sauvegarderMetrages = async () => {
   try {
     const metrageData = {
       chantierId: selectedChantierId.value,
-      zone: selectedZone.value,
-      dateSaisie: saisieDate.value,
-      period: selectedPeriod.value,
-      remarques: remarques.value,
-             produits: selectedProducts.value.map(p => ({
-         id: p.id,
-         codeArticle: p.codeArticle,
-         produit: p.produit,
-         quantitePrevue: p.quantiteML,
-         quantitePosee: p.quantitePosee || 0
-       })),
-             supplements: zoneSupplements.value.map(s => ({
-         id: s.id,
-         codeArticle: s.codeArticle,
-         supplement: s.supplement,
-         quantitePrevue: s.qte,
-         quantitePosee: s.quantitePosee || 0
-       })),
-      heuresPrevues: metragesData.value.totalHeuresPrevues,
-      heuresImployees: metragesData.value.totalHeuresImployees,
-      heuresGagnees: metragesData.value.heuresGagnees,
-             nombreProduits: selectedProducts.value.length + zoneSupplements.value.length,
+      items: metrageItems.value,
+      totalML: totalMLPose.value,
+      zones: zones.value,
+      totalProduits: metrageItems.value.length,
+      draft: false,
       createdAt: new Date()
     };
     
     await addDoc(collection(db, 'metrages'), metrageData);
-    
-         // Reset form
-     selectedProducts.value.forEach(p => p.quantitePosee = 0);
-     zoneSupplements.value.forEach(s => s.quantitePosee = 0);
-     remarques.value = '';
-    
-    alert('Métrages enregistrés avec succès!');
-    
-    // Ricarica storico
-    loadHistoriqueMetrages();
+    alert('Métrages sauvegardés avec succès.');
     
   } catch (error) {
-    console.error('Erreur lors de l\'enregistrement:', error);
-    alert('Erreur lors de l\'enregistrement: ' + error.message);
+    console.error('Erreur lors de la sauvegarde:', error);
+    alert('Erreur lors de la sauvegarde: ' + error.message);
   }
 };
 
-const loadHistoriqueMetrages = async () => {
-  if (!selectedChantierId.value) return;
-  
+const sauvegarderBrouillon = async () => {
   try {
-    const q = query(collection(db, 'metrages'), where('chantierId', '==', selectedChantierId.value));
-    const snapshot = await getDocs(q);
-    historiqueMetrages.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const metrageData = {
+      chantierId: selectedChantierId.value,
+      items: metrageItems.value,
+      totalML: totalMLPose.value,
+      zones: zones.value,
+      totalProduits: metrageItems.value.length,
+      draft: true,
+      createdAt: new Date()
+    };
+    
+    await addDoc(collection(db, 'metrages'), metrageData);
+    alert('Brouillon sauvegardé.');
+    
   } catch (error) {
-    console.error('Erreur lors du chargement de l\'historique:', error);
+    console.error('Erreur lors de la sauvegarde:', error);
+    alert('Erreur lors de la sauvegarde: ' + error.message);
   }
+};
+
+const voirHistorique = async () => {
+  showHistorique.value = !showHistorique.value;
+  if (showHistorique.value) {
+    try {
+      const q = query(collection(db, 'metrages'), where('chantierId', '==', selectedChantierId.value));
+      const snapshot = await getDocs(q);
+      historiqueMetrages.value = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => b.createdAt?.toDate() - a.createdAt?.toDate());
+    } catch (error) {
+      console.error('Erreur lors du chargement de l\'historique:', error);
+    }
+  }
+};
+
+const chargerMetrage = (historique) => {
+  if (confirm('Charger ce métrage? Les données actuelles seront remplacées.')) {
+    metrageItems.value = historique.items || [];
+    currentMetrageId.value = historique.id;
+    const date = historique.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue';
+    const status = historique.draft ? 'Brouillon' : 'Sauvegardé';
+    currentMetrageInfo.value = `${status} le ${date} - ${historique.totalProduits || 0} produits - ${historique.totalML?.toFixed(2) || '0.00'} ML`;
+    showHistorique.value = false;
+  }
+};
+
+const nouveauMetrage = () => {
+  if (confirm('Créer un nouveau métrage? Les données actuelles seront perdues.')) {
+    metrageItems.value = [];
+    currentMetrageId.value = null;
+    currentMetrageInfo.value = '';
+    editingItem.value = null;
+  }
+};
+
+const supprimerMetrage = async (metrageId) => {
+  if (confirm('Supprimer ce métrage?')) {
+    try {
+      await deleteDoc(doc(db, 'metrages', metrageId));
+      
+      // Si on supprime le métrage actuellement chargé, reset
+      if (currentMetrageId.value === metrageId) {
+        metrageItems.value = [];
+        currentMetrageId.value = null;
+        currentMetrageInfo.value = '';
+      }
+      
+      await voirHistorique(); // Refresh
+      alert('Métrage supprimé.');
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression: ' + error.message);
+    }
+  }
+};
+
+const dupliquerMetrage = (historique) => {
+  if (confirm('Dupliquer ce métrage comme nouveau?')) {
+    metrageItems.value = JSON.parse(JSON.stringify(historique.items || []));
+    currentMetrageId.value = null; // Nouveau métrage
+    currentMetrageInfo.value = `Dupliqué de: ${historique.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue'}`;
+    showHistorique.value = false;
+  }
+};
+
+const formatDate = (date) => {
+  return date?.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
 };
 
 onMounted(async () => {
-  await Promise.all([
-    fetchChantiers(),
-    fetchCollaborateurs(),
-    fetchHeuresPropres(),
-    fetchHeuresInterim()
-  ]);
-  setDefaultDate();
+  await fetchChantiers();
 });
 </script>
 
 <style scoped>
-.card {
-  margin-bottom: 1rem;
+.badge {
+  font-size: 0.8em;
+  padding: 0.4em 0.6em;
 }
 </style>

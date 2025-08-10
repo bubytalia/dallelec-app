@@ -254,34 +254,32 @@ const getCollaborateurName = (id) => {
   return collab ? `${collab.nom} ${collab.prenom}` : '-';
 };
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('fr-FR');
+const formatDate = (dateStr) => {
+  return new Date(dateStr).toLocaleDateString('fr-FR');
 };
 
-// Computed properties per cantiere
 const getTotalHeuresPropres = (chantierId) => {
   return heuresPropres.value
     .filter(h => h.chantierId === chantierId)
-    .reduce((sum, h) => sum + (h.heuresPropres || 0), 0);
+    .reduce((total, h) => total + (h.heuresPropres || 0), 0);
 };
 
 const getTotalHeuresInterim = (chantierId) => {
   return heuresInterim.value
     .filter(h => h.chantierId === chantierId)
-    .reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+    .reduce((total, h) => total + (h.heuresInterim || 0), 0);
 };
 
 const getTotalHeuresGeneral = (chantierId) => {
   return getTotalHeuresPropres(chantierId) + getTotalHeuresInterim(chantierId);
 };
 
-// Computed properties totali
 const totalHeuresPropres = computed(() => {
-  return heuresPropres.value.reduce((sum, h) => sum + (h.heuresPropres || 0), 0);
+  return heuresPropres.value.reduce((total, h) => total + (h.heuresPropres || 0), 0);
 });
 
 const totalHeuresInterim = computed(() => {
-  return heuresInterim.value.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+  return heuresInterim.value.reduce((total, h) => total + (h.heuresInterim || 0), 0);
 });
 
 const totalHeuresGeneral = computed(() => {
