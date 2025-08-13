@@ -134,6 +134,7 @@ const sauvegarderDevis = async (asDraft = false) => {
       draft: asDraft,
       updatedAt: new Date()
     });
+    
     localStorage.removeItem('devisItems');
     // quando viene salvato definitivamente eliminiamo anche i dati del form e delle remises
     if (!asDraft) {
@@ -154,7 +155,7 @@ const sauvegarderDevis = async (asDraft = false) => {
       router.push('/admin/devis');
     }
   } catch (error) {
-    console.error('Erreur Firestore:', error);
+    console.error('❌ ERRORE SALVATAGGIO:', error);
     alert('Erreur Firestore: ' + error.message);
   }
 };
@@ -259,10 +260,8 @@ onMounted(async () => {
   }
 
   // Dopo aver caricato eventuali dati dal documento, cerchiamo un backup locale degli items.
-  // Questo è utile quando l'utente sta creando un nuovo devis o sta modificando un devis
-  // e ritorna alla pagina dopo aver navigato via (ad esempio per aggiungere una zona), così da non perdere i prodotti già inseriti.
-  // MODIFICA: Non sovrascriviamo i dati di Firestore se stiamo modificando un devis esistente
-  if (!isEditingExisting.value || devisItems.value.length === 0) {
+  // CORREZIONE: Priorità ai dati del database, localStorage solo se non ci sono prodotti salvati
+  if (devisItems.value.length === 0) {
     try {
       const savedItems = localStorage.getItem('devisItems');
       if (savedItems) {
