@@ -21,7 +21,7 @@
         <router-link to="/admin/repertoires/chantiers" class="btn btn-outline-success w-100">Chantiers</router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/admin/bilans" class="btn btn-outline-secondary w-100" disabled>Bilans (à venir)</router-link>
+        <router-link to="/admin/bilans" class="btn btn-outline-success w-100">📊 Bilans Financiers</router-link>
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/report-mensuel" class="btn btn-outline-info w-100">Report Mensuel</router-link>
@@ -31,6 +31,9 @@
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/associer-devis" class="btn btn-outline-info w-100">Associer Devis</router-link>
+      </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/facturation" class="btn btn-outline-warning w-100">💰 Facturation</router-link>
       </div>
     </div>
   </div>

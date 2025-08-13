@@ -10,6 +10,8 @@ import AdminReportMensuel from '@/views/AdminReportMensuel.vue';
 import AdminGestionFeries from '@/views/AdminGestionFeries.vue';
 import AdminBilanChantiers from '@/views/AdminBilanChantiers.vue';
 import AdminAssocierDevis from '@/views/AdminAssocierDevis.vue';
+import AdminBilans from '@/views/AdminBilans.vue';
+import AdminFacturation from '@/views/AdminFacturation.vue';
 
 // Chef pages
 import ChefHeures from '@/views/ChefHeures.vue';
@@ -45,9 +47,10 @@ import Techniciens from '@/views/repertoires/Techniciens.vue';
 import Supplements from '@/views/repertoires/Supplements.vue';
 import Conditions from '@/views/repertoires/Conditions.vue';
 import Interimaires from '@/views/repertoires/Interimaires.vue';
+import Factures from '@/views/repertoires/Factures.vue';
 
 // Bilans
-import Bilans from '@/views/Bilans.vue';
+// import Bilans from '@/views/Bilans.vue'; // Vecchio placeholder
 
 const routes = [
   { path: '/', name: 'Login', component: Login },
@@ -73,11 +76,13 @@ const routes = [
   { path: '/admin/repertoires/techniciens', name: 'Techniciens', component: Techniciens },
   { path: '/admin/repertoires/conditions', name: 'Conditions', component: Conditions },
   { path: '/admin/repertoires/interimaires', name: 'Interimaires', component: Interimaires },
-  { path: '/admin/bilans', name: 'Bilans', component: Bilans },
+  { path: '/admin/repertoires/factures', name: 'Factures', component: Factures },
+  { path: '/admin/bilans', name: 'AdminBilans', component: AdminBilans },
   { path: '/admin/report-mensuel', name: 'AdminReportMensuel', component: AdminReportMensuel },
   { path: '/admin/gestion-feries', name: 'AdminGestionFeries', component: AdminGestionFeries },
   { path: '/admin/bilan-chantiers', name: 'AdminBilanChantiers', component: AdminBilanChantiers },
   { path: '/admin/associer-devis', name: 'AdminAssocierDevis', component: AdminAssocierDevis },
+  { path: '/admin/facturation', name: 'AdminFacturation', component: AdminFacturation },
 
   // Chef routes
   { path: '/chef', name: 'ChefDashboard', component: ChefDashboard },

@@ -183,16 +183,23 @@ watch(
     if (!item || JSON.stringify(item) === JSON.stringify(localEditingItem.value)) return;
     localEditingItem.value = { ...item };
     
-    const produit = produitsDevis.value.find(p => p.article === item.article);
-    selectedProduitId.value = produit?.id || '';
+    // Prima imposta la zona
     selectedZone.value = item.zone;
-    quantiteMLPrevue.value = item.mlPrevue || 0;
-    quantiteMLPosee.value = item.mlPosee || 0;
-    selectedSupplements.value = item.supplements?.map(s => s.supplement) || [];
-    suppQuantities.value = {};
-    item.supplements?.forEach(s => {
-      suppQuantities.value[s.supplement] = s.qtePosee || 0;
-    });
+    // Poi carica i prodotti per quella zona
+    loadProduitsForZone();
+    
+    // Aspetta che i prodotti siano caricati, poi trova il prodotto
+    setTimeout(() => {
+      const produit = produitsZone.value.find(p => p.article === item.article && p.nom === item.nom && p.taille === item.taille);
+      selectedProduitId.value = produit?.id || '';
+      quantiteMLPrevue.value = item.mlPrevue || 0;
+      quantiteMLPosee.value = item.mlPosee || 0;
+      selectedSupplements.value = item.supplements?.map(s => s.supplement) || [];
+      suppQuantities.value = {};
+      item.supplements?.forEach(s => {
+        suppQuantities.value[s.supplement] = s.qte || s.qtePosee || 0;
+      });
+    }, 100);
   },
   { immediate: true }
 );

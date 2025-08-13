@@ -1,0 +1,863 @@
+<template>
+  <div class="container py-4">
+    <RetourButton to="/admin" />
+    
+    <h2 class="text-center mb-4">Gestion Facturation</h2>
+
+    <!-- Métrages en attente de facturation -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>Métrages en attente de facturation</h5>
+        <small class="text-muted">Métrages complétés par les chefs, prêts pour facturation</small>
+      </div>
+      <div class="card-body">
+        <div v-if="metragesEnAttente.length === 0" class="text-center text-muted py-4">
+          Aucun métrage en attente de facturation
+        </div>
+        <div v-else class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Chantier</th>
+                <th>Client</th>
+                <th>Date Métrage</th>
+                <th>ML Total</th>
+                <th>Montant Estimé</th>
+                <th>Chef</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="metrage in metragesEnAttente" :key="metrage.id">
+                <td>{{ getChantierName(metrage.chantierId) }}</td>
+                <td>{{ getClientName(metrage.chantierId) }}</td>
+                <td>{{ formatDate(metrage.createdAt) }}</td>
+                <td>{{ metrage.totalML?.toFixed(2) || '0.00' }} ML</td>
+                <td>{{ formatCurrency(calculateMontantEstime(metrage)) }}</td>
+                <td>{{ metrage.chefId || 'N/A' }}</td>
+                <td>
+                  <button @click="voirDetailMetrage(metrage)" class="btn btn-sm btn-info me-2">
+                    👁 Détail
+                  </button>
+                  <button @click="autoriserFacturation(metrage)" class="btn btn-sm btn-success">
+                    ✅ Autoriser Facturation
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Factures récentes -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>Factures récentes</h5>
+      </div>
+      <div class="card-body">
+        <div v-if="facturesRecentes.length === 0" class="text-center text-muted py-4">
+          Aucune facture récente
+        </div>
+        <div v-else class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>N° Facture</th>
+                <th>Chantier</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Montant TTC</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="facture in facturesRecentes" :key="facture.id">
+                <td><strong>{{ facture.numero }}</strong></td>
+                <td>{{ getChantierName(facture.chantierId) }}</td>
+                <td>{{ facture.clientNom }}</td>
+                <td>{{ formatDate(facture.dateFacture) }}</td>
+                <td>{{ formatCurrency(facture.montantTTC) }}</td>
+                <td>
+                  <span :class="getStatutClass(facture.statut)">
+                    {{ getStatutLabel(facture.statut) }}
+                  </span>
+                </td>
+                <td>
+                  <button @click="changerStatutFacture(facture)" class="btn btn-sm btn-warning me-2">
+                    📝 Changer Statut
+                  </button>
+                  <button @click="genererPDF(facture)" class="btn btn-sm btn-info">
+                    📄 PDF
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card bg-warning text-white text-center">
+          <div class="card-body">
+            <h6>En Attente</h6>
+            <h4>{{ metragesEnAttente.length }}</h4>
+            <small>Métrages à facturer</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-primary text-white text-center">
+          <div class="card-body">
+            <h6>Ce Mois</h6>
+            <h4>{{ formatCurrency(facturationMois) }}</h4>
+            <small>Facturé ce mois</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-success text-white text-center">
+          <div class="card-body">
+            <h6>Payées</h6>
+            <h4>{{ formatCurrency(facturesPayees) }}</h4>
+            <small>Factures payées</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card bg-danger text-white text-center">
+          <div class="card-body">
+            <h6>En Retard</h6>
+            <h4>{{ formatCurrency(facturesEnRetard) }}</h4>
+            <small>Factures en retard</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Détail Métrage -->
+    <div v-if="showDetailMetrage" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>Détail Métrage - {{ getChantierName(detailMetrage.chantierId) }}</h5>
+            <button @click="showDetailMetrage = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Informations Générales</h6>
+                <p><strong>Chantier:</strong> {{ getChantierName(detailMetrage.chantierId) }}</p>
+                <p><strong>Client:</strong> {{ getClientName(detailMetrage.chantierId) }}</p>
+                <p><strong>Date:</strong> {{ formatDate(detailMetrage.createdAt) }}</p>
+                <p><strong>Chef:</strong> {{ detailMetrage.chefId }}</p>
+              </div>
+              <div class="col-md-6">
+                <h6>Métrages</h6>
+                <p><strong>Total ML:</strong> {{ detailMetrage.totalML?.toFixed(2) }} ML</p>
+                <p><strong>Produits:</strong> {{ detailMetrage.totalProduits || 0 }}</p>
+                <p><strong>Zones:</strong> {{ detailMetrage.zones?.join(', ') || 'N/A' }}</p>
+                <p><strong>Montant Estimé:</strong> {{ formatCurrency(calculateMontantEstime(detailMetrage)) }}</p>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button @click="autoriserFacturation(detailMetrage)" class="btn btn-success me-2">
+                ✅ Autoriser Facturation
+              </button>
+              <button @click="showDetailMetrage = false" class="btn btn-secondary">
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Changer Statut -->
+    <div v-if="showChangeStatut" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>Changer Statut Facture {{ factureEnCours.numero }}</h5>
+            <button @click="showChangeStatut = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label>Nouveau Statut:</label>
+              <select v-model="nouveauStatut" class="form-control">
+                <option value="emise">Émise</option>
+                <option value="envoyee">Envoyée</option>
+                <option value="payee">Payée</option>
+                <option value="en_retard">En retard</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label>Notes (optionnel):</label>
+              <textarea v-model="notesStatut" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="confirmerChangeStatut" class="btn btn-primary">Confirmer</button>
+            <button @click="showChangeStatut = false" class="btn btn-secondary">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { collection, getDocs, addDoc, updateDoc, doc, query, where } from 'firebase/firestore';
+import { db } from '@/firebase';
+import RetourButton from '@/components/RetourButton.vue';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const metrages = ref([]);
+const factures = ref([]);
+const chantiers = ref([]);
+const devis = ref([]);
+
+const showDetailMetrage = ref(false);
+const detailMetrage = ref({});
+const showChangeStatut = ref(false);
+const factureEnCours = ref({});
+const nouveauStatut = ref('');
+const notesStatut = ref('');
+
+// Métrages complétés mais non encore facturés
+const metragesEnAttente = computed(() => {
+  return metrages.value.filter(m => 
+    !m.draft && // Métrage sauvegardé (non brouillon)
+    !m.facture && // Pas encore facturé
+    m.totalML > 0 // A du contenu
+  );
+});
+
+// Factures des 30 derniers jours
+const facturesRecentes = computed(() => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  return factures.value
+    .filter(f => new Date(f.dateFacture) >= thirtyDaysAgo)
+    .sort((a, b) => new Date(b.dateFacture) - new Date(a.dateFacture))
+    .slice(0, 10);
+});
+
+// Statistiques
+const facturationMois = computed(() => {
+  const thisMonth = new Date();
+  return factures.value
+    .filter(f => {
+      const factureDate = new Date(f.dateFacture);
+      return factureDate.getMonth() === thisMonth.getMonth() && 
+             factureDate.getFullYear() === thisMonth.getFullYear();
+    })
+    .reduce((sum, f) => sum + (f.montantTTC || 0), 0);
+});
+
+const facturesPayees = computed(() => {
+  return factures.value
+    .filter(f => f.statut === 'payee')
+    .reduce((sum, f) => sum + (f.montantTTC || 0), 0);
+});
+
+const facturesEnRetard = computed(() => {
+  return factures.value
+    .filter(f => f.statut === 'en_retard')
+    .reduce((sum, f) => sum + (f.montantTTC || 0), 0);
+});
+
+const loadData = async () => {
+  try {
+    // Métrages
+    const metragesSnap = await getDocs(collection(db, 'metrages'));
+    metrages.value = metragesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Factures
+    const facturesSnap = await getDocs(collection(db, 'factures'));
+    factures.value = facturesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Chantiers
+    const chantiersSnap = await getDocs(collection(db, 'chantiers'));
+    chantiers.value = chantiersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Devis
+    const devisSnap = await getDocs(collection(db, 'devis'));
+    devis.value = devisSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Erreur chargement données:', error);
+  }
+};
+
+const calculateMontantEstime = (metrage) => {
+  // Trova il devis associato al chantier
+  const chantier = chantiers.value.find(c => c.id === metrage.chantierId);
+  const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+  
+  if (!chantierDevis || !chantierDevis.total) return 0;
+  
+  // Stima basata sulla percentuale di completamento
+  // Se il métrage ha totalML, calcola percentuale rispetto al devis
+  const devisML = chantierDevis.produits?.reduce((sum, p) => sum + (p.ml || 0), 0) || 1;
+  const percentageComplete = Math.min((metrage.totalML || 0) / devisML, 1);
+  
+  return chantierDevis.total * percentageComplete;
+};
+
+const autoriserFacturation = async (metrage) => {
+  if (!confirm('Autoriser la facturation pour ce métrage ?')) return;
+  
+  try {
+    const chantier = chantiers.value.find(c => c.id === metrage.chantierId);
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+    
+    const montantHT = calculateMontantEstime(metrage);
+    const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
+    
+    // Crée la facture
+    const factureData = {
+      numero: numeroFacture,
+      chantierId: metrage.chantierId,
+      metrageId: metrage.id,
+      dateFacture: new Date().toISOString().split('T')[0],
+      montantHT: montantHT,
+      tauxTVA: 20,
+      montantTTC: montantHT * 1.2,
+      statut: 'emise',
+      clientNom: chantierDevis?.nom || 'Client',
+      dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 jours
+      notes: `Facture générée automatiquement depuis métrage du ${formatDate(metrage.createdAt)}`,
+      createdAt: new Date()
+    };
+    
+    await addDoc(collection(db, 'factures'), factureData);
+    
+    // Marque le métrage comme facturé
+    await updateDoc(doc(db, 'metrages', metrage.id), {
+      facture: true,
+      factureNumero: numeroFacture,
+      factureDate: new Date()
+    });
+    
+    alert(`Facture ${numeroFacture} créée avec succès !`);
+    loadData();
+    showDetailMetrage.value = false;
+  } catch (error) {
+    console.error('Erreur création facture:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const voirDetailMetrage = (metrage) => {
+  detailMetrage.value = metrage;
+  showDetailMetrage.value = true;
+};
+
+const changerStatutFacture = (facture) => {
+  factureEnCours.value = facture;
+  nouveauStatut.value = facture.statut;
+  notesStatut.value = '';
+  showChangeStatut.value = true;
+};
+
+const confirmerChangeStatut = async () => {
+  try {
+    await updateDoc(doc(db, 'factures', factureEnCours.value.id), {
+      statut: nouveauStatut.value,
+      statutNotes: notesStatut.value,
+      statutUpdatedAt: new Date()
+    });
+    
+    alert('Statut mis à jour avec succès');
+    loadData();
+    showChangeStatut.value = false;
+  } catch (error) {
+    console.error('Erreur mise à jour statut:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const getChantierName = (id) => {
+  const chantier = chantiers.value.find(c => c.id === id);
+  return chantier ? chantier.nom : 'N/A';
+};
+
+const getClientName = (chantierId) => {
+  const chantier = chantiers.value.find(c => c.id === chantierId);
+  return chantier?.client || 'N/A';
+};
+
+const getStatutLabel = (statut) => {
+  const labels = {
+    emise: 'Émise',
+    envoyee: 'Envoyée', 
+    payee: 'Payée',
+    en_retard: 'En retard'
+  };
+  return labels[statut] || statut;
+};
+
+const getStatutClass = (statut) => {
+  const classes = {
+    emise: 'badge bg-secondary',
+    envoyee: 'badge bg-info',
+    payee: 'badge bg-success',
+    en_retard: 'badge bg-danger'
+  };
+  return classes[statut] || 'badge bg-secondary';
+};
+
+const formatDate = (date) => {
+  if (!date) return 'N/A';
+  return date.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
+};
+
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(amount);
+};
+
+const genererPDF = async (facture) => {
+  // Carica tutti i dati necessari
+  const chantier = chantiers.value.find(c => c.id === facture.chantierId);
+  const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+  const metrageDoc = metrages.value.find(m => m.id === facture.metrageId);
+  
+  // Carica i dati completi del cliente dall'anagrafica
+  let clienteCompleto = null;
+  const nomeCliente = chantier?.client || chantierDevis?.nom || 'Client';
+  
+  try {
+    const clientsSnapshot = await getDocs(collection(db, 'clients'));
+    const clients = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    clienteCompleto = clients.find(c => c.nom === nomeCliente);
+  } catch (error) {
+    console.error('Erreur chargement clients:', error);
+  }
+  
+  // Import logo
+  let logo;
+  try {
+    const logoModule = await import('@/assets/logo.jpg');
+    logo = logoModule.default;
+  } catch (e) {
+    console.warn('Logo non trovato');
+  }
+  
+  const drawHeader = (doc, title) => {
+    // Logo Dallelec
+    if (logo) {
+      const logoW = 55;
+      const logoH = logoW / 5.32;
+      doc.addImage(logo, 'JPEG', 10, 10, logoW, logoH);
+    }
+    
+    // Dati aziendali reali Dallelec
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    const companyInfo = [
+      'DALLELEC Sarl',
+      'Rue de Bourgogne 25', 
+      '1203 Genève',
+      'contact@dallelec.ch'
+    ];
+    let y = 12;
+    doc.setTextColor(80);
+    companyInfo.forEach((line) => {
+      doc.text(line, 200, y, { align: 'right' });
+      y += 4;
+    });
+    
+    // Titolo documento
+    doc.setFontSize(20);
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(40);
+    doc.text(title, 10, 40);
+  };
+  
+  // 1. GENERA MÉTRÉES DÉTAILLÉES
+  const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
+  drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
+  
+  // Informazioni generali métrées (font più piccolo)
+  docMetrees.setFontSize(9);
+  docMetrees.setFont('Helvetica', 'normal');
+  docMetrees.text(`Date: ${formatDate(facture.dateFacture)}`, 10, 50);
+  
+  // Dati completi del cliente anche nelle métrées (compatti)
+  let yClientMetrees = 57;
+  if (clienteCompleto) {
+    docMetrees.text(`Client: ${clienteCompleto.nom}`, 10, yClientMetrees);
+    yClientMetrees += 4;
+    if (clienteCompleto.adresse) {
+      docMetrees.text(`${clienteCompleto.adresse}`, 10, yClientMetrees);
+      yClientMetrees += 4;
+    }
+    if (clienteCompleto.ville) {
+      docMetrees.text(`${clienteCompleto.ville}`, 10, yClientMetrees);
+      yClientMetrees += 4;
+    }
+  } else {
+    docMetrees.text(`Client: ${nomeCliente}`, 10, yClientMetrees);
+    yClientMetrees += 4;
+  }
+  
+  docMetrees.text(`Chantier: ${getChantierName(facture.chantierId)}`, 10, yClientMetrees + 2);
+  
+  let tableStartY = Math.max(yClientMetrees + 10, 80);
+  
+  // Tabella métrées détaillées
+  if (metrageDoc && metrageDoc.items) {
+    const grouped = {};
+    metrageDoc.items.forEach(item => {
+      if (!grouped[item.zone]) grouped[item.zone] = [];
+      grouped[item.zone].push(item);
+    });
+    
+    Object.entries(grouped).forEach(([zoneName, items]) => {
+      docMetrees.setFontSize(12);
+      docMetrees.setFont('helvetica', 'bold');
+      docMetrees.text(`Zone: ${zoneName}`, 10, tableStartY);
+      
+      const head = [['Code', 'Produit', 'Taille', 'ML', 'ML Suppléments', 'ML Total']];
+      const body = [];
+      
+      items.forEach(item => {
+        body.push([
+          item.article || '',
+          item.nom || '',
+          item.taille || '',
+          (item.mlPosee || 0).toFixed(2),
+          (item.totalSuppML || 0).toFixed(2),
+          (item.totalML || 0).toFixed(2)
+        ]);
+      });
+      
+      autoTable(docMetrees, {
+        head,
+        body,
+        startY: tableStartY + 4,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [230, 230, 230],
+          textColor: 20,
+          fontSize: 8
+        },
+        bodyStyles: {
+          fontSize: 8
+        }
+      });
+      
+      tableStartY = docMetrees.lastAutoTable.finalY + 10;
+    });
+  }
+  
+  // Détail des suppléments (sezione analitica completa)
+  // Ricostruisco supplementParZone dai dati salvati
+  const supplementParZone = [];
+  if (metrageDoc && metrageDoc.items) {
+    const grouped = {};
+    metrageDoc.items.forEach(item => {
+      if (Array.isArray(item.supplements) && item.supplements.length > 0) {
+        if (!grouped[item.zone]) grouped[item.zone] = [];
+        item.supplements.forEach(supp => {
+          grouped[item.zone].push({
+            article: item.article,
+            nom: item.nom,
+            taille: item.taille,
+            supplement: supp.supplement || supp.nom || supp.type,
+            qte: parseFloat(supp.qte || supp.qtePosee) >= 0 ? parseFloat(supp.qte || supp.qtePosee) : 0,
+            valeur: parseFloat(supp.valeur) >= 0 ? parseFloat(supp.valeur) : 0
+          });
+        });
+      }
+    });
+    
+    Object.entries(grouped).forEach(([nom, details]) => {
+      supplementParZone.push({ nom, details });
+    });
+  }
+  
+  if (supplementParZone.length > 0) {
+    docMetrees.setFontSize(14);
+    docMetrees.setFont('Helvetica', 'bold');
+    docMetrees.text('DÉTAIL DES SUPPLÉMENTS PAR ZONE', 10, tableStartY);
+    tableStartY += 10;
+    
+    // Copio esattamente la logica del DevisPdf.vue
+    supplementParZone.forEach((suppZone, idx) => {
+      const suppZoneName = suppZone.nom || `Zone ${idx + 1}`;
+      docMetrees.setFontSize(11);
+      docMetrees.setFont('Helvetica', 'bold');
+      docMetrees.text(suppZoneName, 10, tableStartY);
+      
+      const head = [[
+        'Code',
+        'Produit',
+        'Taille',
+        'Supplement',
+        'Qté',
+        'Valeur',
+        'Total ML'
+      ]];
+      const body = [];
+      
+      // Uso 'details' invece di 'supplements' come nei nostri dati
+      if (Array.isArray(suppZone.details)) {
+        suppZone.details.forEach((s) => {
+          // Calcoliamo totalML come nel DevisPdf
+          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
+          body.push([
+            s.article || '',
+            s.nom || '',
+            s.taille || '',
+            s.supplement || '',
+            s.qte != null ? String(s.qte) : '',
+            s.valeur != null ? s.valeur.toFixed(2) : '',
+            totalML.toFixed(2)
+          ]);
+        });
+      }
+      
+
+      
+      autoTable(docMetrees, {
+        head: head,
+        body: body,
+        startY: tableStartY + 4,
+        theme: 'grid',
+        margin: { top: 35 },
+        headStyles: {
+          fillColor: [230, 230, 230],
+          textColor: 20,
+          halign: 'center',
+          valign: 'middle',
+          fontSize: 8
+        },
+        bodyStyles: {
+          textColor: [0, 0, 0],
+          fontSize: 10,
+          valign: 'middle'
+        },
+        columnStyles: {
+          0: { cellWidth: 20 },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 15 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 10 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 15 }
+        },
+
+      });
+      
+      // Totale per la zona supplementi (esattamente come DevisPdf)
+      let suppSubtotal = 0;
+      if (Array.isArray(suppZone.details)) {
+        suppSubtotal = suppZone.details.reduce((acc, s) => {
+          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
+          return acc + totalML;
+        }, 0);
+      }
+      
+      const finalY2 = docMetrees.lastAutoTable.finalY || (tableStartY + 10);
+      docMetrees.setFontSize(9);
+      docMetrees.setFont('Helvetica', 'bold');
+      docMetrees.text(`Total Suppléments (${suppZoneName}): ${suppSubtotal.toFixed(2)} ML`, 170, finalY2 + 4, { align: 'right' });
+      
+      tableStartY = finalY2 + 10;
+    });
+  }
+  
+  // 2. GENERA FACTURE (semplificata)
+  const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
+  drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+  
+  // Date e informazioni facture (font più piccolo)
+  docFacture.setFontSize(9);
+  docFacture.setFont('Helvetica', 'normal');
+  docFacture.text(`Date: ${formatDate(facture.dateFacture)}`, 10, 50);
+  if (facture.dateEcheance) {
+    docFacture.text(`Échéance: ${formatDate(facture.dateEcheance)}`, 10, 55);
+  }
+  
+  // Informations client (font più piccolo)
+  docFacture.setFontSize(10);
+  docFacture.setFont('Helvetica', 'bold');
+  docFacture.text('FACTURÉ À:', 10, 70);
+  
+  docFacture.setFontSize(8);
+  docFacture.setFont('Helvetica', 'normal');
+  
+  // Dati completi del cliente (compatti)
+  let yClient = 77;
+  if (clienteCompleto) {
+    docFacture.text(clienteCompleto.nom, 10, yClient);
+    yClient += 4;
+    if (clienteCompleto.adresse) {
+      docFacture.text(clienteCompleto.adresse, 10, yClient);
+      yClient += 4;
+    }
+    if (clienteCompleto.ville) {
+      docFacture.text(clienteCompleto.ville, 10, yClient);
+      yClient += 4;
+    }
+  } else {
+    docFacture.text(nomeCliente, 10, yClient);
+    yClient += 4;
+  }
+  
+  docFacture.setFontSize(8);
+  docFacture.text(`Chantier: ${getChantierName(facture.chantierId)}`, 10, yClient + 2);
+  
+  // Tabella facture con struttura corretta (posizione ottimizzata)
+  let factureTableY = Math.max(yClient + 10, 100);
+  let totalFactureHT = 0;
+  
+  if (metrageDoc && metrageDoc.items) {
+    const grouped = {};
+    metrageDoc.items.forEach(item => {
+      if (!grouped[item.zone]) grouped[item.zone] = [];
+      grouped[item.zone].push(item);
+    });
+    
+    Object.entries(grouped).forEach(([zoneName, items]) => {
+      docFacture.setFontSize(12);
+      docFacture.setFont('helvetica', 'bold');
+      docFacture.text(`Zone: ${zoneName}`, 10, factureTableY);
+      
+      const head = [['Code', 'Produit', 'Taille', 'ML', 'ML Suppléments', 'ML Total', 'Prix Unit.', 'Total']];
+      const body = [];
+      let zoneTotal = 0;
+      
+      items.forEach(item => {
+        const devisProduit = chantierDevis?.produits?.find(p => 
+          p.article === item.article && p.nom === item.nom && p.taille === item.taille
+        );
+        const prixUnit = devisProduit?.prix || 0;
+        const mlTotal = item.totalML || 0;
+        const total = mlTotal * prixUnit;
+        zoneTotal += total;
+        
+        body.push([
+          item.article || '',
+          item.nom || '',
+          item.taille || '',
+          (item.mlPosee || 0).toFixed(2),
+          (item.totalSuppML || 0).toFixed(2),
+          mlTotal.toFixed(2),
+          prixUnit.toFixed(2) + ' CHF',
+          total.toFixed(2) + ' CHF'
+        ]);
+      });
+      
+      autoTable(docFacture, {
+        head,
+        body,
+        startY: factureTableY + 4,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [230, 230, 230],
+          textColor: 20,
+          fontSize: 8
+        },
+        bodyStyles: {
+          fontSize: 8
+        }
+      });
+      
+      // Sous-total per zona
+      const finalYZone = docFacture.lastAutoTable.finalY;
+      docFacture.setFontSize(9);
+      docFacture.setFont('Helvetica', 'bold');
+      docFacture.text(`Sous-total (${zoneName}): ${zoneTotal.toFixed(2)} CHF`, 170, finalYZone + 4, { align: 'right' });
+      
+      totalFactureHT += zoneTotal;
+      factureTableY = finalYZone + 15;
+    });
+  } else {
+    // Tabella semplificata se non ci sono détails métrage
+    const head = [['Description', 'Quantité', 'Prix unitaire', 'Total HT']];
+    const body = [[
+      `Travaux électriques - ${getChantierName(facture.chantierId)}`,
+      '1',
+      facture.montantHT.toFixed(2) + ' CHF',
+      facture.montantHT.toFixed(2) + ' CHF'
+    ]];
+    
+    autoTable(docFacture, {
+      head,
+      body,
+      startY: factureTableY,
+      theme: 'grid',
+      headStyles: { fillColor: [230, 230, 230] }
+    });
+    
+    totalFactureHT = facture.montantHT;
+    factureTableY = docFacture.lastAutoTable.finalY + 10;
+  }
+  
+  // Totaux (TVA Suisse 7.7%) - usa il totale calcolato dalla tabella
+  const finalY = factureTableY;
+  
+  docFacture.setFontSize(10);
+  docFacture.text(`Sous-total HT:`, 130, finalY);
+  docFacture.text(`${totalFactureHT.toFixed(2)} CHF`, 170, finalY);
+  
+  const tvaRate = 7.7; // TVA Suisse
+  const montantTVA = totalFactureHT * (tvaRate / 100);
+  const montantTTC = totalFactureHT + montantTVA;
+  
+  docFacture.text(`TVA (${tvaRate}%):`, 130, finalY + 7);
+  docFacture.text(`${montantTVA.toFixed(2)} CHF`, 170, finalY + 7);
+  
+  docFacture.setFontSize(12);
+  docFacture.setFont(undefined, 'bold');
+  docFacture.text(`TOTAL TTC:`, 130, finalY + 17);
+  docFacture.text(`${montantTTC.toFixed(2)} CHF`, 170, finalY + 17);
+  
+  // Conditions de paiement (Suisse)
+  docFacture.setFontSize(8);
+  docFacture.setFont(undefined, 'normal');
+  docFacture.setTextColor(100);
+  docFacture.text('Conditions de paiement: 30 jours net', 20, finalY + 35);
+  
+  if (facture.notes) {
+    docFacture.text(`Notes: ${facture.notes}`, 20, finalY + 45);
+  }
+  
+  // Pied de page (dati Svizzera)
+  docFacture.setFontSize(8);
+  docFacture.setTextColor(150);
+  docFacture.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
+  
+  // Salva i due documenti
+  docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
+  docFacture.save(`Facture_${facture.numero}.pdf`);
+  
+  alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
+};
+
+onMounted(() => {
+  loadData();
+});
+</script>
+
+<style scoped>
+.modal {
+  z-index: 1050;
+}
+
+.card {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
