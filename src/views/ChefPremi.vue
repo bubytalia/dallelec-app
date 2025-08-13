@@ -4,37 +4,59 @@
     
     <h2 class="text-center mb-4">Gestion des Primes</h2>
     
+    <!-- Filtro temporale -->
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Primes par période</h5>
+            <div class="d-flex gap-2">
+              <select v-model="selectedMonth" @change="updatePeriod" class="form-select">
+                <option value="">Tous les mois</option>
+                <option v-for="month in availableMonths" :key="month.value" :value="month.value">
+                  {{ month.label }}
+                </option>
+              </select>
+              <select v-model="selectedYear" @change="updatePeriod" class="form-select">
+                <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Riepilogo generale premi -->
     <div class="row mb-4">
       <div class="col-md-12">
         <div class="card">
           <div class="card-header">
-            <h5>Résumé des primes</h5>
+            <h5>Résumé des primes {{ selectedMonth ? getMonthName(selectedMonth) : '' }} {{ selectedYear }}</h5>
           </div>
           <div class="card-body">
             <div class="row">
               <div class="col-md-3">
                 <div class="text-center">
-                  <h4 class="text-primary">{{ totalHeuresPrevues.toFixed(1) }}h</h4>
+                  <h4 class="text-primary">{{ totalHeuresPrevuesFiltered.toFixed(1) }}h</h4>
                   <p>Total heures prévues</p>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="text-center">
-                  <h4 class="text-info">{{ totalHeuresImployees.toFixed(1) }}h</h4>
+                  <h4 class="text-info">{{ totalHeuresImployeesFiltered.toFixed(1) }}h</h4>
                   <p>Total heures employées</p>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="text-center">
-                  <h4 class="text-success">{{ totalHeuresGagnees.toFixed(1) }}h</h4>
+                  <h4 :class="totalHeuresGagneesFiltered > 0 ? 'text-success' : 'text-danger'">{{ totalHeuresGagneesFiltered > 0 ? '+' : '' }}{{ totalHeuresGagneesFiltered.toFixed(1) }}h</h4>
                   <p>Heures gagnées</p>
                 </div>
               </div>
               <div class="col-md-3">
                 <div class="text-center">
-                  <h4 class="text-warning">{{ totalPrime.toFixed(2) }} CHF</h4>
-                  <p>Prime totale estimée</p>
+                  <h4 :class="totalPrimeFiltered > 0 ? 'text-success' : 'text-muted'">{{ (totalPrimeFiltered / 26).toFixed(1) }}h</h4>
+                  <p>Prime totale (heures)</p>
                 </div>
               </div>
             </div>
@@ -62,31 +84,41 @@
                     <th>Heures prévues</th>
                     <th>Heures employées</th>
                     <th>Heures gagnées</th>
-                    <th>Prime estimée</th>
-                    <th>Dernière mise à jour</th>
+                    <th>Prime (heures)</th>
+                    <th>Période</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="chantier in chantiersAvecMetrages" :key="chantier.id">
+                  <tr v-for="chantier in chantiersFiltered" :key="chantier.id">
                     <td>
                       <strong>{{ chantier.nom }}</strong><br>
                       <small class="text-muted">{{ chantier.adresse }}</small>
                     </td>
-                    <td>{{ chantier.heuresPrevues.toFixed(1) }}h</td>
-                    <td>{{ chantier.heuresImployees.toFixed(1) }}h</td>
+                    <td>{{ chantier.heuresPrevues }}h</td>
+                    <td>{{ chantier.heuresImployees }}h</td>
                     <td>
-                      <span :class="chantier.heuresGagnees > 0 ? 'text-success' : 'text-danger'">
-                        {{ chantier.heuresGagnees.toFixed(1) }}h
+                      <span :class="chantier.heuresGagnees > 0 ? 'text-success fw-bold' : 'text-danger'">
+                        {{ chantier.heuresGagnees > 0 ? '+' : '' }}{{ chantier.heuresGagnees }}h
                       </span>
                     </td>
                     <td>
-                      <span :class="chantier.prime > 0 ? 'text-success' : 'text-danger'">
-                        {{ chantier.prime.toFixed(2) }} CHF
+                      <span :class="chantier.prime > 0 ? 'text-success fw-bold' : 'text-muted'">
+                        {{ chantier.prime > 0 ? (chantier.prime / 26).toFixed(1) + 'h' : '0h' }}
                       </span>
                     </td>
-                    <td>{{ formatDate(chantier.derniereMiseAJour) }}</td>
+                    <td>{{ getMonthName(chantier.moisFacturation) }} {{ chantier.anneeFacturation }}</td>
                   </tr>
                 </tbody>
+                <tfoot>
+                  <tr class="table-primary">
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ totalHeuresPrevuesFiltered.toFixed(1) }}h</strong></td>
+                    <td><strong>{{ totalHeuresImployeesFiltered.toFixed(1) }}h</strong></td>
+                    <td><strong>{{ totalHeuresGagneesFiltered.toFixed(1) }}h</strong></td>
+                    <td><strong>{{ (totalPrimeFiltered / 26).toFixed(1) }}h</strong></td>
+                    <td></td>
+                  </tr>
+                </tfoot>
                 <tfoot>
                   <tr class="table-primary">
                     <td><strong>Total</strong></td>
@@ -115,20 +147,22 @@
             <div class="row">
               <div class="col-md-6">
                 <h6>Formule de calcul:</h6>
-                <ul>
-                  <li><strong>Heures prévues:</strong> Calculées selon les standards de l'entreprise</li>
-                  <li><strong>Heures employées:</strong> Somme des heures enregistrées (Chef + Collaborateurs)</li>
-                  <li><strong>Heures gagnées:</strong> Heures prévues - Heures employées</li>
-                  <li><strong>Prime:</strong> Heures gagnées × 26 CHF/h</li>
-                </ul>
+                <ol>
+                  <li><strong>Quantités posées:</strong> Montant total facturé</li>
+                  <li><strong>Budget disponible:</strong> Facturé - 30% speses générales</li>
+                  <li><strong>Coût horaire moyen:</strong> Basé sur les tarifs des employés</li>
+                  <li><strong>Heures prévues:</strong> Budget ÷ Coût horaire moyen</li>
+                  <li><strong>Prime:</strong> (Heures prévues - Heures réelles) × 26 CHF/h</li>
+                </ol>
               </div>
               <div class="col-md-6">
                 <h6>Conditions:</h6>
                 <ul>
-                  <li>Prime uniquement si heures gagnées > 0</li>
-                  <li>Calcul basé sur les métrages enregistrés</li>
-                  <li>Prime versée sur la buste de paie</li>
-                  <li>Mise à jour mensuelle ou fin de projet</li>
+                  <li>Prime uniquement si heures réelles < heures prévues</li>
+                  <li>Calcul basé sur les factures émises</li>
+                  <li>Pourcentage speses configurable par chantier (défaut 30%)</li>
+                  <li>Cantieri > 1 mois: prime sur totalité du chantier</li>
+                  <li>Affichage en heures uniquement (pas d'importi)</li>
                 </ul>
               </div>
             </div>
@@ -146,13 +180,25 @@ import { db } from '@/firebase';
 import RetourButton from '@/components/RetourButton.vue';
 
 const chantiers = ref([]);
+const devis = ref([]);
+const factures = ref([]);
 const metrages = ref([]);
 const heuresPropres = ref([]);
 const heuresInterim = ref([]);
+const heuresOuvriers = ref([]);
+const collaborateurs = ref([]);
+const interimaires = ref([]);
+const selectedMonth = ref('');
+const selectedYear = ref(new Date().getFullYear());
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
   chantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+const fetchDevis = async () => {
+  const snapshot = await getDocs(collection(db, 'devis'));
+  devis.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
 const fetchMetrages = async () => {
@@ -170,48 +216,177 @@ const fetchHeuresInterim = async () => {
   heuresInterim.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
+const fetchHeuresOuvriers = async () => {
+  const snapshot = await getDocs(collection(db, 'heures_ouvriers'));
+  heuresOuvriers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+const fetchFactures = async () => {
+  const snapshot = await getDocs(collection(db, 'factures'));
+  factures.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+const fetchCollaborateurs = async () => {
+  const snapshot = await getDocs(collection(db, 'collaborateurs'));
+  collaborateurs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+const fetchInterimaires = async () => {
+  const snapshot = await getDocs(collection(db, 'interimaires'));
+  interimaires.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString('fr-FR');
 };
 
-// Computed per calcolare i dati dei premi
+const getMonthName = (monthNum) => {
+  if (!monthNum) return '';
+  const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  return months[monthNum - 1] || '';
+};
+
+const updatePeriod = () => {
+  // Trigger reactive update
+};
+
+// Mois disponibili
+const availableMonths = computed(() => {
+  return [
+    { value: 1, label: 'Janvier' },
+    { value: 2, label: 'Février' },
+    { value: 3, label: 'Mars' },
+    { value: 4, label: 'Avril' },
+    { value: 5, label: 'Mai' },
+    { value: 6, label: 'Juin' },
+    { value: 7, label: 'Juillet' },
+    { value: 8, label: 'Août' },
+    { value: 9, label: 'Septembre' },
+    { value: 10, label: 'Octobre' },
+    { value: 11, label: 'Novembre' },
+    { value: 12, label: 'Décembre' }
+  ];
+});
+
+// Anni disponibili
+const availableYears = computed(() => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  for (let year = currentYear - 2; year <= currentYear + 1; year++) {
+    years.push(year);
+  }
+  return years;
+});
+
+// Computed per calcolare i dati dei premi secondo la formula corretta
 const chantiersAvecMetrages = computed(() => {
   const chantiersData = [];
   
   chantiers.value.forEach(chantier => {
-    // Trova l'ultimo metrage per questo cantiere
-    const metragesChantier = metrages.value.filter(m => m.chantierId === chantier.id);
-    if (metragesChantier.length === 0) return;
+    // 1. Trova factures per questo cantiere (quantità posate fatturate)
+    const facturesChantier = factures.value.filter(f => f.chantierId === chantier.id);
+    if (facturesChantier.length === 0) return; // Nessuna fattura = nessun premio
     
-    const dernierMetrage = metragesChantier.sort((a, b) => 
-      new Date(b.dateSaisie) - new Date(a.dateSaisie)
-    )[0];
+    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (f.montantTTC || 0), 0);
     
-    // Calcola ore impiegate attuali
-    const heuresChefChantier = heuresPropres.value.filter(h => h.chantierId === chantier.id);
-    const heuresCollaborateursChantier = heuresInterim.value.filter(h => h.chantierId === chantier.id);
+    // 2. Importo - 30% spese generali (percentuale configurabile per cantiere)
+    const percentualeSpese = chantier.percentualeSpese || 30; // Default 30%
+    const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeSpese / 100);
     
-    const totalHeuresChef = heuresChefChantier.reduce((sum, h) => sum + h.heuresPropres, 0);
-    const totalHeuresCollaborateurs = heuresCollaborateursChantier.reduce((sum, h) => sum + h.heuresInterim, 0);
-    const heuresImployees = totalHeuresChef + totalHeuresCollaborateurs;
+    // 3. Calcola ore impiegate reali e costo orario medio
+    const heuresChefChantier = heuresPropres.value
+      .filter(h => h.chantierId === chantier.id)
+      .reduce((sum, h) => sum + (h.heuresPropres || 0), 0);
     
-    // Calcola ore guadagnate e premio
-    const heuresGagnees = Math.max(0, dernierMetrage.heuresPrevues - heuresImployees);
-    const prime = heuresGagnees * 26; // 26 CHF/h
+    const heuresInterimChantier = heuresInterim.value
+      .filter(h => h.chantierId === chantier.id)
+      .reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+    
+    const heuresOuvriersChantier = heuresOuvriers.value
+      .filter(h => h.chantierId === chantier.id)
+      .reduce((sum, h) => sum + (h.heures || 0), 0);
+    
+    const heuresImployees = heuresChefChantier + heuresInterimChantier + heuresOuvriersChantier;
+    
+    if (heuresImployees === 0) return; // Nessuna ora registrata
+    
+    // 4. Calcola costo orario medio ponderato dei dipendenti intervenuti
+    const tarifChef = 45; // CHF/h (da configurare in anagrafica)
+    const tarifOuvrier = 25; // CHF/h (da configurare in anagrafica)
+    const tarifInterim = 35; // CHF/h (da anagrafica interimaires)
+    
+    const costoTotaleOre = (heuresChefChantier * tarifChef) + 
+                          (heuresOuvriersChantier * tarifOuvrier) + 
+                          (heuresInterimChantier * tarifInterim);
+    
+    const costoOrarioMedio = heuresImployees > 0 ? costoTotaleOre / heuresImployees : tarifChef;
+    
+    // 5. Ore previste teoriche = Budget disponibile / Costo orario medio
+    const heuresPrevues = budgetOreDisponibile / costoOrarioMedio;
+    
+    // 6. Calcolo premio: se ore reali < ore previste → premio
+    const heuresGagnees = heuresPrevues - heuresImployees;
+    const prime = heuresGagnees > 0 ? heuresGagnees * 26 : 0; // 26 CHF/h solo se positivo
+    
+    // Trova ultima attività
+    const dernierMetrage = metrages.value
+      .filter(m => m.chantierId === chantier.id)
+      .sort((a, b) => new Date(b.createdAt?.toDate() || b.createdAt) - new Date(a.createdAt?.toDate() || a.createdAt))[0];
+    
+    const derniereHeure = [...heuresPropres.value, ...heuresInterim.value, ...heuresOuvriers.value]
+      .filter(h => h.chantierId === chantier.id)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    
+    const derniereMiseAJour = dernierMetrage?.createdAt?.toDate() || derniereHeure?.date || new Date();
+    
+    // Determina mese e anno di fatturazione (dalla prima fattura)
+    const primaFactura = facturesChantier.sort((a, b) => new Date(a.dateFacture) - new Date(b.dateFacture))[0];
+    const dateFacturation = new Date(primaFactura.dateFacture);
+    const moisFacturation = dateFacturation.getMonth() + 1;
+    const anneeFacturation = dateFacturation.getFullYear();
     
     chantiersData.push({
       id: chantier.id,
-      nom: chantier.nom,
+      nom: chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ${chantier.nom}` : chantier.nom,
       adresse: chantier.adresse,
-      heuresPrevues: dernierMetrage.heuresPrevues,
+      heuresPrevues: Math.round(heuresPrevues * 10) / 10,
       heuresImployees,
-      heuresGagnees,
-      prime,
-      derniereMiseAJour: dernierMetrage.dateSaisie
+      heuresGagnees: Math.round(heuresGagnees * 10) / 10,
+      prime: Math.round(prime * 100) / 100,
+      moisFacturation,
+      anneeFacturation,
+      derniereMiseAJour
     });
   });
   
-  return chantiersData;
+  return chantiersData.sort((a, b) => new Date(b.derniereMiseAJour) - new Date(a.derniereMiseAJour));
+});
+
+// Cantieri filtrati per periodo
+const chantiersFiltered = computed(() => {
+  return chantiersAvecMetrages.value.filter(chantier => {
+    if (selectedYear.value && chantier.anneeFacturation !== selectedYear.value) return false;
+    if (selectedMonth.value && chantier.moisFacturation !== selectedMonth.value) return false;
+    return true;
+  });
+});
+
+// Totali filtrati
+const totalHeuresPrevuesFiltered = computed(() => {
+  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresPrevues, 0);
+});
+
+const totalHeuresImployeesFiltered = computed(() => {
+  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresImployees, 0);
+});
+
+const totalHeuresGagneesFiltered = computed(() => {
+  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresGagnees, 0);
+});
+
+const totalPrimeFiltered = computed(() => {
+  return chantiersFiltered.value.reduce((sum, c) => sum + c.prime, 0);
 });
 
 const totalHeuresPrevues = computed(() => {
@@ -233,9 +408,14 @@ const totalPrime = computed(() => {
 onMounted(async () => {
   await Promise.all([
     fetchChantiers(),
+    fetchDevis(),
+    fetchFactures(),
     fetchMetrages(),
     fetchHeuresPropres(),
-    fetchHeuresInterim()
+    fetchHeuresInterim(),
+    fetchHeuresOuvriers(),
+    fetchCollaborateurs(),
+    fetchInterimaires()
   ]);
 });
 </script>
