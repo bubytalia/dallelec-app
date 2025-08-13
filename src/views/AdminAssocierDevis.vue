@@ -15,7 +15,7 @@
             <select v-model="selectedChantierId" class="form-control" @change="loadChantierDetails">
               <option value="">Choisir un chantier</option>
               <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
-                {{ chantier.nom }} - {{ chantier.adresse }}
+                {{ chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '' }}{{ chantier.nom }} - {{ chantier.adresse }}
               </option>
             </select>
           </div>
@@ -33,7 +33,7 @@
           <div class="card-body">
             <div class="row">
               <div class="col-md-6">
-                <p><strong>Nom:</strong> {{ selectedChantier.nom }}</p>
+                <p><strong>Nom:</strong> {{ selectedChantier.numeroCantiere ? `N° ${selectedChantier.numeroCantiere} - ` : '' }}{{ selectedChantier.nom }}</p>
                 <p><strong>Adresse:</strong> {{ selectedChantier.adresse }}</p>
                 <p><strong>Ville:</strong> {{ selectedChantier.ville }}</p>
               </div>
@@ -237,7 +237,9 @@ const getDevisInfo = (devisId) => {
 
 const getChantierAssocie = (devisId) => {
   const chantier = chantiers.value.find(c => c.devisId === devisId)
-  return chantier ? chantier.nom : null
+  if (!chantier) return null
+  const numero = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : ''
+  return `${numero}${chantier.nom}`
 }
 
 const getChantierId = (devisId) => {

@@ -23,13 +23,16 @@
       <!-- Tab Anagrafica -->
       <div class="tab-pane fade show active" id="anagrafica" role="tabpanel">
         <form @submit.prevent="addChantier" class="row g-3 mb-4">
-          <div class="col-md-4">
+          <div class="col-md-3">
+            <input v-model="newChantier.numeroCantiere" type="text" class="form-control" placeholder="Numéro Cantiere" required />
+          </div>
+          <div class="col-md-3">
             <input v-model="newChantier.nom" type="text" class="form-control" placeholder="Nom" required />
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <input v-model="newChantier.adresse" type="text" class="form-control" placeholder="Adresse" required />
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <input v-model="newChantier.ville" type="text" class="form-control" placeholder="Ville" required />
           </div>
           <div class="col-md-4">
@@ -64,6 +67,7 @@
         <table class="table table-striped">
           <thead>
             <tr>
+              <th>N° Cantiere</th>
               <th>Nom</th>
               <th>Adresse</th>
               <th>Ville</th>
@@ -76,6 +80,7 @@
           <tbody>
             <tr v-for="chantier in chantiers" :key="chantier.id">
               <template v-if="editId === chantier.id">
+                <td><input v-model="editChantier.numeroCantiere" class="form-control" /></td>
                 <td><input v-model="editChantier.nom" class="form-control" /></td>
                 <td><input v-model="editChantier.adresse" class="form-control" /></td>
                 <td><input v-model="editChantier.ville" class="form-control" /></td>
@@ -103,6 +108,7 @@
                 </td>
               </template>
               <template v-else>
+                <td><strong>{{ chantier.numeroCantiere || 'N/A' }}</strong></td>
                 <td>{{ chantier.nom }}</td>
                 <td>{{ chantier.adresse }}</td>
                 <td>{{ chantier.ville }}</td>
@@ -127,7 +133,7 @@
             <select v-model="selectedChantierId" class="form-select" @change="loadChantierData">
               <option value="">Choisir un chantier</option>
               <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
-                {{ chantier.nom }} - {{ chantier.adresse }}
+                {{ chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '' }}{{ chantier.nom }} - {{ chantier.adresse }}
               </option>
             </select>
           </div>
@@ -135,7 +141,7 @@
 
         <div v-if="selectedChantier" class="row">
           <div class="col-md-8">
-            <h4>{{ selectedChantier.nom }}</h4>
+            <h4>{{ selectedChantier.numeroCantiere ? `N° ${selectedChantier.numeroCantiere} - ` : '' }}{{ selectedChantier.nom }}</h4>
             <p class="text-muted">{{ selectedChantier.adresse }}, {{ selectedChantier.ville }}</p>
             <p v-if="devisAssocie"><strong>Devis associé:</strong> {{ devisAssocie.numero }} - {{ devisAssocie.nomChantier }}</p>
           </div>
@@ -295,6 +301,7 @@ export default {
     const devisAssocie = ref(null);
 
     const newChantier = ref({
+      numeroCantiere: '',
       nom: '',
       adresse: '',
       ville: '',
@@ -398,7 +405,7 @@ export default {
 
     const addChantier = async () => {
       await addDoc(collection(db, 'chantiers'), newChantier.value);
-      newChantier.value = { nom: '', adresse: '', ville: '', client: '', technicien: '', devisId: '' };
+      newChantier.value = { numeroCantiere: '', nom: '', adresse: '', ville: '', client: '', technicien: '', devisId: '' };
       fetchChantiers();
     };
 

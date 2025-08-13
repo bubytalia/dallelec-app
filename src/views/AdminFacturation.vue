@@ -29,7 +29,7 @@
             </thead>
             <tbody>
               <tr v-for="metrage in metragesEnAttente" :key="metrage.id">
-                <td>{{ getChantierName(metrage.chantierId) }}</td>
+                <td>{{ getChantierNameWithNumber(metrage.chantierId) }}</td>
                 <td>{{ getClientName(metrage.chantierId) }}</td>
                 <td>{{ formatDate(metrage.createdAt) }}</td>
                 <td>{{ metrage.totalML?.toFixed(2) || '0.00' }} ML</td>
@@ -389,6 +389,13 @@ const getChantierName = (id) => {
   return chantier ? chantier.nom : 'N/A';
 };
 
+const getChantierNameWithNumber = (id) => {
+  const chantier = chantiers.value.find(c => c.id === id);
+  if (!chantier) return 'N/A';
+  const numero = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+  return `${numero}${chantier.nom}`;
+};
+
 const getClientName = (chantierId) => {
   const chantier = chantiers.value.find(c => c.id === chantierId);
   return chantier?.client || 'N/A';
@@ -511,7 +518,8 @@ const genererPDF = async (facture) => {
     yClientMetrees += 4;
   }
   
-  docMetrees.text(`Chantier: ${getChantierName(facture.chantierId)}`, 10, yClientMetrees + 2);
+  const numeroCantiereMetrees = chantier?.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+  docMetrees.text(`Chantier: ${numeroCantiereMetrees}${getChantierName(facture.chantierId)}`, 10, yClientMetrees + 2);
   
   let tableStartY = Math.max(yClientMetrees + 10, 80);
   
@@ -717,7 +725,8 @@ const genererPDF = async (facture) => {
   }
   
   docFacture.setFontSize(8);
-  docFacture.text(`Chantier: ${getChantierName(facture.chantierId)}`, 10, yClient + 2);
+  const numeroCantiere = chantier?.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+  docFacture.text(`Chantier: ${numeroCantiere}${getChantierName(facture.chantierId)}`, 10, yClient + 2);
   
   // Tabella facture con struttura corretta (posizione ottimizzata)
   let factureTableY = Math.max(yClient + 10, 100);

@@ -22,7 +22,7 @@
             <select v-model="selectedChantierId" class="form-control" @change="loadChantierData">
               <option value="">Choisir un chantier</option>
               <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
-                {{ chantier.nom }} - {{ chantier.adresse }}
+                {{ chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '' }}{{ chantier.nom }} - {{ chantier.adresse }}
               </option>
             </select>
           </div>
@@ -191,7 +191,8 @@ const loadChantierData = async () => {
       return;
     }
     
-    nomChantier.value = `${chantier.nom} - ${chantier.adresse}`;
+    const numeroDisplay = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+    nomChantier.value = `${numeroDisplay}${chantier.nom} - ${chantier.adresse}`;
     
     // Carica il devis associato
     const devisDoc = await getDoc(doc(db, 'devis', chantier.devisId));
