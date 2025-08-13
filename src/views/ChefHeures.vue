@@ -53,11 +53,11 @@
               <input v-model="newHeureInterim.date" type="date" class="form-control" />
             </div>
             <div class="mb-3">
-              <label>Collaborateur:</label>
-              <select v-model="newHeureInterim.collaborateurId" class="form-control">
-                <option value="">Sélectionner</option>
-                <option v-for="collab in collaborateurs" :key="collab.id" :value="collab.id">
-                  {{ collab.nom }} {{ collab.prenom }}
+              <label>Intérimaire:</label>
+              <select v-model="newHeureInterim.interimaireId" class="form-control">
+                <option value="">Sélectionner un intérimaire</option>
+                <option v-for="interimaire in interimaires" :key="interimaire.id" :value="interimaire.id">
+                  {{ interimaire.nom }} {{ interimaire.prenom }} - {{ interimaire.specialite || 'N/A' }}
                 </option>
               </select>
             </div>
@@ -103,7 +103,7 @@
             <tr>
               <th>Chantier</th>
               <th>Date</th>
-              <th>Collaborateur</th>
+              <th>Intérimaire</th>
               <th>Heures</th>
               <th>Actions</th>
             </tr>
@@ -112,7 +112,7 @@
             <tr v-for="heure in heuresInterim" :key="heure.id">
               <td>{{ getChantierName(heure.chantierId) }}</td>
               <td>{{ formatDate(heure.date) }}</td>
-              <td>{{ getCollaborateurName(heure.collaborateurId) }}</td>
+              <td>{{ getInterimaireName(heure.interimaireId || heure.collaborateurId) }}</td>
               <td>{{ heure.heuresInterim }}</td>
               <td>
                 <button @click="deleteHeure(heure.id, 'interim')" class="btn btn-danger btn-sm">🗑</button>
@@ -156,7 +156,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/firebase';
 import RetourButton from '@/components/RetourButton.vue';
 
-const collaborateurs = ref([]);
+const interimaires = ref([]);
 const chantiers = ref([]);
 const heuresPropres = ref([]);
 const heuresInterim = ref([]);
@@ -170,13 +170,13 @@ const newHeure = ref({
 const newHeureInterim = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
-  collaborateurId: '',
+  interimaireId: '',
   heuresInterim: 0
 });
 
-const fetchCollaborateurs = async () => {
-  const snapshot = await getDocs(collection(db, 'collaborateurs'));
-  collaborateurs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+const fetchInterimaires = async () => {
+  const snapshot = await getDocs(collection(db, 'interimaires'));
+  interimaires.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
 const fetchChantiers = async () => {
@@ -213,12 +213,12 @@ const addHeurePropre = async () => {
 };
 
 const addHeureInterim = async () => {
-  if (!newHeureInterim.value.chantierId || !newHeureInterim.value.date || !newHeureInterim.value.collaborateurId || !newHeureInterim.value.heuresInterim) return;
+  if (!newHeureInterim.value.chantierId || !newHeureInterim.value.date || !newHeureInterim.value.interimaireId || !newHeureInterim.value.heuresInterim) return;
   
   await addDoc(collection(db, 'heures_chef_interim'), {
     chantierId: newHeureInterim.value.chantierId,
     date: newHeureInterim.value.date,
-    collaborateurId: newHeureInterim.value.collaborateurId,
+    interimaireId: newHeureInterim.value.interimaireId,
     heuresInterim: newHeureInterim.value.heuresInterim,
     chefId: 'chef@dallelec.com' // TODO: prendere da auth
   });
@@ -226,7 +226,7 @@ const addHeureInterim = async () => {
   newHeureInterim.value = {
     chantierId: '',
     date: new Date().toISOString().split('T')[0],
-    collaborateurId: '',
+    interimaireId: '',
     heuresInterim: 0
   };
   fetchHeuresInterim();
@@ -249,9 +249,9 @@ const getChantierName = (id) => {
   return chantier ? `${chantier.nom} - ${chantier.adresse}` : '-';
 };
 
-const getCollaborateurName = (id) => {
-  const collab = collaborateurs.value.find(c => c.id === id);
-  return collab ? `${collab.nom} ${collab.prenom}` : '-';
+const getInterimaireName = (id) => {
+  const interimaire = interimaires.value.find(i => i.id === id);
+  return interimaire ? `${interimaire.nom} ${interimaire.prenom}` : '-';
 };
 
 const formatDate = (dateStr) => {
@@ -287,7 +287,7 @@ const totalHeuresGeneral = computed(() => {
 });
 
 onMounted(() => {
-  fetchCollaborateurs();
+  fetchInterimaires();
   fetchChantiers();
   fetchHeuresPropres();
   fetchHeuresInterim();

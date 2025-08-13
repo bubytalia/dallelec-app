@@ -19,6 +19,11 @@ import ChefBilan from '@/views/ChefBilan.vue';
 import ChefMetrages from '@/views/ChefMetrages.vue';
 import ChefPremi from '@/views/ChefPremi.vue';
 
+// Ouvrier pages
+import OuvrierDashboard from '@/views/OuvrierDashboard.vue';
+import OuvrierHeures from '@/views/OuvrierHeures.vue';
+import OuvrierAbsences from '@/views/OuvrierAbsences.vue';
+
 // Devis
 import Devis from '@/views/devis/Devis.vue';
 import DevisCreate from '@/views/devis/DevisCreate.vue';
@@ -39,6 +44,7 @@ import Paiements from '@/views/repertoires/Paiements.vue';
 import Techniciens from '@/views/repertoires/Techniciens.vue';
 import Supplements from '@/views/repertoires/Supplements.vue';
 import Conditions from '@/views/repertoires/Conditions.vue';
+import Interimaires from '@/views/repertoires/Interimaires.vue';
 
 // Bilans
 import Bilans from '@/views/Bilans.vue';
@@ -66,6 +72,7 @@ const routes = [
   { path: '/admin/repertoires/supplements', name: 'Supplements', component: Supplements },
   { path: '/admin/repertoires/techniciens', name: 'Techniciens', component: Techniciens },
   { path: '/admin/repertoires/conditions', name: 'Conditions', component: Conditions },
+  { path: '/admin/repertoires/interimaires', name: 'Interimaires', component: Interimaires },
   { path: '/admin/bilans', name: 'Bilans', component: Bilans },
   { path: '/admin/report-mensuel', name: 'AdminReportMensuel', component: AdminReportMensuel },
   { path: '/admin/gestion-feries', name: 'AdminGestionFeries', component: AdminGestionFeries },
@@ -81,6 +88,12 @@ const routes = [
   { path: '/chef/chantiers/metrages', name: 'ChefMetrages', component: ChefMetrages }, // TODO: creare componente specifico
   { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
   { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers }, // TODO: creare componente specifico
+
+  // Ouvrier routes
+  { path: '/ouvrier', name: 'OuvrierDashboard', component: OuvrierDashboard },
+  { path: '/ouvrier/heures', name: 'OuvrierHeures', component: OuvrierHeures },
+  { path: '/ouvrier/historique', name: 'OuvrierHistorique', component: OuvrierHeures }, // Stessa pagina per ora
+  { path: '/ouvrier/absences', name: 'OuvrierAbsences', component: OuvrierAbsences },
 ];
 
 const router = createRouter({
