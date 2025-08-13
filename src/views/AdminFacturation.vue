@@ -85,11 +85,17 @@
                   </span>
                 </td>
                 <td>
+                  <button @click="modifierFacture(facture)" class="btn btn-sm btn-primary me-2">
+                    ✏️ Modifier
+                  </button>
                   <button @click="changerStatutFacture(facture)" class="btn btn-sm btn-warning me-2">
                     📝 Changer Statut
                   </button>
-                  <button @click="genererPDF(facture)" class="btn btn-sm btn-info">
+                  <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-2">
                     📄 PDF
+                  </button>
+                  <button @click="supprimerFacture(facture)" class="btn btn-sm btn-danger" title="Supprimer (test)">
+                    🗑
                   </button>
                 </td>
               </tr>
@@ -177,6 +183,37 @@
       </div>
     </div>
 
+    <!-- Modal Modifier Facture -->
+    <div v-if="showModifierFacture" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>Modifier Facture {{ factureEnCours.numero }}</h5>
+            <button @click="showModifierFacture = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label>Date Facture:</label>
+              <input v-model="nouvelleDate" type="date" class="form-control">
+              <small class="text-muted">Modifiez la date pour l'aligner au période de référence</small>
+            </div>
+            <div class="mb-3">
+              <label>Date Échéance:</label>
+              <input v-model="nouvelleDateEcheance" type="date" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label>Notes:</label>
+              <textarea v-model="nouvellesNotes" class="form-control" rows="2"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="confirmerModificationFacture" class="btn btn-primary">Sauvegarder</button>
+            <button @click="showModifierFacture = false" class="btn btn-secondary">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Changer Statut -->
     <div v-if="showChangeStatut" class="modal d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog">
@@ -212,7 +249,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, doc, query, where } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '@/firebase';
 import RetourButton from '@/components/RetourButton.vue';
 import jsPDF from 'jspdf';
@@ -226,9 +263,13 @@ const devis = ref([]);
 const showDetailMetrage = ref(false);
 const detailMetrage = ref({});
 const showChangeStatut = ref(false);
+const showModifierFacture = ref(false);
 const factureEnCours = ref({});
 const nouveauStatut = ref('');
 const notesStatut = ref('');
+const nouvelleDate = ref('');
+const nouvelleDateEcheance = ref('');
+const nouvellesNotes = ref('');
 
 // Métrages complétés mais non encore facturés
 const metragesEnAttente = computed(() => {
@@ -380,6 +421,56 @@ const confirmerChangeStatut = async () => {
     showChangeStatut.value = false;
   } catch (error) {
     console.error('Erreur mise à jour statut:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const modifierFacture = (facture) => {
+  factureEnCours.value = facture;
+  nouvelleDate.value = facture.dateFacture;
+  nouvelleDateEcheance.value = facture.dateEcheance || '';
+  nouvellesNotes.value = facture.notes || '';
+  showModifierFacture.value = true;
+};
+
+const confirmerModificationFacture = async () => {
+  try {
+    await updateDoc(doc(db, 'factures', factureEnCours.value.id), {
+      dateFacture: nouvelleDate.value,
+      dateEcheance: nouvelleDateEcheance.value,
+      notes: nouvellesNotes.value,
+      updatedAt: new Date()
+    });
+    
+    alert('Facture modifiée avec succès');
+    loadData();
+    showModifierFacture.value = false;
+  } catch (error) {
+    console.error('Erreur modification facture:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const supprimerFacture = async (facture) => {
+  if (!confirm(`Supprimer la facture ${facture.numero} ?\n\nATTENTION: Le métrage associé sera remis en attente de facturation.`)) return;
+  
+  try {
+    // Supprime la facture
+    await deleteDoc(doc(db, 'factures', facture.id));
+    
+    // Remet le métrage en attente si il existe
+    if (facture.metrageId) {
+      await updateDoc(doc(db, 'metrages', facture.metrageId), {
+        facture: false,
+        factureNumero: null,
+        factureDate: null
+      });
+    }
+    
+    alert('Facture supprimée avec succès');
+    loadData();
+  } catch (error) {
+    console.error('Erreur suppression facture:', error);
     alert('Erreur: ' + error.message);
   }
 };

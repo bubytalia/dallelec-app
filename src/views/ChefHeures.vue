@@ -186,12 +186,16 @@ const fetchChantiers = async () => {
 
 const fetchHeuresPropres = async () => {
   const snapshot = await getDocs(collection(db, 'heures_chef_propres'));
-  heuresPropres.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  heuresPropres.value = snapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordinamento decrescente per data
 };
 
 const fetchHeuresInterim = async () => {
   const snapshot = await getDocs(collection(db, 'heures_chef_interim'));
-  heuresInterim.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  heuresInterim.value = snapshot.docs
+    .map(doc => ({ id: doc.id, ...doc.data() }))
+    .sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordinamento decrescente per data
 };
 
 const addHeurePropre = async () => {
