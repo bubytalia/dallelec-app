@@ -30,11 +30,34 @@
       </div>
     </div>
 
+    <!-- Période de référence -->
+    <div class="row mb-4" v-if="selectedChantierId">
+      <div class="col-md-8 mx-auto">
+        <div class="card">
+          <div class="card-header">
+            <h5>Période de référence</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label">Date début:</label>
+                <input type="date" v-model="periodeDebut" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Date fin:</label>
+                <input type="date" v-model="periodeFin" class="form-control">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Pulsanti di navigazione e salvataggio -->
     <div class="mb-3 d-flex justify-content-center" v-if="selectedChantierId">
       <button class="btn btn-success me-2" @click="sauvegarderMetrages">📥 Sauvegarder les métrages</button>
       <button class="btn btn-outline-primary me-2" @click="sauvegarderBrouillon">💾 Sauver comme brouillon</button>
-      <button class="btn btn-info me-2" @click="voirHistorique">📊 Voir historique</button>
+      <button class="btn btn-info me-2" @click="voirHistorique">📊 Voir historique métrées</button>
       <button class="btn btn-warning" @click="nouveauMetrage" v-if="metrageItems.length > 0">🆕 Nouveau métrage</button>
     </div>
     
@@ -127,6 +150,7 @@
         <thead>
           <tr>
             <th>Date</th>
+            <th>Période</th>
             <th>Zone</th>
             <th>Produits</th>
             <th>ML Total</th>
@@ -136,9 +160,15 @@
         <tbody>
           <tr v-for="historique in historiqueMetrages" :key="historique.id">
             <td>{{ formatDate(historique.createdAt) }}</td>
+            <td>
+              <small v-if="historique.periodeDebut || historique.periodeFin">
+                {{ historique.periodeDebut || '' }} - {{ historique.periodeFin || '' }}
+              </small>
+              <span v-else class="text-muted">-</span>
+            </td>
             <td>{{ historique.zones?.join(', ') || 'Toutes' }}</td>
             <td>{{ historique.totalProduits || 0 }}</td>
-            <td>{{ historique.totalML?.toFixed(2) || '0.00' }} ML</td>
+            <td>{{ calculateTotalMLWithSupplements(historique).toFixed(2) }} ML</td>
             <td>
               <button class="btn btn-sm btn-info me-2" @click="chargerMetrage(historique)" title="Charger ce métrage">📥</button>
               <button class="btn btn-sm btn-warning me-2" @click="dupliquerMetrage(historique)" title="Dupliquer ce métrage">📋</button>
@@ -174,6 +204,8 @@ const showHistorique = ref(false);
 const historiqueMetrages = ref([]);
 const currentMetrageId = ref(null);
 const currentMetrageInfo = ref('');
+const periodeDebut = ref('');
+const periodeFin = ref('');
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
@@ -244,9 +276,11 @@ const loadExistingMetrages = async () => {
       if (latestMetrage.items) {
         metrageItems.value = latestMetrage.items;
         currentMetrageId.value = latestDoc.id;
+        periodeDebut.value = latestMetrage.periodeDebut || '';
+        periodeFin.value = latestMetrage.periodeFin || '';
         const date = latestMetrage.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue';
         const status = latestMetrage.draft ? 'Brouillon' : 'Sauvegardé';
-        currentMetrageInfo.value = `${status} le ${date} - ${latestMetrage.totalProduits || 0} produits - ${latestMetrage.totalML?.toFixed(2) || '0.00'} ML`;
+        currentMetrageInfo.value = `${status} le ${date} - ${latestMetrage.totalProduits || 0} produits - ${calculateTotalMLWithSupplements(latestMetrage).toFixed(2)} ML`;
       }
     } else {
       // Aucun métrage existant
@@ -369,6 +403,8 @@ const sauvegarderMetrages = async () => {
       totalML: totalMLPose.value,
       zones: zones.value,
       totalProduits: metrageItems.value.length,
+      periodeDebut: periodeDebut.value,
+      periodeFin: periodeFin.value,
       draft: false,
       createdAt: new Date()
     };
@@ -390,6 +426,8 @@ const sauvegarderBrouillon = async () => {
       totalML: totalMLPose.value,
       zones: zones.value,
       totalProduits: metrageItems.value.length,
+      periodeDebut: periodeDebut.value,
+      periodeFin: periodeFin.value,
       draft: true,
       createdAt: new Date()
     };
@@ -422,9 +460,11 @@ const chargerMetrage = (historique) => {
   if (confirm('Charger ce métrage? Les données actuelles seront remplacées.')) {
     metrageItems.value = historique.items || [];
     currentMetrageId.value = historique.id;
+    periodeDebut.value = historique.periodeDebut || '';
+    periodeFin.value = historique.periodeFin || '';
     const date = historique.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue';
     const status = historique.draft ? 'Brouillon' : 'Sauvegardé';
-    currentMetrageInfo.value = `${status} le ${date} - ${historique.totalProduits || 0} produits - ${historique.totalML?.toFixed(2) || '0.00'} ML`;
+    currentMetrageInfo.value = `${status} le ${date} - ${historique.totalProduits || 0} produits - ${calculateTotalMLWithSupplements(historique).toFixed(2)} ML`;
     showHistorique.value = false;
   }
 };
@@ -434,6 +474,8 @@ const nouveauMetrage = () => {
     metrageItems.value = [];
     currentMetrageId.value = null;
     currentMetrageInfo.value = '';
+    periodeDebut.value = '';
+    periodeFin.value = '';
     editingItem.value = null;
   }
 };
@@ -463,9 +505,16 @@ const dupliquerMetrage = (historique) => {
   if (confirm('Dupliquer ce métrage comme nouveau?')) {
     metrageItems.value = JSON.parse(JSON.stringify(historique.items || []));
     currentMetrageId.value = null; // Nouveau métrage
-    currentMetrageInfo.value = `Dupliqué de: ${historique.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue'}`;
+    periodeDebut.value = historique.periodeDebut || '';
+    periodeFin.value = historique.periodeFin || '';
+    currentMetrageInfo.value = `Dupliqué de: ${historique.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue'} - ${calculateTotalMLWithSupplements(historique).toFixed(2)} ML`;
     showHistorique.value = false;
   }
+};
+
+const calculateTotalMLWithSupplements = (metrage) => {
+  if (!metrage.items) return 0;
+  return metrage.items.reduce((sum, item) => sum + (item.totalML || 0), 0);
 };
 
 const formatDate = (date) => {

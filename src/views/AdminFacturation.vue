@@ -500,8 +500,14 @@ const genererPDF = async (facture) => {
   docMetrees.setFont('Helvetica', 'normal');
   docMetrees.text(`Date: ${formatDate(facture.dateFacture)}`, 10, 50);
   
+  // Periodo di riferimento se disponibile
+  if (metrageDoc && (metrageDoc.periodeDebut || metrageDoc.periodeFin)) {
+    const periodeText = `Période: ${metrageDoc.periodeDebut || ''} - ${metrageDoc.periodeFin || ''}`;
+    docMetrees.text(periodeText, 10, 55);
+  }
+  
   // Dati completi del cliente anche nelle métrées (compatti)
-  let yClientMetrees = 57;
+  let yClientMetrees = metrageDoc && (metrageDoc.periodeDebut || metrageDoc.periodeFin) ? 62 : 57;
   if (clienteCompleto) {
     docMetrees.text(`Client: ${clienteCompleto.nom}`, 10, yClientMetrees);
     yClientMetrees += 4;
@@ -619,19 +625,50 @@ const genererPDF = async (facture) => {
       ]];
       const body = [];
       
-      // Uso 'details' invece di 'supplements' come nei nostri dati
+      // Raggruppiamo per prodotto/taglia come nel componente SupplementDetails
       if (Array.isArray(suppZone.details)) {
-        suppZone.details.forEach((s) => {
-          // Calcoliamo totalML come nel DevisPdf
-          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
+        const grouped = {};
+        suppZone.details.forEach((entry) => {
+          const key = `${entry.article}-${entry.nom}-${entry.taille}`;
+          if (!grouped[key]) {
+            grouped[key] = {
+              article: entry.article,
+              nom: entry.nom,
+              taille: entry.taille,
+              entries: []
+            };
+          }
+          grouped[key].entries.push(entry);
+        });
+        
+        // Per ogni gruppo di prodotto/taglia
+        Object.values(grouped).forEach((group) => {
+          // Aggiungiamo le righe del gruppo
+          group.entries.forEach((s) => {
+            const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
+            body.push([
+              s.article || '',
+              s.nom || '',
+              s.taille || '',
+              s.supplement || '',
+              s.qte != null ? String(s.qte) : '',
+              s.valeur != null ? s.valeur.toFixed(2) : '',
+              totalML.toFixed(2)
+            ]);
+          });
+          
+          // Aggiungiamo la riga totale per il gruppo
+          const groupTotal = group.entries.reduce((sum, e) => {
+            const totalML = e.totalML || (e.qte && e.valeur ? e.qte * e.valeur : 0);
+            return sum + totalML;
+          }, 0);
+          
           body.push([
-            s.article || '',
-            s.nom || '',
-            s.taille || '',
-            s.supplement || '',
-            s.qte != null ? String(s.qte) : '',
-            s.valeur != null ? s.valeur.toFixed(2) : '',
-            totalML.toFixed(2)
+            '',
+            '',
+            '',
+            { content: `Total Suppléments (${group.nom}):`, colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } },
+            { content: groupTotal.toFixed(2) + ' ML', colSpan: 1, styles: { fontStyle: 'bold' } }
           ]);
         });
       }
@@ -653,36 +690,23 @@ const genererPDF = async (facture) => {
         },
         bodyStyles: {
           textColor: [0, 0, 0],
-          fontSize: 10,
+          fontSize: 8,
           valign: 'middle'
         },
         columnStyles: {
-          0: { cellWidth: 20 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 15 },
-          3: { cellWidth: 35 },
-          4: { cellWidth: 10 },
-          5: { cellWidth: 15 },
-          6: { cellWidth: 15 }
+          0: { cellWidth: 20 },  // Code (uguale)
+          1: { cellWidth: 45 },  // Produit (più grande)
+          2: { cellWidth: 15 },  // Taille (uguale)
+          3: { cellWidth: 45 },  // Supplement (più grande)
+          4: { cellWidth: 12 },  // Qté (leggermente più grande)
+          5: { cellWidth: 18 },  // Valeur (più grande)
+          6: { cellWidth: 18 }   // Total ML (più grande)
         },
 
       });
       
-      // Totale per la zona supplementi (esattamente come DevisPdf)
-      let suppSubtotal = 0;
-      if (Array.isArray(suppZone.details)) {
-        suppSubtotal = suppZone.details.reduce((acc, s) => {
-          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
-          return acc + totalML;
-        }, 0);
-      }
-      
-      const finalY2 = docMetrees.lastAutoTable.finalY || (tableStartY + 10);
-      docMetrees.setFontSize(9);
-      docMetrees.setFont('Helvetica', 'bold');
-      docMetrees.text(`Total Suppléments (${suppZoneName}): ${suppSubtotal.toFixed(2)} ML`, 170, finalY2 + 4, { align: 'right' });
-      
-      tableStartY = finalY2 + 10;
+      // Aggiorniamo la posizione per la prossima zona
+      tableStartY = docMetrees.lastAutoTable.finalY + 10;
     });
   }
   
@@ -694,20 +718,31 @@ const genererPDF = async (facture) => {
   docFacture.setFontSize(9);
   docFacture.setFont('Helvetica', 'normal');
   docFacture.text(`Date: ${formatDate(facture.dateFacture)}`, 10, 50);
+  
+  let yFactureInfo = 55;
   if (facture.dateEcheance) {
-    docFacture.text(`Échéance: ${formatDate(facture.dateEcheance)}`, 10, 55);
+    docFacture.text(`Échéance: ${formatDate(facture.dateEcheance)}`, 10, yFactureInfo);
+    yFactureInfo += 5;
+  }
+  
+  // Periodo di riferimento se disponibile
+  if (metrageDoc && (metrageDoc.periodeDebut || metrageDoc.periodeFin)) {
+    const periodeText = `Période: ${metrageDoc.periodeDebut || ''} - ${metrageDoc.periodeFin || ''}`;
+    docFacture.text(periodeText, 10, yFactureInfo);
+    yFactureInfo += 5;
   }
   
   // Informations client (font più piccolo)
   docFacture.setFontSize(10);
   docFacture.setFont('Helvetica', 'bold');
-  docFacture.text('FACTURÉ À:', 10, 70);
+  const yFactureA = Math.max(yFactureInfo + 5, 70);
+  docFacture.text('FACTURÉ À:', 10, yFactureA);
   
   docFacture.setFontSize(8);
   docFacture.setFont('Helvetica', 'normal');
   
   // Dati completi del cliente (compatti)
-  let yClient = 77;
+  let yClient = yFactureA + 7;
   if (clienteCompleto) {
     docFacture.text(clienteCompleto.nom, 10, yClient);
     yClient += 4;

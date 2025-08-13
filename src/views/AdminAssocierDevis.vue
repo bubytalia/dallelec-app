@@ -120,7 +120,9 @@
        <div class="col-md-12">
          <div class="card">
            <div class="card-header">
-             <h5>Liste des devis disponibles</h5>
+             <h5>Liste des devis disponibles
+               <span v-if="selectedChantier" class="text-muted"> - Cantiere selezionato: {{ selectedChantier.numeroCantiere ? `N° ${selectedChantier.numeroCantiere} - ` : '' }}{{ selectedChantier.nom }}</span>
+             </h5>
            </div>
            <div class="card-body">
              <div class="table-responsive">
@@ -129,6 +131,7 @@
                    <tr>
                      <th>Numéro</th>
                      <th>Client</th>
+                     <th>Cantiere</th>
                      <th>Adresse</th>
                      <th>Technicien</th>
                      <th>Total</th>
@@ -141,6 +144,7 @@
                    <tr v-for="devis in devis" :key="devis.id">
                      <td>{{ devis.numero }}</td>
                      <td>{{ getClientName(devis.clientId) }}</td>
+                     <td>{{ devis.nom || 'N/A' }}</td>
                      <td>{{ devis.adresse }}</td>
                      <td>{{ devis.technicien }}</td>
                      <td>{{ devis.total }}€</td>
@@ -239,7 +243,7 @@ const getChantierAssocie = (devisId) => {
   const chantier = chantiers.value.find(c => c.devisId === devisId)
   if (!chantier) return null
   const numero = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : ''
-  return `${numero}${chantier.nom}`
+  return `${numero}${chantier.nom || 'Nom non défini'}`
 }
 
 const getChantierId = (devisId) => {
