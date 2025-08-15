@@ -31,6 +31,9 @@
       <div class="col-md-3 m-2">
         <router-link to="/chef/premi" class="btn btn-outline-info w-100">Primes</router-link>
       </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/chef/chantiers/metrages" class="btn btn-outline-secondary w-100">Métrages</router-link>
+      </div>
     </div>
   </div>
 </template>

@@ -4,43 +4,80 @@
     
     <h2 class="text-center mb-4">Gestion Facturation</h2>
 
-    <!-- Métrages en attente de facturation -->
+    <!-- Resoconti et Métrages en attente -->
     <div class="card mb-4">
-      <div class="card-header">
-        <h5>Métrages en attente de facturation</h5>
-        <small class="text-muted">Métrages complétés par les chefs, prêts pour facturation</small>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <h5>Resoconti et Métrages en attente</h5>
+          <small class="text-muted">Resoconti percentuels à approuver et métrages prêts pour facturation</small>
+        </div>
+        <button @click="pulirVecchiResoconti" class="btn btn-sm btn-warning">
+          🧹 Nettoyer anciens tests
+        </button>
       </div>
       <div class="card-body">
-        <div v-if="metragesEnAttente.length === 0" class="text-center text-muted py-4">
-          Aucun métrage en attente de facturation
+        <div v-if="resocontiEnAttente.length === 0 && metragesEnAttente.length === 0" class="text-center text-muted py-4">
+          Aucun resoconto ou métrage en attente
         </div>
-        <div v-else class="table-responsive">
+        <div v-else-if="resocontiEnAttente.length > 0 || metragesEnAttente.length > 0" class="table-responsive">
           <table class="table">
             <thead>
               <tr>
+                <th>Type</th>
                 <th>Chantier</th>
                 <th>Client</th>
-                <th>Date Métrage</th>
-                <th>ML Total</th>
-                <th>Montant Estimé</th>
-                <th>Chef</th>
+                <th>Date</th>
+                <th>Détails</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="metrage in metragesEnAttente" :key="metrage.id">
+              <!-- Resoconti percentuali -->
+              <tr v-for="resoconto in resocontiEnAttente" :key="'r-' + resoconto.id">
+                <td><span class="badge bg-info">📊 Percentuel</span></td>
+                <td>{{ getChantierNameWithNumber(resoconto.chantierId) }}</td>
+                <td>{{ getClientName(resoconto.chantierId) }}</td>
+                <td>{{ formatDate(resoconto.createdAt) }}</td>
+                <td>{{ resoconto.periodeMonth }} - {{ Object.keys(resoconto.avancementi || {}).join(', ') }}</td>
+                <td>
+                  <button @click="voirDetailResoconto(resoconto)" class="btn btn-sm btn-info me-1">
+                    👁
+                  </button>
+                  <button 
+                    v-if="resoconto.status === 'approved'"
+                    @click="generarFactureResoconto(resoconto)" 
+                    class="btn btn-sm btn-warning me-1"
+                  >
+                    💰 Genera Fattura
+                  </button>
+                  <button 
+                    v-else
+                    @click="approuverResoconto(resoconto)" 
+                    class="btn btn-sm btn-success me-1"
+                  >
+                    ✅
+                  </button>
+                  <button @click="eliminarResoconto(resoconto)" class="btn btn-sm btn-danger">
+                    🗑
+                  </button>
+                </td>
+              </tr>
+              <!-- Métrages -->
+              <tr v-for="metrage in metragesEnAttente" :key="'m-' + metrage.id">
+                <td><span class="badge bg-secondary">📏 Métrage</span></td>
                 <td>{{ getChantierNameWithNumber(metrage.chantierId) }}</td>
                 <td>{{ getClientName(metrage.chantierId) }}</td>
                 <td>{{ formatDate(metrage.createdAt) }}</td>
-                <td>{{ metrage.totalML?.toFixed(2) || '0.00' }} ML</td>
-                <td>{{ formatCurrency(calculateMontantEstime(metrage)) }}</td>
-                <td>{{ metrage.chefId || 'N/A' }}</td>
+                <td>{{ metrage.totalML?.toFixed(2) || '0.00' }} ML - {{ formatCurrency(calculateMontantEstime(metrage)) }}</td>
                 <td>
-                  <button @click="voirDetailMetrage(metrage)" class="btn btn-sm btn-info me-2">
-                    👁 Détail
+                  <button @click="voirDetailMetrage(metrage)" class="btn btn-sm btn-info me-1">
+                    👁
                   </button>
-                  <button @click="autoriserFacturation(metrage)" class="btn btn-sm btn-success">
-                    ✅ Autoriser Facturation
+                  <button @click="autoriserFacturation(metrage)" class="btn btn-sm btn-success me-1">
+                    ✅
+                  </button>
+                  <button @click="eliminarMetrage(metrage)" class="btn btn-sm btn-danger">
+                    🗑
                   </button>
                 </td>
               </tr>
@@ -140,6 +177,46 @@
             <h6>En Retard</h6>
             <h4>{{ formatCurrency(facturesEnRetard) }}</h4>
             <small>Factures en retard</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Détail Resoconto -->
+    <div v-if="showDetailResoconto" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>Détail Resoconto - {{ getChantierName(detailResoconto.chantierId) }}</h5>
+            <button @click="showDetailResoconto = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Informations Générales</h6>
+                <p><strong>Chantier:</strong> {{ getChantierName(detailResoconto.chantierId) }}</p>
+                <p><strong>Période:</strong> {{ detailResoconto.periodeMonth }}</p>
+                <p><strong>Description:</strong> {{ detailResoconto.descrizione || '-' }}</p>
+                <p><strong>Date soumission:</strong> {{ formatDate(detailResoconto.createdAt) }}</p>
+              </div>
+              <div class="col-md-6">
+                <h6>Avancement par zone</h6>
+                <div v-for="(percentage, zone) in detailResoconto.avancementi" :key="zone">
+                  <p><strong>{{ zone }}:</strong> +{{ percentage }}%</p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button @click="approuverResoconto(detailResoconto)" class="btn btn-success me-2">
+                ✅ Approuver
+              </button>
+              <button @click="refuserResoconto(detailResoconto)" class="btn btn-danger me-2">
+                ❌ Refuser
+              </button>
+              <button @click="showDetailResoconto = false" class="btn btn-secondary">
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -256,12 +333,15 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const metrages = ref([]);
+const resocontiPercentuali = ref([]);
 const factures = ref([]);
 const chantiers = ref([]);
 const devis = ref([]);
 
 const showDetailMetrage = ref(false);
 const detailMetrage = ref({});
+const showDetailResoconto = ref(false);
+const detailResoconto = ref({});
 const showChangeStatut = ref(false);
 const showModifierFacture = ref(false);
 const factureEnCours = ref({});
@@ -270,6 +350,19 @@ const notesStatut = ref('');
 const nouvelleDate = ref('');
 const nouvelleDateEcheance = ref('');
 const nouvellesNotes = ref('');
+
+// Resoconti percentuali en attente d'approbation
+const resocontiEnAttente = computed(() => {
+  return resocontiPercentuali.value.filter(r => 
+    !r.draft && // Resoconto sauvegardé (non brouillon)
+    ((r.status === 'en_attente' || !r.status) || // En attente o senza status
+     (r.status === 'approved' && !hasFacture(r))) // Approvati senza fattura
+  );
+});
+
+const hasFacture = (resoconto) => {
+  return factures.value.some(f => f.resocontoId === resoconto.id);
+};
 
 // Métrages complétés mais non encore facturés
 const metragesEnAttente = computed(() => {
@@ -320,6 +413,12 @@ const loadData = async () => {
     // Métrages
     const metragesSnap = await getDocs(collection(db, 'metrages'));
     metrages.value = metragesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Resoconti percentuali
+    const resocontiSnap = await getDocs(collection(db, 'resoconti_percentuali'));
+    resocontiPercentuali.value = resocontiSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log('Resoconti caricati:', resocontiPercentuali.value);
+    console.log('Resoconti en attente:', resocontiPercentuali.value.filter(r => !r.draft && r.status === 'en_attente'));
 
     // Factures
     const facturesSnap = await getDocs(collection(db, 'factures'));
@@ -399,6 +498,165 @@ const autoriserFacturation = async (metrage) => {
 const voirDetailMetrage = (metrage) => {
   detailMetrage.value = metrage;
   showDetailMetrage.value = true;
+};
+
+const voirDetailResoconto = (resoconto) => {
+  detailResoconto.value = resoconto;
+  showDetailResoconto.value = true;
+};
+
+const approuverResoconto = async (resoconto) => {
+  if (!confirm('Approuver ce resoconto percentuel et générer la facture ?')) return;
+  
+  try {
+    // Approva il resoconto
+    await updateDoc(doc(db, 'resoconti_percentuali', resoconto.id), {
+      status: 'approved',
+      approvedAt: new Date(),
+      approvedBy: 'admin'
+    });
+    
+    // Genera la fattura
+    const chantier = chantiers.value.find(c => c.id === resoconto.chantierId);
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+    
+    // Calcola importo basato sulle percentuali
+    const totalPercentuali = Object.values(resoconto.avancementi || {}).reduce((sum, pct) => sum + pct, 0);
+    const montantHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
+    const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
+    
+    const factureData = {
+      numero: numeroFacture,
+      chantierId: resoconto.chantierId,
+      resocontoId: resoconto.id,
+      dateFacture: new Date().toISOString().split('T')[0],
+      montantHT: montantHT,
+      tauxTVA: 20,
+      montantTTC: montantHT * 1.2,
+      statut: 'emise',
+      clientNom: chantierDevis?.nom || 'Client',
+      dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      notes: `Facture générée depuis resoconto percentuel ${resoconto.periodeMonth}`,
+      createdAt: new Date()
+    };
+    
+    await addDoc(collection(db, 'factures'), factureData);
+    
+    alert(`Resoconto approuvé et facture ${numeroFacture} créée!`);
+    loadData();
+  } catch (error) {
+    console.error('Erreur approbation resoconto:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const refuserResoconto = async (resoconto) => {
+  const motif = prompt('Motif du refus (optionnel):');
+  if (motif === null) return; // Annulé
+  
+  try {
+    await updateDoc(doc(db, 'resoconti_percentuali', resoconto.id), {
+      status: 'rejected',
+      rejectedAt: new Date(),
+      rejectedBy: 'admin', // TODO: utiliser l'utilisateur connecté
+      rejectionReason: motif
+    });
+    
+    alert('Resoconto refusé.');
+    loadData();
+  } catch (error) {
+    console.error('Erreur refus resoconto:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const eliminarResoconto = async (resoconto) => {
+  if (!confirm('Eliminer ce resoconto? Il sera marqué comme refusé et le chef pourra en créer un nouveau.')) return;
+  
+  try {
+    await updateDoc(doc(db, 'resoconti_percentuali', resoconto.id), {
+      status: 'rejected',
+      rejectedAt: new Date(),
+      rejectedBy: 'admin',
+      rejectionReason: 'Eliminato dall\'admin'
+    });
+    
+    alert('Resoconto éliminé (marqué comme refusé).');
+    loadData();
+  } catch (error) {
+    console.error('Erreur élimination:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const generarFactureResoconto = async (resoconto) => {
+  if (!confirm('Générer la facture pour ce resoconto approuvé ?')) return;
+  
+  try {
+    const chantier = chantiers.value.find(c => c.id === resoconto.chantierId);
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+    
+    const totalPercentuali = Object.values(resoconto.avancementi || {}).reduce((sum, pct) => sum + pct, 0);
+    const montantHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
+    const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
+    
+    const factureData = {
+      numero: numeroFacture,
+      chantierId: resoconto.chantierId,
+      resocontoId: resoconto.id,
+      dateFacture: new Date().toISOString().split('T')[0],
+      montantHT: montantHT,
+      tauxTVA: 20,
+      montantTTC: montantHT * 1.2,
+      statut: 'emise',
+      clientNom: chantierDevis?.nom || 'Client',
+      dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      notes: `Facture générée depuis resoconto percentuel ${resoconto.periodeMonth}`,
+      createdAt: new Date()
+    };
+    
+    await addDoc(collection(db, 'factures'), factureData);
+    alert(`Facture ${numeroFacture} créée avec succès!`);
+    loadData();
+  } catch (error) {
+    console.error('Erreur génération facture:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const eliminarMetrage = async (metrage) => {
+  if (!confirm('Eliminer ce métrage de test?')) return;
+  
+  try {
+    await deleteDoc(doc(db, 'metrages', metrage.id));
+    alert('Métrage éliminé.');
+    loadData();
+  } catch (error) {
+    console.error('Erreur élimination métrage:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const pulirVecchiResoconti = async () => {
+  if (!confirm('Supprimer tous les anciens resoconti de test? Cette action est irréversible.')) return;
+  
+  try {
+    // Trova resoconti orfani (senza cantiere valido)
+    const resocontiOrfani = resocontiPercentuali.value.filter(r => {
+      const chantier = chantiers.value.find(c => c.id === r.chantierId);
+      return !chantier; // Cantiere non esiste più
+    });
+    
+    for (const resoconto of resocontiOrfani) {
+      await deleteDoc(doc(db, 'resoconti_percentuali', resoconto.id));
+    }
+    
+    alert(`${resocontiOrfani.length} anciens resoconti supprimés.`);
+    loadData();
+  } catch (error) {
+    console.error('Erreur nettoyage:', error);
+    alert('Erreur: ' + error.message);
+  }
 };
 
 const changerStatutFacture = (facture) => {
@@ -529,6 +787,7 @@ const genererPDF = async (facture) => {
   const chantier = chantiers.value.find(c => c.id === facture.chantierId);
   const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
   const metrageDoc = metrages.value.find(m => m.id === facture.metrageId);
+  const resocontoDoc = resocontiPercentuali.value.find(r => r.id === facture.resocontoId);
   
   // Carica i dati completi del cliente dall'anagrafica
   let clienteCompleto = null;
@@ -582,9 +841,10 @@ const genererPDF = async (facture) => {
     doc.text(title, 10, 40);
   };
   
-  // 1. GENERA MÉTRÉES DÉTAILLÉES
+  // 1. GENERA DOCUMENTO PRINCIPALE (Métrées ou Resoconto)
   const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
-  drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
+  const titleDoc = resocontoDoc ? 'RESOCONTO PERCENTUALE' : 'MÉTRÉES DÉTAILLÉES';
+  drawHeader(docMetrees, `${titleDoc} - ${facture.numero}`);
   
   // Informazioni generali métrées (font più piccolo)
   docMetrees.setFontSize(9);
@@ -620,8 +880,96 @@ const genererPDF = async (facture) => {
   
   let tableStartY = Math.max(yClientMetrees + 10, 80);
   
+  // Tabella resoconto percentuale
+  if (resocontoDoc) {
+    // Riferimento devis
+    docMetrees.setFontSize(10);
+    docMetrees.setFont('helvetica', 'bold');
+    docMetrees.text(`Référence Devis: ${chantierDevis?.numero || 'N/A'}`, 10, tableStartY);
+    docMetrees.setFont('helvetica', 'normal');
+    docMetrees.text('Objet: Pose de chemin de câbles', 10, tableStartY + 5);
+    
+    docMetrees.setFontSize(12);
+    docMetrees.setFont('helvetica', 'bold');
+    docMetrees.text('DÉTAIL PAR ZONE', 10, tableStartY + 15);
+    
+    // Spiegazione calcolo
+    docMetrees.setFontSize(8);
+    docMetrees.setFont('helvetica', 'italic');
+    docMetrees.text('Calcul: Pourcentage Réalisé - Pourcentage Déjà Facturé = Pourcentage à Facturer ce mois', 10, tableStartY + 22);
+    
+    const head = [['Zone', 'Montant Devis (CHF)', '% Réalisé', '% Déjà Facturé', '% à Facturer', 'Montant (CHF)']];
+    const body = [];
+    
+    tableStartY += 30;
+    
+    // Calcola percentuali già fatturate per zona
+    const percentualiGiaFatturate = {};
+    
+    // Trova tutte le fatture precedenti per questo cantiere da resoconti
+    const fatturePassate = factures.value.filter(f => 
+      f.chantierId === facture.chantierId && 
+      f.resocontoId && 
+      f.id !== facture.id
+    );
+    
+    // Per ogni fattura passata, somma le percentuali
+    for (const fatturaPassata of fatturePassate) {
+      const resocontoPassato = resocontiPercentuali.value.find(r => r.id === fatturaPassata.resocontoId);
+      if (resocontoPassato?.avancementi) {
+        Object.entries(resocontoPassato.avancementi).forEach(([zona, pct]) => {
+          percentualiGiaFatturate[zona] = (percentualiGiaFatturate[zona] || 0) + pct;
+        });
+      }
+    }
+    
+    // Calcola importo devis per zona basandosi sui prodotti reali
+    const importoPerZona = {};
+    if (chantierDevis?.produits) {
+      chantierDevis.produits.forEach(prodotto => {
+        const zona = prodotto.zone;
+        const importoProdotto = (prodotto.totalML || prodotto.ml || 0) * (prodotto.prix || 0);
+        importoPerZona[zona] = (importoPerZona[zona] || 0) + importoProdotto;
+      });
+    }
+    
+    // Genera righe per ogni zona nel resoconto corrente
+    Object.entries(resocontoDoc.avancementi || {}).forEach(([zona, percentualeCorrente]) => {
+      const importoDevis = importoPerZona[zona] || 0;
+      const percentualeGiaFatt = percentualiGiaFatturate[zona] || 0;
+      const percentualeDaFatturare = percentualeCorrente; // Questo mese
+      const importoFatturato = importoDevis * (percentualeDaFatturare / 100);
+      const percentualeTotaleRealizzata = percentualeGiaFatt + percentualeCorrente;
+      
+      body.push([
+        zona,
+        importoDevis.toFixed(2),
+        percentualeTotaleRealizzata.toFixed(1) + '%',
+        percentualeGiaFatt.toFixed(1) + '%',
+        percentualeDaFatturare.toFixed(1) + '%',
+        importoFatturato.toFixed(2)
+      ]);
+    });
+    
+    autoTable(docMetrees, {
+      head,
+      body,
+      startY: tableStartY + 4,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [230, 230, 230],
+        textColor: 20,
+        fontSize: 9
+      },
+      bodyStyles: {
+        fontSize: 9
+      }
+    });
+    
+    tableStartY = docMetrees.lastAutoTable.finalY + 10;
+  }
   // Tabella métrées détaillées
-  if (metrageDoc && metrageDoc.items) {
+  else if (metrageDoc && metrageDoc.items) {
     const grouped = {};
     metrageDoc.items.forEach(item => {
       if (!grouped[item.zone]) grouped[item.zone] = [];
@@ -858,7 +1206,84 @@ const genererPDF = async (facture) => {
   let factureTableY = Math.max(yClient + 10, 100);
   let totalFactureHT = 0;
   
-  if (metrageDoc && metrageDoc.items) {
+  if (resocontoDoc) {
+    // Référence et objet (con spaziatura corretta)
+    docFacture.setFontSize(9);
+    docFacture.setFont('helvetica', 'bold');
+    docFacture.text(`Référence Devis: ${chantierDevis?.numero || 'N/A'}`, 10, factureTableY);
+    docFacture.setFont('helvetica', 'normal');
+    docFacture.text('Objet: Pose de chemin de câbles', 10, factureTableY + 5);
+    
+    factureTableY += 15; // Sposta la tabella più in basso
+    
+    // Tabella facture per resoconto percentuale
+    const head = [['Zone', 'Montant Devis', '% Réalisé', '% Déjà Facturé', '% Facturé', 'Montant HT']];
+    const body = [];
+    
+    // Calcola percentuali già fatturate per zona
+    const percentualiGiaFatturate = {};
+    const fatturePassate = factures.value.filter(f => 
+      f.chantierId === facture.chantierId && 
+      f.resocontoId && 
+      f.id !== facture.id
+    );
+    
+    for (const fatturaPassata of fatturePassate) {
+      const resocontoPassato = resocontiPercentuali.value.find(r => r.id === fatturaPassata.resocontoId);
+      if (resocontoPassato?.avancementi) {
+        Object.entries(resocontoPassato.avancementi).forEach(([zona, pct]) => {
+          percentualiGiaFatturate[zona] = (percentualiGiaFatturate[zona] || 0) + pct;
+        });
+      }
+    }
+    
+    // Calcola importo devis per zona basandosi sui prodotti reali
+    const importoPerZona = {};
+    if (chantierDevis?.produits) {
+      chantierDevis.produits.forEach(prodotto => {
+        const zona = prodotto.zone;
+        const importoProdotto = (prodotto.totalML || prodotto.ml || 0) * (prodotto.prix || 0);
+        importoPerZona[zona] = (importoPerZona[zona] || 0) + importoProdotto;
+      });
+    }
+    
+    // Genera righe per ogni zona
+    Object.entries(resocontoDoc.avancementi || {}).forEach(([zona, percentualeCorrente]) => {
+      const importoDevis = importoPerZona[zona] || 0;
+      const percentualeGiaFatt = percentualiGiaFatturate[zona] || 0;
+      const percentualeDaFatturare = percentualeCorrente;
+      const importoFatturato = importoDevis * (percentualeDaFatturare / 100);
+      const percentualeTotaleRealizzata = percentualeGiaFatt + percentualeCorrente;
+      totalFactureHT += importoFatturato;
+      
+      body.push([
+        zona,
+        importoDevis.toFixed(2) + ' CHF',
+        percentualeTotaleRealizzata.toFixed(1) + '%',
+        percentualeGiaFatt.toFixed(1) + '%',
+        percentualeDaFatturare.toFixed(1) + '%',
+        importoFatturato.toFixed(2) + ' CHF'
+      ]);
+    });
+    
+    autoTable(docFacture, {
+      head,
+      body,
+      startY: factureTableY,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [230, 230, 230],
+        textColor: 20,
+        fontSize: 9
+      },
+      bodyStyles: {
+        fontSize: 9
+      }
+    });
+    
+    factureTableY = docFacture.lastAutoTable.finalY + 10;
+  }
+  else if (metrageDoc && metrageDoc.items) {
     const grouped = {};
     metrageDoc.items.forEach(item => {
       if (!grouped[item.zone]) grouped[item.zone] = [];
@@ -976,10 +1401,13 @@ const genererPDF = async (facture) => {
   docFacture.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
   
   // Salva i due documenti
-  docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
+  const docType = resocontoDoc ? 'Resoconto_Percentuale' : 'Metrees_Detaillees';
+  const alertType = resocontoDoc ? 'Resoconto percentuale' : 'Métrées détaillées';
+  
+  docMetrees.save(`${docType}_${facture.numero}.pdf`);
   docFacture.save(`Facture_${facture.numero}.pdf`);
   
-  alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
+  alert(`Deux documents générés:\n1. ${alertType} (pour technicien)\n2. Facture (pour comptabilité)`);
 };
 
 onMounted(() => {

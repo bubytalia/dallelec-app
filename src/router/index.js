@@ -19,6 +19,8 @@ import ChefChantiers from '@/views/ChefChantiers.vue';
 import ChefAbsences from '@/views/ChefAbsences.vue';
 import ChefBilan from '@/views/ChefBilan.vue';
 import ChefMetrages from '@/views/ChefMetrages.vue';
+import ChefResocontoPercentuale from '@/views/ChefResocontoPercentuale.vue';
+import ChefSelectionCantiere from '@/views/ChefSelectionCantiere.vue';
 import ChefPremi from '@/views/ChefPremi.vue';
 
 // Ouvrier pages
@@ -90,7 +92,9 @@ const routes = [
   { path: '/chef/chantiers', name: 'ChefChantiers', component: ChefChantiers },
   { path: '/chef/absences', name: 'ChefAbsences', component: ChefAbsences },
   { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan }, // TODO: creare componente specifico
-  { path: '/chef/chantiers/metrages', name: 'ChefMetrages', component: ChefMetrages }, // TODO: creare componente specifico
+  { path: '/chef/chantiers/metrages', name: 'ChefSelectionCantiere', component: ChefSelectionCantiere },
+  { path: '/chef/chantiers/metrages-detail', name: 'ChefMetrages', component: ChefMetrages },
+  { path: '/chef/chantiers/resoconto-percentuale', name: 'ChefResocontoPercentuale', component: ChefResocontoPercentuale },
   { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
   { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers }, // TODO: creare componente specifico
 

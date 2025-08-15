@@ -416,7 +416,10 @@ const devisParZone = computed(() => {
     if (!grouped[item.zone]) grouped[item.zone] = [];
     grouped[item.zone].push(item);
   });
-  return Object.entries(grouped).map(([nom, produits]) => ({ nom, produits }));
+  return Object.entries(grouped).map(([nom, produits]) => ({ 
+    nom, 
+    produits: produits.sort((a, b) => a.article.localeCompare(b.article)) 
+  }));
 });
 
 const supplementParZone = computed(() => {

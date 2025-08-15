@@ -61,8 +61,15 @@
       <button class="btn btn-warning" @click="nouveauMetrage" v-if="metrageItems.length > 0">🆕 Nouveau métrage</button>
     </div>
     
+    <!-- Avviso modalità conversione -->
+    <div v-if="isConversionMode" class="alert alert-success text-center mb-4">
+      <strong>🔄 Conversione da resoconto percentuale:</strong> 
+      Zona "{{ zoneInConversione }}" completata al 100%. 
+      Inserire ora le quantità definitive per questa zona.
+    </div>
+    
     <!-- Info métrage en cours -->
-    <div v-if="selectedChantierId && currentMetrageInfo" class="alert alert-warning text-center mb-4">
+    <div v-if="selectedChantierId && currentMetrageInfo && !isConversionMode" class="alert alert-warning text-center mb-4">
       <strong>Métrage en cours:</strong> {{ currentMetrageInfo }}
     </div>
 
@@ -183,7 +190,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { db } from '@/firebase';
 import { doc, getDoc, collection, getDocs, addDoc, query, where, deleteDoc } from 'firebase/firestore';
 import RetourButton from '@/components/RetourButton.vue';
@@ -191,6 +198,7 @@ import MetrageForm from '@/components/MetrageForm.vue';
 import MetrageSupplementDetails from '@/components/MetrageSupplementDetails.vue';
 
 const router = useRouter();
+const route = useRoute();
 const chantiers = ref([]);
 const selectedChantierId = ref('');
 const devisData = ref(null);
@@ -206,6 +214,8 @@ const currentMetrageId = ref(null);
 const currentMetrageInfo = ref('');
 const periodeDebut = ref('');
 const periodeFin = ref('');
+const isConversionMode = ref(false);
+const zoneInConversione = ref('');
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
@@ -406,11 +416,19 @@ const sauvegarderMetrages = async () => {
       periodeDebut: periodeDebut.value,
       periodeFin: periodeFin.value,
       draft: false,
-      createdAt: new Date()
+      createdAt: new Date(),
+      conversioneCompletata: isConversionMode.value,
+      zonaConvertita: isConversionMode.value ? zoneInConversione.value : null
     };
     
     await addDoc(collection(db, 'metrages'), metrageData);
-    alert('Métrages sauvegardés avec succès.');
+    
+    if (isConversionMode.value) {
+      alert(`Conversione completata! La zona "${zoneInConversione.value}" è ora definitiva con quantità precise.`);
+      router.push(`/chef/chantiers/resoconto-percentuale?chantier=${selectedChantierId.value}`);
+    } else {
+      alert('Métrages sauvegardés avec succès.');
+    }
     
   } catch (error) {
     console.error('Erreur lors de la sauvegarde:', error);
@@ -523,6 +541,21 @@ const formatDate = (date) => {
 
 onMounted(async () => {
   await fetchChantiers();
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const chantierId = urlParams.get('chantier');
+  
+  // Controlla se siamo in modalità conversione da resoconto percentuale
+  if (urlParams.get('conversion') === 'true') {
+    isConversionMode.value = true;
+    zoneInConversione.value = urlParams.get('zona') || '';
+  }
+  
+  // Preseleziona cantiere da URL
+  if (chantierId) {
+    selectedChantierId.value = chantierId;
+    await loadChantierData();
+  }
 });
 </script>
 

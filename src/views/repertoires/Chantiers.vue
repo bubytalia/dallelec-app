@@ -51,12 +51,19 @@
               </option>
             </select>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-3">
             <select v-model="newChantier.devisId" class="form-select">
               <option value="">Sélectionner un devis (optionnel)</option>
               <option v-for="devis in devis" :key="devis.id" :value="devis.id">
-                {{ devis.numero }} - {{ devis.nomChantier }}
+                {{ devis.numero }} - {{ devis.nom || devis.nomChantier }}
               </option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select v-model="newChantier.modalitaResoconto" class="form-select" required>
+              <option disabled value="">Modalité resoconto</option>
+              <option value="metrages">📏 Métrages détaillés</option>
+              <option value="percentuale">📊 Resoconto percentuel</option>
             </select>
           </div>
           <div class="col-12 text-end">
@@ -74,6 +81,7 @@
               <th>Client</th>
               <th>Technicien</th>
               <th>Devis associé</th>
+              <th>Modalité</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -98,8 +106,14 @@
                   <select v-model="editChantier.devisId" class="form-select">
                     <option value="">Aucun devis</option>
                     <option v-for="devis in devis" :key="devis.id" :value="devis.id">
-                      {{ devis.numero }} - {{ devis.nomChantier }}
+                      {{ devis.numero }} - {{ devis.nom || devis.nomChantier }}
                     </option>
+                  </select>
+                </td>
+                <td>
+                  <select v-model="editChantier.modalitaResoconto" class="form-select">
+                    <option value="metrages">📏 Métrages</option>
+                    <option value="percentuale">📊 Percentuel</option>
                   </select>
                 </td>
                 <td>
@@ -115,6 +129,11 @@
                 <td>{{ chantier.client }}</td>
                 <td>{{ chantier.technicien }}</td>
                 <td>{{ getDevisName(chantier.devisId) }}</td>
+                <td>
+                  <span class="badge" :class="chantier.modalitaResoconto === 'percentuale' ? 'bg-info' : 'bg-secondary'">
+                    {{ chantier.modalitaResoconto === 'percentuale' ? '📊 Percentuel' : '📏 Métrages' }}
+                  </span>
+                </td>
                 <td>
                   <button class="btn btn-warning btn-sm" @click="startEdit(chantier)">✎</button>
                   <button class="btn btn-danger btn-sm" @click="deleteChantier(chantier.id)">🗑</button>
@@ -307,7 +326,8 @@ export default {
       ville: '',
       client: '',
       technicien: '',
-      devisId: ''
+      devisId: '',
+      modalitaResoconto: 'metrages'
     });
 
     const newHeure = ref({

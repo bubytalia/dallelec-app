@@ -123,7 +123,7 @@ onMounted(async () => {
       article: data.article ?? data.code ?? '',
       description: data.description ?? data.nom ?? ''
     };
-  });
+  }).sort((a, b) => a.article.localeCompare(b.article));
 
   const supplementsSnap = await getDocs(collection(db, 'supplements'));
   supplements.value = supplementsSnap.docs.map(d => d.data() as Supplement);
