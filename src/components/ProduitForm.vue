@@ -15,6 +15,10 @@
         <label>Quantité ML</label>
         <input v-model.number="quantiteML" type="number" class="form-control" />
       </div>
+      <div class="col-md-2" v-if="modalitaPrezzi === 'prezziFissi'">
+        <label>Prix Unitaire (€)</label>
+        <input v-model.number="prezzoManuale" type="number" step="0.01" class="form-control" placeholder="0.00" />
+      </div>
       <div class="col-md-4">
         <label>Suppléments</label>
         <div v-for="(sup, i) in supplements" :key="i" class="d-flex align-items-center mb-1">
@@ -55,7 +59,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const { zones, devisId, editingItem, discountFamille } = defineProps<{
+const { zones, devisId, editingItem, discountFamille, modalitaPrezzi } = defineProps<{
   zones: string[];
   devisId: string;
   editingItem: any;
@@ -64,6 +68,10 @@ const { zones, devisId, editingItem, discountFamille } = defineProps<{
    * Questo valore verrà sottratto dal prezzo unitario del prodotto.
    */
   discountFamille: number;
+  /**
+   * Modalità prezzi: 'scontistica' o 'prezziFissi'
+   */
+  modalitaPrezzi: string;
 }>();
 
 const emit = defineEmits(['update-item']);
@@ -94,9 +102,14 @@ const quantiteML = ref(0);
 const selectedSupplements = ref<string[]>([]);
 const suppQuantities = ref<Record<string, number>>({});
 const localEditingItem = ref<any>(null);
+const prezzoManuale = ref(0);
 
 const formValide = computed(() => {
-  return selectedProduitId.value && selectedZone.value && quantiteML.value > 0;
+  const baseValid = selectedProduitId.value && selectedZone.value && quantiteML.value > 0;
+  if (modalitaPrezzi === 'prezziFissi') {
+    return baseValid && prezzoManuale.value > 0;
+  }
+  return baseValid;
 });
 
 // Caricamento prodotti e supplementi da Firestore con normalizzazione
@@ -131,6 +144,7 @@ watch(
     item.supplements?.forEach((s: any) => {
       suppQuantities.value[s.supplement] = s.qte;
     });
+    prezzoManuale.value = item.prix || 0;
   },
   { immediate: true }
 );
@@ -157,14 +171,16 @@ const ajouterLigne = () => {
 
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
-  // Calcola il prezzo da utilizzare per questa riga. Quando si crea una nuova riga
-  // utilizziamo il prezzo del prodotto con lo sconto famiglie; quando si modifica
-  // una riga esistente manteniamo il prezzo salvato nel documento per evitare
-  // che modifiche ai listini o agli sconti alterino i preventivi già creati.
-  const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
-  // Se stiamo modificando un elemento esistente (localEditingItem definito),
-  // conserviamo il prezzo già presente nell'elemento, altrimenti lo calcoliamo.
-  const prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+  // Calcola il prezzo da utilizzare per questa riga
+  let prixFinal;
+  if (modalitaPrezzi === 'prezziFissi') {
+    // Modalità prezzi fissi: usa il prezzo inserito manualmente
+    prixFinal = prezzoManuale.value;
+  } else {
+    // Modalità scontistica: applica sconto famiglie
+    const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+    prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+  }
   const total = totalML * prixFinal;
 
   const newItem = {
@@ -177,10 +193,14 @@ const ajouterLigne = () => {
     supplements: supplementDetails,
     totalSuppML,
     totalML,
-    // Memorizziamo il prezzo finale (già scontato) per coerenza con l'importo applicato.
-    // Quando si modifica un elemento esistente il prezzo rimane quello salvato.
     prix: prixFinal,
-    total
+    total,
+    // Dati congelati dal momento della creazione
+    prixOriginal: produit.prix,
+    descriptionOriginal: produit.description,
+    tailleOriginal: produit.taille,
+    uniteOriginal: produit.unite,
+    createdAt: new Date().toISOString()
   };
 
   emit('update-item', null, newItem);
@@ -211,25 +231,37 @@ const modifierLigne = () => {
 
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
-  const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
-  // Se stiamo modificando una riga esistente, manteniamo il prezzo salvato
-  // nell'item originale; altrimenti applichiamo lo sconto famiglie.
-  const prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+  
+  // Calcola il prezzo per la modifica
+  let prixFinal;
+  if (modalitaPrezzi === 'prezziFissi') {
+    // Modalità prezzi fissi: usa il prezzo inserito manualmente
+    prixFinal = prezzoManuale.value;
+  } else {
+    // Modalità scontistica: mantieni il prezzo esistente o applica sconto
+    const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+    prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+  }
   const total = totalML * prixFinal;
 
   const updatedItem = {
     zone: selectedZone.value,
     article: produit.article,
-    nom: produit.description,
-    taille: produit.taille,
-    unite: produit.unite,
+    nom: localEditingItem.value.nom || produit.description,
+    taille: localEditingItem.value.taille || produit.taille,
+    unite: localEditingItem.value.unite || produit.unite,
     ml: quantiteML.value,
     supplements: supplementDetails,
     totalSuppML,
     totalML,
-    // Manteniamo il prezzo applicato: se si modifica un item esistente resta lo stesso.
     prix: prixFinal,
-    total
+    total,
+    // Mantieni i dati originali congelati
+    prixOriginal: localEditingItem.value.prixOriginal || produit.prix,
+    descriptionOriginal: localEditingItem.value.descriptionOriginal || produit.description,
+    tailleOriginal: localEditingItem.value.tailleOriginal || produit.taille,
+    uniteOriginal: localEditingItem.value.uniteOriginal || produit.unite,
+    createdAt: localEditingItem.value.createdAt || new Date().toISOString()
   };
 
   emit('update-item', index, updatedItem);
@@ -244,6 +276,7 @@ const resetForm = () => {
   selectedSupplements.value = [];
   suppQuantities.value = {};
   localEditingItem.value = null;
+  prezzoManuale.value = 0;
 };
 </script>
 

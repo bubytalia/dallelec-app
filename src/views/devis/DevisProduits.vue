@@ -12,6 +12,19 @@
   <div v-if="nomChantier"><strong>Chantier:</strong> {{ nomChantier }}</div>
 </div>
 
+<!-- Indicazione modalità prezzi -->
+<div class="alert mb-4" :class="modalitaPrezzi === 'prezziFissi' ? 'alert-warning' : 'alert-success'">
+  <div class="text-center">
+    <strong>Modalità:</strong> 
+    <span v-if="modalitaPrezzi === 'prezziFissi'">
+      💰 <strong>Prezzi Fissi</strong> - Inserimento manuale dei prezzi
+    </span>
+    <span v-else>
+      📊 <strong>Scontistica Standard</strong> - Sconto famiglie: {{ remiseFamilles.toFixed(1) }}%
+    </span>
+  </div>
+</div>
+
 <!-- Pulsanti di navigazione e salvataggio -->
 <div class="mb-3 d-flex justify-content-center">
   <!-- Salvataggio definitivo -->
@@ -26,11 +39,15 @@
 
 
    
+    <!-- Controllo integrità dati -->
+    <DataIntegrityCheck :devisItems="devisItems" />
+    
     <ProduitForm
       :editingItem="editingItem"
       :devisId="devisId"
       :zones="zones"
       :discountFamille="remiseFamilles"
+      :modalitaPrezzi="modalitaPrezzi"
       @update-item="handleUpdateItem"
     />
 
@@ -97,6 +114,7 @@ import { db } from '@/firebase';
 import { doc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import ProduitForm from '@/components/ProduitForm.vue';
 import SupplementDetails from '@/components/SupplementDetails.vue';
+import DataIntegrityCheck from '@/components/DataIntegrityCheck.vue';
 import { useRoute } from 'vue-router';
 import RetourButton from '@/components/RetourButton.vue';
 
@@ -120,6 +138,9 @@ const remiseSupplementaire = ref(0);
 // Questa percentuale verrà applicata a ciascun prodotto inserito nel devis.
 const remiseFamilles = ref(0);
 
+// Modalità prezzi del devis
+const modalitaPrezzi = ref('scontistica');
+
 /**
  * Salva il devis su Firestore.
  * Se asDraft è true, imposta draft: true (bozza); altrimenti draft: false.
@@ -127,13 +148,28 @@ const remiseFamilles = ref(0);
  */
 const sauvegarderDevis = async (asDraft = false) => {
   try {
-    await updateDoc(doc(db, 'devis', devisId), {
+    const updateData = {
       produits: devisItems.value,
       total: devisTotal.value,
       discount: Number(remiseSupplementaire.value) || 0,
       draft: asDraft,
       updatedAt: new Date()
-    });
+    };
+    
+    // Se non è una bozza, congela i dati per l'integrità storica
+    if (!asDraft) {
+      updateData.dataCongelati = {
+        produits: devisItems.value.map(item => ({
+          ...item,
+          congelatoIl: new Date().toISOString()
+        })),
+        remiseFamilles: remiseFamilles.value,
+        modalitaPrezzi: modalitaPrezzi.value,
+        congelatoIl: new Date().toISOString()
+      };
+    }
+    
+    await updateDoc(doc(db, 'devis', devisId), updateData);
     
     localStorage.removeItem('devisItems');
     // quando viene salvato definitivamente eliminiamo anche i dati del form e delle remises
@@ -228,6 +264,7 @@ onMounted(async () => {
     nomClient.value = data.nom || '';
     nomChantier.value = data.adresse || '';
     zones.value = data.zones || [];
+    modalitaPrezzi.value = data.modalitaPrezzi || 'scontistica';
 
     // Carica gli items del devis (prodotti) dal documento se esistenti
     if (Array.isArray(data.produits) && data.produits.length > 0) {

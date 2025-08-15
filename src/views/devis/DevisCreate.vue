@@ -55,8 +55,25 @@
       </div>
     </div>
 
-    <!-- Remise par famille -->
+    <!-- Modalità Prezzi -->
     <div class="card p-4 mb-4">
+      <h5>Modalità Prezzi</h5>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="radio" name="modalitaPrezzi" id="scontistica" v-model="modalitaPrezzi" value="scontistica">
+        <label class="form-check-label" for="scontistica">
+          <strong>Scontistica Standard</strong> - Applica sconti famiglia/sottofamiglia
+        </label>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="radio" name="modalitaPrezzi" id="prezziFissi" v-model="modalitaPrezzi" value="prezziFissi">
+        <label class="form-check-label" for="prezziFissi">
+          <strong>Prezzi Fissi</strong> - Inserimento manuale dei prezzi per ogni prodotto
+        </label>
+      </div>
+    </div>
+
+    <!-- Remise par famille (solo se modalità scontistica) -->
+    <div class="card p-4 mb-4" v-if="modalitaPrezzi === 'scontistica'">
       <h5>Remise par famille</h5>
       <table class="table">
         <thead>
@@ -140,6 +157,7 @@ const techniciens = ref([]);
 const familles = ref([]);
 const sousfamilles = ref([]);
 const remiseSelection = ref({});
+const modalitaPrezzi = ref('scontistica');
 
 const addZone = () => {
   if (newZone.value.trim()) {
@@ -172,14 +190,19 @@ const remiseTotale = computed(() => {
 });
 
 const formReady = computed(() => {
-  return (
+  const baseReady = (
     form.value.nom &&
     form.value.adresse &&
     form.value.client &&
     form.value.technicien &&
-    zones.value.length > 0 &&
-    Object.keys(remiseSelection.value).length === familles.value.length
+    zones.value.length > 0
   );
+  
+  if (modalitaPrezzi.value === 'scontistica') {
+    return baseReady && Object.keys(remiseSelection.value).length === familles.value.length;
+  }
+  
+  return baseReady; // Per prezzi fissi non serve la scontistica
 });
 
 const continuerVersDevis = async () => {
@@ -193,7 +216,8 @@ const continuerVersDevis = async () => {
         clientId: form.value.client,
         technicien: form.value.technicien,
         zones: zones.value,
-        remises: remiseSelection.value,
+        modalitaPrezzi: modalitaPrezzi.value,
+        remises: modalitaPrezzi.value === 'scontistica' ? remiseSelection.value : {},
         updatedAt: new Date()
       });
       // Pulizia localStorage (solo i dati del form)
@@ -230,7 +254,8 @@ const continuerVersDevis = async () => {
       clientId: form.value.client,
       technicien: form.value.technicien,
       zones: zones.value,
-      remises: remiseSelection.value,
+      modalitaPrezzi: modalitaPrezzi.value,
+      remises: modalitaPrezzi.value === 'scontistica' ? remiseSelection.value : {},
       createdAt: new Date(),
       produits: [],
       total: 0,
@@ -317,6 +342,7 @@ onMounted(async () => {
         form.value.client = data.clientId || '';
         form.value.technicien = data.technicien || '';
         zones.value = Array.isArray(data.zones) ? [...data.zones] : [];
+        modalitaPrezzi.value = data.modalitaPrezzi || 'scontistica';
         remiseSelection.value = data.remises || {};
         // Salva anche nei localStorage per mantenere i dati se l'utente naviga via router (retour)
         try {

@@ -4,6 +4,12 @@
     <RetourButton to="/admin/repertoires" />
 
     <h2 class="text-center mb-4">Produits</h2>
+    
+    <!-- Avviso integrità dati -->
+    <div class="alert alert-info mb-4">
+      <strong>📊 Integrità dati:</strong> Le modifiche ai prezzi non influenzeranno i devis già salvati. 
+      I prezzi storici rimangono congelati per mantenere l'integrità commerciale.
+    </div>
     <div class="row mb-3">
       <div class="col">
         <input v-model="newProduit.article" placeholder="Article" class="form-control" />
@@ -106,7 +112,8 @@ export default {
 
     const fetchProduits = async () => {
       const querySnapshot = await getDocs(collection(db, 'produits'));
-      produits.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      produits.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => a.article.localeCompare(b.article));
     };
 
     const addProduit = async () => {
@@ -126,9 +133,11 @@ export default {
     };
 
     const updateProduit = async (id) => {
-      await updateDoc(doc(db, 'produits', id), editProduit.value);
-      cancelEdit();
-      fetchProduits();
+      if (confirm('Confermi la modifica? I devis già salvati manterranno i prezzi originali.')) {
+        await updateDoc(doc(db, 'produits', id), editProduit.value);
+        cancelEdit();
+        fetchProduits();
+      }
     };
 
     const deleteProduit = async (id) => {

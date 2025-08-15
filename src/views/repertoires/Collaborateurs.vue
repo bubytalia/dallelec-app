@@ -4,6 +4,12 @@
     <RetourButton to="/admin/repertoires" />
 
     <h2 class="text-center mb-4">Collaborateurs</h2>
+    
+    <!-- Avviso integrità dati -->
+    <div class="alert alert-info mb-4">
+      <strong>📊 Integrità dati:</strong> Le modifiche ai costi orari non influenzeranno i cantieri già in corso. 
+      I dati storici rimangono congelati per mantenere l'integrità dei calcoli.
+    </div>
 
     <form @submit.prevent="addCollaborateur" class="row g-3 mb-4">
       <div class="col-md-4">
@@ -125,10 +131,12 @@ export default {
     };
 
     const updateCollaborateur = async (id) => {
-      const collabRef = doc(db, 'collaborateurs', id);
-      await updateDoc(collabRef, editCollaborateur.value);
-      cancelEdit();
-      fetchCollaborateurs();
+      if (confirm('Confermi la modifica? I cantieri già in corso manterranno i costi orari originali.')) {
+        const collabRef = doc(db, 'collaborateurs', id);
+        await updateDoc(collabRef, editCollaborateur.value);
+        cancelEdit();
+        fetchCollaborateurs();
+      }
     };
 
     const deleteCollaborateur = async (id) => {
