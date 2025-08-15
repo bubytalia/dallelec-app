@@ -66,6 +66,14 @@
               <option value="percentuale">📊 Resoconto percentuel</option>
             </select>
           </div>
+          <div class="col-md-3">
+            <select v-model="newChantier.capocantiere" class="form-select">
+              <option value="">Sélectionner chef de chantier</option>
+              <option v-for="chef in chefDeChantiers" :key="chef.id" :value="chef.email">
+                {{ chef.nom }} {{ chef.prenom }}
+              </option>
+            </select>
+          </div>
           <div class="col-12 text-end">
             <button type="submit" class="btn btn-primary">Ajouter</button>
           </div>
@@ -82,6 +90,7 @@
               <th>Technicien</th>
               <th>Devis associé</th>
               <th>Modalité</th>
+              <th>Chef Responsable</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -117,6 +126,14 @@
                   </select>
                 </td>
                 <td>
+                  <select v-model="editChantier.capocantiere" class="form-select">
+                    <option value="">Aucun chef</option>
+                    <option v-for="chef in chefDeChantiers" :key="chef.id" :value="chef.email">
+                      {{ chef.nom }} {{ chef.prenom }}
+                    </option>
+                  </select>
+                </td>
+                <td>
                   <button class="btn btn-success btn-sm" @click="updateChantier(chantier.id)">✔</button>
                   <button class="btn btn-secondary btn-sm" @click="cancelEdit">✖</button>
                 </td>
@@ -134,6 +151,7 @@
                     {{ chantier.modalitaResoconto === 'percentuale' ? '📊 Percentuel' : '📏 Métrages' }}
                   </span>
                 </td>
+                <td>{{ getChefName(chantier.capocantiere) }}</td>
                 <td>
                   <button class="btn btn-warning btn-sm" @click="startEdit(chantier)">✎</button>
                   <button class="btn btn-danger btn-sm" @click="deleteChantier(chantier.id)">🗑</button>
@@ -311,6 +329,7 @@ export default {
     const techniciens = ref([]);
     const devis = ref([]);
     const collaborateurs = ref([]);
+    const chefDeChantiers = ref([]);
     const heures = ref([]);
     const oeuvres = ref([]);
     const produitsDevis = ref([]);
@@ -327,7 +346,8 @@ export default {
       client: '',
       technicien: '',
       devisId: '',
-      modalitaResoconto: 'metrages'
+      modalitaResoconto: 'metrages',
+      capocantiere: ''
     });
 
     const newHeure = ref({
@@ -369,6 +389,11 @@ export default {
     const fetchCollaborateurs = async () => {
       const snapshot = await getDocs(collection(db, 'collaborateurs'));
       collaborateurs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    };
+
+    const fetchChefDeChantiers = async () => {
+      const snapshot = await getDocs(collection(db, 'chefdechantiers'));
+      chefDeChantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
 
     const loadChantierData = async () => {
@@ -522,6 +547,12 @@ export default {
       return collab ? `${collab.nom} ${collab.prenom}` : '-';
     };
 
+    const getChefName = (email) => {
+      if (!email) return '-';
+      const chef = chefDeChantiers.value.find(c => c.email === email);
+      return chef ? `${chef.nom} ${chef.prenom}` : email;
+    };
+
     const getProduitName = (id) => {
       const produit = produitsDevis.value.find(p => p.id === id);
       return produit ? `${produit.article} - ${produit.description}` : '-';
@@ -569,6 +600,7 @@ export default {
       fetchTechniciens();
       fetchDevis();
       fetchCollaborateurs();
+      fetchChefDeChantiers();
     });
 
     return {
@@ -585,6 +617,7 @@ export default {
       techniciens,
       devis,
       collaborateurs,
+      chefDeChantiers,
       selectedChantierId,
       selectedChantier,
       devisAssocie,
@@ -606,7 +639,8 @@ export default {
       totalHeuresPropres,
       totalHeuresInterim,
       totalHeuresGeneral,
-      resumeOeuvres
+      resumeOeuvres,
+      getChefName
     };
   }
 };

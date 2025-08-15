@@ -52,7 +52,13 @@ const chantiers = ref([]);
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
-  chantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const allChantiers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  
+  // TODO: Sostituire con l'email del chef loggato
+  const chefEmail = 'chef@dallelec.com'; // Temporaneo
+  
+  // Filtra solo i cantieri assegnati a questo chef
+  chantiers.value = allChantiers.filter(c => c.capocantiere === chefEmail);
 };
 
 const accederCantiere = (chantier) => {
