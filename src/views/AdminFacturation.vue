@@ -11,9 +11,14 @@
           <h5>Resoconti et Métrages en attente</h5>
           <small class="text-muted">Resoconti percentuels à approuver et métrages prêts pour facturation</small>
         </div>
-        <button @click="pulirVecchiResoconti" class="btn btn-sm btn-warning">
-          🧹 Nettoyer anciens tests
-        </button>
+        <div>
+          <router-link to="/admin/facture-manuelle" class="btn btn-sm btn-success me-2">
+            📝 Facture Manuelle
+          </router-link>
+          <button @click="pulirVecchiResoconti" class="btn btn-sm btn-warning">
+            🧹 Nettoyer anciens tests
+          </button>
+        </div>
       </div>
       <div class="card-body">
         <div v-if="resocontiEnAttente.length === 0 && metragesEnAttente.length === 0" class="text-center text-muted py-4">
@@ -379,13 +384,9 @@ const metragesEnAttente = computed(() => {
 
 // Factures des 30 derniers jours
 const facturesRecentes = computed(() => {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
   return factures.value
-    .filter(f => new Date(f.dateFacture) >= thirtyDaysAgo)
     .sort((a, b) => new Date(b.dateFacture) - new Date(a.dateFacture))
-    .slice(0, 10);
+    .slice(0, 20); // Mostra tutte le fatture, ordinate per data
 });
 
 // Statistiques
@@ -475,7 +476,7 @@ const autoriserFacturation = async (metrage) => {
     const montantRegiesHT = (metrage.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
     const montantHT = montantTravauxHT + montantRegiesHT;
     
-    const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
+    const numeroFacture = generateNumeroFacture();
     
     // Crée la facture
     const factureData = {
@@ -801,6 +802,10 @@ const formatDate = (date) => {
   return date.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
 };
 
+const generateNumeroFacture = () => {
+  return `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(3, '0')}`;
+};
+
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
@@ -821,12 +826,153 @@ const formatPeriodeMetrage = (metrage) => {
   return '-';
 };
 
+
+
 const genererPDF = async (facture) => {
-  // Carica tutti i dati necessari
-  const chantier = chantiers.value.find(c => c.id === facture.chantierId);
-  const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
-  const metrageDoc = metrages.value.find(m => m.id === facture.metrageId);
-  const resocontoDoc = resocontiPercentuali.value.find(r => r.id === facture.resocontoId);
+  // Fatture manuali: PDF con layout professionale
+  if (facture.type === 'manuelle') {
+    try {
+      // Import logo
+      let logo;
+      try {
+        const logoModule = await import('@/assets/logo.jpg');
+        logo = logoModule.default;
+      } catch (e) {
+        console.warn('Logo non trovato');
+      }
+      
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      
+      // Logo Dallelec
+      if (logo) {
+        const logoW = 55;
+        const logoH = logoW / 5.32;
+        doc.addImage(logo, 'JPEG', 10, 10, logoW, logoH);
+      }
+      
+      // Dati aziendali
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      const companyInfo = [
+        'DALLELEC Sarl',
+        'Rue de Bourgogne 25', 
+        '1203 Genève',
+        'contact@dallelec.ch'
+      ];
+      let y = 12;
+      doc.setTextColor(80);
+      companyInfo.forEach((line) => {
+        doc.text(line, 200, y, { align: 'right' });
+        y += 4;
+      });
+      
+      // Titolo
+      doc.setFontSize(20);
+      doc.setFont('Helvetica', 'bold');
+      doc.setTextColor(40);
+      doc.text(`FACTURE N. ${facture.numero}`, 10, 40);
+      
+      // Date e informazioni
+      doc.setFontSize(9);
+      doc.setFont('Helvetica', 'normal');
+      doc.text(`Date: ${formatDate(facture.dateFacture)}`, 10, 50);
+      if (facture.dateEcheance) {
+        doc.text(`Échéance: ${formatDate(facture.dateEcheance)}`, 10, 55);
+      }
+      
+      // Client
+      doc.setFontSize(10);
+      doc.setFont('Helvetica', 'bold');
+      doc.text('FACTURÉ À:', 10, 70);
+      doc.setFontSize(8);
+      doc.setFont('Helvetica', 'normal');
+      doc.text(facture.clientNom, 10, 77);
+      
+      // Cantiere se presente
+      if (facture.chantierId) {
+        const chantier = chantiers.value.find(c => c.id === facture.chantierId);
+        if (chantier) {
+          const numeroChantier = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+          doc.text(`Chantier: ${numeroChantier}${chantier.nom}`, 10, 84);
+        }
+      }
+      
+      // Tabella lignes
+      const tableData = facture.lignes.map(ligne => [
+        ligne.description,
+        ligne.unite,
+        ligne.quantite.toString(),
+        `${ligne.prixUnitaire.toFixed(2)} CHF`,
+        `${(ligne.quantite * ligne.prixUnitaire).toFixed(2)} CHF`
+      ]);
+      
+      autoTable(doc, {
+        head: [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']],
+        body: tableData,
+        startY: 95,
+        theme: 'grid',
+        headStyles: { fillColor: [230, 230, 230] },
+        margin: { left: 10, right: 10 },
+        columnStyles: {
+          0: { cellWidth: 85 },  // Description
+          1: { cellWidth: 15 },  // Unité ridotta
+          2: { cellWidth: 25 },  // Quantité
+          3: { cellWidth: 30 },  // Prix unitaire
+          4: { cellWidth: 30 }   // Total HT
+        }
+      });
+      
+      // Totaux alignés avec la fin de la tabella
+      const finalY = doc.lastAutoTable.finalY + 10;
+      const totalHT = facture.montantHT;
+      const tva = totalHT * 0.077;
+      const ttc = totalHT + tva;
+      
+      doc.setFontSize(10);
+      doc.text(`Total HT:`, 140, finalY);
+      doc.text(`${totalHT.toFixed(2)} CHF`, 190, finalY, { align: 'right' });
+      
+      doc.text(`TVA (7.7%):`, 140, finalY + 7);
+      doc.text(`${tva.toFixed(2)} CHF`, 190, finalY + 7, { align: 'right' });
+      
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text(`TOTAL TTC:`, 140, finalY + 17);
+      doc.text(`${ttc.toFixed(2)} CHF`, 190, finalY + 17, { align: 'right' });
+      
+      // Notes se presenti
+      if (facture.notes) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(60);
+        doc.text('Notes:', 10, finalY + 35);
+        doc.text(facture.notes, 10, finalY + 42);
+      }
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
+      
+      // Numerazione pagina
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text('Page 1/1', 200, 290, { align: 'right' });
+      
+      doc.save(`Facture_${facture.numero}.pdf`);
+      return;
+    } catch (error) {
+      alert('Erreur PDF: ' + error.message);
+      return;
+    }
+  }
+  
+  // Fatture automatiche: codice complesso esistente
+  try {
+    const chantier = chantiers.value.find(c => c.id === facture.chantierId);
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+    const metrageDoc = metrages.value.find(m => m.id === facture.metrageId);
+    const resocontoDoc = resocontiPercentuali.value.find(r => r.id === facture.resocontoId);
   
   // Carica i dati completi del cliente dall'anagrafica
   let clienteCompleto = null;
@@ -897,12 +1043,19 @@ const genererPDF = async (facture) => {
     }
   };
   
-  // 1. GENERA DOCUMENTO PRINCIPALE (Métrées ou Resoconto)
-  const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
-  const titleDoc = resocontoDoc ? 'RESOCONTO PERCENTUALE' : 'MÉTRÉES DÉTAILLÉES';
-  drawHeader(docMetrees, `${titleDoc} - ${facture.numero}`);
+  // Controlla se è fattura manuelle (non genera documento métrées)
+  const isFactureManuelle = facture.type === 'manuelle';
+  console.log('È fattura manuelle:', isFactureManuelle);
   
-  // Informazioni generali métrées (font più piccolo)
+  let docMetrees = null;
+  if (!isFactureManuelle) {
+    console.log('Creazione documento métrées...');
+    // 1. GENERA DOCUMENTO PRINCIPALE (Métrées ou Resoconto) solo se non è manuelle
+    docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
+    const titleDoc = resocontoDoc ? 'RESOCONTO PERCENTUALE' : 'MÉTRÉES DÉTAILLÉES';
+    drawHeader(docMetrees, `${titleDoc} - ${facture.numero}`);
+    
+    // Informazioni generali métrées (font più piccolo)
   docMetrees.setFontSize(9);
   docMetrees.setFont('Helvetica', 'normal');
   docMetrees.text(`Date: ${formatDate(facture.dateFacture)}`, 10, 50);
@@ -1204,10 +1357,17 @@ const genererPDF = async (facture) => {
       tableStartY = docMetrees.lastAutoTable.finalY + 10;
     });
   }
+  } else {
+    console.log('Saltando creazione métrées per fattura manuelle');
+  }
+  
+  console.log('Inizio creazione fattura...');
   
   // 2. GENERA FACTURE (semplificata)
+  console.log('Creazione documento fattura...');
   const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
   drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+  console.log('Header fattura creato');
   
   // Date e informazioni facture (font più piccolo)
   docFacture.setFontSize(9);
@@ -1400,6 +1560,40 @@ const genererPDF = async (facture) => {
       totalFactureHT += zoneTotal;
       factureTableY = finalYZone + 15;
     });
+  } else if (facture.type === 'manuelle' && facture.lignes) {
+    // Tabella per fatture manuali con lignes
+    const head = [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']];
+    const body = [];
+    
+    facture.lignes.forEach(ligne => {
+      const total = ligne.quantite * ligne.prixUnitaire;
+      totalFactureHT += total;
+      
+      body.push([
+        ligne.description || '',
+        ligne.unite || '',
+        ligne.quantite.toString(),
+        ligne.prixUnitaire.toFixed(2) + ' CHF',
+        total.toFixed(2) + ' CHF'
+      ]);
+    });
+    
+    autoTable(docFacture, {
+      head,
+      body,
+      startY: factureTableY,
+      theme: 'grid',
+      headStyles: { fillColor: [230, 230, 230] },
+      columnStyles: {
+        0: { cellWidth: 60 },  // Description
+        1: { cellWidth: 20 },  // Unité
+        2: { cellWidth: 25 },  // Quantité
+        3: { cellWidth: 30 },  // Prix unitaire
+        4: { cellWidth: 30 }   // Total HT
+      }
+    });
+    
+    factureTableY = docFacture.lastAutoTable.finalY + 10;
   } else {
     // Tabella semplificata se non ci sono détails métrage
     const head = [['Description', 'Quantité', 'Prix unitaire', 'Total HT']];
@@ -1530,22 +1724,32 @@ const genererPDF = async (facture) => {
   // Aggiungi numerazione pagine
   addPageNumbers(docFacture);
   
-  // Aggiungi footer e numerazione anche al documento métrées
-  const totalPagesMetrees = docMetrees.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPagesMetrees; i++) {
-    docMetrees.setPage(i);
-    drawFooter(docMetrees);
+  if (!isFactureManuelle) {
+    // Aggiungi footer e numerazione anche al documento métrées
+    const totalPagesMetrees = docMetrees.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPagesMetrees; i++) {
+      docMetrees.setPage(i);
+      drawFooter(docMetrees);
+    }
+    addPageNumbers(docMetrees);
+    
+    // Salva i due documenti
+    const docType = resocontoDoc ? 'Resoconto_Percentuale' : 'Metrees_Detaillees';
+    const alertType = resocontoDoc ? 'Resoconto percentuale' : 'Métrées détaillées';
+    
+    docMetrees.save(`${docType}_${facture.numero}.pdf`);
+    docFacture.save(`Facture_${facture.numero}.pdf`);
+    
+    alert(`Deux documents générés:\n1. ${alertType} (pour technicien)\n2. Facture (pour comptabilité)`);
+  } else {
+    // Solo fattura per fatture manuali
+    docFacture.save(`Facture_${facture.numero}.pdf`);
+    alert('Facture générée avec succès!');
   }
-  addPageNumbers(docMetrees);
-  
-  // Salva i due documenti
-  const docType = resocontoDoc ? 'Resoconto_Percentuale' : 'Metrees_Detaillees';
-  const alertType = resocontoDoc ? 'Resoconto percentuale' : 'Métrées détaillées';
-  
-  docMetrees.save(`${docType}_${facture.numero}.pdf`);
-  docFacture.save(`Facture_${facture.numero}.pdf`);
-  
-  alert(`Deux documents générés:\n1. ${alertType} (pour technicien)\n2. Facture (pour comptabilité)`);
+  } catch (error) {
+    console.error('Errore generazione PDF:', error);
+    alert('Erreur génération PDF: ' + error.message);
+  }
 };
 
 onMounted(() => {

@@ -242,8 +242,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { db } from '@/firebase';
+import { db, auth } from '@/firebase';
 import { doc, getDoc, collection, getDocs, addDoc, query, where, deleteDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 import RetourButton from '@/components/RetourButton.vue';
 
 const router = useRouter();
@@ -286,14 +287,18 @@ const totalMontantRegies = computed(() => {
 });
 
 const fetchChantiers = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Utilisateur non connecté');
+    router.push('/');
+    return;
+  }
+  
   const snapshot = await getDocs(collection(db, 'chantiers'));
   const allChantiers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   
-  // TODO: Sostituire con l'email del chef loggato
-  const chefEmail = 'chef@dallelec.com'; // Temporaneo
-  
   // Filtra solo i cantieri assegnati a questo chef
-  chantiers.value = allChantiers.filter(c => c.capocantiere === chefEmail);
+  chantiers.value = allChantiers.filter(c => c.capocantiere === user.email);
 };
 
 const ajouterRegie = () => {
