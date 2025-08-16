@@ -17,9 +17,7 @@
       <div class="col-md-3 m-2">
         <router-link to="/admin/devis" class="btn btn-outline-primary w-100">Devis</router-link>
       </div>
-      <div class="col-md-3 m-2">
-        <router-link to="/admin/repertoires/chantiers" class="btn btn-outline-success w-100">Chantiers</router-link>
-      </div>
+
       <div class="col-md-3 m-2">
         <router-link to="/admin/bilans" class="btn btn-outline-success w-100">📊 Bilans Financiers</router-link>
       </div>
@@ -34,6 +32,9 @@
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/facturation" class="btn btn-outline-warning w-100">💰 Facturation</router-link>
+      </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/aide" class="btn btn-outline-info w-100">❓ Aide</router-link>
       </div>
     </div>
   </div>

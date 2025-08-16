@@ -269,9 +269,9 @@ const chantiersAvecMetrages = computed(() => {
     
     const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (f.montantTTC || 0), 0);
     
-    // 2. Importo - 30% spese generali (percentuale configurabile per cantiere)
-    const percentualeSpese = chantier.percentualeSpese || 30; // Default 30%
-    const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeSpese / 100);
+    // 2. Importo - % impresa (percentuale configurabile per cantiere)
+    const percentualeImpresa = chantier.percentualeImpresa || 30; // Default 30%
+    const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeImpresa / 100);
     
     // 3. Calcola ore impiegate reali (ESCLUSE le regie) e costo orario medio
     const heuresChefChantier = heuresPropres.value

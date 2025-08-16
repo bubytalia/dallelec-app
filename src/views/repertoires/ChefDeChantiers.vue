@@ -28,6 +28,12 @@
       <div class="col-md-4">
         <input v-model.number="newChef.coutHoraire" type="number" class="form-control" placeholder="Coût horaire (€)" required />
       </div>
+      <div class="col-md-4">
+        <div class="form-check">
+          <input v-model="newChef.excludeFromReport" type="checkbox" class="form-check-input" id="excludeNewChef">
+          <label class="form-check-label" for="excludeNewChef">Exclure du rapport mensuel</label>
+        </div>
+      </div>
       <div class="col-12 text-end">
         <button type="submit" class="btn btn-primary">Ajouter</button>
       </div>
@@ -42,6 +48,7 @@
           <th>Email</th>
           <th>État</th>
           <th>Coût horaire</th>
+          <th>Exclu rapport</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -60,6 +67,9 @@
             </td>
             <td><input v-model.number="editChef.coutHoraire" class="form-control" /></td>
             <td>
+              <input v-model="editChef.excludeFromReport" type="checkbox" class="form-check-input">
+            </td>
+            <td>
               <button @click="updateChef(chef.id)" class="btn btn-success btn-sm">✔</button>
               <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
             </td>
@@ -71,6 +81,10 @@
             <td>{{ chef.email }}</td>
             <td>{{ chef.etat }}</td>
             <td>{{ chef.coutHoraire }} €</td>
+            <td>
+              <span v-if="chef.excludeFromReport" class="badge bg-warning">⚠️ Exclu</span>
+              <span v-else class="badge bg-success">✓ Inclus</span>
+            </td>
             <td>
               <button @click="startEdit(chef)" class="btn btn-warning btn-sm">✎</button>
               <button @click="deleteChef(chef.id)" class="btn btn-danger btn-sm">🗑</button>
@@ -102,7 +116,8 @@ export default {
       telephone: '',
       email: '',
       etat: '',
-      coutHoraire: null
+      coutHoraire: null,
+      excludeFromReport: false
     });
 
     const editId = ref(null);
@@ -121,7 +136,8 @@ export default {
         telephone: '',
         email: '',
         etat: '',
-        coutHoraire: null
+        coutHoraire: null,
+        excludeFromReport: false
       };
       fetchChefs();
     };

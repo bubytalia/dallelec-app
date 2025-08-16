@@ -41,6 +41,22 @@
               </div>
             </div>
           </div>
+          
+          <!-- Aide -->
+          <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+              <div class="card-body text-center">
+                <div class="mb-3">
+                  <i class="fas fa-question-circle fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title">Centre d'Aide</h5>
+                <p class="card-text">Guides et FAQ pour utiliser le système</p>
+                <router-link to="/aide" class="btn btn-info">
+                  Consulter l'aide
+                </router-link>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Résumé rapide -->

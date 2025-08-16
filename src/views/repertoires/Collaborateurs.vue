@@ -34,6 +34,12 @@
       <div class="col-md-4">
         <input v-model.number="newCollaborateur.coutHoraire" type="number" class="form-control" placeholder="Coût horaire (€)" required />
       </div>
+      <div class="col-md-4">
+        <div class="form-check">
+          <input v-model="newCollaborateur.excludeFromReport" type="checkbox" class="form-check-input" id="excludeNew">
+          <label class="form-check-label" for="excludeNew">Exclure du rapport mensuel</label>
+        </div>
+      </div>
       <div class="col-12 text-end">
         <button type="submit" class="btn btn-primary">Ajouter</button>
       </div>
@@ -48,6 +54,7 @@
           <th>Email</th>
           <th>État</th>
           <th>Coût horaire</th>
+          <th>Exclu rapport</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -66,6 +73,9 @@
             </td>
             <td><input v-model.number="editCollaborateur.coutHoraire" class="form-control" /></td>
             <td>
+              <input v-model="editCollaborateur.excludeFromReport" type="checkbox" class="form-check-input">
+            </td>
+            <td>
               <button @click="updateCollaborateur(collab.id)" class="btn btn-success btn-sm">✔</button>
               <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
             </td>
@@ -77,6 +87,10 @@
             <td>{{ collab.email }}</td>
             <td>{{ collab.etat }}</td>
             <td>{{ collab.coutHoraire }} €</td>
+            <td>
+              <span v-if="collab.excludeFromReport" class="badge bg-warning">⚠️ Exclu</span>
+              <span v-else class="badge bg-success">✓ Inclus</span>
+            </td>
             <td>
               <button @click="startEdit(collab)" class="btn btn-warning btn-sm">✎</button>
               <button @click="deleteCollaborateur(collab.id)" class="btn btn-danger btn-sm">🗑</button>
@@ -103,7 +117,7 @@ export default {
   setup() {
     const collaborateurs = ref([]);
     const newCollaborateur = ref({
-      nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null
+      nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false
     });
 
     const editId = ref(null);
@@ -116,7 +130,7 @@ export default {
 
     const addCollaborateur = async () => {
       await addDoc(collection(db, 'collaborateurs'), newCollaborateur.value);
-      newCollaborateur.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null };
+      newCollaborateur.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false };
       fetchCollaborateurs();
     };
 

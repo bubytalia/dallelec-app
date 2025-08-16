@@ -78,6 +78,10 @@
             <label>Prix régie/h (CHF)</label>
             <input v-model.number="newChantier.prixRegie" placeholder="65" class="form-control" type="number" step="1" />
           </div>
+          <div class="col-md-2">
+            <label>% Impresa</label>
+            <input v-model.number="newChantier.percentualeImpresa" placeholder="30" class="form-control" type="number" step="1" min="0" max="100" />
+          </div>
           <div class="col-12 text-end">
             <button type="submit" class="btn btn-primary">Ajouter</button>
           </div>
@@ -96,6 +100,7 @@
               <th>Modalité</th>
               <th>Chef Responsable</th>
               <th>Prix Régie/h</th>
+              <th>% Impresa</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -142,6 +147,9 @@
                   <input v-model.number="editChantier.prixRegie" class="form-control" type="number" step="1" placeholder="65">
                 </td>
                 <td>
+                  <input v-model.number="editChantier.percentualeImpresa" class="form-control" type="number" step="1" min="0" max="100" placeholder="30">
+                </td>
+                <td>
                   <button class="btn btn-success btn-sm" @click="updateChantier(chantier.id)">✔</button>
                   <button class="btn btn-secondary btn-sm" @click="cancelEdit">✖</button>
                 </td>
@@ -161,6 +169,7 @@
                 </td>
                 <td>{{ getChefName(chantier.capocantiere) }}</td>
                 <td>{{ chantier.prixRegie || '-' }} CHF</td>
+                <td>{{ chantier.percentualeImpresa || 30 }}%</td>
                 <td>
                   <button class="btn btn-warning btn-sm" @click="startEdit(chantier)">✎</button>
                   <button class="btn btn-danger btn-sm" @click="deleteChantier(chantier.id)">🗑</button>
@@ -357,7 +366,8 @@ export default {
       devisId: '',
       modalitaResoconto: 'metrages',
       capocantiere: '',
-      prixRegie: 65
+      prixRegie: 65,
+      percentualeImpresa: 30
     });
 
     const newHeure = ref({
@@ -460,7 +470,7 @@ export default {
 
     const addChantier = async () => {
       await addDoc(collection(db, 'chantiers'), newChantier.value);
-      newChantier.value = { numeroCantiere: '', nom: '', adresse: '', ville: '', client: '', technicien: '', devisId: '' };
+      newChantier.value = { numeroCantiere: '', nom: '', adresse: '', ville: '', client: '', technicien: '', devisId: '', modalitaResoconto: 'metrages', capocantiere: '', prixRegie: 65, percentualeImpresa: 30 };
       fetchChantiers();
     };
 

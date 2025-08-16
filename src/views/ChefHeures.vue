@@ -22,7 +22,10 @@
             </div>
             <div class="mb-3">
               <label>Date:</label>
-              <input v-model="newHeure.date" type="date" class="form-control" />
+              <input v-model="newHeure.date" type="date" class="form-control" :max="maxDate" />
+              <small v-if="isDateBlocked(newHeure.date)" class="text-danger">
+                ⚠️ Date trop ancienne (>2 jours). Contactez l'admin.
+              </small>
             </div>
             <div class="mb-3">
               <label>Heures propres:</label>
@@ -50,7 +53,10 @@
             </div>
             <div class="mb-3">
               <label>Date:</label>
-              <input v-model="newHeureInterim.date" type="date" class="form-control" />
+              <input v-model="newHeureInterim.date" type="date" class="form-control" :max="maxDate" />
+              <small v-if="isDateBlocked(newHeureInterim.date)" class="text-danger">
+                ⚠️ Date trop ancienne (>2 jours). Contactez l'admin.
+              </small>
             </div>
             <div class="mb-3">
               <label>Intérimaire:</label>

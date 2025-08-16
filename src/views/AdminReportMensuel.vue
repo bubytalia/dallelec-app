@@ -182,10 +182,13 @@ const generateReport = async () => {
     const collaborateursSnapshot = await getDocs(collection(db, 'collaborateurs'));
     const collaborateurs = collaborateursSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Lista completa dipendenti
+    const chefsSnapshot = await getDocs(collection(db, 'chefdechantiers'));
+    const chefs = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Lista completa dipendenti (esclusi quelli marcati)
     const employes = [
-      { userId: 'chef@dallelec.com', nom: 'Chef de Chantier', email: 'chef@dallelec.com' },
-      ...collaborateurs.map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email }))
+      ...chefs.filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'chef' })),
+      ...collaborateurs.filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'ouvrier' }))
     ];
     
     // Fetch ore di tutti i dipendenti
@@ -194,6 +197,10 @@ const generateReport = async () => {
     
     const heuresInterimSnapshot = await getDocs(collection(db, 'heures_chef_interim'));
     const heuresInterim = heuresInterimSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Fetch ore ouvriers
+    const heuresOuvriersSnapshot = await getDocs(collection(db, 'heures_ouvriers'));
+    const heuresOuvriers = heuresOuvriersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
     // Fetch assenze
     const absencesSnapshot = await getDocs(collection(db, 'absences'));
@@ -206,19 +213,30 @@ const generateReport = async () => {
     const absencesAziendali = {};
     
     for (const employe of employes) {
-      // Ore del dipendente
-      const heuresEmploye = heuresChef.filter(h => 
-        h.date >= startDate && 
-        h.date <= endDate && 
-        h.chefId === employe.email
-      );
+      let heuresEmploye = [];
+      let heuresInterimEmploye = [];
       
-      // Ore intérimaires per questo dipendente
-      const heuresInterimEmploye = heuresInterim.filter(h => 
-        h.date >= startDate && 
-        h.date <= endDate && 
-        h.collaborateurId === employe.email
-      );
+      if (employe.type === 'chef') {
+        // Per il chef: ore proprie + ore interim
+        heuresEmploye = heuresChef.filter(h => 
+          h.date >= startDate && 
+          h.date <= endDate && 
+          h.chefId === employe.email
+        );
+        
+        heuresInterimEmploye = heuresInterim.filter(h => 
+          h.date >= startDate && 
+          h.date <= endDate && 
+          h.chefId === employe.email
+        );
+      } else {
+        // Per gli ouvriers: solo ore ouvriers
+        heuresEmploye = heuresOuvriers.filter(h => 
+          h.date >= startDate && 
+          h.date <= endDate && 
+          h.ouvrierId === employe.email
+        );
+      }
       
       // Assenze del dipendente
       const absencesEmploye = absences.filter(absence => 
@@ -229,8 +247,14 @@ const generateReport = async () => {
       );
       
       // Calcola totali
-      const totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
-                         heuresInterimEmploye.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+      let totalHeures = 0;
+      
+      if (employe.type === 'chef') {
+        totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
+                     heuresInterimEmploye.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+      } else {
+        totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.heures || 0), 0);
+      }
       
       const joursTravail = new Set();
       const joursAbsence = new Set();
@@ -248,8 +272,13 @@ const generateReport = async () => {
           a.startDate <= dateStr && a.endDate >= dateStr
         );
         
-        const totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
-                               heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+        let totalHeuresJour = 0;
+        if (employe.type === 'chef') {
+          totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
+                           heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+        } else {
+          totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.heures || 0), 0);
+        }
         
         if (absenceJour) {
           joursAbsence.add(dateStr);
@@ -294,22 +323,25 @@ const generateReport = async () => {
       const jourSemaine = currentDate.getDay();
       
       // Conta ore e assenze per questo giorno
-      const heuresJour = heuresChef.filter(h => h.date === dateStr);
+      const heuresChefJour = heuresChef.filter(h => h.date === dateStr);
       const heuresInterimJour = heuresInterim.filter(h => h.date === dateStr);
+      const heuresOuvriersJour = heuresOuvriers.filter(h => h.date === dateStr);
       const absencesJour = absences.filter(a => 
         a.startDate <= dateStr && a.endDate >= dateStr
       );
       
-      const totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
-                             heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+      const totalHeuresJour = heuresChefJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
+                             heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0) +
+                             heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
       
       heuresSemaine += totalHeuresJour;
       absencesSemaine += absencesJour.length;
       
       // Conta dipendenti attivi
       const employesActifsJour = new Set();
-      heuresJour.forEach(h => employesActifsJour.add(h.chefId));
-      heuresInterimJour.forEach(h => employesActifsJour.add(h.collaborateurId));
+      heuresChefJour.forEach(h => employesActifsJour.add(h.chefId));
+      heuresInterimJour.forEach(h => employesActifsJour.add(h.chefId));
+      heuresOuvriersJour.forEach(h => employesActifsJour.add(h.ouvrierId));
       employesActifsJour.forEach(email => employesActifsSemaine.add(email));
       
       // Fine settimana (domenica) o fine mese

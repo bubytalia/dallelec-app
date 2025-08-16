@@ -29,7 +29,10 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label>Date:</label>
-                <input v-model="nouvelleHeure.date" type="date" class="form-control" required />
+                <input v-model="nouvelleHeure.date" type="date" class="form-control" :max="maxDate" required />
+                <small v-if="isDateBlocked(nouvelleHeure.date)" class="text-danger">
+                  ⚠️ Date trop ancienne (>2 jours). Contactez l'admin.
+                </small>
               </div>
             </div>
             <div class="row">
@@ -118,6 +121,24 @@ const router = useRouter();
 const chantiers = ref([]);
 const heuresSemaine = ref([]);
 const currentUser = ref(null);
+const adminOverride = ref(false);
+
+// Data massima per inserimento (oggi)
+const maxDate = computed(() => {
+  return new Date().toISOString().split('T')[0];
+});
+
+// Controlla se data è bloccata (>2 giorni fa)
+const isDateBlocked = (date) => {
+  if (!date) return false;
+  const selectedDate = new Date(date);
+  const today = new Date();
+  const twoDaysAgo = new Date(today);
+  twoDaysAgo.setDate(today.getDate() - 2);
+  twoDaysAgo.setHours(0, 0, 0, 0);
+  
+  return selectedDate < twoDaysAgo && !adminOverride.value;
+};
 
 const nouvelleHeure = ref({
   chantierId: '',
@@ -131,7 +152,8 @@ const formValide = computed(() => {
   return nouvelleHeure.value.chantierId && 
          nouvelleHeure.value.date && 
          nouvelleHeure.value.heures > 0 && 
-         nouvelleHeure.value.heures <= 12;
+         nouvelleHeure.value.heures <= 12 &&
+         !isDateBlocked(nouvelleHeure.value.date);
 });
 
 const totalHeuresSemaine = computed(() => {
@@ -240,11 +262,24 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('fr-FR');
 };
 
+// Controlla se utente ha override admin
+const checkAdminOverride = async (email) => {
+  try {
+    const adminsSnapshot = await getDocs(collection(db, 'admins'));
+    const admins = adminsSnapshot.docs.map(doc => doc.data());
+    adminOverride.value = admins.some(admin => admin.email === email);
+  } catch (error) {
+    console.error('Erreur check admin:', error);
+    adminOverride.value = false;
+  }
+};
+
 onMounted(() => {
   // Ascolta i cambiamenti di autenticazione
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     if (user) {
       currentUser.value = user;
+      await checkAdminOverride(user.email);
       fetchChantiers();
       fetchHeuresSemaine();
     } else {
