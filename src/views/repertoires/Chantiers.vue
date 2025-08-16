@@ -74,6 +74,10 @@
               </option>
             </select>
           </div>
+          <div class="col-md-2">
+            <label>Prix régie/h (CHF)</label>
+            <input v-model.number="newChantier.prixRegie" placeholder="65" class="form-control" type="number" step="1" />
+          </div>
           <div class="col-12 text-end">
             <button type="submit" class="btn btn-primary">Ajouter</button>
           </div>
@@ -91,6 +95,7 @@
               <th>Devis associé</th>
               <th>Modalité</th>
               <th>Chef Responsable</th>
+              <th>Prix Régie/h</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -134,6 +139,9 @@
                   </select>
                 </td>
                 <td>
+                  <input v-model.number="editChantier.prixRegie" class="form-control" type="number" step="1" placeholder="65">
+                </td>
+                <td>
                   <button class="btn btn-success btn-sm" @click="updateChantier(chantier.id)">✔</button>
                   <button class="btn btn-secondary btn-sm" @click="cancelEdit">✖</button>
                 </td>
@@ -152,6 +160,7 @@
                   </span>
                 </td>
                 <td>{{ getChefName(chantier.capocantiere) }}</td>
+                <td>{{ chantier.prixRegie || '-' }} CHF</td>
                 <td>
                   <button class="btn btn-warning btn-sm" @click="startEdit(chantier)">✎</button>
                   <button class="btn btn-danger btn-sm" @click="deleteChantier(chantier.id)">🗑</button>
@@ -347,7 +356,8 @@ export default {
       technicien: '',
       devisId: '',
       modalitaResoconto: 'metrages',
-      capocantiere: ''
+      capocantiere: '',
+      prixRegie: 65
     });
 
     const newHeure = ref({

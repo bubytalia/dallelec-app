@@ -84,7 +84,10 @@
                     <th>Heures prévues</th>
                     <th>Heures employées</th>
                     <th>Heures gagnées</th>
-                    <th>Prime (heures)</th>
+                    <th>Heures régies</th>
+                    <th>Prime efficacité</th>
+                    <th>Prime régies</th>
+                    <th>Prime totale</th>
                     <th>Période</th>
                   </tr>
                 </thead>
@@ -102,8 +105,23 @@
                       </span>
                     </td>
                     <td>
+                      <span class="text-warning fw-bold">
+                        {{ chantier.heuresRegies }}h
+                      </span>
+                    </td>
+                    <td>
+                      <span :class="chantier.primeEfficacite > 0 ? 'text-success fw-bold' : 'text-muted'">
+                        {{ chantier.primeEfficacite.toFixed(2) }} CHF
+                      </span>
+                    </td>
+                    <td>
+                      <span :class="chantier.primeRegies > 0 ? 'text-warning fw-bold' : 'text-muted'">
+                        {{ chantier.primeRegies.toFixed(2) }} CHF
+                      </span>
+                    </td>
+                    <td>
                       <span :class="chantier.prime > 0 ? 'text-success fw-bold' : 'text-muted'">
-                        {{ chantier.prime > 0 ? (chantier.prime / 26).toFixed(1) + 'h' : '0h' }}
+                        {{ chantier.prime.toFixed(2) }} CHF
                       </span>
                     </td>
                     <td>{{ getMonthName(chantier.moisFacturation) }} {{ chantier.anneeFacturation }}</td>
@@ -115,20 +133,14 @@
                     <td><strong>{{ totalHeuresPrevuesFiltered.toFixed(1) }}h</strong></td>
                     <td><strong>{{ totalHeuresImployeesFiltered.toFixed(1) }}h</strong></td>
                     <td><strong>{{ totalHeuresGagneesFiltered.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ (totalPrimeFiltered / 26).toFixed(1) }}h</strong></td>
+                    <td><strong>{{ totalHeuresRegiesFiltered.toFixed(1) }}h</strong></td>
+                    <td><strong>{{ totalPrimeEfficaciteFiltered.toFixed(2) }} CHF</strong></td>
+                    <td><strong>{{ totalPrimeRegiesFiltered.toFixed(2) }} CHF</strong></td>
+                    <td><strong>{{ totalPrimeFiltered.toFixed(2) }} CHF</strong></td>
                     <td></td>
                   </tr>
                 </tfoot>
-                <tfoot>
-                  <tr class="table-primary">
-                    <td><strong>Total</strong></td>
-                    <td><strong>{{ totalHeuresPrevues.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ totalHeuresImployees.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ totalHeuresGagnees.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ totalPrime.toFixed(2) }} CHF</strong></td>
-                    <td></td>
-                  </tr>
-                </tfoot>
+
               </table>
             </div>
           </div>
@@ -136,40 +148,7 @@
       </div>
     </div>
 
-    <!-- Informazioni sul sistema premi -->
-    <div class="row mt-4">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h5>Informations sur le système de primes</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6">
-                <h6>Formule de calcul:</h6>
-                <ol>
-                  <li><strong>Quantités posées:</strong> Montant total facturé</li>
-                  <li><strong>Budget disponible:</strong> Facturé - 30% speses générales</li>
-                  <li><strong>Coût horaire moyen:</strong> Basé sur les tarifs des employés</li>
-                  <li><strong>Heures prévues:</strong> Budget ÷ Coût horaire moyen</li>
-                  <li><strong>Prime:</strong> (Heures prévues - Heures réelles) × 26 CHF/h</li>
-                </ol>
-              </div>
-              <div class="col-md-6">
-                <h6>Conditions:</h6>
-                <ul>
-                  <li>Prime uniquement si heures réelles < heures prévues</li>
-                  <li>Calcul basé sur les factures émises</li>
-                  <li>Pourcentage speses configurable par chantier (défaut 30%)</li>
-                  <li>Cantieri > 1 mois: prime sur totalité du chantier</li>
-                  <li>Affichage en heures uniquement (pas d'importi)</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -294,7 +273,7 @@ const chantiersAvecMetrages = computed(() => {
     const percentualeSpese = chantier.percentualeSpese || 30; // Default 30%
     const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeSpese / 100);
     
-    // 3. Calcola ore impiegate reali e costo orario medio
+    // 3. Calcola ore impiegate reali (ESCLUSE le regie) e costo orario medio
     const heuresChefChantier = heuresPropres.value
       .filter(h => h.chantierId === chantier.id)
       .reduce((sum, h) => sum + (h.heuresPropres || 0), 0);
@@ -306,6 +285,13 @@ const chantiersAvecMetrages = computed(() => {
     const heuresOuvriersChantier = heuresOuvriers.value
       .filter(h => h.chantierId === chantier.id)
       .reduce((sum, h) => sum + (h.heures || 0), 0);
+    
+    // Calcola ore regie da métrages e resoconti (SEPARATE per premi)
+    const heuresRegiesChantier = [...metrages.value]
+      .filter(m => m.chantierId === chantier.id && m.regies)
+      .reduce((sum, m) => {
+        return sum + (m.regies || []).reduce((regieSum, r) => regieSum + (r.heures || 0), 0);
+      }, 0);
     
     const heuresImployees = heuresChefChantier + heuresInterimChantier + heuresOuvriersChantier;
     
@@ -325,9 +311,14 @@ const chantiersAvecMetrages = computed(() => {
     // 5. Ore previste teoriche = Budget disponibile / Costo orario medio
     const heuresPrevues = budgetOreDisponibile / costoOrarioMedio;
     
-    // 6. Calcolo premio: se ore reali < ore previste → premio
+    // 6. Calcolo premio: se ore reali < ore previste → premio + premio regie
     const heuresGagnees = heuresPrevues - heuresImployees;
-    const prime = heuresGagnees > 0 ? heuresGagnees * 26 : 0; // 26 CHF/h solo se positivo
+    const primeEfficacite = heuresGagnees > 0 ? heuresGagnees * 26 : 0; // 26 CHF/h solo se positivo
+    
+    // 7. Premio regie: 5 CHF per ogni ora di regie (se cantiere attivo)
+    const primeRegies = heuresRegiesChantier * 5; // 5 CHF/h per regie
+    
+    const prime = primeEfficacite + primeRegies;
     
     // Trova ultima attività
     const dernierMetrage = metrages.value
@@ -353,6 +344,9 @@ const chantiersAvecMetrages = computed(() => {
       heuresPrevues: Math.round(heuresPrevues * 10) / 10,
       heuresImployees,
       heuresGagnees: Math.round(heuresGagnees * 10) / 10,
+      heuresRegies: Math.round(heuresRegiesChantier * 10) / 10,
+      primeEfficacite: Math.round(primeEfficacite * 100) / 100,
+      primeRegies: Math.round(primeRegies * 100) / 100,
       prime: Math.round(prime * 100) / 100,
       moisFacturation,
       anneeFacturation,
@@ -387,6 +381,18 @@ const totalHeuresGagneesFiltered = computed(() => {
 
 const totalPrimeFiltered = computed(() => {
   return chantiersFiltered.value.reduce((sum, c) => sum + c.prime, 0);
+});
+
+const totalHeuresRegiesFiltered = computed(() => {
+  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresRegies, 0);
+});
+
+const totalPrimeEfficaciteFiltered = computed(() => {
+  return chantiersFiltered.value.reduce((sum, c) => sum + c.primeEfficacite, 0);
+});
+
+const totalPrimeRegiesFiltered = computed(() => {
+  return chantiersFiltered.value.reduce((sum, c) => sum + c.primeRegies, 0);
 });
 
 const totalHeuresPrevues = computed(() => {

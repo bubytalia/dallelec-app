@@ -50,6 +50,7 @@ import Supplements from '@/views/repertoires/Supplements.vue';
 import Conditions from '@/views/repertoires/Conditions.vue';
 import Interimaires from '@/views/repertoires/Interimaires.vue';
 import Factures from '@/views/repertoires/Factures.vue';
+import Regies from '@/views/repertoires/Regies.vue';
 
 // Bilans
 // import Bilans from '@/views/Bilans.vue'; // Vecchio placeholder
@@ -79,6 +80,7 @@ const routes = [
   { path: '/admin/repertoires/conditions', name: 'Conditions', component: Conditions },
   { path: '/admin/repertoires/interimaires', name: 'Interimaires', component: Interimaires },
   { path: '/admin/repertoires/factures', name: 'Factures', component: Factures },
+  { path: '/admin/repertoires/regies', name: 'Regies', component: Regies },
   { path: '/admin/bilans', name: 'AdminBilans', component: AdminBilans },
   { path: '/admin/report-mensuel', name: 'AdminReportMensuel', component: AdminReportMensuel },
   { path: '/admin/gestion-feries', name: 'AdminGestionFeries', component: AdminGestionFeries },

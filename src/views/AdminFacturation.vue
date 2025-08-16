@@ -27,6 +27,7 @@
                 <th>Chantier</th>
                 <th>Client</th>
                 <th>Date</th>
+                <th>Période</th>
                 <th>Détails</th>
                 <th>Actions</th>
               </tr>
@@ -38,7 +39,8 @@
                 <td>{{ getChantierNameWithNumber(resoconto.chantierId) }}</td>
                 <td>{{ getClientName(resoconto.chantierId) }}</td>
                 <td>{{ formatDate(resoconto.createdAt) }}</td>
-                <td>{{ resoconto.periodeMonth }} - {{ Object.keys(resoconto.avancementi || {}).join(', ') }}</td>
+                <td>{{ resoconto.periodeMonth }}</td>
+                <td>{{ Object.keys(resoconto.avancementi || {}).join(', ') }}</td>
                 <td>
                   <button @click="voirDetailResoconto(resoconto)" class="btn btn-sm btn-info me-1">
                     👁
@@ -68,7 +70,8 @@
                 <td>{{ getChantierNameWithNumber(metrage.chantierId) }}</td>
                 <td>{{ getClientName(metrage.chantierId) }}</td>
                 <td>{{ formatDate(metrage.createdAt) }}</td>
-                <td>{{ metrage.totalML?.toFixed(2) || '0.00' }} ML - {{ formatCurrency(calculateMontantEstime(metrage)) }}</td>
+                <td>{{ formatPeriodeMetrage(metrage) }}</td>
+                <td>{{ metrage.zones?.join(', ') || 'Toutes' }} - {{ metrage.totalML?.toFixed(2) || '0.00' }} ML</td>
                 <td>
                   <button @click="voirDetailMetrage(metrage)" class="btn btn-sm btn-info me-1">
                     👁
@@ -368,6 +371,7 @@ const hasFacture = (resoconto) => {
 const metragesEnAttente = computed(() => {
   return metrages.value.filter(m => 
     !m.draft && // Métrage sauvegardé (non brouillon)
+    (m.status === 'en_attente' || !m.status) && // En attente d'approbation ou ancien
     !m.facture && // Pas encore facturé
     m.totalML > 0 // A du contenu
   );
@@ -452,13 +456,25 @@ const calculateMontantEstime = (metrage) => {
 };
 
 const autoriserFacturation = async (metrage) => {
-  if (!confirm('Autoriser la facturation pour ce métrage ?')) return;
+  if (!confirm('Approuver ce métrage et autoriser la facturation ?')) return;
   
   try {
+    // Approuve d'abord le métrage
+    await updateDoc(doc(db, 'metrages', metrage.id), {
+      status: 'approved',
+      approvedAt: new Date(),
+      approvedBy: 'admin'
+    });
+    
     const chantier = chantiers.value.find(c => c.id === metrage.chantierId);
     const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
     
-    const montantHT = calculateMontantEstime(metrage);
+    const montantTravauxHT = calculateMontantEstime(metrage);
+    
+    // Calcola montant regie
+    const montantRegiesHT = (metrage.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+    const montantHT = montantTravauxHT + montantRegiesHT;
+    
     const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
     
     // Crée la facture
@@ -486,7 +502,7 @@ const autoriserFacturation = async (metrage) => {
       factureDate: new Date()
     });
     
-    alert(`Facture ${numeroFacture} créée avec succès !`);
+    alert(`Métrage approuvé et facture ${numeroFacture} créée avec succès !`);
     loadData();
     showDetailMetrage.value = false;
   } catch (error) {
@@ -522,7 +538,12 @@ const approuverResoconto = async (resoconto) => {
     
     // Calcola importo basato sulle percentuali
     const totalPercentuali = Object.values(resoconto.avancementi || {}).reduce((sum, pct) => sum + pct, 0);
-    const montantHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
+    const montantTravauxHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
+    
+    // Calcola montant regie
+    const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+    const montantHT = montantTravauxHT + montantRegiesHT;
+    
     const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
     
     const factureData = {
@@ -597,7 +618,12 @@ const generarFactureResoconto = async (resoconto) => {
     const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
     
     const totalPercentuali = Object.values(resoconto.avancementi || {}).reduce((sum, pct) => sum + pct, 0);
-    const montantHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
+    const montantTravauxHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
+    
+    // Calcola montant regie
+    const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+    const montantHT = montantTravauxHT + montantRegiesHT;
+    
     const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
     
     const factureData = {
@@ -782,6 +808,19 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
+const formatPeriodeMetrage = (metrage) => {
+  if (metrage.periodeDebut && metrage.periodeFin) {
+    return `${metrage.periodeDebut} - ${metrage.periodeFin}`;
+  }
+  if (metrage.periodeDebut) {
+    return `Du ${metrage.periodeDebut}`;
+  }
+  if (metrage.periodeFin) {
+    return `Jusqu'au ${metrage.periodeFin}`;
+  }
+  return '-';
+};
+
 const genererPDF = async (facture) => {
   // Carica tutti i dati necessari
   const chantier = chantiers.value.find(c => c.id === facture.chantierId);
@@ -839,6 +878,23 @@ const genererPDF = async (facture) => {
     doc.setFont('Helvetica', 'bold');
     doc.setTextColor(40);
     doc.text(title, 10, 40);
+  };
+  
+  const drawFooter = (doc) => {
+    // Pied de page (dati Svizzera)
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
+  };
+  
+  const addPageNumbers = (doc) => {
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text(`Page ${i}/${totalPages}`, 200, 290, { align: 'right' });
+    }
   };
   
   // 1. GENERA DOCUMENTO PRINCIPALE (Métrées ou Resoconto)
@@ -1366,24 +1422,93 @@ const genererPDF = async (facture) => {
     factureTableY = docFacture.lastAutoTable.finalY + 10;
   }
   
-  // Totaux (TVA Suisse 7.7%) - usa il totale calcolato dalla tabella
+  // Sezione Regie nella fattura
+  let totalRegiesHT = 0;
+  if ((resocontoDoc?.regies && resocontoDoc.regies.length > 0) || (metrageDoc?.regies && metrageDoc.regies.length > 0)) {
+    const regiesData = resocontoDoc?.regies || metrageDoc?.regies || [];
+    
+    // Controlla se c'è spazio sufficiente (almeno 60mm dal fondo)
+    if (factureTableY > 220) {
+      docFacture.addPage();
+      drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+      factureTableY = 50;
+    }
+    
+    docFacture.setFontSize(12);
+    docFacture.setFont('helvetica', 'bold');
+    docFacture.text('RÉGIES (Heures supplémentaires)', 10, factureTableY);
+    
+    const headRegies = [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']];
+    const bodyRegies = [];
+    
+    regiesData.forEach(regie => {
+      const totalRegie = regie.heures * regie.prixHeure;
+      totalRegiesHT += totalRegie;
+      
+      bodyRegies.push([
+        regie.zone,
+        regie.description,
+        regie.heures + 'h',
+        regie.prixHeure + ' CHF',
+        totalRegie.toFixed(2) + ' CHF'
+      ]);
+    });
+    
+    autoTable(docFacture, {
+      head: headRegies,
+      body: bodyRegies,
+      startY: factureTableY + 4,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [230, 230, 230],
+        textColor: 20,
+        fontSize: 9
+      },
+      bodyStyles: {
+        fontSize: 9
+      }
+    });
+    
+    factureTableY = docFacture.lastAutoTable.finalY + 10;
+  }
+  
+  // Controlla spazio per totali (almeno 40mm dal fondo)
+  if (factureTableY > 240) {
+    docFacture.addPage();
+    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+    factureTableY = 50;
+  }
+  
+  // Totaux (TVA Suisse 7.7%) - usa il totale calcolato dalla tabella + regie
   const finalY = factureTableY;
   
   docFacture.setFontSize(10);
-  docFacture.text(`Sous-total HT:`, 130, finalY);
+  docFacture.text(`Sous-total Travaux:`, 130, finalY);
   docFacture.text(`${totalFactureHT.toFixed(2)} CHF`, 170, finalY);
   
-  const tvaRate = 7.7; // TVA Suisse
-  const montantTVA = totalFactureHT * (tvaRate / 100);
-  const montantTTC = totalFactureHT + montantTVA;
+  let yTotaux = finalY;
+  if (totalRegiesHT > 0) {
+    yTotaux += 7;
+    docFacture.text(`Sous-total Régies:`, 130, yTotaux);
+    docFacture.text(`${totalRegiesHT.toFixed(2)} CHF`, 170, yTotaux);
+  }
   
-  docFacture.text(`TVA (${tvaRate}%):`, 130, finalY + 7);
-  docFacture.text(`${montantTVA.toFixed(2)} CHF`, 170, finalY + 7);
+  yTotaux += 7;
+  const totalHT = totalFactureHT + totalRegiesHT;
+  docFacture.text(`Total HT:`, 130, yTotaux);
+  docFacture.text(`${totalHT.toFixed(2)} CHF`, 170, yTotaux);
+  
+  const tvaRate = 7.7; // TVA Suisse
+  const montantTVA = totalHT * (tvaRate / 100);
+  const montantTTC = totalHT + montantTVA;
+  
+  docFacture.text(`TVA (${tvaRate}%):`, 130, yTotaux + 7);
+  docFacture.text(`${montantTVA.toFixed(2)} CHF`, 170, yTotaux + 7);
   
   docFacture.setFontSize(12);
   docFacture.setFont(undefined, 'bold');
-  docFacture.text(`TOTAL TTC:`, 130, finalY + 17);
-  docFacture.text(`${montantTTC.toFixed(2)} CHF`, 170, finalY + 17);
+  docFacture.text(`TOTAL TTC:`, 130, yTotaux + 17);
+  docFacture.text(`${montantTTC.toFixed(2)} CHF`, 170, yTotaux + 17);
   
   // Conditions de paiement (Suisse)
   docFacture.setFontSize(8);
@@ -1395,10 +1520,23 @@ const genererPDF = async (facture) => {
     docFacture.text(`Notes: ${facture.notes}`, 20, finalY + 45);
   }
   
-  // Pied de page (dati Svizzera)
-  docFacture.setFontSize(8);
-  docFacture.setTextColor(150);
-  docFacture.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
+  // Aggiungi footer a tutte le pagine
+  const totalPagesFacture = docFacture.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPagesFacture; i++) {
+    docFacture.setPage(i);
+    drawFooter(docFacture);
+  }
+  
+  // Aggiungi numerazione pagine
+  addPageNumbers(docFacture);
+  
+  // Aggiungi footer e numerazione anche al documento métrées
+  const totalPagesMetrees = docMetrees.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPagesMetrees; i++) {
+    docMetrees.setPage(i);
+    drawFooter(docMetrees);
+  }
+  addPageNumbers(docMetrees);
   
   // Salva i due documenti
   const docType = resocontoDoc ? 'Resoconto_Percentuale' : 'Metrees_Detaillees';

@@ -106,6 +106,71 @@
       </div>
     </div>
 
+    <!-- Sezione Regie -->
+    <div v-if="selectedChantierId" class="card p-4 mb-4">
+      <h5>Régies (Heures supplémentaires facturables)</h5>
+      <div class="row mb-3">
+        <div class="col-md-2">
+          <label>Zone:</label>
+          <select v-model="nouvelleRegie.zone" class="form-control">
+            <option value="">Sélectionner zone</option>
+            <option v-for="zona in zones" :key="zona" :value="zona">{{ zona }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label>Heures:</label>
+          <input v-model.number="nouvelleRegie.heures" type="number" step="0.5" class="form-control" placeholder="2.0">
+        </div>
+        <div class="col-md-2">
+          <label>Type régie:</label>
+          <select v-model="nouvelleRegie.regieId" class="form-control">
+            <option value="">Sélectionner type</option>
+            <option v-for="regie in regiesDisponibles" :key="regie.id" :value="regie.id">
+              {{ regie.nom }} ({{ regie.prixHeure }} CHF/h)
+            </option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label>Description travail:</label>
+          <input v-model="nouvelleRegie.description" type="text" class="form-control" placeholder="Modification installation électrique...">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button @click="regieEnModification !== null ? sauvegarderModificationRegie() : ajouterRegie()" class="btn btn-warning w-100" :disabled="!regieValide">
+            {{ regieEnModification !== null ? '✅ Modifier' : '➕ Ajouter' }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- Liste regie -->
+      <div v-if="regies.length > 0">
+        <h6>Régies ce mois:</h6>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Zone</th>
+              <th>Heures</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(regie, index) in regies" :key="index">
+              <td>{{ regie.zone }}</td>
+              <td>{{ regie.heures }}h</td>
+              <td>{{ regie.description }}</td>
+              <td>
+                <button @click="modifierRegie(index)" class="btn btn-warning btn-sm me-1">✏️</button>
+                <button @click="supprimerRegie(index)" class="btn btn-danger btn-sm">🗑</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="text-end">
+          <strong>Total Heures Régies: {{ totalHeuresRegies }}h</strong>
+        </div>
+      </div>
+    </div>
+
     <!-- Pulsanti azioni -->
     <div class="mb-3 d-flex justify-content-center" v-if="selectedChantierId">
       <button class="btn btn-success me-2" @click="sauvegarderResoconto">📥 Sauvegarder</button>
@@ -194,10 +259,31 @@ const avancementiStorici = ref({});
 const showHistorique = ref(false);
 const historiqueResoconti = ref([]);
 const zoneConvertite = ref(new Set());
-
+const regies = ref([]);
+const prixRegieChantier = ref(65);
+const regieEnModification = ref(null);
+const nouvelleRegie = ref({
+  zone: '',
+  heures: 0,
+  description: ''
+});
 const chantiersPercentuels = computed(() => 
   chantiers.value.filter(c => c.modalitaResoconto === 'percentuale')
 );
+
+const regieValide = computed(() => {
+  return nouvelleRegie.value.zone && 
+         nouvelleRegie.value.heures > 0 && 
+         nouvelleRegie.value.description.trim();
+});
+
+const totalHeuresRegies = computed(() => {
+  return regies.value.reduce((sum, r) => sum + r.heures, 0);
+});
+
+const totalMontantRegies = computed(() => {
+  return regies.value.reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+});
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
@@ -210,10 +296,75 @@ const fetchChantiers = async () => {
   chantiers.value = allChantiers.filter(c => c.capocantiere === chefEmail);
 };
 
+const ajouterRegie = () => {
+  if (!regieValide.value) return;
+  
+  const nouvelleRegieItem = {
+    zone: nouvelleRegie.value.zone,
+    heures: nouvelleRegie.value.heures,
+    prixHeure: prixRegieChantier.value,
+    description: nouvelleRegie.value.description
+  };
+  
+  regies.value.push(nouvelleRegieItem);
+  
+  // Reset form
+  nouvelleRegie.value = {
+    zone: '',
+    heures: 0,
+    description: ''
+  };
+};
+
+const modifierRegie = (index) => {
+  const regie = regies.value[index];
+  nouvelleRegie.value = {
+    zone: regie.zone,
+    heures: regie.heures,
+    description: regie.description
+  };
+  regieEnModification.value = index;
+};
+
+const sauvegarderModificationRegie = () => {
+  if (!regieValide.value || regieEnModification.value === null) return;
+  
+  regies.value[regieEnModification.value] = {
+    zone: nouvelleRegie.value.zone,
+    heures: nouvelleRegie.value.heures,
+    prixHeure: prixRegieChantier.value,
+    description: nouvelleRegie.value.description
+  };
+  
+  // Reset
+  nouvelleRegie.value = {
+    zone: '',
+    heures: 0,
+    description: ''
+  };
+  regieEnModification.value = null;
+};
+
+const supprimerRegie = (index) => {
+  regies.value.splice(index, 1);
+  // Se stavo modificando questa regie, reset
+  if (regieEnModification.value === index) {
+    regieEnModification.value = null;
+    nouvelleRegie.value = {
+      zone: '',
+      heures: 0,
+      description: ''
+    };
+  }
+};
+
 const loadChantierData = async () => {
   if (!selectedChantierId.value) return;
   
   selectedChantier.value = chantiers.value.find(c => c.id === selectedChantierId.value);
+  
+  // Carica prezzo regie del cantiere
+  prixRegieChantier.value = selectedChantier.value?.prixRegie || 65;
   
   if (selectedChantier.value?.devisId) {
     const devisDoc = await getDoc(doc(db, 'devis', selectedChantier.value.devisId));
@@ -318,16 +469,22 @@ const zoneCompleteDaConvertire = computed(() => {
   );
 });
 
+
+
 const sauvegarderResoconto = async () => {
   const resocontoData = {
     chantierId: selectedChantierId.value,
     periodeMonth: periodeMonth.value,
     descrizione: descrizione.value,
     avancementi: { ...avancementiMensili.value },
+    regies: [...regies.value],
     draft: false,
     status: 'en_attente',
     createdAt: new Date()
   };
+  
+  // Includi regie nel resoconto
+  resocontoData.regies = [...regies.value];
   
   await addDoc(collection(db, 'resoconti_percentuali'), resocontoData);
   alert('Resoconto sauvegardé avec succès.');
@@ -337,6 +494,7 @@ const sauvegarderResoconto = async () => {
     avancementiMensili.value[zona] = 0;
   });
   descrizione.value = '';
+  regies.value = [];
   
   await loadAvancementiStorici();
 };
@@ -347,9 +505,13 @@ const sauvegarderBrouillon = async () => {
     periodeMonth: periodeMonth.value,
     descrizione: descrizione.value,
     avancementi: { ...avancementiMensili.value },
+    regies: [...regies.value],
     draft: true,
     createdAt: new Date()
   };
+  
+  // Includi regie nel brouillon
+  resocontoData.regies = [...regies.value];
   
   await addDoc(collection(db, 'resoconti_percentuali'), resocontoData);
   alert('Brouillon sauvegardé.');
@@ -378,6 +540,9 @@ const chargerBrouillon = (resoconto) => {
     Object.keys(avancementiMensili.value).forEach(zona => {
       avancementiMensili.value[zona] = resoconto.avancementi?.[zona] || 0;
     });
+    
+    // Carica le regie
+    regies.value = resoconto.regies ? [...resoconto.regies] : [];
     
     showHistorique.value = false;
     alert('Brouillon chargé. Vous pouvez maintenant le modifier et le sauvegarder.');

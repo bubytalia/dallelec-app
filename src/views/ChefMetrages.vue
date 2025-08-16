@@ -53,6 +53,63 @@
       </div>
     </div>
 
+    <!-- Sezione Regie -->
+    <div v-if="selectedChantierId" class="card p-4 mb-4">
+      <h5>Régies (Heures supplémentaires facturables)</h5>
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label>Zone:</label>
+          <select v-model="nouvelleRegie.zone" class="form-control">
+            <option value="">Sélectionner zone</option>
+            <option v-for="zona in zones" :key="zona" :value="zona">{{ zona }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label>Heures:</label>
+          <input v-model.number="nouvelleRegie.heures" type="number" step="0.5" class="form-control" placeholder="2.0">
+        </div>
+
+        <div class="col-md-3">
+          <label>Description travail:</label>
+          <input v-model="nouvelleRegie.description" type="text" class="form-control" placeholder="Modification installation électrique...">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button @click="regieEnModification !== null ? sauvegarderModificationRegie() : ajouterRegie()" class="btn btn-warning w-100" :disabled="!regieValide">
+            {{ regieEnModification !== null ? '✅ Modifier' : '➕ Ajouter' }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- Liste regie -->
+      <div v-if="regies.length > 0">
+        <h6>Régies ce mois:</h6>
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Zone</th>
+              <th>Heures</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(regie, index) in regies" :key="index">
+              <td>{{ regie.zone }}</td>
+              <td>{{ regie.heures }}h</td>
+              <td>{{ regie.description }}</td>
+              <td>
+                <button @click="modifierRegie(index)" class="btn btn-warning btn-sm me-1">✏️</button>
+                <button @click="supprimerRegie(index)" class="btn btn-danger btn-sm">🗑</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="text-end">
+          <strong>Total Heures Régies: {{ totalHeuresRegies }}h</strong>
+        </div>
+      </div>
+    </div>
+
     <!-- Pulsanti di navigazione e salvataggio -->
     <div class="mb-3 d-flex justify-content-center" v-if="selectedChantierId">
       <button class="btn btn-success me-2" @click="sauvegarderMetrages">📥 Sauvegarder les métrages</button>
@@ -216,6 +273,14 @@ const periodeDebut = ref('');
 const periodeFin = ref('');
 const isConversionMode = ref(false);
 const zoneInConversione = ref('');
+const regies = ref([]);
+const prixRegieChantier = ref(65);
+const regieEnModification = ref(null);
+const nouvelleRegie = ref({
+  zone: '',
+  heures: 0,
+  description: ''
+});
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
@@ -231,6 +296,15 @@ const fetchChantiers = async () => {
 const loadChantierData = async () => {
   if (!selectedChantierId.value) return;
   
+  // Reset automatico per nuovo métrage
+  metrageItems.value = [];
+  regies.value = [];
+  currentMetrageId.value = null;
+  currentMetrageInfo.value = '';
+  periodeDebut.value = '';
+  periodeFin.value = '';
+  editingItem.value = null;
+  
   try {
     // Trova il cantiere selezionato
     const chantier = chantiers.value.find(c => c.id === selectedChantierId.value);
@@ -241,6 +315,9 @@ const loadChantierData = async () => {
     
     const numeroDisplay = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
     nomChantier.value = `${numeroDisplay}${chantier.nom} - ${chantier.adresse}`;
+    
+    // Carica prezzo regie del cantiere
+    prixRegieChantier.value = chantier.prixRegie || 65;
     
     // Carica il devis associato
     const devisDoc = await getDoc(doc(db, 'devis', chantier.devisId));
@@ -269,8 +346,7 @@ const loadChantierData = async () => {
       console.log('Nessun prodotto trovato nel devis');
     }
     
-    // Carica métrages esistenti per questo cantiere
-    await loadExistingMetrages();
+    // Non caricare automaticamente métrages esistenti - inizia sempre nuovo
     
   } catch (error) {
     console.error('Erreur lors du chargement:', error);
@@ -279,30 +355,23 @@ const loadChantierData = async () => {
 };
 
 const loadExistingMetrages = async () => {
+  // Inizia sempre con form vuoto per nuovo métrage
+  metrageItems.value = [];
+  regies.value = [];
+  currentMetrageId.value = null;
+  currentMetrageInfo.value = '';
+  periodeDebut.value = '';
+  periodeFin.value = '';
+  
+  // Carica solo per mostrare nell'historique se necessario
   try {
     const q = query(collection(db, 'metrages'), where('chantierId', '==', selectedChantierId.value));
     const snapshot = await getDocs(q);
     
     if (!snapshot.empty) {
-      // Prendi l'ultimo métrage salvato
       const docs = snapshot.docs.sort((a, b) => b.data().createdAt?.toDate() - a.data().createdAt?.toDate());
-      const latestDoc = docs[0];
-      const latestMetrage = latestDoc.data();
-      
-      if (latestMetrage.items) {
-        metrageItems.value = latestMetrage.items;
-        currentMetrageId.value = latestDoc.id;
-        periodeDebut.value = latestMetrage.periodeDebut || '';
-        periodeFin.value = latestMetrage.periodeFin || '';
-        const date = latestMetrage.createdAt?.toDate()?.toLocaleDateString('fr-FR') || 'Date inconnue';
-        const status = latestMetrage.draft ? 'Brouillon' : 'Sauvegardé';
-        currentMetrageInfo.value = `${status} le ${date} - ${latestMetrage.totalProduits || 0} produits - ${calculateTotalMLWithSupplements(latestMetrage).toFixed(2)} ML`;
-      }
-    } else {
-      // Aucun métrage existant
-      metrageItems.value = [];
-      currentMetrageId.value = null;
-      currentMetrageInfo.value = '';
+      const count = docs.length;
+      currentMetrageInfo.value = `${count} métrage(s) existant(s) - Voir historique pour charger`;
     }
   } catch (error) {
     console.error('Erreur lors du chargement des métrages existants:', error);
@@ -396,6 +465,20 @@ const totalMLGeneral = computed(() => {
   return metrageItems.value.reduce((sum, i) => sum + (i.totalML || 0), 0);
 });
 
+const regieValide = computed(() => {
+  return nouvelleRegie.value.zone && 
+         nouvelleRegie.value.heures > 0 && 
+         nouvelleRegie.value.description.trim();
+});
+
+const totalHeuresRegies = computed(() => {
+  return regies.value.reduce((sum, r) => sum + r.heures, 0);
+});
+
+const totalMontantRegies = computed(() => {
+  return regies.value.reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+});
+
 const getProgressPercentage = (item) => {
   const prevue = item.mlPrevue || 0;
   const posee = item.mlPosee || 0;
@@ -416,12 +499,14 @@ const sauvegarderMetrages = async () => {
     const metrageData = {
       chantierId: selectedChantierId.value,
       items: metrageItems.value,
+      regies: [...regies.value],
       totalML: totalMLPose.value,
       zones: zones.value,
       totalProduits: metrageItems.value.length,
       periodeDebut: periodeDebut.value,
       periodeFin: periodeFin.value,
       draft: false,
+      status: 'en_attente',
       createdAt: new Date(),
       conversioneCompletata: isConversionMode.value,
       zonaConvertita: isConversionMode.value ? zoneInConversione.value : null
@@ -447,6 +532,7 @@ const sauvegarderBrouillon = async () => {
     const metrageData = {
       chantierId: selectedChantierId.value,
       items: metrageItems.value,
+      regies: [...regies.value],
       totalML: totalMLPose.value,
       zones: zones.value,
       totalProduits: metrageItems.value.length,
@@ -483,6 +569,7 @@ const voirHistorique = async () => {
 const chargerMetrage = (historique) => {
   if (confirm('Charger ce métrage? Les données actuelles seront remplacées.')) {
     metrageItems.value = historique.items || [];
+    regies.value = historique.regies ? [...historique.regies] : [];
     currentMetrageId.value = historique.id;
     periodeDebut.value = historique.periodeDebut || '';
     periodeFin.value = historique.periodeFin || '';
@@ -543,6 +630,68 @@ const calculateTotalMLWithSupplements = (metrage) => {
 
 const formatDate = (date) => {
   return date?.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
+};
+
+const ajouterRegie = () => {
+  if (!regieValide.value) return;
+  
+  const nouvelleRegieItem = {
+    zone: nouvelleRegie.value.zone,
+    heures: nouvelleRegie.value.heures,
+    prixHeure: prixRegieChantier.value,
+    description: nouvelleRegie.value.description
+  };
+  
+  regies.value.push(nouvelleRegieItem);
+  
+  // Reset form
+  nouvelleRegie.value = {
+    zone: '',
+    heures: 0,
+    description: ''
+  };
+};
+
+const modifierRegie = (index) => {
+  const regie = regies.value[index];
+  nouvelleRegie.value = {
+    zone: regie.zone,
+    heures: regie.heures,
+    description: regie.description
+  };
+  regieEnModification.value = index;
+};
+
+const sauvegarderModificationRegie = () => {
+  if (!regieValide.value || regieEnModification.value === null) return;
+  
+  regies.value[regieEnModification.value] = {
+    zone: nouvelleRegie.value.zone,
+    heures: nouvelleRegie.value.heures,
+    prixHeure: prixRegieChantier.value,
+    description: nouvelleRegie.value.description
+  };
+  
+  // Reset
+  nouvelleRegie.value = {
+    zone: '',
+    heures: 0,
+    description: ''
+  };
+  regieEnModification.value = null;
+};
+
+const supprimerRegie = (index) => {
+  regies.value.splice(index, 1);
+  // Se stavo modificando questa regie, reset
+  if (regieEnModification.value === index) {
+    regieEnModification.value = null;
+    nouvelleRegie.value = {
+      zone: '',
+      heures: 0,
+      description: ''
+    };
+  }
 };
 
 onMounted(async () => {

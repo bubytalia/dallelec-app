@@ -41,6 +41,7 @@ export default {
         { name: 'paiements', label: 'Modes de paiement', path: '/admin/repertoires/paiements' },
         { name: 'techniciens', label: 'Techniciens', path: '/admin/repertoires/techniciens' },
         { name: 'supplements', label: 'Suppléments', path: '/admin/repertoires/supplements' },
+        { name: 'regies', label: '⏰ Régies', path: '/admin/repertoires/regies' },
         { name: 'conditions', label: 'Conditions de vente', path: '/admin/repertoires/conditions' }
       ]
     };
