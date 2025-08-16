@@ -177,9 +177,15 @@ const ajouterLigne = () => {
     // Modalità prezzi fissi: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
   } else {
-    // Modalità scontistica: applica sconto famiglie
-    const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
-    prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+    // Modalità scontistica: controlla se è prezzo netto
+    if (produit.prezzoNetto) {
+      // Prezzo netto: non applicare sconti
+      prixFinal = produit.prix;
+    } else {
+      // Applica sconto famiglie
+      const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+      prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+    }
   }
   const total = totalML * prixFinal;
 
@@ -238,9 +244,15 @@ const modifierLigne = () => {
     // Modalità prezzi fissi: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
   } else {
-    // Modalità scontistica: mantieni il prezzo esistente o applica sconto
-    const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
-    prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+    // Modalità scontistica: controlla se è prezzo netto
+    if (produit.prezzoNetto) {
+      // Prezzo netto: non applicare sconti
+      prixFinal = produit.prix;
+    } else {
+      // Mantieni il prezzo esistente o applica sconto
+      const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+      prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+    }
   }
   const total = totalML * prixFinal;
 

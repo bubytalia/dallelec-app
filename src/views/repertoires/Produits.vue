@@ -33,6 +33,14 @@
       <div class="col">
         <input v-model="newProduit.prix" placeholder="Prix unitaire" class="form-control" type="number" />
       </div>
+      <div class="col">
+        <div class="form-check">
+          <input v-model="newProduit.prezzoNetto" class="form-check-input" type="checkbox" id="prezzoNetto">
+          <label class="form-check-label" for="prezzoNetto">
+            💰 Prix net (pas de remise)
+          </label>
+        </div>
+      </div>
     </div>
     <div class="text-center mb-4">
       <button @click="addProduit" class="btn btn-primary">Ajouter</button>
@@ -46,6 +54,7 @@
           <th>Description</th>
           <th>Unité</th>
           <th>Prix</th>
+          <th>Prix Net</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -65,6 +74,12 @@
             </td>
             <td><input v-model="editProduit.prix" class="form-control" type="number" /></td>
             <td>
+              <div class="form-check">
+                <input v-model="editProduit.prezzoNetto" class="form-check-input" type="checkbox">
+                <label class="form-check-label">Prix net</label>
+              </div>
+            </td>
+            <td>
               <button @click="updateProduit(prod.id)" class="btn btn-success btn-sm">✔</button>
               <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
             </td>
@@ -75,6 +90,10 @@
             <td>{{ prod.description }}</td>
             <td>{{ prod.unite }}</td>
             <td>{{ prod.prix }}</td>
+            <td>
+              <span v-if="prod.prezzoNetto" class="badge bg-warning">💰 Prix net</span>
+              <span v-else class="text-muted">-</span>
+            </td>
             <td>
               <button @click="startEdit(prod)" class="btn btn-warning btn-sm">✎</button>
               <button @click="deleteProduit(prod.id)" class="btn btn-danger btn-sm">🗑</button>
@@ -104,7 +123,8 @@ export default {
       taille: '',
       description: '',
       unite: '',
-      prix: ''
+      prix: '',
+      prezzoNetto: false
     });
 
     const editId = ref(null);
@@ -118,7 +138,7 @@ export default {
 
     const addProduit = async () => {
       await addDoc(collection(db, 'produits'), newProduit.value);
-      newProduit.value = { article: '', taille: '', description: '', unite: '', prix: '' };
+      newProduit.value = { article: '', taille: '', description: '', unite: '', prix: '', prezzoNetto: false };
       fetchProduits();
     };
 
