@@ -155,13 +155,14 @@ const generatePdf = async () => {
   doc.text('Détail du Devis', 10, 40)
 
   // Coordina la posizione iniziale della prima tabella
-  let tableStartY = 45
+  let tableStartY = 50
   // Per ogni zona, costruiamo la tabella dei prodotti
   ;(props.devisParZone || []).forEach((zone, zIndex) => {
     const zoneName = zone.nom || `Zone ${zIndex + 1}`
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
     doc.text(zoneName, 10, tableStartY)
+    tableStartY += 6
     // Testata e corpo della tabella
     const head = [[
       'Code',
@@ -193,7 +194,7 @@ const generatePdf = async () => {
     autoTable(doc, {
       head: head,
       body: body,
-      startY: tableStartY + 4,
+      startY: tableStartY + 2,
       theme: 'grid',
       margin: { top: 35 }, // Aggiungiamo margine superiore per evitare sovrapposizione con logo
       headStyles: {
@@ -233,97 +234,108 @@ const generatePdf = async () => {
     const finalY = doc.lastAutoTable.finalY || tableStartY + 10
     doc.setFontSize(9)
     doc.setFont('Helvetica', 'bold')
-    doc.text(`Sous-total: ${zoneSubtotal.toFixed(2)} €`, 170, finalY + 4, { align: 'right' })
-    tableStartY = finalY + 10
+    doc.text(`Sous-total: ${zoneSubtotal.toFixed(2)} €`, 170, finalY + 6, { align: 'right' })
+    tableStartY = finalY + 15
   })
 
   // Inseriamo il totale del devis
   doc.setFontSize(10)
   doc.setFont('Helvetica', 'bold')
-  doc.text(`Total Devis: ${devisTotal.value.toFixed(2)} €`, 170, tableStartY + 4, { align: 'right' })
-  tableStartY += 15
+  doc.text(`Total Devis: ${devisTotal.value.toFixed(2)} €`, 170, tableStartY + 6, { align: 'right' })
+  tableStartY += 20
 
   // Ora aggiungiamo la sezione "Détail des Suppléments par Zone" se esistono dati
   if (Array.isArray(props.supplementParZone) && props.supplementParZone.length) {
     doc.setFontSize(14)
     doc.setFont('Helvetica', 'bold')
     doc.text('Détail des Suppléments par Zone', 10, tableStartY)
-    tableStartY += 4
+    tableStartY += 8
     ;(props.supplementParZone || []).forEach((suppZone, idx) => {
       const suppZoneName = suppZone.nom || `Zone ${idx + 1}`
       doc.setFontSize(11)
       doc.setFont('Helvetica', 'bold')
       doc.text(suppZoneName, 10, tableStartY)
-      const head = [[
-        'Code',
-        'Produit',
-        'Taille',
-        'Supplement',
-        'Qté',
-        'Valeur',
-        'Total'
-      ]]
-      const body = []
+      tableStartY += 6
+      
+      // Raggruppiamo i supplementi per prodotto+taglia
+      const groupedSupplements = {}
       if (Array.isArray(suppZone.supplements)) {
         suppZone.supplements.forEach((s) => {
-          // Calcoliamo totalML se non presente
-          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
+          const key = `${s.article || ''}-${s.nom || ''}-${s.taille || ''}`
+          if (!groupedSupplements[key]) {
+            groupedSupplements[key] = {
+              article: s.article || '',
+              nom: s.nom || '',
+              taille: s.taille || '',
+              supplements: [],
+              total: 0
+            }
+          }
+          groupedSupplements[key].supplements.push(s)
+          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0)
+          groupedSupplements[key].total += totalML
+        })
+      }
+      
+      // Per ogni gruppo prodotto+taglia, creiamo una sezione
+      Object.values(groupedSupplements).forEach((group) => {
+        doc.setFontSize(10)
+        doc.setFont('Helvetica', 'normal')
+        doc.text(`${group.article} - ${group.nom} ${group.taille}`, 10, tableStartY + 2)
+        
+        const head = [[
+          'Supplement',
+          'Qté',
+          'Valeur',
+          'Total'
+        ]]
+        const body = []
+        group.supplements.forEach((s) => {
+          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0)
           body.push([
-            s.article || '',
-            s.nom || '',
-            s.taille || '',
             s.supplement || '',
             s.qte != null ? String(s.qte) : '',
             s.valeur != null ? s.valeur.toFixed(2) : '',
             totalML.toFixed(2)
           ])
         })
-      }
-      autoTable(doc, {
-        head: head,
-        body: body,
-        startY: tableStartY + 4,
-        theme: 'grid',
-        margin: { top: 35 }, // Aggiungiamo margine superiore per evitare sovrapposizione con logo
-        headStyles: {
-          fillColor: [230, 230, 230],
-          textColor: 20,
-          halign: 'center',
-          valign: 'middle',
-          fontSize: 8
-        },
-        bodyStyles: {
-          textColor: 20,
-          fontSize: 8,
-          valign: 'middle'
-        },
-        columnStyles: {
-          0: { cellWidth: 20 },
-          1: { cellWidth: 35 },
-          2: { cellWidth: 15 },
-          3: { cellWidth: 35 },
-          4: { cellWidth: 10 },
-          5: { cellWidth: 15 },
-          6: { cellWidth: 15 }
-        },
-        didDrawPage: (data) => {
-          drawHeader(doc.internal.getCurrentPageInfo().pageNumber, plannedPages)
-          // drawFooter(doc.internal.getCurrentPageInfo().pageNumber, plannedPages) - Rimosso per evitare duplicazione
-        }
+        
+        autoTable(doc, {
+          head: head,
+          body: body,
+          startY: tableStartY + 6,
+          theme: 'grid',
+          margin: { top: 35 },
+          headStyles: {
+            fillColor: [240, 240, 240],
+            textColor: 20,
+            halign: 'center',
+            valign: 'middle',
+            fontSize: 7
+          },
+          bodyStyles: {
+            textColor: 20,
+            fontSize: 7,
+            valign: 'middle'
+          },
+          columnStyles: {
+            0: { cellWidth: 60 },
+            1: { cellWidth: 20 },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 25 }
+          },
+          didDrawPage: (data) => {
+            drawHeader(doc.internal.getCurrentPageInfo().pageNumber, plannedPages)
+          }
+        })
+        
+        // Totale per questo prodotto+taglia
+        const finalY3 = doc.lastAutoTable.finalY || (tableStartY + 15)
+        doc.setFontSize(8)
+        doc.setFont('Helvetica', 'bold')
+        doc.text(`Total Suppléments: ${group.total.toFixed(2)}`, 105, finalY3 + 4, { align: 'center' })
+        tableStartY = finalY3 + 10
       })
-      // Totale per la zona supplementi
-      let suppSubtotal = 0
-      if (Array.isArray(suppZone.supplements)) {
-        suppSubtotal = suppZone.supplements.reduce((acc, s) => {
-          const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
-          return acc + totalML;
-        }, 0)
-      }
-      const finalY2 = doc.lastAutoTable.finalY || (tableStartY + 10)
-      doc.setFontSize(9)
-      doc.setFont('Helvetica', 'bold')
-      doc.text(`Total Suppléments (${suppZoneName}): ${suppSubtotal.toFixed(2)}`, 170, finalY2 + 4, { align: 'right' })
-      tableStartY = finalY2 + 10
     })
   }
   // drawFooter(currentPage, plannedPages) - Rimosso per evitare duplicazione
