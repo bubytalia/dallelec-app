@@ -168,9 +168,9 @@ const generatePdf = async () => {
       'Produit',
       'Taille',
       'Unité',
-      'Quantité ML',
-      'Total Suppl. (ML)',
-      'Total ML',
+      'Quantité',
+      'Total Suppl.',
+      'Total',
       'Prix U.',
       'Total'
     ]]
@@ -213,9 +213,9 @@ const generatePdf = async () => {
         1: { cellWidth: 35 }, // Produit
         2: { cellWidth: 15 }, // Taille
         3: { cellWidth: 15 }, // Unité
-        4: { cellWidth: 20 }, // Quantité ML
-        5: { cellWidth: 20 }, // Total Suppl. (ML)
-        6: { cellWidth: 18 }, // Total ML
+        4: { cellWidth: 20 }, // Quantité
+        5: { cellWidth: 20 }, // Total Suppl.
+        6: { cellWidth: 18 }, // Total
         7: { cellWidth: 20 }, // Prix U.
         8: { cellWidth: 20 } // Total
       },
@@ -261,7 +261,7 @@ const generatePdf = async () => {
         'Supplement',
         'Qté',
         'Valeur',
-        'Total ML'
+        'Total'
       ]]
       const body = []
       if (Array.isArray(suppZone.supplements)) {
@@ -322,7 +322,7 @@ const generatePdf = async () => {
       const finalY2 = doc.lastAutoTable.finalY || (tableStartY + 10)
       doc.setFontSize(9)
       doc.setFont('Helvetica', 'bold')
-      doc.text(`Total Suppléments (${suppZoneName}): ${suppSubtotal.toFixed(2)} ML`, 170, finalY2 + 4, { align: 'right' })
+      doc.text(`Total Suppléments (${suppZoneName}): ${suppSubtotal.toFixed(2)}`, 170, finalY2 + 4, { align: 'right' })
       tableStartY = finalY2 + 10
     })
   }

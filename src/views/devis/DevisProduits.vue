@@ -62,9 +62,9 @@
               <th>Produit</th>
               <th>Taille</th>
               <th>Unité</th>
-              <th>Quantité ML</th>
-              <th>Total Suppl. (ML)</th>
-              <th>Total ML</th>
+              <th>Quantité</th>
+              <th>Total Suppl.</th>
+              <th>Total</th>
               <th>Prix Unit.</th>
               <th>Total</th>
               <th>Actions</th>

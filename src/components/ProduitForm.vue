@@ -12,7 +12,7 @@
         </select>
       </div>
       <div class="col-md-2">
-        <label>Quantité ML</label>
+        <label>Quantité</label>
         <input v-model.number="quantiteML" type="number" class="form-control" />
       </div>
       <div class="col-md-2" v-if="modalitaPrezzi === 'prezziFissi'">
