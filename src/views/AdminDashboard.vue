@@ -36,6 +36,18 @@
       <div class="col-md-3 m-2">
         <router-link to="/aide" class="btn btn-outline-info w-100">❓ Aide</router-link>
       </div>
+      <div class="col-md-3 m-2">
+        <button @click="runFirstLoginScript" class="btn btn-outline-warning w-100" :disabled="scriptRunning">
+          <span v-if="scriptRunning" class="spinner-border spinner-border-sm me-2"></span>
+          🔐 Set FirstLogin All
+        </button>
+      </div>
+    </div>
+    
+    <!-- Alert risultato script -->
+    <div v-if="scriptResult" class="alert mt-3" :class="scriptResult.success ? 'alert-success' : 'alert-danger'">
+      <strong>{{ scriptResult.success ? '✅ Successo!' : '❌ Errore!' }}</strong>
+      {{ scriptResult.message }}
     </div>
   </div>
 </template>

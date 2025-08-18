@@ -92,6 +92,7 @@ const routes = [
   { path: '/admin/facturation', name: 'AdminFacturation', component: AdminFacturation },
   { path: '/admin/facture-manuelle', name: 'AdminFactureManuelle', component: AdminFactureManuelle },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },
+  { path: '/change-password', name: 'ChangePassword', component: () => import('@/views/ChangePassword.vue') },
 
   // Chef routes
   { path: '/chef', name: 'ChefDashboard', component: ChefDashboard },

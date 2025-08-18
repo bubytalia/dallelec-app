@@ -17,10 +17,10 @@
   <div class="text-center">
     <strong>Modalità:</strong> 
     <span v-if="modalitaPrezzi === 'prezziFissi'">
-      💰 <strong>Prezzi Fissi</strong> - Inserimento manuale dei prezzi
+      💰 <strong>Prix Fixes</strong> - Saisie manuelle des prix
     </span>
     <span v-else>
-      📊 <strong>Scontistica Standard</strong> - Sconto famiglie: {{ remiseFamilles.toFixed(1) }}%
+      📊 <strong>Remise Standard</strong> - Remise familles: {{ remiseFamilles.toFixed(1) }}%
     </span>
   </div>
 </div>

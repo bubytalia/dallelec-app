@@ -55,19 +55,28 @@ export default {
         const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
         const user = userCredential.user;
         
-        // Determina il tipo di utente dall'anagrafica
-        const userType = await this.getUserType(user.email);
+        // Determina il tipo di utente e controlla first login
+        const userInfo = await this.getUserInfo(user.email);
         
-        // Redirect basato sul tipo
-        if (userType === 'admin') {
-          this.$router.push('/admin');
-        } else if (userType === 'chef') {
-          this.$router.push('/chef');
-        } else if (userType === 'ouvrier') {
-          this.$router.push('/ouvrier');
-        } else {
+        if (!userInfo) {
           this.error = 'Utilisateur non autorisé';
           await auth.signOut();
+          return;
+        }
+        
+        // Controlla se è il primo login
+        if (userInfo.firstLogin) {
+          this.$router.push('/change-password');
+          return;
+        }
+        
+        // Redirect basato sul tipo
+        if (userInfo.type === 'admin') {
+          this.$router.push('/admin');
+        } else if (userInfo.type === 'chef') {
+          this.$router.push('/chef');
+        } else if (userInfo.type === 'ouvrier') {
+          this.$router.push('/ouvrier');
         }
         
       } catch (error) {
@@ -86,26 +95,41 @@ export default {
       }
     },
     
-    async getUserType(email) {
+    async getUserInfo(email) {
       // Verifica se è admin
       const adminsQuery = query(collection(db, 'admins'), where('email', '==', email));
       const adminsSnapshot = await getDocs(adminsQuery);
       if (!adminsSnapshot.empty) {
-        return 'admin';
+        const adminData = adminsSnapshot.docs[0].data();
+        return {
+          type: 'admin',
+          firstLogin: adminData.firstLogin || false,
+          userData: adminData
+        };
       }
       
       // Verifica se è chef de chantier
       const chefsQuery = query(collection(db, 'chefdechantiers'), where('email', '==', email));
       const chefsSnapshot = await getDocs(chefsQuery);
       if (!chefsSnapshot.empty) {
-        return 'chef';
+        const chefData = chefsSnapshot.docs[0].data();
+        return {
+          type: 'chef',
+          firstLogin: chefData.firstLogin || false,
+          userData: chefData
+        };
       }
       
       // Verifica se è collaboratore/ouvrier
       const collabQuery = query(collection(db, 'collaborateurs'), where('email', '==', email));
       const collabSnapshot = await getDocs(collabQuery);
       if (!collabSnapshot.empty) {
-        return 'ouvrier';
+        const collabData = collabSnapshot.docs[0].data();
+        return {
+          type: 'ouvrier',
+          firstLogin: collabData.firstLogin || false,
+          userData: collabData
+        };
       }
       
       return null; // Utente non riconosciuto

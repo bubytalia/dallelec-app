@@ -5,9 +5,9 @@
       <div class="col-md-3">
         <label>Produit</label>
         <select v-model="selectedProduitId" class="form-select">
-          <option disabled value="">Sélectionner un produit</option>
+          <option disabled value="">Code - Description (Taille)</option>
           <option v-for="p in produits" :key="p.id" :value="p.id">
-            {{ p.description }} ({{ p.taille }})
+            {{ p.article }} - {{ p.description }} ({{ p.taille }})
           </option>
         </select>
       </div>
@@ -123,7 +123,18 @@ onMounted(async () => {
       article: data.article ?? data.code ?? '',
       description: data.description ?? data.nom ?? ''
     };
-  }).sort((a, b) => a.article.localeCompare(b.article));
+  }).sort((a, b) => {
+    // Ordina prima per codice prodotto, poi per descrizione se i codici sono uguali
+    const codeA = (a.article || '').toLowerCase();
+    const codeB = (b.article || '').toLowerCase();
+    
+    if (codeA !== codeB) {
+      return codeA.localeCompare(codeB);
+    }
+    
+    // Se i codici sono uguali, ordina per descrizione
+    return (a.description || '').toLowerCase().localeCompare((b.description || '').toLowerCase());
+  });
 
   const supplementsSnap = await getDocs(collection(db, 'supplements'));
   supplements.value = supplementsSnap.docs.map(d => d.data() as Supplement);
@@ -174,10 +185,10 @@ const ajouterLigne = () => {
   // Calcola il prezzo da utilizzare per questa riga
   let prixFinal;
   if (modalitaPrezzi === 'prezziFissi') {
-    // Modalità prezzi fissi: usa il prezzo inserito manualmente
+    // Modalità prix fixes: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
   } else {
-    // Modalità scontistica: controlla se è prezzo netto
+    // Modalità remise: controlla se è prezzo netto
     if (produit.prezzoNetto) {
       // Prezzo netto: non applicare sconti
       prixFinal = produit.prix;
@@ -241,10 +252,10 @@ const modifierLigne = () => {
   // Calcola il prezzo per la modifica
   let prixFinal;
   if (modalitaPrezzi === 'prezziFissi') {
-    // Modalità prezzi fissi: usa il prezzo inserito manualmente
+    // Modalità prix fixes: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
   } else {
-    // Modalità scontistica: controlla se è prezzo netto
+    // Modalità remise: controlla se è prezzo netto
     if (produit.prezzoNetto) {
       // Prezzo netto: non applicare sconti
       prixFinal = produit.prix;

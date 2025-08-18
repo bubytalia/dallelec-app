@@ -59,15 +59,29 @@
     <div class="card p-4 mb-4">
       <h5>Modalità Prezzi</h5>
       <div class="form-check mb-3">
-        <input class="form-check-input" type="radio" name="modalitaPrezzi" id="scontistica" v-model="modalitaPrezzi" value="scontistica">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          name="modalitaPrezzi" 
+          id="scontistica" 
+          :checked="modalitaPrezzi === 'scontistica'"
+          @change="modalitaPrezzi = 'scontistica'"
+        >
         <label class="form-check-label" for="scontistica">
-          <strong>Scontistica Standard</strong> - Applica sconti famiglia/sottofamiglia
+          <strong>Remise Standard</strong> - Applique des remises famille/sous-famille
         </label>
       </div>
       <div class="form-check mb-3">
-        <input class="form-check-input" type="radio" name="modalitaPrezzi" id="prezziFissi" v-model="modalitaPrezzi" value="prezziFissi">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          name="modalitaPrezzi" 
+          id="prezziFissi" 
+          :checked="modalitaPrezzi === 'prezziFissi'"
+          @change="modalitaPrezzi = 'prezziFissi'"
+        >
         <label class="form-check-label" for="prezziFissi">
-          <strong>Prezzi Fissi</strong> - Inserimento manuale dei prezzi per ogni prodotto
+          <strong>Prix Fixes</strong> - Saisie manuelle des prix pour chaque produit
         </label>
       </div>
     </div>
@@ -112,8 +126,34 @@
       </div>
     </div>
 
+    <!-- Informazione per prezzi fissi -->
+    <div class="card p-4 mb-4" v-if="modalitaPrezzi === 'prezziFissi'">
+      <div class="alert alert-info">
+        <h6>💡 Information Prix Fixes</h6>
+        <p class="mb-0">
+          En mode <strong>Prix Fixes</strong>, vous pourrez saisir manuellement le prix de chaque produit 
+          lors de l'ajout au devis. Aucune remise famille n'est appliquée automatiquement.
+        </p>
+      </div>
+    </div>
+
     <!-- Continuer -->
       <div class="text-end">
+        
+        <!-- Indicatore stato validazione -->
+        <div class="mb-3 text-start">
+          <small class="text-muted">
+            <span v-if="modalitaPrezzi === 'scontistica'">
+              ✅ Informazioni cantiere: {{ form.nom && form.adresse && form.client && form.technicien && zones.length > 0 ? 'Completate' : 'Incomplete' }}<br>
+              ✅ Remise famiglie: {{ Object.keys(remiseSelection).length === familles.length ? 'Completate' : 'Incomplete' }} ({{ Object.keys(remiseSelection).length }}/{{ familles.length }})
+            </span>
+            <span v-else>
+              ✅ Informazioni cantiere: {{ form.nom && form.adresse && form.client && form.technicien && zones.length > 0 ? 'Completate' : 'Incomplete' }}<br>
+              ℹ️ Modalità prezzi fissi: Nessuna remise richiesta
+            </span>
+          </small>
+        </div>
+        
         <button
           class="btn btn-success"
           :disabled="!formReady"
@@ -157,7 +197,7 @@ const techniciens = ref([]);
 const familles = ref([]);
 const sousfamilles = ref([]);
 const remiseSelection = ref({});
-const modalitaPrezzi = ref('scontistica');
+const modalitaPrezzi = ref('scontistica'); // Ripristinato valore corretto
 
 const addZone = () => {
   if (newZone.value.trim()) {
@@ -199,10 +239,11 @@ const formReady = computed(() => {
   );
   
   if (modalitaPrezzi.value === 'scontistica') {
-    return baseReady && Object.keys(remiseSelection.value).length === familles.value.length;
+    const remiseReady = Object.keys(remiseSelection.value).length === familles.value.length;
+    return baseReady && remiseReady;
+  } else {
+    return baseReady; // Per prezzi fissi non serve la scontistica
   }
-  
-  return baseReady; // Per prezzi fissi non serve la scontistica
 });
 
 const continuerVersDevis = async () => {
