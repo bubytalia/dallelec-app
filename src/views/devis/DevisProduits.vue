@@ -351,15 +351,7 @@ watch(remiseSupplementaire, (val) => {
 
 // Aggiunta/modifica riga
 const handleUpdateItem = (index, item) => {
-  const duplicate = devisItems.value.find(i =>
-    i.zone === item.zone && i.nom === item.nom && i.taille === item.taille && i !== devisItems.value[index]
-  );
-  if (duplicate) {
-    alert("Ce produit existe déjà dans cette zone.");
-    return;
-  }
-
- // Se l'articolo non è già presente (nuovo item), proviamo a recuperarlo dalla lista prodotti
+  // Se l'articolo non è già presente (nuovo item), proviamo a recuperarlo dalla lista prodotti
 if (!item.article) {
   const refProd = produits.value.find(
     p => p.description === item.nom && p.taille === item.taille
@@ -367,6 +359,16 @@ if (!item.article) {
   item.article = refProd?.article || item.article;
 }
 
+// Verifica che l'articolo sia unico nella zona (controllo aggiuntivo)
+if (item.article) {
+  const duplicateCheck = devisItems.value.find(i =>
+    i.zone === item.zone && i.article === item.article && i !== devisItems.value[index]
+  );
+  if (duplicateCheck) {
+    alert("Ce produit (code: " + item.article + ") existe déjà dans cette zone.");
+    return;
+  }
+}
 
   if (index !== null && index !== undefined) {
     devisItems.value[index] = item;

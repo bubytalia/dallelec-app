@@ -139,7 +139,6 @@
 
     <!-- Continuer -->
       <div class="text-end">
-        
         <!-- Indicatore stato validazione -->
         <div class="mb-3 text-start">
           <small class="text-muted">
