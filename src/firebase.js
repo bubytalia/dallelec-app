@@ -3,17 +3,24 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD97Bgyg0SwVPF9rZS4BCSWKP20LxXfaqM",
-  authDomain: "dallelec-gestion-58a49.firebaseapp.com",
-  projectId: "dallelec-gestion-58a49",
-  storageBucket: "dallelec-gestion-58a49.appspot.com",
-  messagingSenderId: "801397923579",
-  appId: "1:801397923579:web:b07860aadfeef5c1579a5e",
-  measurementId: "G-G3CLCT2ERB"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
-const auth = getAuth(firebaseApp);
+let firebaseApp, db, auth;
+
+try {
+  firebaseApp = initializeApp(firebaseConfig);
+  db = getFirestore(firebaseApp);
+  auth = getAuth(firebaseApp);
+} catch (error) {
+  console.error('Firebase initialization failed:', error);
+  throw new Error('Failed to initialize Firebase. Please check configuration.');
+}
 
 export { db, auth };

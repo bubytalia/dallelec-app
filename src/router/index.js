@@ -67,7 +67,7 @@ const routes = [
   { path: '/admin/devis/create', name: 'DevisCreate', component: DevisCreate },
   { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate },
   { path: '/admin/devis/list', name: 'DevisList', component: DevisList },
-  { path: '/devis/produits/:id', name: 'DevisProduits', component: DevisProduits },
+  { path: '/admin/devis/produits/:id', name: 'DevisProduits', component: DevisProduits },
   { path: '/admin/devis/conditions/:id', name: 'DevisConditions', component: DevisConditions },
   { path: '/admin/repertoires', name: 'Repertoires', component: Repertoires },
   { path: '/admin/repertoires/chantiers', name: 'Chantiers', component: Chantiers },
@@ -93,6 +93,7 @@ const routes = [
   { path: '/admin/facturation', name: 'AdminFacturation', component: AdminFacturation },
   { path: '/admin/facture-manuelle', name: 'AdminFactureManuelle', component: AdminFactureManuelle },
   { path: '/admin/monitoring-heures', name: 'AdminMonitoringHeures', component: AdminMonitoringHeures },
+  { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },
   { path: '/change-password', name: 'ChangePassword', component: () => import('@/views/ChangePassword.vue') },
 

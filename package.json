@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "security-audit": "npm audit",
+    "security-fix": "npm audit fix",
+    "deploy-secure": "npm run security-audit && npm run build && firebase deploy"
   },
   "dependencies": {
     "bootstrap": "^5.3.7",

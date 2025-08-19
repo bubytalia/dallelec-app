@@ -26,10 +26,10 @@ export const setFirstLoginForAllUsers = async () => {
             firstLogin: true
           })
           
-          console.log(`✅ Aggiornato: ${userData.email || userData.nom}`)
+          console.log(`✅ Aggiornato: ${encodeURIComponent(userData.email || userData.nom)}`)
           totalUpdated++
         } else {
-          console.log(`⏭️ Saltato (già firstLogin=true): ${userData.email || userData.nom}`)
+          console.log(`⏭️ Saltato (già firstLogin=true): ${encodeURIComponent(userData.email || userData.nom)}`)
         }
       }
     }
@@ -38,7 +38,7 @@ export const setFirstLoginForAllUsers = async () => {
     return { success: true, updated: totalUpdated }
     
   } catch (error) {
-    console.error('❌ Errore durante aggiornamento:', error)
+    console.error('❌ Errore durante aggiornamento:', encodeURIComponent(error.message))
     return { success: false, error: error.message }
   }
 }

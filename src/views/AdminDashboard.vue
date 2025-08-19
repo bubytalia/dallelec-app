@@ -40,6 +40,9 @@
         <router-link to="/aide" class="btn btn-outline-info w-100">❓ Aide</router-link>
       </div>
       <div class="col-md-3 m-2">
+        <router-link to="/admin/security" class="btn btn-outline-danger w-100">🛡️ Security Dashboard</router-link>
+      </div>
+      <div class="col-md-3 m-2">
         <button @click="runFirstLoginScript" class="btn btn-outline-warning w-100" :disabled="scriptRunning">
           <span v-if="scriptRunning" class="spinner-border spinner-border-sm me-2"></span>
           🔐 Set FirstLogin All

@@ -11,7 +11,7 @@ const app = createApp(App);
 
 app.use(router);
 
-app.config.globalProperties.$auth = auth;
-app.config.globalProperties.$db = db;
+app.provide('auth', auth);
+app.provide('db', db);
 
 app.mount('#app');
