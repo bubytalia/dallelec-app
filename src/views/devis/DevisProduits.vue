@@ -106,7 +106,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, onBeforeRouteLeave } from 'vue-router';
 import { db } from '@/firebase';
@@ -237,7 +237,7 @@ const retourPage = async () => {
 };
 
 // ✅ AGGIUNTA QUI
-const zones = ref<string[]>([]);
+const zones = ref([]);
 
 // Salvataggio automatico come bozza quando si lascia la pagina (navigazione interna).
 onBeforeRouteLeave(async (to, from, next) => {
@@ -282,9 +282,9 @@ onMounted(async () => {
       const remisesObj = data.remises || {};
       // Otteniamo tutti i documenti delle sousfamilles per poter leggerne il pourcentage.
       const sousSnap = await getDocs(collection(db, 'sousfamilles'));
-      const allSous = sousSnap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      const allSous = sousSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       let totalPct = 0;
-      Object.values(remisesObj).forEach((sousId: any) => {
+      Object.values(remisesObj).forEach((sousId) => {
         const sous = allSous.find(s => s.id === sousId);
         if (sous && typeof sous.pourcentage !== 'undefined') {
           totalPct += Number(sous.pourcentage) || 0;
