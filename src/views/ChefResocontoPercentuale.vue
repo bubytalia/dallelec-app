@@ -98,6 +98,13 @@
                   >
                     📋 Convertir en métrage
                   </button>
+                  <router-link 
+                    v-if="getTotalAvancement(zona) === 100"
+                    :to="`/chef/chantiers/resoconto-finale?chantier=${selectedChantierId}&zone=${zona}`"
+                    class="btn btn-danger btn-sm ms-2"
+                  >
+                    📋 Resoconto final
+                  </router-link>
                 </td>
               </tr>
             </tbody>
