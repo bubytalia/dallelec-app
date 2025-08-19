@@ -13,6 +13,7 @@ import AdminAssocierDevis from '@/views/AdminAssocierDevis.vue';
 import AdminBilans from '@/views/AdminBilans.vue';
 import AdminFacturation from '@/views/AdminFacturation.vue';
 import AdminFactureManuelle from '@/views/AdminFactureManuelle.vue';
+import AdminMonitoringHeures from '@/views/AdminMonitoringHeures.vue';
 
 // Chef pages
 import ChefHeures from '@/views/ChefHeures.vue';
@@ -91,6 +92,7 @@ const routes = [
   { path: '/admin/associer-devis', name: 'AdminAssocierDevis', component: AdminAssocierDevis },
   { path: '/admin/facturation', name: 'AdminFacturation', component: AdminFacturation },
   { path: '/admin/facture-manuelle', name: 'AdminFactureManuelle', component: AdminFactureManuelle },
+  { path: '/admin/monitoring-heures', name: 'AdminMonitoringHeures', component: AdminMonitoringHeures },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },
   { path: '/change-password', name: 'ChangePassword', component: () => import('@/views/ChangePassword.vue') },
 

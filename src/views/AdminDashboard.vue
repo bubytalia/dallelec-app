@@ -25,6 +25,9 @@
         <router-link to="/admin/report-mensuel" class="btn btn-outline-info w-100">Report Mensuel</router-link>
       </div>
       <div class="col-md-3 m-2">
+        <router-link to="/admin/monitoring-heures" class="btn btn-outline-primary w-100">📊 Monitoring Heures</router-link>
+      </div>
+      <div class="col-md-3 m-2">
         <router-link to="/admin/gestion-feries" class="btn btn-outline-warning w-100">Gestion Congés</router-link>
       </div>
       <div class="col-md-3 m-2">

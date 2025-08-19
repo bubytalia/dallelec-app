@@ -370,6 +370,16 @@ const generateReport = async () => {
       };
     });
     
+    // Debug: verifica dati caricati
+    console.log('=== DEBUG REPORT ===');
+    console.log('Période:', startDate, 'à', endDate);
+    console.log('Employés trouvés:', employes.length);
+    console.log('Heures chef:', heuresChef.length);
+    console.log('Heures interim:', heuresInterim.length);
+    console.log('Heures ouvriers:', heuresOuvriers.length);
+    console.log('Absences:', absences.length);
+    console.log('Employés avec données:', employesReport.filter(e => e.totalHeures > 0 || e.joursAbsence > 0).length);
+    
     reportData.value = {
       totalHeuresAzienda,
       nombreEmployes: employes.length,
@@ -401,9 +411,180 @@ const getTypeLabel = (type) => {
   }
 };
 
-const exportToPDF = () => {
-  // TODO: Implementare export PDF
-  alert('Fonctionnalité d\'export PDF à implémenter');
+const exportToPDF = async () => {
+  if (!reportData.value) return;
+  
+  const { jsPDF } = await import('jspdf');
+  const autoTable = (await import('jspdf-autotable')).default;
+  const logo = (await import('@/assets/logo.jpg')).default;
+  
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  
+  const drawHeader = (pageNum, totalPages) => {
+    // Logo aziendale
+    const logoW = 45;
+    const logoH = logoW / 5.32;
+    doc.addImage(logo, 'JPEG', 10, 10, logoW, logoH);
+    
+    // Dati aziendali a destra
+    doc.setFontSize(8);
+    doc.setFont('Helvetica', 'normal');
+    const companyInfo = [
+      'DALLELEC Sarl',
+      'Rue de Bourgogne 25',
+      '1203 Genève',
+      'contact@dallelec.ch'
+    ];
+    let y = 12;
+    const prevColor = doc.getTextColor();
+    doc.setTextColor(80);
+    companyInfo.forEach((line) => {
+      doc.text(line, 200, y, { align: 'right' });
+      y += 4;
+    });
+    doc.setTextColor(prevColor);
+    
+    // Titolo centrato
+    doc.setFontSize(16);
+    doc.setFont('Helvetica', 'bold');
+    doc.text('RAPPORT MENSUEL', 105, 35, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('Helvetica', 'normal');
+    doc.text(`Période: ${formatMonth(selectedMonth.value)}`, 105, 42, { align: 'center' });
+    
+    // Numero pagina
+    doc.setFontSize(8);
+    doc.text(`Page ${pageNum}/${totalPages}`, 200, 285, { align: 'right' });
+  };
+  
+  let currentPage = 1;
+  const totalPages = 3;
+  
+  // Page 1: Résumé général
+  drawHeader(currentPage, totalPages);
+  
+  doc.setFontSize(14);
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Résumé Général de l\'Entreprise', 10, 55);
+  
+  const resumeData = [
+    ['Période', formatMonth(selectedMonth.value)],
+    ['Total heures travaillées', `${reportData.value.totalHeuresAzienda} heures`],
+    ['Nombre d\'employés', `${reportData.value.nombreEmployes} employés`],
+    ['Jours d\'absence total', `${reportData.value.totalJoursAbsence} jours`]
+  ];
+  
+  autoTable(doc, {
+    body: resumeData,
+    startY: 60,
+    theme: 'grid',
+    headStyles: { fillColor: [230, 230, 230] },
+    columnStyles: {
+      0: { cellWidth: 80, fontStyle: 'bold' },
+      1: { cellWidth: 100 }
+    }
+  });
+  
+  // Statistiques hebdomadaires
+  let yPos = doc.lastAutoTable.finalY + 15;
+  doc.setFontSize(12);
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Statistiques Hebdomadaires', 10, yPos);
+  
+  const semainesHead = [['Semaine', 'Heures', 'Absences', 'Employés Actifs']];
+  const semainesBody = reportData.value.semainesAziendali.map(s => [
+    `Semaine ${s.numero}`,
+    `${s.heures}h`,
+    `${s.absences} jours`,
+    `${s.employesActifs} employés`
+  ]);
+  
+  autoTable(doc, {
+    head: semainesHead,
+    body: semainesBody,
+    startY: yPos + 5,
+    theme: 'grid',
+    headStyles: { fillColor: [200, 200, 200] }
+  });
+  
+  // Page 2: Rapport par employé
+  doc.addPage();
+  currentPage++;
+  drawHeader(currentPage, totalPages);
+  
+  doc.setFontSize(14);
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Rapport par Employé', 10, 55);
+  
+  const employesHead = [['Employé', 'Heures', 'Jours Travail', 'Jours Absence']];
+  const employesBody = reportData.value.employes.map(emp => [
+    emp.nom,
+    `${emp.totalHeures}h`,
+    `${emp.joursTravail} jours`,
+    `${emp.joursAbsence} jours`
+  ]);
+  
+  autoTable(doc, {
+    head: employesHead,
+    body: employesBody,
+    startY: 60,
+    theme: 'grid',
+    headStyles: { fillColor: [200, 200, 200] }
+  });
+  
+  // Page 3: Détail des absences
+  doc.addPage();
+  currentPage++;
+  drawHeader(currentPage, totalPages);
+  
+  doc.setFontSize(14);
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Résumé des Absences par Type', 10, 55);
+  
+  const absencesHead = [['Type d\'Absence', 'Total Jours', 'Employés Concernés']];
+  const absencesBody = Object.entries(reportData.value.absencesAziendali).map(([type, data]) => [
+    getTypeLabel(type),
+    `${data.totalJours} jours`,
+    `${data.nombreEmployes} employés`
+  ]);
+  
+  autoTable(doc, {
+    head: absencesHead,
+    body: absencesBody,
+    startY: 60,
+    theme: 'grid',
+    headStyles: { fillColor: [200, 200, 200] }
+  });
+  
+  // Détail absences par employé
+  yPos = doc.lastAutoTable.finalY + 15;
+  doc.setFontSize(12);
+  doc.setFont('Helvetica', 'bold');
+  doc.text('Détail des Absences par Employé', 10, yPos);
+  
+  yPos += 10;
+  reportData.value.employes.forEach(emp => {
+    if (Object.keys(emp.absencesResume).length > 0) {
+      doc.setFontSize(10);
+      doc.setFont('Helvetica', 'bold');
+      doc.text(`${emp.nom}:`, 15, yPos);
+      yPos += 5;
+      
+      Object.entries(emp.absencesResume).forEach(([type, count]) => {
+        doc.setFont('Helvetica', 'normal');
+        doc.text(`  • ${getTypeLabel(type)}: ${count} jours`, 20, yPos);
+        yPos += 4;
+      });
+      yPos += 3;
+    }
+  });
+  
+  // Footer con data generazione
+  doc.setFontSize(8);
+  doc.setFont('Helvetica', 'italic');
+  doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 105, 285, { align: 'center' });
+  
+  doc.save(`rapport-mensuel-${selectedMonth.value}.pdf`);
 };
 
 onMounted(() => {

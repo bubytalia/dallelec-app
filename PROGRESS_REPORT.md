@@ -58,6 +58,17 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - ✅ Dashboard specifiche per ruolo
 - ✅ Controllo accessi per modulo
 
+### 7. **SISTEMA GESTIONE ORE** ⭐ **COMPLETATO**
+- ✅ **OuvrierHeures**: Inserimento ore dipendenti con limite 2 giorni
+- ✅ **ChefHeures**: Gestione ore personali + ore interinali
+- ✅ **AdminReportMensuel**: Report mensili PDF per buste paga
+- ✅ **AdminMonitoringHeures**: Dashboard monitoraggio compliance
+- ✅ Validazioni: max 12h/giorno, controllo weekend
+- ✅ Sistema alerts per dipendenti con ore mancanti
+- ✅ Calendario visuale con codici colore per stato ore
+- ✅ Esclusione account test dai report (flag excludeFromReport)
+- ✅ Statistiche dettagliate per dipendente e periodo
+
 ## ✅ COMPLETAMENTI RECENTI
 
 ### **NUMERO CANTIERE** (100% completato) ⭐
@@ -81,6 +92,18 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - ✅ **IMPLEMENTATO**: Raggruppamento supplementi per prodotto/taglia
 - ✅ **IMPLEMENTATO**: Totali per gruppo che corrispondono alla tabella principale
 - ✅ **OTTIMIZZATO**: Layout e spaziature tabelle
+
+### **SISTEMA ORE LAVORO** (100% completato) ⭐
+- ✅ **NUOVO**: OuvrierHeures.vue - Inserimento ore dipendenti
+- ✅ **NUOVO**: ChefHeures.vue - Gestione ore chef + interinali
+- ✅ **NUOVO**: Limite 2 giorni per inserimento ore (con override admin)
+- ✅ **NUOVO**: Validazione max 12 ore/giorno
+- ✅ **NUOVO**: Riepilogo settimanale ore per cantiere
+- ✅ **NUOVO**: AdminReportMensuel.vue - Report mensili con PDF
+- ✅ **NUOVO**: AdminMonitoringHeures.vue - Dashboard monitoraggio ore
+- ✅ **NUOVO**: Sistema alerts per ore mancanti
+- ✅ **NUOVO**: Calendario visuale stato inserimento ore
+- ✅ **NUOVO**: Statistiche dipendenti e controllo compliance
 
 ### **CORREZIONI VARIE** (100% completato)
 - ✅ **CORRETTO**: Calcolo ML totali nell'historique (ora include supplementi)
@@ -127,7 +150,10 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 ├── supplements (repertorio supplementi)
 ├── metrages (misurazioni cantiere)
 ├── factures (fatture generate)
-└── collaborateurs (risorse umane)
+├── collaborateurs (risorse umane)
+├── heures (ore lavorate dipendenti)
+├── heuresChef (ore chef + interinali)
+└── reportsMensuels (report mensili generati)
 ```
 
 ## 🎯 PROSSIMI STEP PRIORITARI
@@ -158,6 +184,8 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - **Autenticazione**: 100% completato ✅
 - **PDF Generation**: 100% completato ✅
 - **Periodo Riferimento**: 100% completato ✅
+- **Sistema Ore Lavoro**: 100% completato ✅
+- **Monitoring Dashboard**: 100% completato ✅
 
 ## 🔧 TECNOLOGIE E STRUMENTI
 
@@ -197,6 +225,15 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - Supplementi raggruppati per prodotto/taglia
 - Totali che corrispondono alla tabella principale
 - Layout professionale e leggibile
+
+### **Sistema Ore Lavoro**
+- Limite 2 giorni per inserimento ore (configurabile admin)
+- Validazione max 12 ore/giorno per sicurezza
+- Gestione separata ore dipendenti/chef/interinali
+- Report mensili PDF con logo aziendale
+- Dashboard monitoring con alerts automatici
+- Calendario visuale per controllo compliance
+- Esclusione account test dai calcoli payroll
 
 ---
 
