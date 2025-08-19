@@ -69,6 +69,7 @@ const routes = [
   { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate },
   { path: '/admin/devis/list', name: 'DevisList', component: DevisList },
   { path: '/admin/devis/produits/:id', name: 'DevisProduits', component: DevisProduits },
+  { path: '/devis/produits/:id', name: 'DevisProduitsShort', component: DevisProduits },
   { path: '/admin/devis/conditions/:id', name: 'DevisConditions', component: DevisConditions },
   { path: '/admin/repertoires', name: 'Repertoires', component: Repertoires },
   { path: '/admin/repertoires/chantiers', name: 'Chantiers', component: Chantiers },
