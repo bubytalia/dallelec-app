@@ -115,7 +115,8 @@ onMounted(async () => {
   });
 
   const supplementsSnap = await getDocs(collection(db, 'supplements'));
-  supplements.value = supplementsSnap.docs.map(d => d.data());
+  supplements.value = supplementsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
 });
 
 // Quando editingItem cambia, popoliamo il form con i dati della riga da modificare

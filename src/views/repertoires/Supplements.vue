@@ -6,11 +6,14 @@
     <h2 class="text-center mb-4">Suppléments</h2>
 
     <form @submit.prevent="addSupplement" class="row g-3 mb-4 justify-content-center">
-      <div class="col-md-6">
+      <div class="col-md-5">
         <input v-model="newSupplement.nom" placeholder="Nom du supplément" class="form-control" required />
       </div>
       <div class="col-md-3">
         <input v-model.number="newSupplement.valeur" placeholder="Valeur (mètres)" type="number" step="0.01" class="form-control" required />
+      </div>
+      <div class="col-md-2">
+        <input v-model.number="newSupplement.ordre" placeholder="Ordre" type="number" class="form-control" min="0" />
       </div>
       <div class="col-12 text-center">
         <button type="submit" class="btn btn-primary">Ajouter</button>
@@ -22,6 +25,7 @@
         <tr>
           <th>Nom</th>
           <th>Valeur (m)</th>
+          <th>Ordre</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -32,6 +36,9 @@
 
           <td v-if="editId !== supp.id">{{ supp.valeur }}</td>
           <td v-else><input v-model.number="editData.valeur" type="number" step="0.01" class="form-control" /></td>
+
+          <td v-if="editId !== supp.id">{{ supp.ordre || 0 }}</td>
+          <td v-else><input v-model.number="editData.ordre" type="number" class="form-control" min="0" /></td>
 
           <td>
             <button v-if="editId !== supp.id" @click="startEdit(supp)" class="btn btn-sm btn-warning me-1">✏️</button>
@@ -57,19 +64,24 @@ export default {
   },
   setup() {
     const supplements = ref([]);
-    const newSupplement = ref({ nom: '', valeur: null });
+    const newSupplement = ref({ nom: '', valeur: null, ordre: 0 });
     const editId = ref(null);
-    const editData = ref({ nom: '', valeur: null });
+    const editData = ref({ nom: '', valeur: null, ordre: 0 });
 
     const fetchSupplements = async () => {
       const snap = await getDocs(collection(db, 'supplements'));
-      supplements.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      supplements.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
     };
 
     const addSupplement = async () => {
       if (!newSupplement.value.nom || newSupplement.value.valeur === null) return;
-      await addDoc(collection(db, 'supplements'), newSupplement.value);
-      newSupplement.value = { nom: '', valeur: null };
+      await addDoc(collection(db, 'supplements'), {
+        nom: newSupplement.value.nom,
+        valeur: newSupplement.value.valeur,
+        ordre: newSupplement.value.ordre || 0
+      });
+      newSupplement.value = { nom: '', valeur: null, ordre: 0 };
       fetchSupplements();
     };
 
@@ -80,13 +92,17 @@ export default {
 
     const startEdit = (supp) => {
       editId.value = supp.id;
-      editData.value = { nom: supp.nom, valeur: supp.valeur };
+      editData.value = { nom: supp.nom, valeur: supp.valeur, ordre: supp.ordre || 0 };
     };
 
     const confirmEdit = async (id) => {
-      await updateDoc(doc(db, 'supplements', id), editData.value);
+      await updateDoc(doc(db, 'supplements', id), {
+        nom: editData.value.nom,
+        valeur: editData.value.valeur,
+        ordre: editData.value.ordre || 0
+      });
       editId.value = null;
-      editData.value = { nom: '', valeur: null };
+      editData.value = { nom: '', valeur: null, ordre: 0 };
       fetchSupplements();
     };
 

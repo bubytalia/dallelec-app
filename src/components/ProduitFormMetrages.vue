@@ -96,7 +96,8 @@ const produitsDisponibili = computed(() => {
 onMounted(async () => {
   try {
     const supplementsSnap = await getDocs(collection(db, 'supplements'));
-    supplements.value = supplementsSnap.docs.map(d => d.data() as Supplement);
+    supplements.value = supplementsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Supplement))
+      .sort((a, b) => ((a as any).ordre || 0) - ((b as any).ordre || 0));
   } catch (error) {
     console.error('Erreur lors du chargement des suppléments:', error);
     supplements.value = [];

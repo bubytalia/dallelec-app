@@ -142,8 +142,9 @@ const fetchSupplements = async () => {
     supplementsAnagrafica.value = snapshot.docs.map(doc => ({
       id: doc.id,
       nom: doc.data().nom,
-      valeur: doc.data().valeur || 1
-    }));
+      valeur: doc.data().valeur || 1,
+      ordre: doc.data().ordre || 0
+    })).sort((a, b) => a.ordre - b.ordre);
     console.log('Supplementi caricati:', supplementsAnagrafica.value);
   } catch (error) {
     console.error('Errore caricamento supplementi:', error);
