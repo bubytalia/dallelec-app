@@ -54,54 +54,32 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, watch, onMounted, computed } from 'vue';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
-const { zones, devisId, editingItem, discountFamille, modalitaPrezzi } = defineProps<{
-  zones: string[];
-  devisId: string;
-  editingItem: any;
-  /**
-   * Percentuale di sconto derivante dalle famiglie/sottofamiglie selezionate nella prima pagina.
-   * Questo valore verrà sottratto dal prezzo unitario del prodotto.
-   */
-  discountFamille: number;
-  /**
-   * Modalità prezzi: 'scontistica' o 'prezziFissi'
-   */
-  modalitaPrezzi: string;
-}>();
+const props = defineProps({
+  zones: { type: Array, default: () => [] },
+  devisId: { type: String, default: '' },
+  editingItem: { type: Object, default: null },
+  discountFamille: { type: Number, default: 0 },
+  modalitaPrezzi: { type: String, default: 'scontistica' }
+});
+
+const { zones, devisId, editingItem, discountFamille, modalitaPrezzi } = props;
 
 const emit = defineEmits(['update-item']);
 
-/**
- * Rappresenta un prodotto disponibile su Firestore.
- */
-type Produit = {
-  id: string;
-  article: string;
-  description: string;
-  taille: string;
-  unite: string;
-  prix: number;
-};
-
-type Supplement = {
-  nom: string;
-  valeur: number;
-};
-
-const produits = ref<Produit[]>([]);
-const supplements = ref<Supplement[]>([]);
+const produits = ref([]);
+const supplements = ref([]);
 
 const selectedProduitId = ref('');
 const selectedZone = ref('');
 const quantiteML = ref(0);
-const selectedSupplements = ref<string[]>([]);
-const suppQuantities = ref<Record<string, number>>({});
-const localEditingItem = ref<any>(null);
+const selectedSupplements = ref([]);
+const suppQuantities = ref({});
+const localEditingItem = ref(null);
 const prezzoManuale = ref(0);
 
 const formValide = computed(() => {
@@ -116,7 +94,7 @@ const formValide = computed(() => {
 onMounted(async () => {
   const produitsSnap = await getDocs(collection(db, 'produits'));
   produits.value = produitsSnap.docs.map(d => {
-    const data = d.data() as any;
+    const data = d.data();
     return {
       id: d.id,
       ...data,
@@ -137,7 +115,7 @@ onMounted(async () => {
   });
 
   const supplementsSnap = await getDocs(collection(db, 'supplements'));
-  supplements.value = supplementsSnap.docs.map(d => d.data() as Supplement);
+  supplements.value = supplementsSnap.docs.map(d => d.data());
 });
 
 // Quando editingItem cambia, popoliamo il form con i dati della riga da modificare
@@ -150,9 +128,9 @@ watch(
     selectedProduitId.value = produit?.id || '';
     selectedZone.value = item.zone;
     quantiteML.value = item.ml;
-    selectedSupplements.value = item.supplements?.map((s: any) => s.supplement) || [];
+    selectedSupplements.value = item.supplements?.map((s) => s.supplement) || [];
     suppQuantities.value = {};
-    item.supplements?.forEach((s: any) => {
+    item.supplements?.forEach((s) => {
       suppQuantities.value[s.supplement] = s.qte;
     });
     prezzoManuale.value = item.prix || 0;
