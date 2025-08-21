@@ -42,6 +42,7 @@
     <!-- Controllo integrità dati -->
     <DataIntegrityCheck :devisItems="devisItems" />
     
+
     <ProduitForm
       :editingItem="editingItem"
       :devisId="devisId"
@@ -265,6 +266,8 @@ onMounted(async () => {
     nomChantier.value = data.adresse || '';
     zones.value = data.zones || [];
     modalitaPrezzi.value = data.modalitaPrezzi || 'scontistica';
+    
+
 
     // Carica gli items del devis (prodotti) dal documento se esistenti
     if (Array.isArray(data.produits) && data.produits.length > 0) {
