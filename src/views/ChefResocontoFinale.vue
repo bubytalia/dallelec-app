@@ -213,14 +213,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { db, auth } from '@/firebase';
+import { db } from '@/firebase';
 import { doc, getDoc, collection, getDocs, addDoc, query, where } from 'firebase/firestore';
+import { useAuth } from '@/composables/useAuth';
 import RetourButton from '@/components/RetourButton.vue';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '@/assets/logo.jpg';
 
 const router = useRouter();
+const { user } = useAuth();
 const chantiers = ref([]);
 const selectedChantierId = ref('');
 const selectedZone = ref('');
@@ -291,12 +293,14 @@ const congualioClass = computed(() => {
 
 // Methods
 const fetchChantiers = async () => {
-  const user = auth.currentUser;
-  if (!user) return;
+  if (!user.value?.email) {
+    console.warn('Utente non autenticato');
+    return;
+  }
   
   const snapshot = await getDocs(collection(db, 'chantiers'));
   const allChantiers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  chantiers.value = allChantiers.filter(c => c.capocantiere === user.email);
+  chantiers.value = allChantiers.filter(c => c.capocantiere === user.value.email);
 };
 
 const loadChantierData = async () => {
@@ -388,6 +392,7 @@ const salvaResocontoFinale = async () => {
     variazioniQuantita: variazioniQuantita.value,
     totalSupplementi: totalSupplementi.value,
     conguaglioFinale: conguaglioFinale.value,
+    capocantiere: user.value?.email || 'unknown',
     createdAt: new Date(),
     status: 'completato'
   };

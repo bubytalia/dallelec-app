@@ -249,12 +249,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { db, auth } from '@/firebase';
+import { db } from '@/firebase';
 import { doc, getDoc, collection, getDocs, addDoc, query, where, deleteDoc } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useAuth } from '@/composables/useAuth';
 import RetourButton from '@/components/RetourButton.vue';
 
 const router = useRouter();
+const { user } = useAuth();
 const chantiers = ref([]);
 const selectedChantierId = ref('');
 const selectedChantier = ref(null);
@@ -294,8 +295,7 @@ const totalMontantRegies = computed(() => {
 });
 
 const fetchChantiers = async () => {
-  const user = auth.currentUser;
-  if (!user) {
+  if (!user.value?.email) {
     alert('Utilisateur non connecté');
     router.push('/');
     return;
@@ -305,7 +305,7 @@ const fetchChantiers = async () => {
   const allChantiers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   
   // Filtra solo i cantieri assegnati a questo chef
-  chantiers.value = allChantiers.filter(c => c.capocantiere === user.email);
+  chantiers.value = allChantiers.filter(c => c.capocantiere === user.value.email);
 };
 
 const ajouterRegie = () => {
@@ -490,6 +490,7 @@ const sauvegarderResoconto = async () => {
     descrizione: descrizione.value,
     avancementi: { ...avancementiMensili.value },
     regies: [...regies.value],
+    capocantiere: user.value?.email || 'unknown',
     draft: false,
     status: 'en_attente',
     createdAt: new Date()
@@ -518,6 +519,7 @@ const sauvegarderBrouillon = async () => {
     descrizione: descrizione.value,
     avancementi: { ...avancementiMensili.value },
     regies: [...regies.value],
+    capocantiere: user.value?.email || 'unknown',
     draft: true,
     createdAt: new Date()
   };
