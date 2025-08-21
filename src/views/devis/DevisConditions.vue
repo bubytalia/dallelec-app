@@ -67,7 +67,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { db } from '@/firebase';
@@ -80,53 +80,39 @@ import RetourButton from '@/components/RetourButton.vue';
 // Route and router
 const route = useRoute();
 const router = useRouter();
-const devisId = route.params.id as string;
+const devisId = route.params.id;
 
 // Liste des modalités de paiement
-interface Paiement {
-  id: string;
-  label: string;
-}
-const paiements = ref<Paiement[]>([]);
-const selectedPaiement = ref<string>('');
+const paiements = ref([]);
+const selectedPaiement = ref('');
 
 // Conditions disponibles
-interface Condition {
-  id: string;
-  texte: string;
-}
-const conditionsComprend = ref<Condition[]>([]);
-const conditionsExclues = ref<Condition[]>([]);
-const selectedComprendIds = ref<string[]>([]);
-const selectedExcluIds = ref<string[]>([]);
+const conditionsComprend = ref([]);
+const conditionsExclues = ref([]);
+const selectedComprendIds = ref([]);
+const selectedExcluIds = ref([]);
 
 // Famiglie per il PDF
-interface Famille {
-  id: string;
-  nom: string;
-  visiblePDF?: boolean;
-  ordrePDF?: number;
-}
-const familles = ref<Famille[]>([]);
+const familles = ref([]);
 
 // Notes liberi
-const notes = ref<string>('');
+const notes = ref('');
 
 // Référence au composant DevisPdf
-const pdfRef = ref<any>(null);
+const pdfRef = ref(null);
 
 // Données du devis pour le PDF
-const devisData = ref<any>(null);
-const nomClient = ref<string>('');
-const nomChantier = ref<string>('');
-const numeroDevis = ref<string>('');
-const dateDevis = ref<string>('');
+const devisData = ref(null);
+const nomClient = ref('');
+const nomChantier = ref('');
+const numeroDevis = ref('');
+const dateDevis = ref('');
 
 // Computed properties pour le PDF
 const devisParZone = computed(() => {
   if (!devisData.value || !Array.isArray(devisData.value.produits)) return [];
-  const grouped: Record<string, any[]> = {};
-  devisData.value.produits.forEach((item: any) => {
+  const grouped = {};
+  devisData.value.produits.forEach((item) => {
     if (!grouped[item.zone]) grouped[item.zone] = [];
     grouped[item.zone].push(item);
   });
@@ -135,11 +121,11 @@ const devisParZone = computed(() => {
 
 const supplementParZone = computed(() => {
   if (!devisData.value || !Array.isArray(devisData.value.produits)) return [];
-  const grouped: Record<string, any[]> = {};
-  devisData.value.produits.forEach((item: any) => {
+  const grouped = {};
+  devisData.value.produits.forEach((item) => {
     if (Array.isArray(item.supplements) && item.supplements.length) {
       if (!grouped[item.zone]) grouped[item.zone] = [];
-      grouped[item.zone].push(...item.supplements.map((s: any) => ({
+      grouped[item.zone].push(...item.supplements.map((s) => ({
         ...s,
         article: item.article,
         nom: item.nom,
@@ -151,7 +137,7 @@ const supplementParZone = computed(() => {
 });
 
 const selectedPaiementObj = computed(() => {
-  return paiements.value.find((p: any) => p.id === selectedPaiement.value) || null;
+  return paiements.value.find((p) => p.id === selectedPaiement.value) || null;
 });
 
 const selectedComprendDetails = computed(() => {
@@ -172,28 +158,14 @@ const famillesVisibles = computed(() => {
 
 // Fonction pour générer le PDF
 const generatePdf = () => {
-  console.log('=== DEBUG PDF ===');
-  console.log('generatePdf chiamato');
-  console.log('pdfRef.value:', pdfRef.value);
-  console.log('typeof pdfRef.value.generatePdf:', typeof pdfRef.value?.generatePdf);
-  console.log('devisData.value:', devisData.value);
-  console.log('devisParZone.value:', devisParZone.value);
-  console.log('nomClient.value:', nomClient.value);
-  console.log('numeroDevis.value:', numeroDevis.value);
-  
   if (pdfRef.value && typeof pdfRef.value.generatePdf === 'function') {
-    console.log('✅ Chiamando generatePdf()');
     try {
       pdfRef.value.generatePdf();
-      console.log('✅ generatePdf() chiamato con successo');
     } catch (error) {
-      console.error('❌ Errore in generatePdf():', error);
+      console.error('Errore in generatePdf():', error);
       alert('Errore nella generazione PDF: ' + error.message);
     }
   } else {
-    console.error('❌ PDF non prêt : les données sont encore en cours de chargement.');
-    console.log('pdfRef.value:', pdfRef.value);
-    console.log('generatePdf function:', pdfRef.value?.generatePdf);
     alert('PDF non prêt : les données sont encore en cours de chargement.');
   }
 };
@@ -204,12 +176,33 @@ onMounted(async () => {
   const devisRef = doc(db, 'devis', devisId);
   const devisSnap = await getDoc(devisRef);
   if (devisSnap.exists()) {
-    const data = devisSnap.data() as any;
+    const data = devisSnap.data();
+
     // Sauvegarde des données complètes du devis pour la génération du PDF
     devisData.value = data;
-    // Dati del devis per il PDF
-    nomClient.value = data.nom || '';
-    nomChantier.value = data.adresse || '';
+    // Dati del devis per il PDF - CORREZIONE MAPPATURA
+    nomChantier.value = data.nom || ''; // data.nom è il nome del cantiere
+    const adresseChantier = data.adresse || ''; // data.adresse è l'indirizzo del cantiere
+    
+    // Recupera il nome del cliente dall'ID
+    if (data.clientId) {
+      try {
+        const clientRef = doc(db, 'clients', data.clientId);
+        const clientSnap = await getDoc(clientRef);
+        if (clientSnap.exists()) {
+          const clientData = clientSnap.data();
+          nomClient.value = clientData.nom || '';
+        }
+      } catch (e) {
+        console.warn('Errore nel caricamento del cliente:', e);
+        nomClient.value = 'Client inconnu';
+      }
+    }
+    
+    // Combina nome cantiere e indirizzo per il PDF
+    if (adresseChantier) {
+      nomChantier.value = nomChantier.value + ' - ' + adresseChantier;
+    }
     numeroDevis.value = data.numero || '';
     dateDevis.value = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('fr-CH') : new Date().toLocaleDateString('fr-CH');
     
@@ -227,7 +220,7 @@ onMounted(async () => {
   // Charge la liste des paiements (dal répertoire 'paiements' ou 'modalites')
   try {
     const paySnap = await getDocs(collection(db, 'paiements'));
-    paiements.value = paySnap.docs.map(docu => ({ id: docu.id, ...(docu.data() as any) })) as Paiement[];
+    paiements.value = paySnap.docs.map(docu => ({ id: docu.id, ...docu.data() }));
     // Si aucun paiement sélectionné, prendi il primo come default
     if (!selectedPaiement.value && paiements.value.length > 0) {
       selectedPaiement.value = paiements.value[0].id;
@@ -239,7 +232,7 @@ onMounted(async () => {
   // Charge la liste des conditions (dal répertoire 'conditions')
   try {
     const condSnap = await getDocs(collection(db, 'conditions'));
-    const allConds = condSnap.docs.map(docu => ({ id: docu.id, ...(docu.data() as any) }));
+    const allConds = condSnap.docs.map(docu => ({ id: docu.id, ...docu.data() }));
     conditionsComprend.value = allConds.filter(c => c.type === 'comprend');
     conditionsExclues.value = allConds.filter(c => c.type === 'ne_comprend_pas');
     // Preselect default conditions (campo defaultBoolean) si aucune sélection
@@ -256,7 +249,7 @@ onMounted(async () => {
   // Charge la liste des familles (dal répertoire 'familles')
   try {
     const famSnap = await getDocs(collection(db, 'familles'));
-    familles.value = famSnap.docs.map(docu => ({ id: docu.id, ...(docu.data() as any) })) as Famille[];
+    familles.value = famSnap.docs.map(docu => ({ id: docu.id, ...docu.data() }));
   } catch (e) {
     console.warn('Impossible de charger les familles', e);
   }
@@ -266,7 +259,7 @@ onMounted(async () => {
  * Sauvegarde les conditions et notes dans le devis.
  * Si asDraft est true, marque le devis comme brouillon; sinon, resta dans son état actuel.
  */
-const sauvegarder = async (asDraft: boolean) => {
+const sauvegarder = async (asDraft) => {
   try {
     await updateDoc(doc(db, 'devis', devisId), {
       paiement: selectedPaiement.value,
@@ -280,7 +273,7 @@ const sauvegarder = async (asDraft: boolean) => {
     if (!asDraft) {
       router.push('/admin/devis');
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Erreur Firestore:', error);
     alert('Erreur Firestore: ' + error.message);
   }

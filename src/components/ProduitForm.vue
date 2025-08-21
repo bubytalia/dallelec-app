@@ -38,7 +38,7 @@
         <label>Zone</label>
         <select v-model="selectedZone" class="form-select">
           <option disabled value="">Sélectionner une zone</option>
-          <option v-for="(zone, i) in zones" :key="i" :value="zone">{{ zone }}</option>
+          <option v-for="(zone, i) in props.zones" :key="i" :value="zone">{{ zone }}</option>
         </select>
 
       </div>
@@ -68,7 +68,7 @@ const props = defineProps({
   modalitaPrezzi: { type: String, default: 'scontistica' }
 });
 
-const { zones, devisId, editingItem, discountFamille, modalitaPrezzi } = props;
+// Uso direttamente props.zones per mantenere la reattività
 
 const emit = defineEmits(['update-item']);
 
@@ -85,11 +85,13 @@ const prezzoManuale = ref(0);
 
 const formValide = computed(() => {
   const baseValid = selectedProduitId.value && selectedZone.value && quantiteML.value > 0;
-  if (modalitaPrezzi === 'prezziFissi') {
+  if (props.modalitaPrezzi === 'prezziFissi') {
     return baseValid && prezzoManuale.value > 0;
   }
   return baseValid;
 });
+
+
 
 // Caricamento prodotti e supplementi da Firestore con normalizzazione
 onMounted(async () => {
@@ -122,7 +124,7 @@ onMounted(async () => {
 
 // Quando editingItem cambia, popoliamo il form con i dati della riga da modificare
 watch(
-  () => editingItem,
+  () => props.editingItem,
   (item) => {
     if (!item || JSON.stringify(item) === JSON.stringify(localEditingItem.value)) return;
     localEditingItem.value = { ...item };
@@ -164,7 +166,7 @@ const ajouterLigne = () => {
   const totalML = quantiteML.value + totalSuppML;
   // Calcola il prezzo da utilizzare per questa riga
   let prixFinal;
-  if (modalitaPrezzi === 'prezziFissi') {
+  if (props.modalitaPrezzi === 'prezziFissi') {
     // Modalità prix fixes: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
   } else {
@@ -174,7 +176,7 @@ const ajouterLigne = () => {
       prixFinal = produit.prix;
     } else {
       // Applica sconto famiglie
-      const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+      const remisePct = typeof props.discountFamille === 'number' ? props.discountFamille : 0;
       prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
     }
   }
@@ -231,7 +233,7 @@ const modifierLigne = () => {
   
   // Calcola il prezzo per la modifica
   let prixFinal;
-  if (modalitaPrezzi === 'prezziFissi') {
+  if (props.modalitaPrezzi === 'prezziFissi') {
     // Modalità prix fixes: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
   } else {
@@ -241,7 +243,7 @@ const modifierLigne = () => {
       prixFinal = produit.prix;
     } else {
       // Mantieni il prezzo esistente o applica sconto
-      const remisePct = typeof discountFamille === 'number' ? discountFamille : 0;
+      const remisePct = typeof props.discountFamille === 'number' ? props.discountFamille : 0;
       prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
     }
   }

@@ -216,8 +216,18 @@ const abandonnerDevis = async () => {
 };
 
 // Naviga alla terza pagina per impostare le condizioni del devis
-const gotoConditions = () => {
-  router.push(`/admin/devis/conditions/${devisId}`);
+const gotoConditions = async () => {
+  // Salva i prodotti prima di navigare
+  try {
+    await sauvegarderDevis(true); // Salva come bozza
+    router.push(`/admin/devis/conditions/${devisId}`);
+  } catch (error) {
+    console.error('Errore nel salvataggio prima di andare alle condizioni:', error);
+    // Naviga comunque, ma avvisa l'utente
+    if (confirm('Errore nel salvataggio. Continuare comunque?')) {
+      router.push(`/admin/devis/conditions/${devisId}`);
+    }
+  }
 };
 
 // Naviga esplicitamente alla pagina di modifica del devis per tornare alla prima pagina.
@@ -268,6 +278,7 @@ onMounted(async () => {
     modalitaPrezzi.value = data.modalitaPrezzi || 'scontistica';
     
 
+    
 
     // Carica gli items del devis (prodotti) dal documento se esistenti
     if (Array.isArray(data.produits) && data.produits.length > 0) {

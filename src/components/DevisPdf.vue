@@ -139,8 +139,8 @@ const generatePdf = async () => {
   doc.setFont('Helvetica', 'bold')
   doc.text('Liste suppléments', 10, yPos)
   yPos += 12
-  // Aggiungiamo l'immagine dei supplementi
-  const imgWidthSupp = 140
+  // Aggiungiamo l'immagine dei supplementi - larghezza massima tra i margini
+  const imgWidthSupp = 190  // Da 10mm a 200mm (margini) = 190mm di larghezza
   const imgHeightSupp = imgWidthSupp / 1.4142
   doc.addImage(supplementsImage, 'PNG', 10, yPos + 5, imgWidthSupp, imgHeightSupp)
   // drawFooter(currentPage, plannedPages) - Rimosso per evitare duplicazione
