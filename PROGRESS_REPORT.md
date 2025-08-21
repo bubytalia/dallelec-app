@@ -139,7 +139,15 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - ✅ **IMPLEMENTATO**: Protezione anti-cancellazione massive
 - ✅ **IMPLEMENTATO**: Log immutabili per audit trail
 
-### **CORREZIONI SISTEMA DEVIS** (100% completato) ⭐ **NUOVO**
+### **GESTIONE CHEF CANTIERI** (100% completato) ⭐ **NUOVO**
+- ✅ **IMPLEMENTATO**: Distinzione accessi ore vs resoconti per chef
+- ✅ **ORE**: Chef può inserire ore in QUALSIASI cantiere (per aiuti)
+- ✅ **RESOCONTI**: Chef accede SOLO ai cantieri assegnati (capocantiere)
+- ✅ **AUTENTICAZIONE**: Utilizzo email reale utente loggato
+- ✅ **CONTROLLI**: Limite 2 giorni per inserimento ore
+- ✅ **SISTEMA CHEF**: Logica di accesso completamente funzionante
+
+### **CORREZIONI SISTEMA DEVIS** (100% completato) ⭐
 - ✅ **CORRETTO**: Reattività zone nel menu a tendina seconda pagina devis
 - ✅ **CORRETTO**: Generazione PDF terza pagina (conversione TypeScript → JavaScript)
 - ✅ **CORRETTO**: Mappatura corretta cliente/cantiere nei PDF
