@@ -160,12 +160,15 @@
 import { ref, computed, onMounted } from 'vue';
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { useAuth } from '@/composables/useAuth';
 import RetourButton from '@/components/RetourButton.vue';
 
 const interimaires = ref([]);
 const chantiers = ref([]);
 const heuresPropres = ref([]);
 const heuresInterim = ref([]);
+
+const { user } = useAuth();
 
 const newHeure = ref({
   chantierId: '',
@@ -211,7 +214,7 @@ const addHeurePropre = async () => {
     chantierId: newHeure.value.chantierId,
     date: newHeure.value.date,
     heuresPropres: newHeure.value.heuresPropres,
-    chefId: 'chef@dallelec.com' // TODO: prendere da auth
+    chefId: user.value?.email || 'unknown'
   });
   
   newHeure.value = {
@@ -230,7 +233,7 @@ const addHeureInterim = async () => {
     date: newHeureInterim.value.date,
     interimaireId: newHeureInterim.value.interimaireId,
     heuresInterim: newHeureInterim.value.heuresInterim,
-    chefId: 'chef@dallelec.com' // TODO: prendere da auth
+    chefId: user.value?.email || 'unknown'
   });
   
   newHeureInterim.value = {
@@ -295,6 +298,20 @@ const totalHeuresInterim = computed(() => {
 const totalHeuresGeneral = computed(() => {
   return totalHeuresPropres.value + totalHeuresInterim.value;
 });
+
+// Controllo date - limite 2 giorni
+const maxDate = computed(() => {
+  return new Date().toISOString().split('T')[0];
+});
+
+const isDateBlocked = (date) => {
+  if (!date) return false;
+  const selectedDate = new Date(date);
+  const today = new Date();
+  const diffTime = today - selectedDate;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 2;
+};
 
 onMounted(() => {
   fetchInterimaires();

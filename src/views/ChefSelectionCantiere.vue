@@ -45,17 +45,22 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { useAuth } from '@/composables/useAuth';
 import RetourButton from '@/components/RetourButton.vue';
 
 const router = useRouter();
+const { user } = useAuth();
 const chantiers = ref([]);
 
 const fetchChantiers = async () => {
   const snapshot = await getDocs(collection(db, 'chantiers'));
   const allChantiers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   
-  // TODO: Sostituire con l'email del chef loggato
-  const chefEmail = 'chef@dallelec.com'; // Temporaneo
+  const chefEmail = user.value?.email;
+  if (!chefEmail) {
+    console.warn('Utente non autenticato');
+    return;
+  }
   
   // Filtra solo i cantieri assegnati a questo chef
   chantiers.value = allChantiers.filter(c => c.capocantiere === chefEmail);
