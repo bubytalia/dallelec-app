@@ -308,9 +308,17 @@ const isDateBlocked = (date) => {
   if (!date) return false;
   const selectedDate = new Date(date);
   const today = new Date();
-  const diffTime = today - selectedDate;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays > 2;
+  
+  // TEMPORANEO: Permette inserimento per tutto il mese corrente
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  // Blocca solo se la data è prima dell'inizio del mese corrente
+  return selectedDate < startOfMonth;
+  
+  // ORIGINALE (da ripristinare):
+  // const diffTime = today - selectedDate;
+  // const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // return diffDays > 2;
 };
 
 onMounted(() => {

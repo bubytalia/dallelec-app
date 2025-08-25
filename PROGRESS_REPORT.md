@@ -175,6 +175,12 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - ✅ **CORRETTO**: Testo pulsante "Voir historique métrées"
 - ✅ **MIGLIORATO**: Visualizzazione nome cantiere con numero in tutte le interfacce
 
+### **MODIFICA TEMPORANEA SISTEMA ORE** ⚠️ **TEMPORANEO - DA RIPRISTINARE**
+- ⚠️ **MODIFICATO**: Limite inserimento ore da 2 giorni → tutto il mese corrente
+- ⚠️ **FILE MODIFICATI**: OuvrierHeures.vue, ChefHeures.vue
+- ⚠️ **MOTIVO**: Permettere inserimento ore complete del mese per tutti i collaboratori
+- ⚠️ **DA RIPRISTINARE**: Fine mese → tornare al limite di 2 giorni
+
 ## 📋 MODULI PIANIFICATI (Non ancora sviluppati)
 
 ### **SISTEMA BILANS**
@@ -265,13 +271,19 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
    - Validazione flussi operativi completi
    - Supporto post-lancio
 
-2. **MONITORAGGIO E OTTIMIZZAZIONI**
+2. **⚠️ RIPRISTINO LIMITE ORE (FINE MESE)** ⭐ URGENTE
+   - **QUANDO**: Fine mese corrente
+   - **COSA**: Ripristinare limite 2 giorni per inserimento ore
+   - **FILE**: OuvrierHeures.vue, ChefHeures.vue
+   - **AZIONE**: Sostituire codice temporaneo con quello commentato
+
+3. **MONITORAGGIO E OTTIMIZZAZIONI**
    - Backup automatici database
    - Monitoraggio performance
    - Raccolta feedback utenti
    - Miglioramenti incrementali
 
-3. **MODULI FUTURI** (opzionali)
+4. **MODULI FUTURI** (opzionali)
    - Sistema bilans avanzato
    - Gestione magazzino
    - Integrazione contabilità
@@ -463,6 +475,59 @@ allow delete: if isAdmin() && rateLimitCheck();
 - 📧 **Security Officer**: daniele.dallelec@gmail.com
 - 📞 **Hotline**: +41 (emergenze sicurezza)
 - 🔗 **Security Dashboard**: https://dallelec-gestion-58a49.web.app/admin/security
+
+---
+
+## 🔄 ISTRUZIONI RIPRISTINO LIMITE ORE (2 GIORNI)
+
+### **⚠️ MODIFICA TEMPORANEA ATTIVA**
+**Data modifica**: Dicembre 2024  
+**Motivo**: Permettere inserimento ore complete del mese  
+**Stato**: ⚠️ TEMPORANEO - DA RIPRISTINARE A FINE MESE  
+
+### **🔧 PROCEDURA RIPRISTINO**
+
+#### **1. File da modificare:**
+- `src/views/OuvrierHeures.vue`
+- `src/views/ChefHeures.vue`
+
+#### **2. In OuvrierHeures.vue:**
+**Sostituire la funzione `isDateBlocked` con:**
+```javascript
+const isDateBlocked = (date) => {
+  if (!date) return false;
+  const selectedDate = new Date(date);
+  const today = new Date();
+  const twoDaysAgo = new Date(today);
+  twoDaysAgo.setDate(today.getDate() - 2);
+  twoDaysAgo.setHours(0, 0, 0, 0);
+  
+  return selectedDate < twoDaysAgo && !adminOverride.value;
+};
+```
+
+#### **3. In ChefHeures.vue:**
+**Sostituire la funzione `isDateBlocked` con:**
+```javascript
+const isDateBlocked = (date) => {
+  if (!date) return false;
+  const selectedDate = new Date(date);
+  const today = new Date();
+  const diffTime = today - selectedDate;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 2;
+};
+```
+
+#### **4. Deploy:**
+```bash
+git add .
+git commit -m "Ripristino limite 2 giorni per inserimento ore"
+git push origin fix-produits-devis
+```
+
+#### **5. Rimuovere questa sezione dal PROGRESS_REPORT.md**
+Una volta ripristinato, eliminare la sezione "MODIFICA TEMPORANEA SISTEMA ORE" e questa sezione istruzioni.
 
 ---
 

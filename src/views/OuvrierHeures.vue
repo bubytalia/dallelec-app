@@ -128,16 +128,23 @@ const maxDate = computed(() => {
   return new Date().toISOString().split('T')[0];
 });
 
-// Controlla se data è bloccata (>2 giorni fa)
+// Controlla se data è bloccata - TEMPORANEO: permette tutto il mese corrente
 const isDateBlocked = (date) => {
   if (!date) return false;
   const selectedDate = new Date(date);
   const today = new Date();
-  const twoDaysAgo = new Date(today);
-  twoDaysAgo.setDate(today.getDate() - 2);
-  twoDaysAgo.setHours(0, 0, 0, 0);
   
-  return selectedDate < twoDaysAgo && !adminOverride.value;
+  // TEMPORANEO: Permette inserimento per tutto il mese corrente
+  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  // Blocca solo se la data è prima dell'inizio del mese corrente
+  return selectedDate < startOfMonth && !adminOverride.value;
+  
+  // ORIGINALE (da ripristinare): 
+  // const twoDaysAgo = new Date(today);
+  // twoDaysAgo.setDate(today.getDate() - 2);
+  // twoDaysAgo.setHours(0, 0, 0, 0);
+  // return selectedDate < twoDaysAgo && !adminOverride.value;
 };
 
 const nouvelleHeure = ref({
