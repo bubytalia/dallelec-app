@@ -5,13 +5,12 @@ import router from './router';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-import { db, auth } from './firebase'; // ← importa da file separato
+import { supabase } from './supabase.js';
 
 const app = createApp(App);
 
 app.use(router);
 
-app.provide('auth', auth);
-app.provide('db', db);
+app.provide('supabase', supabase);
 
 app.mount('#app');

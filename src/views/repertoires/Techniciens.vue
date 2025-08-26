@@ -68,8 +68,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -91,29 +90,65 @@ export default {
     const editId = ref(null);
 
     const fetchClients = async () => {
-      const snap = await getDocs(collection(db, 'clients'));
-      clients.value = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('nom');
+      
+      if (error) {
+        console.error('Errore caricamento clients:', error);
+      } else {
+        clients.value = data || [];
+      }
     };
 
     const fetchTechniciens = async () => {
-      const snap = await getDocs(collection(db, 'techniciens'));
-      techniciens.value = snap.docs.map(d => {
-        const data = d.data();
-        const client = clients.value.find(c => c.id === data.clientId);
-        return {
-          id: d.id,
-          ...data,
-          clientName: client ? client.nom : ''
-        };
-      });
+      const { data, error } = await supabase
+        .from('techniciens')
+        .select('*')
+        .order('nom');
+      
+      if (error) {
+        console.error('Errore caricamento techniciens:', error);
+      } else {
+        techniciens.value = (data || []).map(tech => {
+          const client = clients.value.find(c => c.firebase_id === tech.client_id);
+          return {
+            ...tech,
+            clientName: client ? client.nom : ''
+          };
+        });
+      }
     };
 
     const saveTechnicien = async () => {
       if (editId.value) {
-        await updateDoc(doc(db, 'techniciens', editId.value), { ...form.value });
+        const { error } = await supabase
+          .from('techniciens')
+          .update({
+            nom: form.value.nom,
+            prenom: form.value.prenom,
+            telephone: form.value.telephone,
+            email: form.value.email,
+            client_id: form.value.clientId
+          })
+          .eq('id', editId.value);
+        
+        if (error) console.error('Errore aggiornamento:', error);
       } else {
-        await addDoc(collection(db, 'techniciens'), { ...form.value });
+        const { error } = await supabase
+          .from('techniciens')
+          .insert([{
+            nom: form.value.nom,
+            prenom: form.value.prenom,
+            telephone: form.value.telephone,
+            email: form.value.email,
+            client_id: form.value.clientId
+          }]);
+        
+        if (error) console.error('Errore inserimento:', error);
       }
+      
       form.value = { nom: '', prenom: '', telephone: '', email: '', clientId: '' };
       editId.value = null;
       fetchTechniciens();
@@ -131,8 +166,16 @@ export default {
     };
 
     const remove = async (id) => {
-      await deleteDoc(doc(db, 'techniciens', id));
-      fetchTechniciens();
+      const { error } = await supabase
+        .from('techniciens')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Errore eliminazione:', error);
+      } else {
+        fetchTechniciens();
+      }
     };
 
     onMounted(async () => {

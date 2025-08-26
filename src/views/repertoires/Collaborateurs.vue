@@ -71,7 +71,7 @@
                 <option value="interimaire">Intérimaire</option>
               </select>
             </td>
-            <td><input v-model.number="editCollaborateur.coutHoraire" class="form-control" /></td>
+            <td><input v-model.number="editCollaborateur.cout_horaire" class="form-control" /></td>
             <td>
               <input v-model="editCollaborateur.excludeFromReport" type="checkbox" class="form-check-input">
             </td>
@@ -86,7 +86,7 @@
             <td>{{ collab.telephone }}</td>
             <td>{{ collab.email }}</td>
             <td>{{ collab.etat }}</td>
-            <td>{{ collab.coutHoraire }} €</td>
+            <td>{{ collab.cout_horaire }} €</td>
             <td>
               <span v-if="collab.excludeFromReport" class="badge bg-warning">⚠️ Exclu</span>
               <span v-else class="badge bg-success">✓ Inclus</span>
@@ -105,8 +105,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -117,21 +116,39 @@ export default {
   setup() {
     const collaborateurs = ref([]);
     const newCollaborateur = ref({
-      nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false
+      nom: '', prenom: '', telephone: '', email: '', etat: '', cout_horaire: null, exclude_from_report: false
     });
 
     const editId = ref(null);
     const editCollaborateur = ref({});
 
     const fetchCollaborateurs = async () => {
-      const querySnapshot = await getDocs(collection(db, 'collaborateurs'));
-      collaborateurs.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('🔍 Caricando collaborateurs...');
+      
+      const { data, error } = await supabase
+        .from('collaborateurs')
+        .select('*')
+        .order('nom');
+      
+      console.log('📊 Risposta:', { data, error });
+      
+      if (!error && data) {
+        collaborateurs.value = data;
+        console.log(`✅ Caricati ${data.length} collaborateurs`);
+      } else {
+        console.error('❌ Errore:', error);
+      }
     };
 
     const addCollaborateur = async () => {
-      await addDoc(collection(db, 'collaborateurs'), newCollaborateur.value);
-      newCollaborateur.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false };
-      fetchCollaborateurs();
+      const { error } = await supabase
+        .from('collaborateurs')
+        .insert([newCollaborateur.value]);
+      
+      if (!error) {
+        newCollaborateur.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', cout_horaire: null, exclude_from_report: false };
+        fetchCollaborateurs();
+      }
     };
 
     const startEdit = (collab) => {
@@ -146,17 +163,28 @@ export default {
 
     const updateCollaborateur = async (id) => {
       if (confirm('Confermi la modifica? I cantieri già in corso manterranno i costi orari originali.')) {
-        const collabRef = doc(db, 'collaborateurs', id);
-        await updateDoc(collabRef, editCollaborateur.value);
-        cancelEdit();
-        fetchCollaborateurs();
+        const { error } = await supabase
+          .from('collaborateurs')
+          .update(editCollaborateur.value)
+          .eq('id', id);
+        
+        if (!error) {
+          cancelEdit();
+          fetchCollaborateurs();
+        }
       }
     };
 
     const deleteCollaborateur = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'collaborateurs', id));
-        fetchCollaborateurs();
+        const { error } = await supabase
+          .from('collaborateurs')
+          .delete()
+          .eq('id', id);
+        
+        if (!error) {
+          fetchCollaborateurs();
+        }
       }
     };
 

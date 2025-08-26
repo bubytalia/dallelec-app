@@ -70,6 +70,9 @@
         </button>
       </div>
       <div class="col-md-3 m-2">
+        <router-link to="/admin/backup" class="btn btn-outline-danger w-100">🛡️ Backup Database</router-link>
+      </div>
+      <div class="col-md-3 m-2">
         <router-link to="/aide" class="btn btn-outline-danger w-100">❓ Aide</router-link>
       </div>
     </div>

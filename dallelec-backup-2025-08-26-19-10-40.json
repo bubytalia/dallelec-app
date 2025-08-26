@@ -1,0 +1,5015 @@
+{
+  "timestamp": "2025-08-26T17:10:40.532Z",
+  "version": "1.0",
+  "data": {
+    "clients": [
+      {
+        "id": "M3CPGLVrrG8llpHfq3dJ",
+        "email_compta": "",
+        "nom": "Lumielec SA",
+        "telephone": "+4122 559 30 39",
+        "ville": "1226 Thônex",
+        "adresse": " Rue de Genève 122",
+        "email_contact": "Info@lumielec.ch"
+      },
+      {
+        "id": "OkF8L3PAbPgNjUFSWOAk",
+        "email_compta": "",
+        "adresse": "Avenue de Longemalle 13",
+        "nom": "Swisspro SA",
+        "ville": "Renens",
+        "email_contact": " infosr@swisspro.ch",
+        "telephone": "+4121 654 22 22"
+      },
+      {
+        "id": "UqipehMWNWkmNoeAZUU0",
+        "email_compta": "",
+        "ville": "1020 Renens",
+        "email_contact": "lausanne@etavis.ch",
+        "adresse": "Rue du Caudray 6",
+        "conditionsPaiement": "",
+        "telephone": "+4121 614 44 44",
+        "nom": "Etavis SA"
+      },
+      {
+        "id": "oPCD1Aw4irihXrdXLnDb",
+        "email": "demo@azienda.ch",
+        "telephone": "091 765 4321",
+        "ville": "Bellinzona",
+        "adresse": "Strada Demo 2",
+        "nom": "Azienda Demo Sàrl"
+      },
+      {
+        "id": "sjNBXqAWRtH7ZY08J4ZY",
+        "adresse": "Via Esempio 1",
+        "telephone": "091 123 4567",
+        "ville": "Lugano",
+        "nom": "Client Test SA",
+        "email": "test@client.ch"
+      },
+      {
+        "id": "vkSi2DL8qqPv3yV9gCu3",
+        "nom": "Oiken Solutions SA",
+        "email_contact": "",
+        "adresse": "Rue de l’Industrie 43",
+        "email_compta": "",
+        "telephone": "+4127 617 30 00",
+        "ville": "1951 Sion"
+      },
+      {
+        "id": "zuXHEnFIftspTlio8dlA",
+        "telephone": "+4121 623 35 35",
+        "email_contact": "info@cielelectricite.com",
+        "nom": "CIEL Electricité SA",
+        "email_compta": "",
+        "ville": "1004 Lausanne",
+        "adresse": "Av. de Sévelin 18"
+      }
+    ],
+    "chantiers": [
+      {
+        "id": "1PlZYeVUOJD1cJKhdthD",
+        "prixRegie": 75,
+        "devisId": "",
+        "numeroCantiere": "xxxxxx",
+        "percentualeImpresa": 40,
+        "modalitaResoconto": "metrages",
+        "technicien": "Vernay",
+        "ville": "Uvrier",
+        "client": "Oiken Solutions SA",
+        "capocantiere": "remi.repellin@dallelec.ch",
+        "nom": "Projet Alegria/Uvrier",
+        "adresse": "R.te d'Italie"
+      },
+      {
+        "id": "2ZRa56oq1kVzosAhbxog",
+        "nom": "Mikron",
+        "prixRegie": 75,
+        "ville": "2017 Boudry",
+        "adresse": "Rte du Vignoble 17, ",
+        "client": "Etavis SA",
+        "technicien": "Bouslah",
+        "capocantiere": "",
+        "devisId": "",
+        "percentualeImpresa": 30,
+        "numeroCantiere": "xxxxx",
+        "modalitaResoconto": "metrages"
+      },
+      {
+        "id": "4pr1kfLpXg4ezZQ22kRL",
+        "adresse": "Chemin des Cedres",
+        "modalitaResoconto": "metrages",
+        "devisId": "aQkMN5hoKDn3qfj5wHEW",
+        "ville": "1004 Lausanne",
+        "nom": "LES CÈDRES",
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756215963,
+          "nanoseconds": 822000000
+        },
+        "capocantiere": "sofiane.hadadi@dallelec.ch",
+        "client": "CIEL Electricité SA",
+        "prixRegie": 75,
+        "technicien": "Maggitti",
+        "percentualeImpresa": 30,
+        "numeroCantiere": "7724010005"
+      },
+      {
+        "id": "58Mz96wUkhzdQSnWZQ2C",
+        "capocantiere": "remi.repellin@dallelec.ch",
+        "client": "Swisspro SA",
+        "devisId": "",
+        "nom": "QOQA",
+        "adresse": "Zone Industrielle Les Portettes 5, ",
+        "technicien": "Douillot",
+        "modalitaResoconto": "metrages",
+        "numeroCantiere": "xxxxx",
+        "prixRegie": 75,
+        "percentualeImpresa": 30,
+        "ville": "1312 Eclépens"
+      },
+      {
+        "id": "BJOlDR0qL2EdTZxWml46",
+        "technicien": "Bouslah",
+        "devisId": "",
+        "adresse": "Marin",
+        "nom": "EM_A4_CDC ET CANAUX",
+        "prixRegie": 75,
+        "ville": "Neuchâtel",
+        "modalitaResoconto": "percentuale",
+        "capocantiere": "junior.repellin@dallelec.ch",
+        "percentualeImpresa": 30,
+        "numeroCantiere": "P.0766832.1.01",
+        "client": "Etavis SA"
+      },
+      {
+        "id": "FLPPV2LjiRpmTe0HdlZM",
+        "ville": "Gstaad",
+        "capocantiere": "irfan.qazimi@dallelec.ch",
+        "modalitaResoconto": "percentuale",
+        "client": "Lumielec SA",
+        "devisId": "",
+        "percentualeImpresa": 40,
+        "technicien": "Bury",
+        "adresse": "Wispilerstrasse",
+        "nom": "Park Gstaad Hotel",
+        "numeroCantiere": "xxxxxx",
+        "prixRegie": 75
+      },
+      {
+        "id": "VxOkdw3buH16SuSVjJiT",
+        "nom": "Centre Thermal d'Yverdon-les-Bains",
+        "ville": "1400 Yverdon-les-Bains",
+        "modalitaResoconto": "metrages",
+        "prixRegie": 75,
+        "adresse": "Av. des Bains 22, ",
+        "client": "Etavis SA",
+        "technicien": "Chalmeau",
+        "percentualeImpresa": 30,
+        "devisId": "",
+        "capocantiere": "remi.repellin@dallelec.ch",
+        "numeroCantiere": "xxxxxxx"
+      },
+      {
+        "id": "aNVJrEZbvuytH61AJQUn",
+        "prixRegie": 75,
+        "nom": "EM_CE_CDC ET CANAUX",
+        "ville": "Neuchâtel",
+        "client": "Etavis SA",
+        "adresse": "Marin",
+        "technicien": "Bouslah",
+        "capocantiere": "junior.repellin@dallelec.ch",
+        "devisId": "",
+        "percentualeImpresa": 30,
+        "numeroCantiere": " P.0767199.2.01",
+        "modalitaResoconto": "percentuale"
+      },
+      {
+        "id": "e6ZToe006jnhtUgYF6Kf",
+        "client": "Etavis SA",
+        "modalitaResoconto": "percentuale",
+        "prixRegie": 75,
+        "technicien": "Bouslah",
+        "nom": "EM_A5_CDC ET CANAUX",
+        "ville": "Neuchâtel",
+        "capocantiere": "junior.repellin@dallelec.ch",
+        "adresse": "Marin",
+        "percentualeImpresa": 30,
+        "numeroCantiere": "P.0767194.2.01",
+        "devisId": ""
+      },
+      {
+        "id": "wvUAngEbRLx2LegboP9L",
+        "capocantiere": "chef@dallelec.com",
+        "client": "Etavis SA",
+        "modalitaResoconto": "metrages",
+        "nom": "torre di pisa",
+        "adresse": "pisa",
+        "numeroCantiere": "xxxxxx",
+        "technicien": "Neves ",
+        "ville": "pisa",
+        "prixRegie": 65,
+        "devisId": "gIntRo9nbWcMwkbE4IMo",
+        "percentualeImpresa": 30
+      },
+      {
+        "id": "xPXN15iIfhk5bEPBoVAZ",
+        "numeroCantiere": "xxxxxx",
+        "technicien": "Maggitti",
+        "prixRegie": 75,
+        "devisId": "",
+        "capocantiere": "sofiane.hadadi@dallelec.ch",
+        "nom": "Collège de Prilly ",
+        "client": "CIEL Electricité SA",
+        "ville": "1008 Prilly",
+        "adresse": "Chem. de la Grand-Vigne 3",
+        "percentualeImpresa": 30,
+        "modalitaResoconto": "metrages"
+      },
+      {
+        "id": "zJBa1Kdf14axyAKPmHws",
+        "nom": "Campus santé HESAV",
+        "modalitaResoconto": "metrages",
+        "ville": "Renens - Lausanne",
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756220278,
+          "nanoseconds": 644000000
+        },
+        "technicien": "Neves ",
+        "numeroCantiere": " P0731575.01.1",
+        "devisId": "6LSl4B1rMIbgXoc24VMN",
+        "percentualeImpresa": 30,
+        "client": "Etavis SA",
+        "adresse": "R.te de Chavannes",
+        "prixRegie": 75,
+        "capocantiere": "sofiane.hadadi@dallelec.ch"
+      }
+    ],
+    "devis": [
+      {
+        "id": "0nyKt61NHYV8mgs1sRlj",
+        "adresse": "R.te de Chavannes - Renens",
+        "draft": false,
+        "discount": 0,
+        "status": "En cours",
+        "nom": "Campus Santé -Hesav - CDC",
+        "total": 258983.60000000003,
+        "conditionsNeComprendPas": [
+          "15nUvFWNOUWXUoExrCxL",
+          "2nuFjkCjpXeDZ8mbQDRD",
+          "7176eVCF2hSB4ewVqhvl",
+          "ozqNo4Fkhfw9akzkM2np",
+          "q2v79cQsphYhBDd8Ds2e",
+          "vCJWI9Y7M3dJrBJrcLO7",
+          "wzB8Bsw6o2ZYrw35fCsg"
+        ],
+        "zones": [
+          "chantier"
+        ],
+        "technicien": "Neves ",
+        "notes": "",
+        "clientId": "UqipehMWNWkmNoeAZUU0",
+        "modalitaPrezzi": "prezziFissi",
+        "createdAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756218809,
+          "nanoseconds": 296000000
+        },
+        "paiement": "oS2H3WNCS6DHNoTJwqoc",
+        "numero": "DEV-0156",
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756219236,
+          "nanoseconds": 114000000
+        },
+        "remises": {},
+        "conditionsComprend": [],
+        "produits": [
+          {
+            "descriptionOriginal": "Chemin de Câble 60",
+            "prix": 19.8,
+            "totalSuppML": 1518,
+            "ml": 6221,
+            "article": "A01400X60",
+            "tailleOriginal": "400",
+            "taille": "400",
+            "createdAt": "2025-08-26T14:34:29.564Z",
+            "prixOriginal": 67,
+            "total": 153232.2,
+            "unite": "m",
+            "zone": "chantier",
+            "supplements": [
+              {
+                "taille": "400",
+                "article": "A01400X60",
+                "zone": "chantier",
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 759,
+                "supplement": "T fabbriqué",
+                "qte": 253,
+                "valeur": 3
+              },
+              {
+                "valeur": 3,
+                "taille": "400",
+                "qte": 253,
+                "supplement": "virage fabbriqué",
+                "article": "A01400X60",
+                "qteTotale": 759,
+                "nom": "Chemin de Câble 60",
+                "zone": "chantier"
+              }
+            ],
+            "totalML": 7739,
+            "nom": "Chemin de Câble 60",
+            "uniteOriginal": "m"
+          },
+          {
+            "zone": "chantier",
+            "supplements": [
+              {
+                "valeur": 3,
+                "supplement": "virage fabbriqué",
+                "zone": "chantier",
+                "qte": 3,
+                "taille": "300",
+                "article": "A01300X60",
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 9
+              },
+              {
+                "supplement": "T fabbriqué",
+                "valeur": 3,
+                "nom": "Chemin de Câble 60",
+                "article": "A01300X60",
+                "zone": "chantier",
+                "qte": 3,
+                "qteTotale": 9,
+                "taille": "300"
+              }
+            ],
+            "createdAt": "2025-08-26T14:35:34.804Z",
+            "article": "A01300X60",
+            "totalML": 78,
+            "unite": "m",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "total": 1458.6,
+            "uniteOriginal": "m",
+            "tailleOriginal": "300",
+            "nom": "Chemin de Câble 60",
+            "totalSuppML": 18,
+            "prix": 18.7,
+            "taille": "300",
+            "prixOriginal": 62,
+            "ml": 60
+          },
+          {
+            "supplements": [
+              {
+                "valeur": 3,
+                "taille": "200",
+                "qteTotale": 519,
+                "qte": 173,
+                "article": "A01200X60",
+                "nom": "Chemin de Câble 60",
+                "supplement": "virage fabbriqué",
+                "zone": "chantier"
+              },
+              {
+                "qteTotale": 519,
+                "taille": "200",
+                "supplement": "T fabbriqué",
+                "zone": "chantier",
+                "nom": "Chemin de Câble 60",
+                "qte": 173,
+                "valeur": 3,
+                "article": "A01200X60"
+              }
+            ],
+            "ml": 3450,
+            "total": 78988.8,
+            "prix": 17.6,
+            "tailleOriginal": "200",
+            "unite": "m",
+            "article": "A01200X60",
+            "prixOriginal": 58,
+            "createdAt": "2025-08-26T14:36:44.441Z",
+            "uniteOriginal": "m",
+            "totalML": 4488,
+            "taille": "200",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "zone": "chantier",
+            "totalSuppML": 1038,
+            "nom": "Chemin de Câble 60"
+          },
+          {
+            "zone": "chantier",
+            "createdAt": "2025-08-26T14:37:18.959Z",
+            "total": 6666,
+            "article": "E04400X60",
+            "totalML": 330,
+            "descriptionOriginal": "Echelle à Câble 60",
+            "taille": "400",
+            "unite": "m",
+            "prixOriginal": 75,
+            "nom": "Echelle à Câble 60",
+            "ml": 330,
+            "tailleOriginal": "400",
+            "supplements": [],
+            "prix": 20.2,
+            "totalSuppML": 0,
+            "uniteOriginal": "m"
+          },
+          {
+            "prix": 19.6,
+            "uniteOriginal": "m",
+            "nom": "Echelle à Câble 60",
+            "totalSuppML": 0,
+            "article": "E04200X60",
+            "supplements": [],
+            "zone": "chantier",
+            "total": 392,
+            "prixOriginal": 66,
+            "unite": "m",
+            "tailleOriginal": "200",
+            "createdAt": "2025-08-26T14:37:45.753Z",
+            "ml": 20,
+            "descriptionOriginal": "Echelle à Câble 60",
+            "taille": "200",
+            "totalML": 20
+          },
+          {
+            "totalML": 3510,
+            "descriptionOriginal": "Séparation 60",
+            "prix": 5,
+            "supplements": [],
+            "prixOriginal": 8,
+            "nom": "Séparation 60",
+            "uniteOriginal": "m",
+            "ml": 3510,
+            "unite": "m",
+            "taille": "",
+            "total": 17550,
+            "article": "H07SEPx60",
+            "createdAt": "2025-08-26T14:38:39.152Z",
+            "tailleOriginal": "",
+            "totalSuppML": 0,
+            "zone": "chantier"
+          },
+          {
+            "nom": "Canal à Grille 60",
+            "ml": 20,
+            "tailleOriginal": "200",
+            "createdAt": "2025-08-26T14:39:18.076Z",
+            "uniteOriginal": "m",
+            "descriptionOriginal": "Canal à Grille 60",
+            "prix": 16.3,
+            "totalSuppML": 0,
+            "article": "D03200X60",
+            "supplements": [],
+            "zone": "chantier",
+            "total": 326,
+            "taille": "200",
+            "prixOriginal": 60,
+            "unite": "m",
+            "totalML": 20
+          },
+          {
+            "taille": "400",
+            "totalSuppML": 0,
+            "supplements": [],
+            "totalML": 20,
+            "ml": 20,
+            "prixOriginal": 69,
+            "nom": "Canal à Grille 60",
+            "total": 370,
+            "uniteOriginal": "m",
+            "descriptionOriginal": "Canal à Grille 60",
+            "unite": "m",
+            "createdAt": "2025-08-26T14:39:45.691Z",
+            "prix": 18.5,
+            "tailleOriginal": "400",
+            "article": "D03400X60",
+            "zone": "chantier"
+          }
+        ]
+      },
+      {
+        "id": "6LSl4B1rMIbgXoc24VMN",
+        "dataCongelati": {
+          "produits": [
+            {
+              "supplements": [],
+              "unite": "pc",
+              "totalSuppML": 0,
+              "createdAt": "2025-08-26T13:35:18.395Z",
+              "ml": 139,
+              "congelatoIl": "2025-08-26T14:10:57.622Z",
+              "totalML": 139,
+              "prixOriginal": 48,
+              "nom": "Cannaux au sol -  Boîte au sol - Faux plancher ",
+              "prix": 48,
+              "total": 6672,
+              "uniteOriginal": "pc",
+              "article": "N7409220",
+              "tailleOriginal": "243x243",
+              "taille": "243x243",
+              "zone": "1",
+              "descriptionOriginal": "Cannaux au sol -  Boîte au sol - Faux plancher "
+            },
+            {
+              "totalSuppML": 0,
+              "tailleOriginal": "243",
+              "descriptionOriginal": "Cassette ",
+              "prix": 41.5,
+              "createdAt": "2025-08-26T13:41:15.653Z",
+              "taille": "243",
+              "supplements": [],
+              "congelatoIl": "2025-08-26T14:10:57.622Z",
+              "prixOriginal": 41.5,
+              "uniteOriginal": "pc",
+              "ml": 691,
+              "total": 28676.5,
+              "totalML": 691,
+              "nom": "Cassette ",
+              "article": "N7409240",
+              "zone": "1",
+              "unite": "pc"
+            },
+            {
+              "totalML": 26,
+              "total": 967.2,
+              "supplements": [],
+              "unite": "pc",
+              "prixOriginal": 37.2,
+              "createdAt": "2025-08-26T13:42:37.896Z",
+              "tailleOriginal": "250",
+              "congelatoIl": "2025-08-26T14:10:57.622Z",
+              "taille": "250",
+              "ml": 26,
+              "totalSuppML": 0,
+              "nom": "Cannaux au sol - Coude vertical- Béton",
+              "descriptionOriginal": "Cannaux au sol - Coude vertical- Béton",
+              "uniteOriginal": "pc",
+              "prix": 37.2,
+              "zone": "1",
+              "article": "N7400653"
+            },
+            {
+              "congelatoIl": "2025-08-26T14:10:57.622Z",
+              "totalSuppML": 0,
+              "total": 58752,
+              "totalML": 1224,
+              "article": "N7403605",
+              "zone": "1",
+              "taille": "400",
+              "uniteOriginal": "m",
+              "nom": "Cannaux au sol - goulotte",
+              "descriptionOriginal": "Cannaux au sol - goulotte",
+              "prix": 48,
+              "ml": 1224,
+              "supplements": [],
+              "tailleOriginal": "400",
+              "prixOriginal": 48,
+              "unite": "m",
+              "createdAt": "2025-08-26T14:10:48.597Z"
+            },
+            {
+              "tailleOriginal": "400",
+              "prix": 29.6,
+              "totalSuppML": 0,
+              "congelatoIl": "2025-08-26T14:10:57.622Z",
+              "total": 12372.800000000001,
+              "prixOriginal": 29.6,
+              "supplements": [],
+              "taille": "400",
+              "zone": "1",
+              "descriptionOriginal": "Cannaux au sol - Faux plancher",
+              "ml": 418,
+              "nom": "Cannaux au sol - Faux plancher",
+              "totalML": 418,
+              "uniteOriginal": "m",
+              "unite": "m",
+              "article": "N7403605F",
+              "createdAt": "2025-08-26T13:52:50.405Z"
+            },
+            {
+              "createdAt": "2025-08-26T14:08:31.177Z",
+              "supplements": [],
+              "prixOriginal": 45.65,
+              "article": "N7399852",
+              "totalSuppML": 0,
+              "unite": "pc",
+              "prix": 45.65,
+              "taille": "440",
+              "ml": 395,
+              "nom": "Cannaux au sol - Boîte de raccordement -Béton",
+              "uniteOriginal": "pc",
+              "descriptionOriginal": "Cannaux au sol - Boîte de raccordement -Béton",
+              "tailleOriginal": "440",
+              "zone": "1",
+              "total": 18031.75,
+              "totalML": 395,
+              "congelatoIl": "2025-08-26T14:10:57.622Z"
+            },
+            {
+              "descriptionOriginal": "Cannaux au sol pose béton",
+              "taille": "250",
+              "totalML": 658,
+              "unite": "m",
+              "zone": "1",
+              "ml": 658,
+              "supplements": [],
+              "tailleOriginal": "250",
+              "prix": 47.6,
+              "total": 31320.8,
+              "congelatoIl": "2025-08-26T14:10:57.622Z",
+              "nom": "Cannaux au sol pose béton",
+              "totalSuppML": 0,
+              "uniteOriginal": "m",
+              "createdAt": "2025-08-26T14:09:24.711Z",
+              "article": "N7400281",
+              "prixOriginal": 47.6
+            }
+          ],
+          "remiseFamilles": 0,
+          "modalitaPrezzi": "prezziFissi",
+          "congelatoIl": "2025-08-26T14:10:57.622Z"
+        },
+        "total": 156793.05,
+        "discount": 0,
+        "produits": [
+          {
+            "prixOriginal": 48,
+            "total": 6672,
+            "tailleOriginal": "243x243",
+            "totalSuppML": 0,
+            "taille": "243x243",
+            "article": "N7409220",
+            "totalML": 139,
+            "unite": "pc",
+            "zone": "1",
+            "uniteOriginal": "pc",
+            "nom": "Cannaux au sol -  Boîte au sol - Faux plancher ",
+            "supplements": [],
+            "prix": 48,
+            "ml": 139,
+            "descriptionOriginal": "Cannaux au sol -  Boîte au sol - Faux plancher ",
+            "createdAt": "2025-08-26T13:35:18.395Z"
+          },
+          {
+            "prix": 41.5,
+            "totalML": 691,
+            "zone": "1",
+            "createdAt": "2025-08-26T13:41:15.653Z",
+            "uniteOriginal": "pc",
+            "tailleOriginal": "243",
+            "article": "N7409240",
+            "descriptionOriginal": "Cassette ",
+            "prixOriginal": 41.5,
+            "unite": "pc",
+            "supplements": [],
+            "taille": "243",
+            "total": 28676.5,
+            "totalSuppML": 0,
+            "nom": "Cassette ",
+            "ml": 691
+          },
+          {
+            "descriptionOriginal": "Cannaux au sol - Coude vertical- Béton",
+            "totalSuppML": 0,
+            "uniteOriginal": "pc",
+            "totalML": 26,
+            "prixOriginal": 37.2,
+            "taille": "250",
+            "total": 967.2,
+            "unite": "pc",
+            "nom": "Cannaux au sol - Coude vertical- Béton",
+            "tailleOriginal": "250",
+            "article": "N7400653",
+            "ml": 26,
+            "zone": "1",
+            "prix": 37.2,
+            "createdAt": "2025-08-26T13:42:37.896Z",
+            "supplements": []
+          },
+          {
+            "zone": "1",
+            "nom": "Cannaux au sol - goulotte",
+            "taille": "400",
+            "total": 58752,
+            "article": "N7403605",
+            "totalSuppML": 0,
+            "prix": 48,
+            "unite": "m",
+            "supplements": [],
+            "uniteOriginal": "m",
+            "descriptionOriginal": "Cannaux au sol - goulotte",
+            "createdAt": "2025-08-26T14:10:48.597Z",
+            "prixOriginal": 48,
+            "tailleOriginal": "400",
+            "totalML": 1224,
+            "ml": 1224
+          },
+          {
+            "tailleOriginal": "400",
+            "supplements": [],
+            "totalSuppML": 0,
+            "zone": "1",
+            "total": 12372.800000000001,
+            "taille": "400",
+            "uniteOriginal": "m",
+            "prixOriginal": 29.6,
+            "descriptionOriginal": "Cannaux au sol - Faux plancher",
+            "totalML": 418,
+            "createdAt": "2025-08-26T13:52:50.405Z",
+            "ml": 418,
+            "article": "N7403605F",
+            "unite": "m",
+            "nom": "Cannaux au sol - Faux plancher",
+            "prix": 29.6
+          },
+          {
+            "ml": 395,
+            "zone": "1",
+            "unite": "pc",
+            "prixOriginal": 45.65,
+            "supplements": [],
+            "tailleOriginal": "440",
+            "taille": "440",
+            "totalSuppML": 0,
+            "uniteOriginal": "pc",
+            "nom": "Cannaux au sol - Boîte de raccordement -Béton",
+            "total": 18031.75,
+            "totalML": 395,
+            "descriptionOriginal": "Cannaux au sol - Boîte de raccordement -Béton",
+            "prix": 45.65,
+            "createdAt": "2025-08-26T14:08:31.177Z",
+            "article": "N7399852"
+          },
+          {
+            "zone": "1",
+            "prix": 47.6,
+            "article": "N7400281",
+            "total": 31320.8,
+            "unite": "m",
+            "totalSuppML": 0,
+            "descriptionOriginal": "Cannaux au sol pose béton",
+            "createdAt": "2025-08-26T14:09:24.711Z",
+            "tailleOriginal": "250",
+            "ml": 658,
+            "nom": "Cannaux au sol pose béton",
+            "uniteOriginal": "m",
+            "prixOriginal": 47.6,
+            "supplements": [],
+            "totalML": 658,
+            "taille": "250"
+          }
+        ],
+        "numero": "DEV-0155",
+        "modalitaPrezzi": "prezziFissi",
+        "remises": {},
+        "status": "Accepté",
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756217457,
+          "nanoseconds": 622000000
+        },
+        "nom": "Campus santé - Hesav - Cannaux au sol",
+        "createdAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756215238,
+          "nanoseconds": 680000000
+        },
+        "clientId": "UqipehMWNWkmNoeAZUU0",
+        "technicien": "Neves ",
+        "draft": false,
+        "adresse": "R.te de Chavannes Renens",
+        "zones": [
+          "1"
+        ]
+      },
+      {
+        "id": "aQkMN5hoKDn3qfj5wHEW",
+        "draft": false,
+        "modalitaPrezzi": "prezziFissi",
+        "technicien": "Maggitti",
+        "total": 20031.06,
+        "dataCongelati": {
+          "produits": [
+            {
+              "totalSuppML": 32,
+              "prix": 21.8,
+              "unite": "m",
+              "nom": "Chemin de Câble 60",
+              "ml": 21,
+              "prixOriginal": 80,
+              "uniteOriginal": "m",
+              "descriptionOriginal": "Chemin de Câble 60",
+              "totalML": 53,
+              "zone": "BAT H SS1",
+              "taille": "600",
+              "total": 1155.4,
+              "createdAt": "2025-08-26T13:28:52.195Z",
+              "article": "A01600X60",
+              "supplements": [
+                {
+                  "qteTotale": 16,
+                  "valeur": 4,
+                  "supplement": "virage avec CDC",
+                  "nom": "Chemin de Câble 60",
+                  "qte": 4,
+                  "taille": "600",
+                  "zone": "BAT H SS1",
+                  "article": "A01600X60"
+                },
+                {
+                  "supplement": "T avec CDC",
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT H SS1",
+                  "taille": "600",
+                  "article": "A01600X60",
+                  "valeur": 4,
+                  "qte": 4,
+                  "qteTotale": 16
+                }
+              ],
+              "tailleOriginal": "600",
+              "congelatoIl": "2025-08-26T13:45:05.269Z"
+            },
+            {
+              "unite": "m",
+              "ml": 135,
+              "totalML": 237,
+              "uniteOriginal": "m",
+              "total": 4787.4,
+              "zone": "BAT H SS1",
+              "article": "A01500X60",
+              "prix": 20.2,
+              "totalSuppML": 102,
+              "nom": "Chemin de Câble 60",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "createdAt": "2025-08-26T13:30:41.883Z",
+              "supplements": [
+                {
+                  "qteTotale": 6,
+                  "valeur": 1.5,
+                  "article": "A01500X60",
+                  "taille": "500",
+                  "qte": 4,
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT H SS1",
+                  "supplement": "départ/arrivé"
+                },
+                {
+                  "qteTotale": 64,
+                  "nom": "Chemin de Câble 60",
+                  "article": "A01500X60",
+                  "valeur": 4,
+                  "supplement": "T avec CDC",
+                  "taille": "500",
+                  "qte": 16,
+                  "zone": "BAT H SS1"
+                },
+                {
+                  "nom": "Chemin de Câble 60",
+                  "article": "A01500X60",
+                  "valeur": 4,
+                  "supplement": "virage avec CDC",
+                  "taille": "500",
+                  "zone": "BAT H SS1",
+                  "qteTotale": 32,
+                  "qte": 8
+                }
+              ],
+              "prixOriginal": 72,
+              "tailleOriginal": "500",
+              "descriptionOriginal": "Chemin de Câble 60",
+              "taille": "500"
+            },
+            {
+              "prix": 19.8,
+              "nom": "Chemin de Câble 60",
+              "createdAt": "2025-08-26T13:31:29.080Z",
+              "supplements": [
+                {
+                  "valeur": 1.5,
+                  "supplement": "départ/arrivé",
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 3,
+                  "article": "A01400X60",
+                  "qte": 2,
+                  "zone": "BAT H SS1",
+                  "taille": "400"
+                },
+                {
+                  "article": "A01400X60",
+                  "zone": "BAT H SS1",
+                  "taille": "400",
+                  "supplement": "T avec CDC",
+                  "qte": 2,
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 8,
+                  "valeur": 4
+                },
+                {
+                  "taille": "400",
+                  "valeur": 4,
+                  "supplement": "virage avec CDC",
+                  "qteTotale": 12,
+                  "article": "A01400X60",
+                  "qte": 3,
+                  "zone": "BAT H SS1",
+                  "nom": "Chemin de Câble 60"
+                }
+              ],
+              "zone": "BAT H SS1",
+              "article": "A01400X60",
+              "taille": "400",
+              "ml": 29,
+              "totalSuppML": 23,
+              "prixOriginal": 67,
+              "descriptionOriginal": "Chemin de Câble 60",
+              "unite": "m",
+              "uniteOriginal": "m",
+              "tailleOriginal": "400",
+              "totalML": 52,
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "total": 1029.6000000000001
+            },
+            {
+              "unite": "m",
+              "uniteOriginal": "m",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "ml": 200,
+              "nom": "Chemin de Câble 60",
+              "totalML": 237,
+              "descriptionOriginal": "Chemin de Câble 60",
+              "supplements": [
+                {
+                  "taille": "300",
+                  "qte": 6,
+                  "supplement": "départ/arrivé",
+                  "valeur": 1.5,
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 9,
+                  "article": "A01300X60",
+                  "zone": "BAT H SS1"
+                },
+                {
+                  "qte": 4,
+                  "valeur": 4,
+                  "supplement": "T avec CDC",
+                  "qteTotale": 16,
+                  "article": "A01300X60",
+                  "taille": "300",
+                  "zone": "BAT H SS1",
+                  "nom": "Chemin de Câble 60"
+                },
+                {
+                  "article": "A01300X60",
+                  "qte": 3,
+                  "zone": "BAT H SS1",
+                  "taille": "300",
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 12,
+                  "supplement": "virage avec CDC",
+                  "valeur": 4
+                }
+              ],
+              "zone": "BAT H SS1",
+              "tailleOriginal": "300",
+              "totalSuppML": 37,
+              "total": 4431.9,
+              "taille": "300",
+              "article": "A01300X60",
+              "createdAt": "2025-08-26T13:32:26.698Z",
+              "prix": 18.7,
+              "prixOriginal": 62
+            },
+            {
+              "nom": "Chemin de Câble 60",
+              "zone": "BAT H SS2",
+              "descriptionOriginal": "Chemin de Câble 60",
+              "prixOriginal": 67,
+              "tailleOriginal": "400",
+              "uniteOriginal": "m",
+              "unite": "m",
+              "createdAt": "2025-08-26T13:33:41.588Z",
+              "ml": 92,
+              "totalML": 194,
+              "article": "A01400X60",
+              "supplements": [
+                {
+                  "valeur": 1.5,
+                  "supplement": "départ/arrivé",
+                  "taille": "400",
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 18,
+                  "qte": 12,
+                  "zone": "BAT H SS2",
+                  "article": "A01400X60"
+                },
+                {
+                  "taille": "400",
+                  "supplement": "T avec CDC",
+                  "valeur": 4,
+                  "zone": "BAT H SS2",
+                  "article": "A01400X60",
+                  "qteTotale": 16,
+                  "qte": 4,
+                  "nom": "Chemin de Câble 60"
+                },
+                {
+                  "qte": 17,
+                  "qteTotale": 68,
+                  "valeur": 4,
+                  "article": "A01400X60",
+                  "taille": "400",
+                  "zone": "BAT H SS2",
+                  "nom": "Chemin de Câble 60",
+                  "supplement": "virage avec CDC"
+                }
+              ],
+              "total": 3841.2000000000003,
+              "prix": 19.8,
+              "taille": "400",
+              "totalSuppML": 102,
+              "congelatoIl": "2025-08-26T13:45:05.269Z"
+            },
+            {
+              "uniteOriginal": "m",
+              "total": 2861.1,
+              "createdAt": "2025-08-26T13:34:33.029Z",
+              "prix": 18.7,
+              "descriptionOriginal": "Chemin de Câble 60",
+              "totalML": 153,
+              "prixOriginal": 62,
+              "zone": "BAT H SS2",
+              "supplements": [
+                {
+                  "qte": 2,
+                  "article": "A01300X60",
+                  "nom": "Chemin de Câble 60",
+                  "valeur": 1.5,
+                  "qteTotale": 3,
+                  "zone": "BAT H SS2",
+                  "supplement": "départ/arrivé",
+                  "taille": "300"
+                },
+                {
+                  "qte": 1,
+                  "supplement": "T avec CDC",
+                  "taille": "300",
+                  "article": "A01300X60",
+                  "qteTotale": 4,
+                  "valeur": 4,
+                  "zone": "BAT H SS2",
+                  "nom": "Chemin de Câble 60"
+                },
+                {
+                  "supplement": "virage avec CDC",
+                  "qteTotale": 8,
+                  "article": "A01300X60",
+                  "zone": "BAT H SS2",
+                  "taille": "300",
+                  "valeur": 4,
+                  "qte": 2,
+                  "nom": "Chemin de Câble 60"
+                }
+              ],
+              "taille": "300",
+              "tailleOriginal": "300",
+              "totalSuppML": 15,
+              "nom": "Chemin de Câble 60",
+              "unite": "m",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "ml": 138,
+              "article": "A01300X60"
+            },
+            {
+              "createdAt": "2025-08-26T13:35:46.536Z",
+              "total": 1898.8,
+              "totalML": 94,
+              "totalSuppML": 47,
+              "nom": "Chemin de Câble 60",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "ml": 47,
+              "prix": 20.2,
+              "article": "A01500X60",
+              "supplements": [
+                {
+                  "qteTotale": 3,
+                  "nom": "Chemin de Câble 60",
+                  "qte": 2,
+                  "zone": "BAT I SS1",
+                  "taille": "500",
+                  "valeur": 1.5,
+                  "supplement": "départ/arrivé",
+                  "article": "A01500X60"
+                },
+                {
+                  "qteTotale": 8,
+                  "taille": "500",
+                  "qte": 2,
+                  "article": "A01500X60",
+                  "nom": "Chemin de Câble 60",
+                  "supplement": "T avec CDC",
+                  "valeur": 4,
+                  "zone": "BAT I SS1"
+                },
+                {
+                  "qte": 9,
+                  "valeur": 4,
+                  "zone": "BAT I SS1",
+                  "supplement": "virage avec CDC",
+                  "qteTotale": 36,
+                  "nom": "Chemin de Câble 60",
+                  "taille": "500",
+                  "article": "A01500X60"
+                }
+              ],
+              "tailleOriginal": "500",
+              "taille": "500",
+              "zone": "BAT I SS1",
+              "prixOriginal": 72,
+              "uniteOriginal": "m",
+              "unite": "m",
+              "descriptionOriginal": "Chemin de Câble 60"
+            },
+            {
+              "totalSuppML": 3,
+              "zone": "BAT I SS1",
+              "tailleOriginal": "400",
+              "unite": "m",
+              "totalML": 9,
+              "prixOriginal": 67,
+              "taille": "400",
+              "nom": "Chemin de Câble 60",
+              "article": "A01400X60",
+              "total": 178.20000000000002,
+              "createdAt": "2025-08-26T13:36:18.692Z",
+              "prix": 19.8,
+              "descriptionOriginal": "Chemin de Câble 60",
+              "uniteOriginal": "m",
+              "supplements": [
+                {
+                  "qte": 2,
+                  "article": "A01400X60",
+                  "valeur": 1.5,
+                  "zone": "BAT I SS1",
+                  "nom": "Chemin de Câble 60",
+                  "taille": "400",
+                  "supplement": "départ/arrivé",
+                  "qteTotale": 3
+                }
+              ],
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "ml": 6
+            },
+            {
+              "totalML": 49,
+              "uniteOriginal": "m",
+              "total": 862.4000000000001,
+              "unite": "m",
+              "supplements": [
+                {
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT I SS1",
+                  "article": "A01200X60",
+                  "taille": "200",
+                  "valeur": 1.5,
+                  "qteTotale": 3,
+                  "qte": 2,
+                  "supplement": "départ/arrivé"
+                },
+                {
+                  "qteTotale": 16,
+                  "supplement": "T avec CDC",
+                  "article": "A01200X60",
+                  "nom": "Chemin de Câble 60",
+                  "valeur": 4,
+                  "taille": "200",
+                  "zone": "BAT I SS1",
+                  "qte": 4
+                },
+                {
+                  "article": "A01200X60",
+                  "qteTotale": 8,
+                  "supplement": "virage avec CDC",
+                  "zone": "BAT I SS1",
+                  "qte": 2,
+                  "taille": "200",
+                  "nom": "Chemin de Câble 60",
+                  "valeur": 4
+                }
+              ],
+              "prix": 17.6,
+              "ml": 22,
+              "taille": "200",
+              "prixOriginal": 58,
+              "nom": "Chemin de Câble 60",
+              "createdAt": "2025-08-26T13:37:17.990Z",
+              "article": "A01200X60",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "tailleOriginal": "200",
+              "totalSuppML": 27,
+              "zone": "BAT I SS1",
+              "descriptionOriginal": "Chemin de Câble 60"
+            },
+            {
+              "total": 1898.8,
+              "prix": 20.2,
+              "article": "A01500X60",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "uniteOriginal": "m",
+              "totalML": 94,
+              "supplements": [
+                {
+                  "qte": 2,
+                  "article": "A01500X60",
+                  "qteTotale": 3,
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT J SS1",
+                  "valeur": 1.5,
+                  "taille": "500",
+                  "supplement": "départ/arrivé"
+                },
+                {
+                  "zone": "BAT J SS1",
+                  "valeur": 4,
+                  "qte": 2,
+                  "supplement": "T avec CDC",
+                  "qteTotale": 8,
+                  "nom": "Chemin de Câble 60",
+                  "taille": "500",
+                  "article": "A01500X60"
+                },
+                {
+                  "supplement": "virage avec CDC",
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT J SS1",
+                  "qte": 9,
+                  "valeur": 4,
+                  "article": "A01500X60",
+                  "taille": "500",
+                  "qteTotale": 36
+                }
+              ],
+              "createdAt": "2025-08-26T13:38:06.597Z",
+              "tailleOriginal": "500",
+              "totalSuppML": 47,
+              "prixOriginal": 72,
+              "nom": "Chemin de Câble 60",
+              "zone": "BAT J SS1",
+              "taille": "500",
+              "ml": 47,
+              "unite": "m",
+              "descriptionOriginal": "Chemin de Câble 60"
+            },
+            {
+              "supplements": [
+                {
+                  "qteTotale": 3,
+                  "nom": "Chemin de Câble 60",
+                  "qte": 2,
+                  "article": "A01400X60",
+                  "taille": "400",
+                  "zone": "BAT J SS1",
+                  "valeur": 1.5,
+                  "supplement": "départ/arrivé"
+                }
+              ],
+              "zone": "BAT J SS1",
+              "ml": 6,
+              "nom": "Chemin de Câble 60",
+              "unite": "m",
+              "totalML": 9,
+              "tailleOriginal": "400",
+              "uniteOriginal": "m",
+              "taille": "400",
+              "total": 178.20000000000002,
+              "prixOriginal": 67,
+              "totalSuppML": 3,
+              "article": "A01400X60",
+              "prix": 19.8,
+              "createdAt": "2025-08-26T13:38:58.544Z",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "descriptionOriginal": "Chemin de Câble 60"
+            },
+            {
+              "total": 862.4000000000001,
+              "totalML": 49,
+              "nom": "Chemin de Câble 60",
+              "createdAt": "2025-08-26T13:39:49.389Z",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "supplements": [
+                {
+                  "zone": "BAT J SS1",
+                  "qte": 2,
+                  "supplement": "départ/arrivé",
+                  "taille": "200",
+                  "nom": "Chemin de Câble 60",
+                  "article": "A01200X60",
+                  "valeur": 1.5,
+                  "qteTotale": 3
+                },
+                {
+                  "taille": "200",
+                  "valeur": 4,
+                  "qte": 4,
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT J SS1",
+                  "qteTotale": 16,
+                  "article": "A01200X60",
+                  "supplement": "T avec CDC"
+                },
+                {
+                  "supplement": "virage avec CDC",
+                  "article": "A01200X60",
+                  "qte": 2,
+                  "nom": "Chemin de Câble 60",
+                  "taille": "200",
+                  "zone": "BAT J SS1",
+                  "qteTotale": 8,
+                  "valeur": 4
+                }
+              ],
+              "zone": "BAT J SS1",
+              "uniteOriginal": "m",
+              "descriptionOriginal": "Chemin de Câble 60",
+              "unite": "m",
+              "article": "A01200X60",
+              "tailleOriginal": "200",
+              "taille": "200",
+              "prixOriginal": 58,
+              "totalSuppML": 27,
+              "prix": 17.6,
+              "ml": 22
+            },
+            {
+              "tailleOriginal": "500",
+              "createdAt": "2025-08-26T13:40:35.194Z",
+              "nom": "Chemin de Câble 60",
+              "ml": 39,
+              "descriptionOriginal": "Chemin de Câble 60",
+              "zone": "BAT K SS1",
+              "total": 1737.2,
+              "unite": "m",
+              "prixOriginal": 72,
+              "article": "A01500X60",
+              "prix": 20.2,
+              "uniteOriginal": "m",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "taille": "500",
+              "supplements": [
+                {
+                  "supplement": "départ/arrivé",
+                  "qte": 2,
+                  "qteTotale": 3,
+                  "nom": "Chemin de Câble 60",
+                  "taille": "500",
+                  "zone": "BAT K SS1",
+                  "valeur": 1.5,
+                  "article": "A01500X60"
+                },
+                {
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 8,
+                  "qte": 2,
+                  "valeur": 4,
+                  "article": "A01500X60",
+                  "supplement": "T avec CDC",
+                  "zone": "BAT K SS1",
+                  "taille": "500"
+                },
+                {
+                  "nom": "Chemin de Câble 60",
+                  "taille": "500",
+                  "qte": 9,
+                  "valeur": 4,
+                  "article": "A01500X60",
+                  "qteTotale": 36,
+                  "zone": "BAT K SS1",
+                  "supplement": "virage avec CDC"
+                }
+              ],
+              "totalSuppML": 47,
+              "totalML": 86
+            },
+            {
+              "ml": 17,
+              "article": "A01300X60",
+              "unite": "m",
+              "prixOriginal": 62,
+              "descriptionOriginal": "Chemin de Câble 60",
+              "zone": "BAT K SS1",
+              "total": 598.4,
+              "nom": "Chemin de Câble 60",
+              "tailleOriginal": "300",
+              "supplements": [
+                {
+                  "taille": "300",
+                  "qteTotale": 3,
+                  "valeur": 1.5,
+                  "article": "A01300X60",
+                  "supplement": "départ/arrivé",
+                  "qte": 2,
+                  "zone": "BAT K SS1",
+                  "nom": "Chemin de Câble 60"
+                },
+                {
+                  "valeur": 4,
+                  "qte": 2,
+                  "article": "A01300X60",
+                  "qteTotale": 8,
+                  "taille": "300",
+                  "supplement": "T avec CDC",
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT K SS1"
+                },
+                {
+                  "supplement": "virage avec CDC",
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT K SS1",
+                  "valeur": 4,
+                  "qte": 1,
+                  "article": "A01300X60",
+                  "qteTotale": 4,
+                  "taille": "300"
+                }
+              ],
+              "prix": 18.7,
+              "taille": "300",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "totalSuppML": 15,
+              "uniteOriginal": "m",
+              "createdAt": "2025-08-26T13:41:34.221Z",
+              "totalML": 32
+            },
+            {
+              "createdAt": "2025-08-26T13:42:17.095Z",
+              "congelatoIl": "2025-08-26T13:45:05.269Z",
+              "descriptionOriginal": "Chemin de Câble 60",
+              "totalSuppML": 23.5,
+              "taille": "200",
+              "tailleOriginal": "200",
+              "zone": "BAT K SS1",
+              "prix": 17.6,
+              "ml": 19,
+              "supplements": [
+                {
+                  "qteTotale": 4.5,
+                  "supplement": "départ/arrivé",
+                  "qte": 3,
+                  "zone": "BAT K SS1",
+                  "taille": "200",
+                  "nom": "Chemin de Câble 60",
+                  "valeur": 1.5,
+                  "article": "A01200X60"
+                },
+                {
+                  "taille": "200",
+                  "valeur": 3,
+                  "article": "A01200X60",
+                  "qte": 1,
+                  "zone": "BAT K SS1",
+                  "nom": "Chemin de Câble 60",
+                  "supplement": "réduction",
+                  "qteTotale": 3
+                },
+                {
+                  "article": "A01200X60",
+                  "qteTotale": 16,
+                  "supplement": "virage avec CDC",
+                  "qte": 4,
+                  "nom": "Chemin de Câble 60",
+                  "zone": "BAT K SS1",
+                  "taille": "200",
+                  "valeur": 4
+                }
+              ],
+              "totalML": 42.5,
+              "uniteOriginal": "m",
+              "prixOriginal": 58,
+              "article": "A01200X60",
+              "total": 748.0000000000001,
+              "unite": "m",
+              "nom": "Chemin de Câble 60"
+            }
+          ],
+          "remiseFamilles": 0,
+          "modalitaPrezzi": "prezziFissi",
+          "congelatoIl": "2025-08-26T13:45:05.269Z"
+        },
+        "nom": "CEDRES",
+        "numero": "DEV-0154",
+        "status": "Accepté",
+        "discount": 26,
+        "produits": [
+          {
+            "article": "A01600X60",
+            "nom": "Chemin de Câble 60",
+            "tailleOriginal": "600",
+            "createdAt": "2025-08-26T13:28:52.195Z",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "totalSuppML": 32,
+            "total": 1155.4,
+            "prixOriginal": 80,
+            "prix": 21.8,
+            "unite": "m",
+            "supplements": [
+              {
+                "valeur": 4,
+                "article": "A01600X60",
+                "qteTotale": 16,
+                "zone": "BAT H SS1",
+                "nom": "Chemin de Câble 60",
+                "taille": "600",
+                "qte": 4,
+                "supplement": "virage avec CDC"
+              },
+              {
+                "supplement": "T avec CDC",
+                "qte": 4,
+                "taille": "600",
+                "valeur": 4,
+                "zone": "BAT H SS1",
+                "qteTotale": 16,
+                "nom": "Chemin de Câble 60",
+                "article": "A01600X60"
+              }
+            ],
+            "ml": 21,
+            "taille": "600",
+            "totalML": 53,
+            "zone": "BAT H SS1",
+            "uniteOriginal": "m"
+          },
+          {
+            "supplements": [
+              {
+                "qte": 4,
+                "supplement": "départ/arrivé",
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT H SS1",
+                "qteTotale": 6,
+                "article": "A01500X60",
+                "valeur": 1.5,
+                "taille": "500"
+              },
+              {
+                "taille": "500",
+                "article": "A01500X60",
+                "qte": 16,
+                "zone": "BAT H SS1",
+                "supplement": "T avec CDC",
+                "qteTotale": 64,
+                "valeur": 4,
+                "nom": "Chemin de Câble 60"
+              },
+              {
+                "valeur": 4,
+                "nom": "Chemin de Câble 60",
+                "taille": "500",
+                "supplement": "virage avec CDC",
+                "qte": 8,
+                "article": "A01500X60",
+                "qteTotale": 32,
+                "zone": "BAT H SS1"
+              }
+            ],
+            "createdAt": "2025-08-26T13:30:41.883Z",
+            "prix": 20.2,
+            "tailleOriginal": "500",
+            "total": 4787.4,
+            "totalSuppML": 102,
+            "prixOriginal": 72,
+            "article": "A01500X60",
+            "unite": "m",
+            "totalML": 237,
+            "zone": "BAT H SS1",
+            "nom": "Chemin de Câble 60",
+            "taille": "500",
+            "ml": 135,
+            "descriptionOriginal": "Chemin de Câble 60",
+            "uniteOriginal": "m"
+          },
+          {
+            "nom": "Chemin de Câble 60",
+            "prixOriginal": 67,
+            "descriptionOriginal": "Chemin de Câble 60",
+            "taille": "400",
+            "uniteOriginal": "m",
+            "zone": "BAT H SS1",
+            "ml": 29,
+            "total": 1029.6000000000001,
+            "totalML": 52,
+            "unite": "m",
+            "tailleOriginal": "400",
+            "createdAt": "2025-08-26T13:31:29.080Z",
+            "totalSuppML": 23,
+            "prix": 19.8,
+            "article": "A01400X60",
+            "supplements": [
+              {
+                "qte": 2,
+                "valeur": 1.5,
+                "nom": "Chemin de Câble 60",
+                "article": "A01400X60",
+                "taille": "400",
+                "qteTotale": 3,
+                "zone": "BAT H SS1",
+                "supplement": "départ/arrivé"
+              },
+              {
+                "zone": "BAT H SS1",
+                "nom": "Chemin de Câble 60",
+                "supplement": "T avec CDC",
+                "taille": "400",
+                "valeur": 4,
+                "qte": 2,
+                "qteTotale": 8,
+                "article": "A01400X60"
+              },
+              {
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT H SS1",
+                "taille": "400",
+                "qte": 3,
+                "valeur": 4,
+                "supplement": "virage avec CDC",
+                "article": "A01400X60",
+                "qteTotale": 12
+              }
+            ]
+          },
+          {
+            "supplements": [
+              {
+                "qte": 6,
+                "supplement": "départ/arrivé",
+                "article": "A01300X60",
+                "taille": "300",
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 9,
+                "zone": "BAT H SS1",
+                "valeur": 1.5
+              },
+              {
+                "qteTotale": 16,
+                "nom": "Chemin de Câble 60",
+                "valeur": 4,
+                "zone": "BAT H SS1",
+                "article": "A01300X60",
+                "taille": "300",
+                "qte": 4,
+                "supplement": "T avec CDC"
+              },
+              {
+                "zone": "BAT H SS1",
+                "supplement": "virage avec CDC",
+                "taille": "300",
+                "qte": 3,
+                "qteTotale": 12,
+                "nom": "Chemin de Câble 60",
+                "article": "A01300X60",
+                "valeur": 4
+              }
+            ],
+            "totalSuppML": 37,
+            "unite": "m",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "uniteOriginal": "m",
+            "taille": "300",
+            "prix": 18.7,
+            "createdAt": "2025-08-26T13:32:26.698Z",
+            "tailleOriginal": "300",
+            "total": 4431.9,
+            "article": "A01300X60",
+            "nom": "Chemin de Câble 60",
+            "totalML": 237,
+            "ml": 200,
+            "prixOriginal": 62,
+            "zone": "BAT H SS1"
+          },
+          {
+            "createdAt": "2025-08-26T13:33:41.588Z",
+            "article": "A01400X60",
+            "prix": 19.8,
+            "supplements": [
+              {
+                "taille": "400",
+                "qte": 12,
+                "valeur": 1.5,
+                "nom": "Chemin de Câble 60",
+                "supplement": "départ/arrivé",
+                "zone": "BAT H SS2",
+                "qteTotale": 18,
+                "article": "A01400X60"
+              },
+              {
+                "article": "A01400X60",
+                "qteTotale": 16,
+                "zone": "BAT H SS2",
+                "qte": 4,
+                "taille": "400",
+                "supplement": "T avec CDC",
+                "valeur": 4,
+                "nom": "Chemin de Câble 60"
+              },
+              {
+                "nom": "Chemin de Câble 60",
+                "taille": "400",
+                "supplement": "virage avec CDC",
+                "valeur": 4,
+                "zone": "BAT H SS2",
+                "article": "A01400X60",
+                "qte": 17,
+                "qteTotale": 68
+              }
+            ],
+            "zone": "BAT H SS2",
+            "prixOriginal": 67,
+            "totalSuppML": 102,
+            "uniteOriginal": "m",
+            "ml": 92,
+            "taille": "400",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "unite": "m",
+            "tailleOriginal": "400",
+            "total": 3841.2000000000003,
+            "nom": "Chemin de Câble 60",
+            "totalML": 194
+          },
+          {
+            "article": "A01300X60",
+            "totalML": 153,
+            "ml": 138,
+            "taille": "300",
+            "totalSuppML": 15,
+            "supplements": [
+              {
+                "supplement": "départ/arrivé",
+                "qteTotale": 3,
+                "article": "A01300X60",
+                "qte": 2,
+                "taille": "300",
+                "valeur": 1.5,
+                "zone": "BAT H SS2",
+                "nom": "Chemin de Câble 60"
+              },
+              {
+                "taille": "300",
+                "qte": 1,
+                "article": "A01300X60",
+                "qteTotale": 4,
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT H SS2",
+                "valeur": 4,
+                "supplement": "T avec CDC"
+              },
+              {
+                "qte": 2,
+                "valeur": 4,
+                "article": "A01300X60",
+                "qteTotale": 8,
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT H SS2",
+                "supplement": "virage avec CDC",
+                "taille": "300"
+              }
+            ],
+            "descriptionOriginal": "Chemin de Câble 60",
+            "tailleOriginal": "300",
+            "createdAt": "2025-08-26T13:34:33.029Z",
+            "uniteOriginal": "m",
+            "nom": "Chemin de Câble 60",
+            "total": 2861.1,
+            "prixOriginal": 62,
+            "unite": "m",
+            "prix": 18.7,
+            "zone": "BAT H SS2"
+          },
+          {
+            "totalSuppML": 47,
+            "prixOriginal": 72,
+            "supplements": [
+              {
+                "zone": "BAT I SS1",
+                "qte": 2,
+                "supplement": "départ/arrivé",
+                "nom": "Chemin de Câble 60",
+                "article": "A01500X60",
+                "valeur": 1.5,
+                "taille": "500",
+                "qteTotale": 3
+              },
+              {
+                "valeur": 4,
+                "qte": 2,
+                "qteTotale": 8,
+                "article": "A01500X60",
+                "supplement": "T avec CDC",
+                "taille": "500",
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT I SS1"
+              },
+              {
+                "article": "A01500X60",
+                "valeur": 4,
+                "supplement": "virage avec CDC",
+                "zone": "BAT I SS1",
+                "qte": 9,
+                "taille": "500",
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 36
+              }
+            ],
+            "totalML": 94,
+            "uniteOriginal": "m",
+            "zone": "BAT I SS1",
+            "nom": "Chemin de Câble 60",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "taille": "500",
+            "unite": "m",
+            "ml": 47,
+            "createdAt": "2025-08-26T13:35:46.536Z",
+            "tailleOriginal": "500",
+            "prix": 20.2,
+            "total": 1898.8,
+            "article": "A01500X60"
+          },
+          {
+            "tailleOriginal": "400",
+            "taille": "400",
+            "prix": 19.8,
+            "descriptionOriginal": "Chemin de Câble 60",
+            "unite": "m",
+            "prixOriginal": 67,
+            "ml": 6,
+            "nom": "Chemin de Câble 60",
+            "article": "A01400X60",
+            "total": 178.20000000000002,
+            "supplements": [
+              {
+                "taille": "400",
+                "article": "A01400X60",
+                "qte": 2,
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 3,
+                "valeur": 1.5,
+                "zone": "BAT I SS1",
+                "supplement": "départ/arrivé"
+              }
+            ],
+            "uniteOriginal": "m",
+            "zone": "BAT I SS1",
+            "totalML": 9,
+            "createdAt": "2025-08-26T13:36:18.692Z",
+            "totalSuppML": 3
+          },
+          {
+            "zone": "BAT I SS1",
+            "uniteOriginal": "m",
+            "article": "A01200X60",
+            "createdAt": "2025-08-26T13:37:17.990Z",
+            "taille": "200",
+            "prixOriginal": 58,
+            "ml": 22,
+            "totalSuppML": 27,
+            "total": 862.4000000000001,
+            "tailleOriginal": "200",
+            "nom": "Chemin de Câble 60",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "prix": 17.6,
+            "supplements": [
+              {
+                "qteTotale": 3,
+                "qte": 2,
+                "valeur": 1.5,
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT I SS1",
+                "supplement": "départ/arrivé",
+                "article": "A01200X60",
+                "taille": "200"
+              },
+              {
+                "nom": "Chemin de Câble 60",
+                "article": "A01200X60",
+                "taille": "200",
+                "qteTotale": 16,
+                "zone": "BAT I SS1",
+                "valeur": 4,
+                "qte": 4,
+                "supplement": "T avec CDC"
+              },
+              {
+                "qteTotale": 8,
+                "supplement": "virage avec CDC",
+                "zone": "BAT I SS1",
+                "taille": "200",
+                "qte": 2,
+                "article": "A01200X60",
+                "valeur": 4,
+                "nom": "Chemin de Câble 60"
+              }
+            ],
+            "unite": "m",
+            "totalML": 49
+          },
+          {
+            "totalSuppML": 47,
+            "total": 1898.8,
+            "totalML": 94,
+            "article": "A01500X60",
+            "tailleOriginal": "500",
+            "prixOriginal": 72,
+            "uniteOriginal": "m",
+            "unite": "m",
+            "createdAt": "2025-08-26T13:38:06.597Z",
+            "zone": "BAT J SS1",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "taille": "500",
+            "prix": 20.2,
+            "nom": "Chemin de Câble 60",
+            "supplements": [
+              {
+                "valeur": 1.5,
+                "article": "A01500X60",
+                "nom": "Chemin de Câble 60",
+                "supplement": "départ/arrivé",
+                "zone": "BAT J SS1",
+                "qteTotale": 3,
+                "taille": "500",
+                "qte": 2
+              },
+              {
+                "article": "A01500X60",
+                "qteTotale": 8,
+                "supplement": "T avec CDC",
+                "qte": 2,
+                "taille": "500",
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT J SS1",
+                "valeur": 4
+              },
+              {
+                "zone": "BAT J SS1",
+                "qteTotale": 36,
+                "supplement": "virage avec CDC",
+                "taille": "500",
+                "valeur": 4,
+                "article": "A01500X60",
+                "nom": "Chemin de Câble 60",
+                "qte": 9
+              }
+            ],
+            "ml": 47
+          },
+          {
+            "prixOriginal": 67,
+            "prix": 19.8,
+            "unite": "m",
+            "supplements": [
+              {
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT J SS1",
+                "supplement": "départ/arrivé",
+                "valeur": 1.5,
+                "article": "A01400X60",
+                "taille": "400",
+                "qte": 2,
+                "qteTotale": 3
+              }
+            ],
+            "zone": "BAT J SS1",
+            "ml": 6,
+            "tailleOriginal": "400",
+            "uniteOriginal": "m",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "total": 178.20000000000002,
+            "nom": "Chemin de Câble 60",
+            "createdAt": "2025-08-26T13:38:58.544Z",
+            "article": "A01400X60",
+            "taille": "400",
+            "totalML": 9,
+            "totalSuppML": 3
+          },
+          {
+            "zone": "BAT J SS1",
+            "total": 862.4000000000001,
+            "totalML": 49,
+            "tailleOriginal": "200",
+            "unite": "m",
+            "uniteOriginal": "m",
+            "prixOriginal": 58,
+            "nom": "Chemin de Câble 60",
+            "ml": 22,
+            "descriptionOriginal": "Chemin de Câble 60",
+            "taille": "200",
+            "prix": 17.6,
+            "article": "A01200X60",
+            "createdAt": "2025-08-26T13:39:49.389Z",
+            "totalSuppML": 27,
+            "supplements": [
+              {
+                "zone": "BAT J SS1",
+                "qte": 2,
+                "valeur": 1.5,
+                "qteTotale": 3,
+                "nom": "Chemin de Câble 60",
+                "taille": "200",
+                "supplement": "départ/arrivé",
+                "article": "A01200X60"
+              },
+              {
+                "nom": "Chemin de Câble 60",
+                "valeur": 4,
+                "zone": "BAT J SS1",
+                "qteTotale": 16,
+                "supplement": "T avec CDC",
+                "taille": "200",
+                "qte": 4,
+                "article": "A01200X60"
+              },
+              {
+                "supplement": "virage avec CDC",
+                "zone": "BAT J SS1",
+                "valeur": 4,
+                "nom": "Chemin de Câble 60",
+                "article": "A01200X60",
+                "qte": 2,
+                "taille": "200",
+                "qteTotale": 8
+              }
+            ]
+          },
+          {
+            "article": "A01500X60",
+            "total": 1737.2,
+            "uniteOriginal": "m",
+            "prixOriginal": 72,
+            "ml": 39,
+            "unite": "m",
+            "totalSuppML": 47,
+            "nom": "Chemin de Câble 60",
+            "prix": 20.2,
+            "taille": "500",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "totalML": 86,
+            "supplements": [
+              {
+                "zone": "BAT K SS1",
+                "supplement": "départ/arrivé",
+                "qte": 2,
+                "nom": "Chemin de Câble 60",
+                "taille": "500",
+                "article": "A01500X60",
+                "valeur": 1.5,
+                "qteTotale": 3
+              },
+              {
+                "zone": "BAT K SS1",
+                "article": "A01500X60",
+                "qteTotale": 8,
+                "valeur": 4,
+                "nom": "Chemin de Câble 60",
+                "supplement": "T avec CDC",
+                "taille": "500",
+                "qte": 2
+              },
+              {
+                "article": "A01500X60",
+                "zone": "BAT K SS1",
+                "qte": 9,
+                "supplement": "virage avec CDC",
+                "nom": "Chemin de Câble 60",
+                "taille": "500",
+                "qteTotale": 36,
+                "valeur": 4
+              }
+            ],
+            "tailleOriginal": "500",
+            "createdAt": "2025-08-26T13:40:35.194Z",
+            "zone": "BAT K SS1"
+          },
+          {
+            "article": "A01300X60",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "totalSuppML": 15,
+            "supplements": [
+              {
+                "article": "A01300X60",
+                "taille": "300",
+                "nom": "Chemin de Câble 60",
+                "zone": "BAT K SS1",
+                "qte": 2,
+                "supplement": "départ/arrivé",
+                "valeur": 1.5,
+                "qteTotale": 3
+              },
+              {
+                "qteTotale": 8,
+                "valeur": 4,
+                "zone": "BAT K SS1",
+                "supplement": "T avec CDC",
+                "nom": "Chemin de Câble 60",
+                "article": "A01300X60",
+                "qte": 2,
+                "taille": "300"
+              },
+              {
+                "qte": 1,
+                "article": "A01300X60",
+                "supplement": "virage avec CDC",
+                "zone": "BAT K SS1",
+                "nom": "Chemin de Câble 60",
+                "taille": "300",
+                "qteTotale": 4,
+                "valeur": 4
+              }
+            ],
+            "prixOriginal": 62,
+            "ml": 17,
+            "nom": "Chemin de Câble 60",
+            "totalML": 32,
+            "prix": 18.7,
+            "unite": "m",
+            "createdAt": "2025-08-26T13:41:34.221Z",
+            "taille": "300",
+            "total": 598.4,
+            "tailleOriginal": "300",
+            "uniteOriginal": "m",
+            "zone": "BAT K SS1"
+          },
+          {
+            "totalSuppML": 23.5,
+            "createdAt": "2025-08-26T13:42:17.095Z",
+            "ml": 19,
+            "zone": "BAT K SS1",
+            "tailleOriginal": "200",
+            "nom": "Chemin de Câble 60",
+            "taille": "200",
+            "uniteOriginal": "m",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "unite": "m",
+            "supplements": [
+              {
+                "qte": 3,
+                "zone": "BAT K SS1",
+                "taille": "200",
+                "qteTotale": 4.5,
+                "supplement": "départ/arrivé",
+                "valeur": 1.5,
+                "article": "A01200X60",
+                "nom": "Chemin de Câble 60"
+              },
+              {
+                "zone": "BAT K SS1",
+                "qte": 1,
+                "supplement": "réduction",
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 3,
+                "taille": "200",
+                "valeur": 3,
+                "article": "A01200X60"
+              },
+              {
+                "nom": "Chemin de Câble 60",
+                "qte": 4,
+                "supplement": "virage avec CDC",
+                "valeur": 4,
+                "taille": "200",
+                "article": "A01200X60",
+                "zone": "BAT K SS1",
+                "qteTotale": 16
+              }
+            ],
+            "prix": 17.6,
+            "article": "A01200X60",
+            "prixOriginal": 58,
+            "totalML": 42.5,
+            "total": 748.0000000000001
+          }
+        ],
+        "createdAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756214839,
+          "nanoseconds": 414000000
+        },
+        "clientId": "zuXHEnFIftspTlio8dlA",
+        "remises": {},
+        "zones": [
+          "BAT H SS1",
+          "BAT H SS2",
+          "BAT I SS1",
+          "BAT J SS1",
+          "BAT K SS1"
+        ],
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756215905,
+          "nanoseconds": 269000000
+        },
+        "adresse": "CHEMIN DES CEDRES 1004 LAUSANNE"
+      },
+      {
+        "id": "l2NxhchvW8I2vIzbDNUs",
+        "status": "En cours",
+        "remises": {},
+        "paiement": "oS2H3WNCS6DHNoTJwqoc",
+        "draft": false,
+        "createdAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756219684,
+          "nanoseconds": 73000000
+        },
+        "numero": "DEV-0157",
+        "clientId": "zuXHEnFIftspTlio8dlA",
+        "zones": [
+          "Chantier"
+        ],
+        "discount": 0,
+        "notes": "",
+        "nom": "College Grand Prés ",
+        "produits": [
+          {
+            "zone": "Chantier",
+            "totalSuppML": 0,
+            "article": "A01300X60",
+            "supplements": [],
+            "nom": "Chemin de Câble 60",
+            "totalML": 50,
+            "prixOriginal": 62,
+            "taille": "300",
+            "uniteOriginal": "m",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "unite": "m",
+            "prix": 18.7,
+            "tailleOriginal": "300",
+            "createdAt": "2025-08-26T14:48:29.073Z",
+            "ml": 50,
+            "total": 935
+          },
+          {
+            "descriptionOriginal": "Chemin de Câble 60",
+            "article": "A01400X60",
+            "zone": "Chantier",
+            "tailleOriginal": "400",
+            "prixOriginal": 67,
+            "nom": "Chemin de Câble 60",
+            "ml": 50,
+            "total": 990,
+            "unite": "m",
+            "totalML": 50,
+            "createdAt": "2025-08-26T14:48:45.354Z",
+            "prix": 19.8,
+            "supplements": [],
+            "totalSuppML": 0,
+            "taille": "400",
+            "uniteOriginal": "m"
+          },
+          {
+            "article": "A01500X60",
+            "supplements": [],
+            "total": 1010,
+            "unite": "m",
+            "prixOriginal": 72,
+            "taille": "500",
+            "nom": "Chemin de Câble 60",
+            "uniteOriginal": "m",
+            "ml": 50,
+            "zone": "Chantier",
+            "tailleOriginal": "500",
+            "prix": 20.2,
+            "totalSuppML": 0,
+            "totalML": 50,
+            "descriptionOriginal": "Chemin de Câble 60",
+            "createdAt": "2025-08-26T14:49:03.181Z"
+          }
+        ],
+        "total": 2935,
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1756219758,
+          "nanoseconds": 68000000
+        },
+        "technicien": "Maggitti",
+        "adresse": "Prilly",
+        "conditionsNeComprendPas": [
+          "15nUvFWNOUWXUoExrCxL",
+          "2nuFjkCjpXeDZ8mbQDRD",
+          "7176eVCF2hSB4ewVqhvl",
+          "ozqNo4Fkhfw9akzkM2np",
+          "q2v79cQsphYhBDd8Ds2e",
+          "vCJWI9Y7M3dJrBJrcLO7",
+          "wzB8Bsw6o2ZYrw35fCsg"
+        ],
+        "modalitaPrezzi": "prezziFissi",
+        "conditionsComprend": []
+      },
+      {
+        "id": "vmcilOw9OD1R0nqHVOFM",
+        "status": "Accepté",
+        "remises": {},
+        "draft": false,
+        "dataCongelati": {
+          "produits": [
+            {
+              "uniteOriginal": "m",
+              "congelatoIl": "2025-08-18T11:57:25.315Z",
+              "createdAt": "2025-08-18T11:57:10.369Z",
+              "prixOriginal": 58,
+              "total": 1774.5,
+              "article": "A01200X60",
+              "prix": 21,
+              "zone": "sous sol",
+              "descriptionOriginal": "Chemin de Câble 60",
+              "totalSuppML": 43.5,
+              "nom": "Chemin de Câble 60",
+              "tailleOriginal": "200",
+              "ml": 41,
+              "totalML": 84.5,
+              "unite": "m",
+              "taille": "200",
+              "supplements": [
+                {
+                  "article": "A01200X60",
+                  "supplement": "départ/arrivé",
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 7.5,
+                  "taille": "200",
+                  "valeur": 1.5,
+                  "qte": 5,
+                  "zone": "sous sol"
+                },
+                {
+                  "qte": 5,
+                  "article": "A01200X60",
+                  "valeur": 3,
+                  "supplement": "virage fabbriqué",
+                  "nom": "Chemin de Câble 60",
+                  "zone": "sous sol",
+                  "qteTotale": 15,
+                  "taille": "200"
+                },
+                {
+                  "qte": 3,
+                  "supplement": "monté et descente",
+                  "qteTotale": 9,
+                  "taille": "200",
+                  "nom": "Chemin de Câble 60",
+                  "zone": "sous sol",
+                  "valeur": 3,
+                  "article": "A01200X60"
+                },
+                {
+                  "nom": "Chemin de Câble 60",
+                  "qteTotale": 12,
+                  "zone": "sous sol",
+                  "taille": "200",
+                  "supplement": "T fabbriqué",
+                  "qte": 4,
+                  "article": "A01200X60",
+                  "valeur": 3
+                }
+              ]
+            },
+            {
+              "total": 18490.600000000002,
+              "descriptionOriginal": "Chemin de Câble 60",
+              "tailleOriginal": "400",
+              "createdAt": "2025-08-18T11:55:46.093Z",
+              "prix": 23.6,
+              "supplements": [
+                {
+                  "qte": 23,
+                  "article": "A01400X60",
+                  "valeur": 1.5,
+                  "taille": "400",
+                  "supplement": "départ/arrivé",
+                  "nom": "Chemin de Câble 60",
+                  "zone": "sous sol",
+                  "qteTotale": 34.5
+                },
+                {
+                  "zone": "sous sol",
+                  "valeur": 3,
+                  "taille": "400",
+                  "article": "A01400X60",
+                  "nom": "Chemin de Câble 60",
+                  "supplement": "T fabbriqué",
+                  "qteTotale": 36,
+                  "qte": 12
+                },
+                {
+                  "article": "A01400X60",
+                  "nom": "Chemin de Câble 60",
+                  "qte": 25,
+                  "zone": "sous sol",
+                  "supplement": "virage fabbriqué",
+                  "qteTotale": 75,
+                  "valeur": 3,
+                  "taille": "400"
+                },
+                {
+                  "taille": "400",
+                  "qteTotale": 48,
+                  "article": "A01400X60",
+                  "qte": 16,
+                  "nom": "Chemin de Câble 60",
+                  "supplement": "monté et descente",
+                  "zone": "sous sol",
+                  "valeur": 3
+                }
+              ],
+              "totalSuppML": 193.5,
+              "article": "A01400X60",
+              "prixOriginal": 67,
+              "taille": "400",
+              "unite": "m",
+              "zone": "sous sol",
+              "ml": 590,
+              "congelatoIl": "2025-08-18T11:57:25.315Z",
+              "uniteOriginal": "m",
+              "totalML": 783.5,
+              "nom": "Chemin de Câble 60"
+            }
+          ],
+          "remiseFamilles": 0,
+          "congelatoIl": "2025-08-18T11:57:25.315Z",
+          "modalitaPrezzi": "prezziFissi"
+        },
+        "createdAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1755517152,
+          "nanoseconds": 402000000
+        },
+        "numero": "DEV-0142",
+        "clientId": "vkSi2DL8qqPv3yV9gCu3",
+        "zones": [
+          "sous sol"
+        ],
+        "discount": 0,
+        "produits": [
+          {
+            "supplements": [
+              {
+                "article": "A01200X60",
+                "zone": "sous sol",
+                "qte": 5,
+                "supplement": "départ/arrivé",
+                "taille": "200",
+                "qteTotale": 7.5,
+                "valeur": 1.5,
+                "nom": "Chemin de Câble 60"
+              },
+              {
+                "nom": "Chemin de Câble 60",
+                "supplement": "virage fabbriqué",
+                "article": "A01200X60",
+                "taille": "200",
+                "qte": 5,
+                "zone": "sous sol",
+                "valeur": 3,
+                "qteTotale": 15
+              },
+              {
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 9,
+                "article": "A01200X60",
+                "supplement": "monté et descente",
+                "zone": "sous sol",
+                "valeur": 3,
+                "taille": "200",
+                "qte": 3
+              },
+              {
+                "valeur": 3,
+                "zone": "sous sol",
+                "article": "A01200X60",
+                "qte": 4,
+                "taille": "200",
+                "supplement": "T fabbriqué",
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 12
+              }
+            ],
+            "nom": "Chemin de Câble 60",
+            "prix": 21,
+            "totalSuppML": 43.5,
+            "zone": "sous sol",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "uniteOriginal": "m",
+            "total": 1774.5,
+            "article": "A01200X60",
+            "createdAt": "2025-08-18T11:57:10.369Z",
+            "ml": 41,
+            "totalML": 84.5,
+            "taille": "200",
+            "tailleOriginal": "200",
+            "unite": "m",
+            "prixOriginal": 58
+          },
+          {
+            "nom": "Chemin de Câble 60",
+            "zone": "sous sol",
+            "uniteOriginal": "m",
+            "prix": 23.6,
+            "total": 18490.600000000002,
+            "prixOriginal": 67,
+            "tailleOriginal": "400",
+            "descriptionOriginal": "Chemin de Câble 60",
+            "totalML": 783.5,
+            "taille": "400",
+            "supplements": [
+              {
+                "taille": "400",
+                "zone": "sous sol",
+                "supplement": "départ/arrivé",
+                "qteTotale": 34.5,
+                "article": "A01400X60",
+                "qte": 23,
+                "valeur": 1.5,
+                "nom": "Chemin de Câble 60"
+              },
+              {
+                "zone": "sous sol",
+                "taille": "400",
+                "qte": 12,
+                "valeur": 3,
+                "nom": "Chemin de Câble 60",
+                "article": "A01400X60",
+                "qteTotale": 36,
+                "supplement": "T fabbriqué"
+              },
+              {
+                "taille": "400",
+                "qte": 25,
+                "valeur": 3,
+                "article": "A01400X60",
+                "zone": "sous sol",
+                "nom": "Chemin de Câble 60",
+                "qteTotale": 75,
+                "supplement": "virage fabbriqué"
+              },
+              {
+                "valeur": 3,
+                "qteTotale": 48,
+                "article": "A01400X60",
+                "qte": 16,
+                "nom": "Chemin de Câble 60",
+                "supplement": "monté et descente",
+                "taille": "400",
+                "zone": "sous sol"
+              }
+            ],
+            "ml": 590,
+            "createdAt": "2025-08-18T11:55:46.093Z",
+            "unite": "m",
+            "article": "A01400X60",
+            "totalSuppML": 193.5
+          }
+        ],
+        "nom": "Projet Alegria",
+        "total": 20265.100000000002,
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1755545257,
+          "nanoseconds": 867000000
+        },
+        "technicien": "Vernay",
+        "adresse": "R.te d'Italie",
+        "modalitaPrezzi": "prezziFissi"
+      },
+      {
+        "id": "wqejHfQmfnB0smN7CeBV",
+        "createdAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1755518723,
+          "nanoseconds": 170000000
+        },
+        "updatedAt": {
+          "type": "firestore/timestamp/1.0",
+          "seconds": 1755878487,
+          "nanoseconds": 994000000
+        },
+        "numero": "DEV-0143",
+        "nom": "QOQA",
+        "remises": {},
+        "conditionsNeComprendPas": [
+          "15nUvFWNOUWXUoExrCxL",
+          "2nuFjkCjpXeDZ8mbQDRD",
+          "7176eVCF2hSB4ewVqhvl",
+          "ozqNo4Fkhfw9akzkM2np",
+          "q2v79cQsphYhBDd8Ds2e",
+          "vCJWI9Y7M3dJrBJrcLO7",
+          "wzB8Bsw6o2ZYrw35fCsg"
+        ],
+        "conditionsComprend": [],
+        "total": 19913.715000000004,
+        "dataCongelati": {
+          "congelatoIl": "2025-08-21T13:09:37.133Z",
+          "modalitaPrezzi": "prezziFissi",
+          "remiseFamilles": 0,
+          "produits": [
+            {
+              "descriptionOriginal": "KT 4X1600AL ALIMENTATION ER N1",
+              "prixOriginal": 87.65,
+              "totalML": 2,
+              "unite": "pc",
+              "zone": "rail 1  1600A",
+              "nom": "KT 4X1600AL ALIMENTATION ER N1",
+              "total": 175.3,
+              "taille": "1600A",
+              "totalSuppML": 0,
+              "ml": 2,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "prix": 87.65,
+              "uniteOriginal": "pc",
+              "supplements": [],
+              "createdAt": "2025-08-18T13:32:14.615Z",
+              "tailleOriginal": "1600A",
+              "article": "RKTA1600ER41"
+            },
+            {
+              "tailleOriginal": "1600A",
+              "article": "RKTA1600LC4B",
+              "descriptionOriginal": "KT 4X1600AL COUDE SUR CHANT.",
+              "taille": "1600A",
+              "nom": "KT 4X1600AL COUDE SUR CHANT",
+              "zone": "rail 1  1600A",
+              "total": 207.65,
+              "createdAt": "2025-08-18T13:33:03.808Z",
+              "unite": "pc",
+              "supplements": [],
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "totalML": 1,
+              "prixOriginal": 207.65,
+              "ml": 1,
+              "totalSuppML": 0,
+              "uniteOriginal": "pc",
+              "prix": 207.65
+            },
+            {
+              "tailleOriginal": "1600A",
+              "createdAt": "2025-08-18T13:33:20.555Z",
+              "totalML": 3,
+              "totalSuppML": 0,
+              "supplements": [],
+              "descriptionOriginal": "CANALIS KT 4X1600AL COUDE A PLAT N2",
+              "ml": 3,
+              "taille": "1600A",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "prix": 207.65,
+              "unite": "pc",
+              "nom": "CANALIS KT 4X1600AL COUDE A PLAT N2",
+              "zone": "rail 1  1600A",
+              "total": 622.95,
+              "prixOriginal": 207.65,
+              "uniteOriginal": "pc",
+              "article": "RKTA1600LP4D2"
+            },
+            {
+              "prix": 207.65,
+              "supplements": [],
+              "prixOriginal": 207.65,
+              "tailleOriginal": "1600A",
+              "nom": "KT 4X1600AL COUDE A PLAT N1",
+              "taille": "1600A",
+              "total": 415.3,
+              "zone": "rail 1  1600A",
+              "totalSuppML": 0,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "article": "RKTA1600LP4B1",
+              "unite": "pc",
+              "uniteOriginal": "pc",
+              "totalML": 2,
+              "ml": 2,
+              "createdAt": "2025-08-18T13:33:09.229Z",
+              "descriptionOriginal": "KT 4X1600AL COUDE A PLAT N1"
+            },
+            {
+              "totalSuppML": 0,
+              "totalML": 4,
+              "tailleOriginal": "1600A",
+              "supplements": [],
+              "uniteOriginal": "pc",
+              "createdAt": "2025-08-18T13:32:29.892Z",
+              "prixOriginal": 327.65,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "zone": "rail 1  1600A",
+              "nom": "KT 4X1600AL DROIT TRANSPORT",
+              "unite": "pc",
+              "total": 1310.6,
+              "ml": 4,
+              "taille": "1600A",
+              "descriptionOriginal": "KT 4X1600AL DROIT TRANSPORT",
+              "prix": 327.65,
+              "article": "RKTA1600ET42B"
+            },
+            {
+              "zone": "rail 1  1600A",
+              "nom": "KT 4X1600AL DROIT TRANSPORT",
+              "uniteOriginal": "pc",
+              "prix": 447.65,
+              "total": 895.3,
+              "prixOriginal": 447.65,
+              "tailleOriginal": "1600A",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "descriptionOriginal": "KT 4X1600AL DROIT TRANSPORT",
+              "totalML": 2,
+              "taille": "1600A",
+              "supplements": [],
+              "ml": 2,
+              "createdAt": "2025-08-18T13:32:35.940Z",
+              "unite": "pc",
+              "article": "RKTA1600ET43D",
+              "totalSuppML": 0
+            },
+            {
+              "supplements": [],
+              "nom": "KT 4X1600AL  COUDE SUR CHANT",
+              "prix": 207.65,
+              "totalSuppML": 0,
+              "zone": "rail 1  1600A",
+              "descriptionOriginal": "KT 4X1600AL  COUDE SUR CHANT",
+              "uniteOriginal": "pc",
+              "total": 415.3,
+              "article": "RKTA1600LC4A",
+              "createdAt": "2025-08-18T13:32:56.009Z",
+              "ml": 2,
+              "taille": "1600A",
+              "totalML": 2,
+              "unite": "pc",
+              "tailleOriginal": "1600A",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "prixOriginal": 207.65
+            },
+            {
+              "total": 350.6,
+              "descriptionOriginal": "KTB kit coupe feu, (pour H:164mm), L:650mm",
+              "tailleOriginal": "1600A",
+              "createdAt": "2025-08-18T13:33:30.379Z",
+              "prix": 87.65,
+              "totalSuppML": 0,
+              "supplements": [],
+              "article": "RKTB0164CF6",
+              "prixOriginal": 87.65,
+              "unite": "pc",
+              "taille": "1600A",
+              "zone": "rail 1  1600A",
+              "ml": 4,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "totalML": 4,
+              "uniteOriginal": "pc",
+              "nom": "KTB kit coupe feu, (pour H:164mm), L:650mm"
+            },
+            {
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "uniteOriginal": "pc",
+              "createdAt": "2025-08-18T13:33:25.175Z",
+              "prixOriginal": 207.65,
+              "article": "RKTA1600ZC42",
+              "total": 207.65,
+              "prix": 207.65,
+              "zone": "rail 1  1600A",
+              "descriptionOriginal": "KT 4X1600AL ZED SUR CHANT N2",
+              "totalSuppML": 0,
+              "tailleOriginal": "1600A",
+              "nom": "KT 4X1600AL ZED SUR CHANT N2",
+              "ml": 1,
+              "unite": "pc",
+              "totalML": 1,
+              "taille": "1600A",
+              "supplements": []
+            },
+            {
+              "article": "RKTA1600ET41A",
+              "supplements": [],
+              "total": 802.9499999999999,
+              "unite": "pc",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "prixOriginal": 267.65,
+              "taille": "1600A",
+              "nom": "KTA élément droit transport, 1600A, sur mesure, 3L+N+PE",
+              "uniteOriginal": "pc",
+              "ml": 3,
+              "zone": "rail 1  1600A",
+              "tailleOriginal": "1600A",
+              "prix": 267.65,
+              "totalSuppML": 0,
+              "totalML": 3,
+              "descriptionOriginal": "KTA élément droit transport, 1600A, sur mesure, 3L+N+PE",
+              "createdAt": "2025-08-18T13:32:23.901Z"
+            },
+            {
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "descriptionOriginal": "KTA élément droit transport, 1600A, 4m, 3L+N+PE",
+              "article": "RKTA1600ET440",
+              "zone": "rail 1  1600A",
+              "tailleOriginal": "1600A",
+              "prixOriginal": 567.65,
+              "ml": 22,
+              "nom": "KTA élément droit transport, 1600A, 4m, 3L+N+PE",
+              "total": 12488.3,
+              "totalML": 22,
+              "createdAt": "2025-08-18T13:32:51.036Z",
+              "unite": "pc",
+              "prix": 567.65,
+              "supplements": [],
+              "totalSuppML": 0,
+              "taille": "1600A",
+              "uniteOriginal": "pc"
+            },
+            {
+              "zone": "rail 1  1600A",
+              "totalSuppML": 0,
+              "supplements": [],
+              "article": "RKTA1600ET43E",
+              "totalML": 1,
+              "nom": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+              "prixOriginal": 507.65,
+              "taille": "1600A",
+              "uniteOriginal": "pc",
+              "descriptionOriginal": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+              "unite": "pc",
+              "prix": 507.65,
+              "tailleOriginal": "1600A",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "createdAt": "2025-08-18T13:32:41.106Z",
+              "ml": 1,
+              "total": 507.65
+            },
+            {
+              "prixOriginal": 567.65,
+              "unite": "pc",
+              "article": "RKTA1600ET43F",
+              "totalSuppML": 0,
+              "taille": "1600A",
+              "totalML": 1,
+              "supplements": [],
+              "createdAt": "2025-08-18T13:32:46.065Z",
+              "nom": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+              "descriptionOriginal": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+              "tailleOriginal": "1600A",
+              "total": 567.65,
+              "zone": "rail 1  1600A",
+              "uniteOriginal": "pc",
+              "prix": 567.65,
+              "ml": 1,
+              "congelatoIl": "2025-08-21T13:09:37.133Z"
+            },
+            {
+              "totalSuppML": 0,
+              "createdAt": "2025-08-18T13:33:15.217Z",
+              "descriptionOriginal": "CANALIS KT 4X1600AL COUDE A PLAT N1",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "supplements": [],
+              "prixOriginal": 207.65,
+              "tailleOriginal": "1600A",
+              "ml": 2,
+              "prix": 207.65,
+              "totalML": 2,
+              "taille": "1600A",
+              "nom": "CANALIS KT 4X1600AL COUDE A PLAT N1",
+              "zone": "rail 1  1600A",
+              "uniteOriginal": "pc",
+              "article": "RKTA1600LP4D1",
+              "total": 415.3,
+              "unite": "pc"
+            },
+            {
+              "total": 207.65,
+              "descriptionOriginal": "KT 4X800AL COUDE SUR CHANT",
+              "prixOriginal": 152.25,
+              "supplements": [],
+              "ml": 1,
+              "tailleOriginal": "800A",
+              "totalSuppML": 0,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "zone": "rail 1  1600A",
+              "totalML": 1,
+              "taille": "800A",
+              "nom": "KT 4X800AL COUDE SUR CHANT",
+              "unite": "pc",
+              "prix": 207.65,
+              "article": "RKTA0800LC4B",
+              "uniteOriginal": "pc",
+              "createdAt": "2025-08-18T13:32:06.687Z"
+            },
+            {
+              "unite": "pc",
+              "uniteOriginal": "pc",
+              "ml": 2,
+              "article": "RKTA0800ER41",
+              "descriptionOriginal": "KT 4X800AL ALIMENTATION ER N1",
+              "taille": "800A",
+              "tailleOriginal": "800A",
+              "totalML": 2,
+              "nom": "KT 4X800AL ALIMENTATION ER N1",
+              "prixOriginal": 62.25,
+              "prix": 62.25,
+              "supplements": [],
+              "zone": "rail 2  800A",
+              "totalSuppML": 0,
+              "createdAt": "2025-08-18T13:36:02.042Z",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "total": 124.5
+            },
+            {
+              "taille": "800A",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "createdAt": "2025-08-18T13:36:56.109Z",
+              "totalSuppML": 0,
+              "supplements": [],
+              "tailleOriginal": "800A",
+              "zone": "rail 2  800A",
+              "prixOriginal": 152.25,
+              "article": "RKTA0800LC4D",
+              "total": 152.25,
+              "prix": 152.25,
+              "uniteOriginal": "pc",
+              "totalML": 1,
+              "ml": 1,
+              "nom": "CANALIS KT 4X800AL COUDE SUR CHANT",
+              "unite": "pc",
+              "descriptionOriginal": "CANALIS KT 4X800AL COUDE SUR CHANT"
+            },
+            {
+              "taille": "800A",
+              "article": "RKTA0800ET440",
+              "prix": 422.25,
+              "supplements": [],
+              "totalML": 2,
+              "tailleOriginal": "800A",
+              "zone": "rail 2  800A",
+              "ml": 2,
+              "prixOriginal": 422.25,
+              "totalSuppML": 0,
+              "total": 844.5,
+              "unite": "pc",
+              "createdAt": "2025-08-18T13:37:28.921Z",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "descriptionOriginal": "KT 4X800AL DROIT TRANSPORT 4M",
+              "nom": "KT 4X800AL DROIT TRANSPORT 4M",
+              "uniteOriginal": "pc"
+            },
+            {
+              "taille": "800A",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "prix": 152.25,
+              "totalML": 2,
+              "uniteOriginal": "pc",
+              "article": "RKTA0800LC4B",
+              "unite": "pc",
+              "prixOriginal": 152.25,
+              "total": 304.5,
+              "descriptionOriginal": "KT 4X800AL COUDE SUR CHANT",
+              "ml": 2,
+              "nom": "KT 4X800AL COUDE SUR CHANT",
+              "totalSuppML": 0,
+              "createdAt": "2025-08-18T13:42:57.940Z",
+              "tailleOriginal": "800A",
+              "supplements": [],
+              "zone": "rail 2  800A"
+            },
+            {
+              "supplements": [],
+              "createdAt": "2025-08-18T13:38:52.538Z",
+              "totalSuppML": 0,
+              "totalML": 3,
+              "tailleOriginal": "800A",
+              "descriptionOriginal": "CANALIS KT KIT COUPE FEU H74 L650",
+              "prix": 62.25,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "prixOriginal": 62.25,
+              "article": "RKTB0074CF6",
+              "ml": 3,
+              "zone": "rail 2  800A",
+              "total": 186.75,
+              "taille": "800A",
+              "unite": "pc",
+              "nom": "CANALIS KT KIT COUPE FEU H74 L650",
+              "uniteOriginal": "pc"
+            },
+            {
+              "prixOriginal": 332.25,
+              "uniteOriginal": "pc",
+              "supplements": [],
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "zone": "rail 2  800A",
+              "tailleOriginal": "800A",
+              "descriptionOriginal": "KT 4X800AL DROIT TRANSPORT",
+              "taille": "800A",
+              "total": 664.5,
+              "createdAt": "2025-08-18T13:44:40.907Z",
+              "ml": 2,
+              "article": "RKTA0800ET43D",
+              "nom": "KT 4X800AL DROIT TRANSPORT",
+              "prix": 332.25,
+              "totalSuppML": 0,
+              "unite": "pc",
+              "totalML": 2
+            },
+            {
+              "uniteOriginal": "pc",
+              "taille": "800A",
+              "zone": "rail 2  800A",
+              "totalML": 1,
+              "article": "RKTA0800ZP4",
+              "supplements": [],
+              "unite": "pc",
+              "nom": "KT 4X800AL ZED A PLAT",
+              "ml": 1,
+              "tailleOriginal": "800A",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "total": 152.25,
+              "prixOriginal": 152.25,
+              "prix": 152.25,
+              "createdAt": "2025-08-18T13:39:56.662Z",
+              "descriptionOriginal": "KT 4X800AL ZED A PLAT",
+              "totalSuppML": 0
+            },
+            {
+              "unite": "pc",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "ml": 2,
+              "supplements": [],
+              "zone": "rail 2  800A",
+              "prixOriginal": 197.25,
+              "tailleOriginal": "800A",
+              "taille": "800A",
+              "totalML": 2,
+              "total": 394.5,
+              "prix": 197.25,
+              "nom": "KT 4X800AL DROIT TRANSPORT",
+              "uniteOriginal": "pc",
+              "descriptionOriginal": "KT 4X800AL DROIT TRANSPORT",
+              "createdAt": "2025-08-18T13:46:32.206Z",
+              "totalSuppML": 0,
+              "article": "RKTA0800ET41A"
+            },
+            {
+              "supplements": [],
+              "prix": 377.25,
+              "unite": "pc",
+              "totalML": 1,
+              "uniteOriginal": "pc",
+              "ml": 1,
+              "tailleOriginal": "800A",
+              "total": 377.25,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "taille": "800A",
+              "descriptionOriginal": "CANALIS KT 4X800AL LONGUEUR D'ALIMENTATION",
+              "nom": "CANALIS KT 4X800AL LONGUEUR D'ALIMENTATION",
+              "article": "RKTA0800ET43E",
+              "createdAt": "2025-08-18T13:41:37.271Z",
+              "zone": "rail 2  800A",
+              "totalSuppML": 0,
+              "prixOriginal": 377.25
+            },
+            {
+              "ml": 1,
+              "createdAt": "2025-08-18T13:42:13.016Z",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "taille": "1600A",
+              "descriptionOriginal": "KT 4X1600AL DROIT TRANSPORT",
+              "tailleOriginal": "1600A",
+              "supplements": [],
+              "nom": "KT 4X1600AL DROIT TRANSPORT",
+              "totalSuppML": 0,
+              "uniteOriginal": "pc",
+              "unite": "pc",
+              "zone": "rail 2  800A",
+              "prix": 332.25,
+              "totalML": 1,
+              "prixOriginal": 447.65,
+              "article": "RKTA1600ET43D",
+              "total": 332.25
+            },
+            {
+              "article": "RKTA0800LP4A2",
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "descriptionOriginal": "KT 4X800AL COUDE A PLAT N2",
+              "tailleOriginal": "800A",
+              "nom": "KT 4X800AL COUDE A PLAT N2",
+              "taille": "800A",
+              "totalML": 1,
+              "uniteOriginal": "pc",
+              "createdAt": "2025-08-18T13:43:49.150Z",
+              "prix": 152.25,
+              "prixOriginal": 152.25,
+              "totalSuppML": 0,
+              "total": 152.25,
+              "zone": "rail 2  800A",
+              "unite": "pc",
+              "ml": 1,
+              "supplements": []
+            },
+            {
+              "taille": "800A",
+              "createdAt": "2025-08-18T13:45:10.583Z",
+              "prix": 152.25,
+              "zone": "rail 2  800A",
+              "descriptionOriginal": "KT 4X800AL ZED CHANT PLAT N4",
+              "uniteOriginal": "pc",
+              "total": 152.25,
+              "prixOriginal": 152.25,
+              "article": "RKTA0800CP44",
+              "totalSuppML": 0,
+              "congelatoIl": "2025-08-21T13:09:37.133Z",
+              "nom": "KT 4X800AL ZED CHANT PLAT N4",
+              "ml": 1,
+              "supplements": [],
+              "totalML": 1,
+              "tailleOriginal": "800A",
+              "unite": "pc"
+            }
+          ]
+        },
+        "paiement": "oS2H3WNCS6DHNoTJwqoc",
+        "modalitaPrezzi": "prezziFissi",
+        "discount": 15,
+        "status": "Accepté",
+        "notes": "",
+        "draft": false,
+        "technicien": "Douillot",
+        "adresse": "La Sarraz",
+        "produits": [
+          {
+            "prix": 87.65,
+            "supplements": [],
+            "nom": "KT 4X1600AL ALIMENTATION ER N1",
+            "zone": "rail 1  1600A",
+            "total": 175.3,
+            "totalSuppML": 0,
+            "taille": "1600A",
+            "totalML": 2,
+            "uniteOriginal": "pc",
+            "ml": 2,
+            "prixOriginal": 87.65,
+            "unite": "pc",
+            "tailleOriginal": "1600A",
+            "article": "RKTA1600ER41",
+            "createdAt": "2025-08-18T13:32:14.615Z",
+            "descriptionOriginal": "KT 4X1600AL ALIMENTATION ER N1"
+          },
+          {
+            "ml": 1,
+            "article": "RKTA1600LC4B",
+            "nom": "KT 4X1600AL COUDE SUR CHANT",
+            "uniteOriginal": "pc",
+            "prixOriginal": 207.65,
+            "zone": "rail 1  1600A",
+            "descriptionOriginal": "KT 4X1600AL COUDE SUR CHANT.",
+            "unite": "pc",
+            "totalML": 1,
+            "totalSuppML": 0,
+            "tailleOriginal": "1600A",
+            "supplements": [],
+            "total": 207.65,
+            "createdAt": "2025-08-18T13:33:03.808Z",
+            "prix": 207.65,
+            "taille": "1600A"
+          },
+          {
+            "supplements": [],
+            "descriptionOriginal": "CANALIS KT 4X1600AL COUDE A PLAT N2",
+            "createdAt": "2025-08-18T13:33:20.555Z",
+            "unite": "pc",
+            "total": 622.95,
+            "totalSuppML": 0,
+            "tailleOriginal": "1600A",
+            "prix": 207.65,
+            "uniteOriginal": "pc",
+            "nom": "CANALIS KT 4X1600AL COUDE A PLAT N2",
+            "ml": 3,
+            "zone": "rail 1  1600A",
+            "taille": "1600A",
+            "article": "RKTA1600LP4D2",
+            "totalML": 3,
+            "prixOriginal": 207.65
+          },
+          {
+            "createdAt": "2025-08-18T13:33:09.229Z",
+            "prix": 207.65,
+            "descriptionOriginal": "KT 4X1600AL COUDE A PLAT N1",
+            "totalSuppML": 0,
+            "supplements": [],
+            "totalML": 2,
+            "ml": 2,
+            "article": "RKTA1600LP4B1",
+            "uniteOriginal": "pc",
+            "unite": "pc",
+            "taille": "1600A",
+            "nom": "KT 4X1600AL COUDE A PLAT N1",
+            "prixOriginal": 207.65,
+            "total": 415.3,
+            "zone": "rail 1  1600A",
+            "tailleOriginal": "1600A"
+          },
+          {
+            "supplements": [],
+            "total": 1310.6,
+            "tailleOriginal": "1600A",
+            "nom": "KT 4X1600AL DROIT TRANSPORT",
+            "zone": "rail 1  1600A",
+            "totalML": 4,
+            "totalSuppML": 0,
+            "prix": 327.65,
+            "taille": "1600A",
+            "unite": "pc",
+            "createdAt": "2025-08-18T13:32:29.892Z",
+            "uniteOriginal": "pc",
+            "prixOriginal": 327.65,
+            "descriptionOriginal": "KT 4X1600AL DROIT TRANSPORT",
+            "article": "RKTA1600ET42B",
+            "ml": 4
+          },
+          {
+            "ml": 2,
+            "totalML": 2,
+            "article": "RKTA1600ET43D",
+            "prixOriginal": 447.65,
+            "supplements": [],
+            "totalSuppML": 0,
+            "total": 895.3,
+            "unite": "pc",
+            "taille": "1600A",
+            "nom": "KT 4X1600AL DROIT TRANSPORT",
+            "descriptionOriginal": "KT 4X1600AL DROIT TRANSPORT",
+            "uniteOriginal": "pc",
+            "createdAt": "2025-08-18T13:32:35.940Z",
+            "tailleOriginal": "1600A",
+            "zone": "rail 1  1600A",
+            "prix": 447.65
+          },
+          {
+            "descriptionOriginal": "KT 4X1600AL  COUDE SUR CHANT",
+            "taille": "1600A",
+            "total": 415.3,
+            "totalSuppML": 0,
+            "nom": "KT 4X1600AL  COUDE SUR CHANT",
+            "createdAt": "2025-08-18T13:32:56.009Z",
+            "zone": "rail 1  1600A",
+            "tailleOriginal": "1600A",
+            "uniteOriginal": "pc",
+            "prixOriginal": 207.65,
+            "article": "RKTA1600LC4A",
+            "ml": 2,
+            "prix": 207.65,
+            "totalML": 2,
+            "supplements": [],
+            "unite": "pc"
+          },
+          {
+            "supplements": [],
+            "article": "RKTB0164CF6",
+            "totalML": 4,
+            "prixOriginal": 87.65,
+            "ml": 4,
+            "taille": "1600A",
+            "createdAt": "2025-08-18T13:33:30.379Z",
+            "prix": 87.65,
+            "descriptionOriginal": "KTB kit coupe feu, (pour H:164mm), L:650mm",
+            "totalSuppML": 0,
+            "tailleOriginal": "1600A",
+            "nom": "KTB kit coupe feu, (pour H:164mm), L:650mm",
+            "unite": "pc",
+            "total": 350.6,
+            "zone": "rail 1  1600A",
+            "uniteOriginal": "pc"
+          },
+          {
+            "total": 207.65,
+            "tailleOriginal": "1600A",
+            "zone": "rail 1  1600A",
+            "taille": "1600A",
+            "ml": 1,
+            "nom": "KT 4X1600AL ZED SUR CHANT N2",
+            "descriptionOriginal": "KT 4X1600AL ZED SUR CHANT N2",
+            "supplements": [],
+            "prix": 207.65,
+            "unite": "pc",
+            "totalML": 1,
+            "article": "RKTA1600ZC42",
+            "prixOriginal": 207.65,
+            "totalSuppML": 0,
+            "createdAt": "2025-08-18T13:33:25.175Z",
+            "uniteOriginal": "pc"
+          },
+          {
+            "descriptionOriginal": "KTA élément droit transport, 1600A, sur mesure, 3L+N+PE",
+            "zone": "rail 1  1600A",
+            "unite": "pc",
+            "prixOriginal": 267.65,
+            "totalML": 3,
+            "totalSuppML": 0,
+            "nom": "KTA élément droit transport, 1600A, sur mesure, 3L+N+PE",
+            "createdAt": "2025-08-18T13:32:23.901Z",
+            "article": "RKTA1600ET41A",
+            "uniteOriginal": "pc",
+            "ml": 3,
+            "taille": "1600A",
+            "total": 802.9499999999999,
+            "supplements": [],
+            "prix": 267.65,
+            "tailleOriginal": "1600A"
+          },
+          {
+            "prix": 567.65,
+            "prixOriginal": 567.65,
+            "supplements": [],
+            "ml": 22,
+            "tailleOriginal": "1600A",
+            "descriptionOriginal": "KTA élément droit transport, 1600A, 4m, 3L+N+PE",
+            "totalSuppML": 0,
+            "uniteOriginal": "pc",
+            "taille": "1600A",
+            "nom": "KTA élément droit transport, 1600A, 4m, 3L+N+PE",
+            "article": "RKTA1600ET440",
+            "total": 12488.3,
+            "zone": "rail 1  1600A",
+            "unite": "pc",
+            "createdAt": "2025-08-18T13:32:51.036Z",
+            "totalML": 22
+          },
+          {
+            "totalSuppML": 0,
+            "article": "RKTA1600ET43E",
+            "unite": "pc",
+            "total": 507.65,
+            "descriptionOriginal": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+            "prix": 507.65,
+            "zone": "rail 1  1600A",
+            "taille": "1600A",
+            "uniteOriginal": "pc",
+            "prixOriginal": 507.65,
+            "nom": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+            "supplements": [],
+            "createdAt": "2025-08-18T13:32:41.106Z",
+            "totalML": 1,
+            "tailleOriginal": "1600A",
+            "ml": 1
+          },
+          {
+            "nom": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+            "prixOriginal": 567.65,
+            "unite": "pc",
+            "taille": "1600A",
+            "supplements": [],
+            "total": 567.65,
+            "ml": 1,
+            "tailleOriginal": "1600A",
+            "prix": 567.65,
+            "totalML": 1,
+            "article": "RKTA1600ET43F",
+            "uniteOriginal": "pc",
+            "createdAt": "2025-08-18T13:32:46.065Z",
+            "descriptionOriginal": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+            "zone": "rail 1  1600A",
+            "totalSuppML": 0
+          },
+          {
+            "totalSuppML": 0,
+            "taille": "1600A",
+            "nom": "CANALIS KT 4X1600AL COUDE A PLAT N1",
+            "zone": "rail 1  1600A",
+            "createdAt": "2025-08-18T13:33:15.217Z",
+            "supplements": [],
+            "unite": "pc",
+            "prixOriginal": 207.65,
+            "uniteOriginal": "pc",
+            "ml": 2,
+            "descriptionOriginal": "CANALIS KT 4X1600AL COUDE A PLAT N1",
+            "total": 415.3,
+            "article": "RKTA1600LP4D1",
+            "totalML": 2,
+            "tailleOriginal": "1600A",
+            "prix": 207.65
+          },
+          {
+            "taille": "800A",
+            "prixOriginal": 152.25,
+            "tailleOriginal": "800A",
+            "createdAt": "2025-08-18T13:32:06.687Z",
+            "prix": 207.65,
+            "nom": "KT 4X800AL COUDE SUR CHANT",
+            "unite": "pc",
+            "article": "RKTA0800LC4B",
+            "totalML": 1,
+            "total": 207.65,
+            "uniteOriginal": "pc",
+            "supplements": [],
+            "descriptionOriginal": "KT 4X800AL COUDE SUR CHANT",
+            "totalSuppML": 0,
+            "ml": 1,
+            "zone": "rail 1  1600A"
+          },
+          {
+            "createdAt": "2025-08-18T13:36:02.042Z",
+            "totalSuppML": 0,
+            "taille": "800A",
+            "prixOriginal": 62.25,
+            "prix": 62.25,
+            "unite": "pc",
+            "zone": "rail 2  800A",
+            "totalML": 2,
+            "uniteOriginal": "pc",
+            "nom": "KT 4X800AL ALIMENTATION ER N1",
+            "total": 124.5,
+            "supplements": [],
+            "ml": 2,
+            "descriptionOriginal": "KT 4X800AL ALIMENTATION ER N1",
+            "article": "RKTA0800ER41",
+            "tailleOriginal": "800A"
+          },
+          {
+            "createdAt": "2025-08-18T13:36:56.109Z",
+            "totalSuppML": 0,
+            "tailleOriginal": "800A",
+            "prix": 152.25,
+            "article": "RKTA0800LC4D",
+            "descriptionOriginal": "CANALIS KT 4X800AL COUDE SUR CHANT",
+            "taille": "800A",
+            "supplements": [],
+            "ml": 1,
+            "total": 152.25,
+            "zone": "rail 2  800A",
+            "nom": "CANALIS KT 4X800AL COUDE SUR CHANT",
+            "uniteOriginal": "pc",
+            "totalML": 1,
+            "unite": "pc",
+            "prixOriginal": 152.25
+          },
+          {
+            "prix": 422.25,
+            "totalSuppML": 0,
+            "prixOriginal": 422.25,
+            "article": "RKTA0800ET440",
+            "ml": 2,
+            "uniteOriginal": "pc",
+            "unite": "pc",
+            "zone": "rail 2  800A",
+            "descriptionOriginal": "KT 4X800AL DROIT TRANSPORT 4M",
+            "tailleOriginal": "800A",
+            "createdAt": "2025-08-18T13:37:28.921Z",
+            "taille": "800A",
+            "totalML": 2,
+            "nom": "KT 4X800AL DROIT TRANSPORT 4M",
+            "supplements": [],
+            "total": 844.5
+          },
+          {
+            "descriptionOriginal": "KT 4X800AL COUDE SUR CHANT",
+            "prixOriginal": 152.25,
+            "unite": "pc",
+            "ml": 2,
+            "totalSuppML": 0,
+            "totalML": 2,
+            "taille": "800A",
+            "total": 304.5,
+            "prix": 152.25,
+            "article": "RKTA0800LC4B",
+            "supplements": [],
+            "zone": "rail 2  800A",
+            "tailleOriginal": "800A",
+            "nom": "KT 4X800AL COUDE SUR CHANT",
+            "uniteOriginal": "pc",
+            "createdAt": "2025-08-18T13:42:57.940Z"
+          },
+          {
+            "supplements": [],
+            "prixOriginal": 62.25,
+            "unite": "pc",
+            "ml": 3,
+            "tailleOriginal": "800A",
+            "prix": 62.25,
+            "nom": "CANALIS KT KIT COUPE FEU H74 L650",
+            "total": 186.75,
+            "totalSuppML": 0,
+            "article": "RKTB0074CF6",
+            "zone": "rail 2  800A",
+            "uniteOriginal": "pc",
+            "descriptionOriginal": "CANALIS KT KIT COUPE FEU H74 L650",
+            "totalML": 3,
+            "taille": "800A",
+            "createdAt": "2025-08-18T13:38:52.538Z"
+          },
+          {
+            "tailleOriginal": "800A",
+            "unite": "pc",
+            "nom": "KT 4X800AL DROIT TRANSPORT",
+            "uniteOriginal": "pc",
+            "descriptionOriginal": "KT 4X800AL DROIT TRANSPORT",
+            "taille": "800A",
+            "prix": 332.25,
+            "totalSuppML": 0,
+            "createdAt": "2025-08-18T13:44:40.907Z",
+            "ml": 2,
+            "totalML": 2,
+            "total": 664.5,
+            "prixOriginal": 332.25,
+            "article": "RKTA0800ET43D",
+            "zone": "rail 2  800A",
+            "supplements": []
+          },
+          {
+            "prixOriginal": 152.25,
+            "uniteOriginal": "pc",
+            "createdAt": "2025-08-18T13:39:56.662Z",
+            "zone": "rail 2  800A",
+            "totalSuppML": 0,
+            "totalML": 1,
+            "article": "RKTA0800ZP4",
+            "unite": "pc",
+            "ml": 1,
+            "supplements": [],
+            "total": 152.25,
+            "tailleOriginal": "800A",
+            "taille": "800A",
+            "descriptionOriginal": "KT 4X800AL ZED A PLAT",
+            "nom": "KT 4X800AL ZED A PLAT",
+            "prix": 152.25
+          },
+          {
+            "prix": 197.25,
+            "totalML": 2,
+            "supplements": [],
+            "nom": "KT 4X800AL DROIT TRANSPORT",
+            "article": "RKTA0800ET41A",
+            "createdAt": "2025-08-18T13:46:32.206Z",
+            "unite": "pc",
+            "descriptionOriginal": "KT 4X800AL DROIT TRANSPORT",
+            "uniteOriginal": "pc",
+            "tailleOriginal": "800A",
+            "prixOriginal": 197.25,
+            "zone": "rail 2  800A",
+            "totalSuppML": 0,
+            "total": 394.5,
+            "ml": 2,
+            "taille": "800A"
+          },
+          {
+            "totalSuppML": 0,
+            "totalML": 1,
+            "uniteOriginal": "pc",
+            "tailleOriginal": "800A",
+            "createdAt": "2025-08-18T13:41:37.271Z",
+            "total": 377.25,
+            "zone": "rail 2  800A",
+            "supplements": [],
+            "prix": 377.25,
+            "unite": "pc",
+            "ml": 1,
+            "article": "RKTA0800ET43E",
+            "prixOriginal": 377.25,
+            "nom": "CANALIS KT 4X800AL LONGUEUR D'ALIMENTATION",
+            "taille": "800A",
+            "descriptionOriginal": "CANALIS KT 4X800AL LONGUEUR D'ALIMENTATION"
+          },
+          {
+            "ml": 1,
+            "article": "RKTA1600ET43D",
+            "unite": "pc",
+            "createdAt": "2025-08-18T13:42:13.016Z",
+            "supplements": [],
+            "total": 332.25,
+            "zone": "rail 2  800A",
+            "prix": 332.25,
+            "totalML": 1,
+            "totalSuppML": 0,
+            "uniteOriginal": "pc",
+            "descriptionOriginal": "KT 4X1600AL DROIT TRANSPORT",
+            "tailleOriginal": "1600A",
+            "nom": "KT 4X1600AL DROIT TRANSPORT",
+            "prixOriginal": 447.65,
+            "taille": "1600A"
+          },
+          {
+            "total": 152.25,
+            "taille": "800A",
+            "createdAt": "2025-08-18T13:43:49.150Z",
+            "totalSuppML": 0,
+            "supplements": [],
+            "totalML": 1,
+            "nom": "KT 4X800AL COUDE A PLAT N2",
+            "prixOriginal": 152.25,
+            "zone": "rail 2  800A",
+            "article": "RKTA0800LP4A2",
+            "unite": "pc",
+            "tailleOriginal": "800A",
+            "prix": 152.25,
+            "ml": 1,
+            "descriptionOriginal": "KT 4X800AL COUDE A PLAT N2",
+            "uniteOriginal": "pc"
+          },
+          {
+            "article": "RKTA0800CP44",
+            "unite": "pc",
+            "totalML": 1,
+            "tailleOriginal": "800A",
+            "prix": 152.25,
+            "uniteOriginal": "pc",
+            "prixOriginal": 152.25,
+            "supplements": [],
+            "descriptionOriginal": "KT 4X800AL ZED CHANT PLAT N4",
+            "totalSuppML": 0,
+            "createdAt": "2025-08-18T13:45:10.583Z",
+            "taille": "800A",
+            "ml": 1,
+            "nom": "KT 4X800AL ZED CHANT PLAT N4",
+            "total": 152.25,
+            "zone": "rail 2  800A"
+          }
+        ],
+        "clientId": "OkF8L3PAbPgNjUFSWOAk",
+        "zones": [
+          "rail 1  1600A",
+          "rail 2  800A"
+        ]
+      }
+    ],
+    "produits": [
+      {
+        "id": "1bJQFbvRilbCTO5J6YUr",
+        "taille": "400",
+        "article": "N7403605F",
+        "prix": 29.6,
+        "unite": "m",
+        "description": "Cannaux au sol - Faux plancher",
+        "prezzoNetto": true
+      },
+      {
+        "id": "3JgD0ARJueYbvBj1DPGB",
+        "prezzoNetto": true,
+        "prix": 152.25,
+        "article": "RKTA0800LC4D",
+        "description": "CANALIS KT 4X800AL COUDE SUR CHANT",
+        "taille": "800A",
+        "unite": "pc"
+      },
+      {
+        "id": "3NAUGZDfEzlu3LQEwvnN",
+        "prix": 207.65,
+        "prezzoNetto": true,
+        "description": "KT 4X1600AL ZED SUR CHANT N2",
+        "unite": "pc",
+        "taille": "1600A",
+        "article": "RKTA1600ZC42"
+      },
+      {
+        "id": "48LAPe3esmUo50sXhwuT",
+        "prix": 73,
+        "description": "\tEchelle à Câble 110",
+        "unite": "m",
+        "article": "F04300X110",
+        "taille": "300"
+      },
+      {
+        "id": "4BJYomo7FzFcTWTOdPmF",
+        "prix": 567.65,
+        "prezzoNetto": true,
+        "article": "RKTA1600ET43F",
+        "taille": "1600A",
+        "unite": "pc",
+        "description": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION"
+      },
+      {
+        "id": "4bZrG7fs9tsrrDXkDBmw",
+        "article": "F04400X110",
+        "description": "\tEchelle à Câble 110",
+        "unite": "m",
+        "prix": 77,
+        "taille": "400"
+      },
+      {
+        "id": "5WFqv6B7sA2fLc7ijbz4",
+        "article": "N7399852",
+        "description": "Cannaux au sol - Boîte de raccordement -Béton",
+        "unite": "pc",
+        "taille": "440",
+        "prezzoNetto": true,
+        "prix": 45.65
+      },
+      {
+        "id": "60obdZ6K96s7y8SFVCkA",
+        "taille": "400",
+        "prix": 183,
+        "unite": "m",
+        "description": "Chemin de Câble Long portée 110",
+        "article": "C02400X110"
+      },
+      {
+        "id": "6Id1cuzWL7VlDVf1rJJJ",
+        "prix": 62.25,
+        "taille": "800A",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "description": "CANALIS KT KIT COUPE FEU H74 L650",
+        "article": "RKTB0074CF6"
+      },
+      {
+        "id": "6XS47fzdUzcdBjBufAtk",
+        "description": "Cassette ",
+        "article": "N7409240",
+        "taille": "243",
+        "prezzoNetto": true,
+        "prix": 41.5,
+        "unite": "pc"
+      },
+      {
+        "id": "6ojFKYW6zynUwm70tNU9",
+        "taille": "200",
+        "description": "\tEchelle à Câble 110",
+        "article": "F04200X110",
+        "prix": 69,
+        "unite": "m"
+      },
+      {
+        "id": "7DDMxpmiUn2MvPwpF4ox",
+        "prix": 58,
+        "taille": "200",
+        "unite": "m",
+        "description": "Chemin de Câble 60",
+        "article": "A01200X60"
+      },
+      {
+        "id": "7emmgzF3ojR6KxuoKIil",
+        "article": "C02100x110",
+        "description": "Chemin de Câble Long portée 110",
+        "prix": 142,
+        "taille": "100",
+        "unite": "m"
+      },
+      {
+        "id": "80RuLA4VsMARLvV3m6DS",
+        "description": "Cannaux au sol - goulotte",
+        "prezzoNetto": true,
+        "prix": 48,
+        "unite": "m",
+        "taille": "400",
+        "article": "N7403605"
+      },
+      {
+        "id": "8HsZnVBPVR79n4mhTNPR",
+        "taille": "500",
+        "prix": 77,
+        "unite": "m",
+        "description": "Chemin de Câble 110",
+        "article": "B1500x110"
+      },
+      {
+        "id": "8QOS9U2mACgzAWvIOZ8x",
+        "unite": "m",
+        "taille": "400",
+        "description": "Canal à Grille 60",
+        "prix": 69,
+        "article": "D03400X60"
+      },
+      {
+        "id": "8pYaiurPOBARybJd2IAo",
+        "description": "Bride Moyenne",
+        "unite": "pc",
+        "prix": 15,
+        "taille": "30",
+        "article": "I07BRI30"
+      },
+      {
+        "id": "99zQ4eLHF0zEcNGi1PmQ",
+        "article": "L08DECU7TE",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "prix": 8,
+        "description": "Découpe pendard Posée",
+        "taille": "U7"
+      },
+      {
+        "id": "9XPQaSwQJPsa3zDedn7g",
+        "unite": "m",
+        "description": "Echelle a câble Long portée 110",
+        "prix": 152,
+        "article": "G05200X60",
+        "taille": "200"
+      },
+      {
+        "id": "9wmP3Vj9hVrlWpOlYqjm",
+        "taille": "300",
+        "description": "Chemin de Câble Long portée 110",
+        "prix": 166,
+        "article": "C02300X110",
+        "unite": "m"
+      },
+      {
+        "id": "A3EekssfDve3oNKaTPjd",
+        "unite": "pc",
+        "prix": 5,
+        "taille": "U7",
+        "article": "L08DECU7PO",
+        "description": "Découpe pendard à terre",
+        "prezzoNetto": true
+      },
+      {
+        "id": "AVoDHfYAneJ1oRkyIWao",
+        "article": "RKTA1600ER41",
+        "prezzoNetto": true,
+        "prix": 87.65,
+        "unite": "pc",
+        "taille": "1600A",
+        "description": "KT 4X1600AL ALIMENTATION ER N1"
+      },
+      {
+        "id": "At9WKjC7H2XxFpC9oWe4",
+        "taille": "500",
+        "description": "Echelle à Câble 60",
+        "unite": "m",
+        "prix": 80,
+        "article": "E04500X60"
+      },
+      {
+        "id": "BKUr13iX6CBi2Nhushvz",
+        "taille": "400",
+        "article": "B01400x110",
+        "prix": 72,
+        "unite": "m",
+        "description": "Chemin de Câble 110"
+      },
+      {
+        "id": "CLxiy7FvENoEiYvqDNox",
+        "prix": 64,
+        "unite": "m",
+        "article": "D03300X60",
+        "description": "Canal à Grille 60",
+        "taille": "300"
+      },
+      {
+        "id": "CavpOpBszuPY902VBx3D",
+        "description": "KT 4X1600AL ZED CHANT PLAT N3",
+        "article": "RKTA1600CP43",
+        "taille": "1600A",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "prix": 207.65
+      },
+      {
+        "id": "D7xheQpTGw3lLSEZWZTy",
+        "article": "RKTA1600ET43E",
+        "description": "CANALIS KT 4X1600AL LONGUEUR D'ALIMENTATION",
+        "taille": "1600A",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "prix": 507.65
+      },
+      {
+        "id": "DULiUSwBqvaiccL0tjsH",
+        "description": "Chemin de Câble 60",
+        "taille": "600",
+        "prix": 80,
+        "unite": "m",
+        "article": "A01600X60"
+      },
+      {
+        "id": "DvM0Uq9AZYocqrv9mQQ6",
+        "taille": "600",
+        "article": "F04600X110",
+        "prix": 87,
+        "description": "Echelle à Câble 110",
+        "unite": "m"
+      },
+      {
+        "id": "EGrijNUapXzUwXuSVlS9",
+        "unite": "m",
+        "taille": "100",
+        "description": "Chemin de Câble 60",
+        "article": "A01100X60",
+        "prix": 54
+      },
+      {
+        "id": "FFUUvgElq3AqXikJpVDy",
+        "prix": 0,
+        "prezzoNetto": true,
+        "article": "RKTA1600YA4",
+        "description": "KT 4X1600AL ECLISSAGE SUPP",
+        "taille": "1600A",
+        "unite": "pc"
+      },
+      {
+        "id": "FgbeNLe3ZuJakitMhVLE",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "article": "RKTA0800ET43E",
+        "description": "CANALIS KT 4X800AL LONGUEUR D'ALIMENTATION",
+        "prix": 377.25,
+        "taille": "800A"
+      },
+      {
+        "id": "GUQGTV1QGVGksd6aj7NO",
+        "prix": 447.65,
+        "unite": "pc",
+        "taille": "1600A",
+        "prezzoNetto": true,
+        "description": "KT 4X1600AL DROIT TRANSPORT",
+        "article": "RKTA1600ET43D"
+      },
+      {
+        "id": "GsdADTZmcYDzfzkgr9br",
+        "taille": "243x243",
+        "prix": 48,
+        "description": "Cannaux au sol -  Boîte au sol - Faux plancher ",
+        "prezzoNetto": true,
+        "article": "N7409220",
+        "unite": "pc"
+      },
+      {
+        "id": "Hq5FhX8bjNsgdLEPWeYb",
+        "taille": "500",
+        "unite": "m",
+        "prix": 82,
+        "article": "F04500X110",
+        "description": "Echelle à Câble 110"
+      },
+      {
+        "id": "J0Rnwpz5Ylg8VkTnNjzY",
+        "prix": 152,
+        "unite": "m",
+        "taille": "200",
+        "description": "Chemin de Câble Long Portée 110",
+        "article": "C02200x110"
+      },
+      {
+        "id": "KP3EAxUQIGyy8LGEF2GT",
+        "description": "Canal à Grille 60",
+        "prix": 56,
+        "article": "D03100X60",
+        "taille": "100",
+        "unite": "m"
+      },
+      {
+        "id": "Mc1Cay7MWEZkh24ELqBt",
+        "unite": "m",
+        "description": "Canal G 75X125",
+        "taille": "75",
+        "article": "D03A075X125",
+        "prix": 62
+      },
+      {
+        "id": "NaH7ALhWsKaiimlltqFT",
+        "article": "N7400653",
+        "description": "Cannaux au sol - Coude vertical- Béton",
+        "taille": "250",
+        "prezzoNetto": true,
+        "prix": 37.2,
+        "unite": "pc"
+      },
+      {
+        "id": "NjoGQjdC3hFG1Ys2rG3x",
+        "prix": 12,
+        "taille": "400",
+        "article": "H06400X000",
+        "description": "Couvercle Chemin de Câble",
+        "unite": "m"
+      },
+      {
+        "id": "O9WVV5rTQDL7qXDWLK1T",
+        "taille": "300",
+        "unite": "m",
+        "article": "H06300X000",
+        "description": "Couvercle Chemin de Câble",
+        "prix": 11
+      },
+      {
+        "id": "OicecFVBbBFJImpluUcV",
+        "taille": "< 10 cm.",
+        "description": "Découpe Schichtex",
+        "prix": 8,
+        "unite": "pc",
+        "article": "M09DECSHI00",
+        "prezzoNetto": true
+      },
+      {
+        "id": "P0qnwradz2hB0AkRvomd",
+        "unite": "m",
+        "prix": 84,
+        "taille": "600",
+        "description": "Chemin de Câble 110",
+        "article": "B01600x110"
+      },
+      {
+        "id": "PunGmmwla8EJDjV42jWR",
+        "article": "RKTA0800ET43D",
+        "taille": "800A",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "description": "KT 4X800AL DROIT TRANSPORT",
+        "prix": 332.25
+      },
+      {
+        "id": "Q2Pgfw52Il9qQT3lUb9G",
+        "taille": "500",
+        "description": "Couvercle Chemin de Câble",
+        "article": "H06500X000",
+        "prix": 13,
+        "unite": "m"
+      },
+      {
+        "id": "QJmXYaLoS1yrElq1ghn7",
+        "prix": 0,
+        "taille": "800A",
+        "unite": "pc",
+        "article": "RKTA0800YA4",
+        "description": "KT 4X800AL ECLISSAGE SUPP",
+        "prezzoNetto": true
+      },
+      {
+        "id": "QS0vM80EH1nJVv3Cu54l",
+        "unite": "pc",
+        "prix": 10,
+        "description": "Découpe Schichtex",
+        "article": "M09DECSHI10",
+        "taille": ">10 cm.",
+        "prezzoNetto": true
+      },
+      {
+        "id": "QW64g1ka7BETB1pLLyus",
+        "taille": "1600A",
+        "description": "KTA élément droit transport, 1600A, 4m, 3L+N+PE",
+        "prix": 567.65,
+        "prezzoNetto": true,
+        "article": "RKTA1600ET440",
+        "unite": "pc"
+      },
+      {
+        "id": "Qxzb6UDBDNPnjHLVF10F",
+        "description": "Echelle à Câble 60",
+        "article": "E04400X60",
+        "taille": "400",
+        "unite": "m",
+        "prix": 75
+      },
+      {
+        "id": "SVU4lCYMiSln7hsf63Kl",
+        "prix": 63,
+        "article": "E04100X60",
+        "taille": "100",
+        "unite": "m",
+        "description": "Echelle à Câble 60"
+      },
+      {
+        "id": "T0CX31ySjPVdSXeSkE2c",
+        "prix": 327.65,
+        "unite": "pc",
+        "prezzoNetto": true,
+        "article": "RKTA1600ET42B",
+        "description": "KT 4X1600AL DROIT TRANSPORT",
+        "taille": "1600A"
+      },
+      {
+        "id": "TJwZh6fd0jJGDUBIIc6o",
+        "prix": 66,
+        "taille": "100",
+        "description": "Echelle à Câble 110",
+        "unite": "m",
+        "article": "F04100X110"
+      },
+      {
+        "id": "TffcRK3Wzc3gddd2rinv",
+        "prix": 152.25,
+        "prezzoNetto": true,
+        "unite": "pc",
+        "taille": "800A",
+        "article": "RKTA0800CP44",
+        "description": "KT 4X800AL ZED CHANT PLAT N4"
+      },
+      {
+        "id": "U0bb18N0vuQmrJMl53r2",
+        "taille": "400",
+        "description": "Chemin de Câble 60",
+        "unite": "m",
+        "article": "A01400X60",
+        "prix": 67
+      },
+      {
+        "id": "Uvhuk056zvH0mmwLWvgz",
+        "description": "Découpe pendard Posée",
+        "unite": "pc",
+        "taille": "U5",
+        "prix": 5,
+        "prezzoNetto": true,
+        "article": "L08DECU5TE"
+      },
+      {
+        "id": "ViZMkZMTeRS4tPd5tGhR",
+        "description": "Chemin de Câble 110",
+        "prix": 67,
+        "article": "B01300X110",
+        "unite": "m",
+        "taille": "300"
+      },
+      {
+        "id": "WdwUk45Ne6dwXO5JIViA",
+        "unite": "pc",
+        "article": "RKTA0800ET440",
+        "prix": 422.25,
+        "prezzoNetto": true,
+        "taille": "800A",
+        "description": "KT 4X800AL DROIT TRANSPORT 4M"
+      },
+      {
+        "id": "XBWaZTO5tiJyngZZYHQK",
+        "unite": "pc",
+        "article": "RKTA1600LP4B1",
+        "description": "KT 4X1600AL COUDE A PLAT N1",
+        "prix": 207.65,
+        "prezzoNetto": true,
+        "taille": "1600A"
+      },
+      {
+        "id": "XHqERtr6T2eKKsrWA2qc",
+        "article": "G05500X60",
+        "taille": "500",
+        "prix": 196,
+        "unite": "m",
+        "description": "Echelle a câble Long portée 110"
+      },
+      {
+        "id": "XL525nWskCMcIn3tbqVI",
+        "prix": 207.65,
+        "description": "CANALIS KT 4X1600AL COUDE A PLAT N1",
+        "taille": "1600A",
+        "unite": "pc",
+        "article": "RKTA1600LP4D1",
+        "prezzoNetto": true
+      },
+      {
+        "id": "XS1u8lnsmBfVscE7xQDO",
+        "unite": "m",
+        "taille": "100",
+        "description": "Couvercle Chemin de Câble",
+        "article": "H06100X000",
+        "prix": 9
+      },
+      {
+        "id": "XyZjRsv8yenXMfOwoKCB",
+        "taille": "500",
+        "description": "Canal à Grille 60",
+        "unite": "m",
+        "prix": 76,
+        "article": "D03500X60"
+      },
+      {
+        "id": "YSpB3LHOYnqovZbje6AX",
+        "description": "Canal à Grille 60",
+        "unite": "m",
+        "taille": "600",
+        "article": "D03600X60",
+        "prix": 82
+      },
+      {
+        "id": "Yx9qdPKiT2naVfq5FUxu",
+        "taille": "1600A",
+        "description": "CANALIS KT 4X1600AL COUDE A PLAT N2",
+        "prix": 207.65,
+        "unite": "pc",
+        "article": "RKTA1600LP4D2",
+        "prezzoNetto": true
+      },
+      {
+        "id": "a0EOTGkLt6TlJD4qljwB",
+        "unite": "m",
+        "prix": 66,
+        "taille": "200",
+        "article": "E04200X60",
+        "description": "Echelle à Câble 60"
+      },
+      {
+        "id": "a5S58cuqTZBA4pAaKAAX",
+        "taille": "",
+        "unite": "m",
+        "article": "H07SEPx110",
+        "prix": 10,
+        "description": "Séparation 60"
+      },
+      {
+        "id": "aL12cnr1BlpzmQpGB5cV",
+        "description": "Echelle à Câble 60",
+        "article": "E04600X60",
+        "unite": "m",
+        "prix": 86,
+        "taille": "600"
+      },
+      {
+        "id": "ezPtW5LcVC51MjeEqYYW",
+        "description": "Echelle a câble Long portée 110",
+        "prix": 183,
+        "unite": "m",
+        "taille": "400",
+        "article": "G05400X60"
+      },
+      {
+        "id": "fFxQcqOAErwLgIknQINS",
+        "description": "Echelle a câble Long portée 110",
+        "article": "G05300X60",
+        "taille": "300",
+        "unite": "m",
+        "prix": 166
+      },
+      {
+        "id": "fdNL8HJOTXaPQFW9dhRy",
+        "article": "D03A100X150",
+        "taille": "100",
+        "prix": 64,
+        "unite": "m",
+        "description": "Canal G 100X150"
+      },
+      {
+        "id": "g6nqeIOR6fMg5FFUgrI2",
+        "unite": "m",
+        "prix": 72,
+        "taille": "500",
+        "article": "A01500X60",
+        "description": "Chemin de Câble 60"
+      },
+      {
+        "id": "gXCrFRlGrEvDEt10vLgr",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "taille": "1600A",
+        "article": "RKTA1600ET42B",
+        "description": "KTA1600ET42B",
+        "prix": 327.65
+      },
+      {
+        "id": "gZUR6FOj2xpQ4GmGHCIF",
+        "taille": "1600A",
+        "article": "RKTB0164CF6",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "prix": 87.65,
+        "description": "KTB kit coupe feu, (pour H:164mm), L:650mm"
+      },
+      {
+        "id": "gbdRCQVilQosaGTkZzLV",
+        "description": "Echelle a câble Long portée 110",
+        "taille": "600",
+        "article": "G05600X60",
+        "prix": 212,
+        "unite": "m"
+      },
+      {
+        "id": "i0m969v0A8TPXfBIj6om",
+        "prix": 3,
+        "description": "Découpe pendard à terre",
+        "taille": "U5",
+        "prezzoNetto": true,
+        "article": "L08DECU5PO",
+        "unite": "pc"
+      },
+      {
+        "id": "iwKuEfqaNQDm6DOUxfgE",
+        "article": "RKTA1600LC4A",
+        "prix": 207.65,
+        "prezzoNetto": true,
+        "unite": "pc",
+        "taille": "1600A",
+        "description": "KT 4X1600AL  COUDE SUR CHANT"
+      },
+      {
+        "id": "jk59seqFQrBoInpvsfho",
+        "taille": "100",
+        "unite": "m",
+        "prix": 59,
+        "description": "Chemin de Câble 110",
+        "article": "B01100x110"
+      },
+      {
+        "id": "jxwBDGNGSwihXzAh3duP",
+        "description": "KT 4X800AL COUDE A PLAT N2",
+        "prix": 152.25,
+        "article": "RKTA0800LP4A2",
+        "unite": "pc",
+        "taille": "800A",
+        "prezzoNetto": true
+      },
+      {
+        "id": "lWT7Z78eCwbC2yVaj7JK",
+        "article": "G05100X60",
+        "description": "Echelle a câble Long portée 110",
+        "prix": 142,
+        "taille": "100",
+        "unite": "m"
+      },
+      {
+        "id": "mT76jMI5LzbHOljQNP0A",
+        "description": "Canal G 50X50   50X75",
+        "unite": "m",
+        "taille": "50",
+        "prix": 58,
+        "article": "D03A050X050"
+      },
+      {
+        "id": "mfMP33kFWKl8pfGPREqy",
+        "description": "KT 4X1600AL DROIT TRANSPORT",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "article": "RKTA1600ET42B",
+        "prix": 327.65,
+        "taille": "1600A"
+      },
+      {
+        "id": "mynHynjyeZWHhvHJe0DA",
+        "taille": "300",
+        "prix": 62,
+        "article": "A01300X60",
+        "unite": "m",
+        "description": "Chemin de Câble 60"
+      },
+      {
+        "id": "pKHsJTwYEPDOZdyYvlYg",
+        "prezzoNetto": true,
+        "taille": "1600A",
+        "article": "RKTA1600LC4B",
+        "prix": 207.65,
+        "unite": "pc",
+        "description": "KT 4X1600AL COUDE SUR CHANT."
+      },
+      {
+        "id": "pQ1qrNMjIXN8xp2bCzpQ",
+        "taille": "",
+        "prix": 8,
+        "description": "Séparation 60",
+        "unite": "m",
+        "article": "H07SEPx60"
+      },
+      {
+        "id": "ppelI9U8Lkvwp3hDJa3D",
+        "taille": "800A",
+        "description": "KT 4X800AL DROIT TRANSPORT",
+        "unite": "pc",
+        "prezzoNetto": true,
+        "article": "RKTA0800ET41A",
+        "prix": 197.25
+      },
+      {
+        "id": "q77XLsrFQtG6F21GKb60",
+        "article": "B01200X110",
+        "taille": "200",
+        "unite": "m",
+        "prix": 63,
+        "description": "Chemin de Câble 110"
+      },
+      {
+        "id": "rQG8uiQ4KnOSKjYY05Jz",
+        "prix": 267.65,
+        "taille": "1600A",
+        "prezzoNetto": true,
+        "article": "RKTA1600ET41A",
+        "unite": "pc",
+        "description": "KTA élément droit transport, 1600A, sur mesure, 3L+N+PE"
+      },
+      {
+        "id": "raZns3QVudIZ6N9Nee4G",
+        "article": "C02500X110",
+        "description": "Chemin de Câble Long portée 110",
+        "taille": "500",
+        "unite": "m",
+        "prix": 196
+      },
+      {
+        "id": "tCSr1Tj5TitcUG2OuwCl",
+        "article": "I07BRI15",
+        "prix": 13,
+        "unite": "pc",
+        "taille": "15",
+        "description": "Bride Petite"
+      },
+      {
+        "id": "uGK4mgaeZwEfPyVuwn74",
+        "taille": "600",
+        "prix": 212,
+        "unite": "m",
+        "description": "Chemin de Câble Long portée 110",
+        "article": "C02600X110"
+      },
+      {
+        "id": "vIJAWsErHHcUo8KI7AcC",
+        "unite": "m",
+        "description": "Couvercle Chemin de Câble",
+        "prix": 10,
+        "taille": "200",
+        "article": "H06200X000"
+      },
+      {
+        "id": "vJewQcgji791ZKZ6yj2p",
+        "taille": "200",
+        "prix": 60,
+        "unite": "m",
+        "description": "Canal à Grille 60",
+        "article": "D03200X60"
+      },
+      {
+        "id": "vVjkIXeR11L3mqcGqNWB",
+        "prix": 14,
+        "taille": "600",
+        "unite": "m",
+        "article": "H06600X000",
+        "description": "Couvercle Chemin de Câble"
+      },
+      {
+        "id": "wXwr1IVZwgLfk6i3fmvt",
+        "unite": "pc",
+        "prix": 18,
+        "description": "Bride grande",
+        "taille": "70",
+        "article": "I07BRI70"
+      },
+      {
+        "id": "ww48ZlBajjrLq1jQvwLO",
+        "article": "RKTA0800LC4B",
+        "prezzoNetto": true,
+        "unite": "pc",
+        "prix": 152.25,
+        "taille": "800A",
+        "description": "KT 4X800AL COUDE SUR CHANT"
+      },
+      {
+        "id": "xrHLjM5BvXsQd5tx0HAL",
+        "taille": "800A",
+        "description": "KT 4X800AL ALIMENTATION ER N1",
+        "unite": "pc",
+        "prix": 62.25,
+        "prezzoNetto": true,
+        "article": "RKTA0800ER41"
+      },
+      {
+        "id": "y6pD8tCrO6vOGLeo9tLQ",
+        "description": "KT 4X800AL ZED A PLAT",
+        "taille": "800A",
+        "prix": 152.25,
+        "unite": "pc",
+        "article": "RKTA0800ZP4",
+        "prezzoNetto": true
+      },
+      {
+        "id": "yAjYgShdZZv7sfWCn8eb",
+        "prix": 70,
+        "taille": "300",
+        "unite": "m",
+        "description": "Echelle à Câble 60",
+        "article": "E04300X60"
+      },
+      {
+        "id": "zOlAS4LQQCV2XVF1Le3i",
+        "prezzoNetto": true,
+        "taille": "250",
+        "prix": 47.6,
+        "article": "N7400281",
+        "description": "Cannaux au sol pose béton",
+        "unite": "m"
+      }
+    ],
+    "supplements": [
+      {
+        "id": "0HlIIEXFYLYQb9ZLFFYO",
+        "ordre": 4,
+        "nom": "T avec CDC",
+        "valeur": 4
+      },
+      {
+        "id": "0xevKjwH3VqepTPovLiv",
+        "nom": "virage fabbriqué",
+        "valeur": 3,
+        "ordre": 1
+      },
+      {
+        "id": "6Yb1iUnnWemqoqbbmgOT",
+        "valeur": 3,
+        "nom": "T fabbriqué",
+        "ordre": 3
+      },
+      {
+        "id": "FSn9E9FjvlzZY4dqUPEO",
+        "valeur": 3,
+        "nom": "réduction",
+        "ordre": 6
+      },
+      {
+        "id": "Zg4k5hTPsy7t4LdkEHRs",
+        "valeur": 3,
+        "nom": "monté et descente",
+        "ordre": 5
+      },
+      {
+        "id": "e09VdR90WRWa14jghOaU",
+        "ordre": 2,
+        "nom": "virage avec CDC",
+        "valeur": 4
+      },
+      {
+        "id": "juHnbvSax7ZghSxJSv2A",
+        "nom": "départ/arrivé",
+        "valeur": 1.5,
+        "ordre": 7
+      }
+    ],
+    "techniciens": [
+      {
+        "id": "6TBlTUp4cuLTGR4Lid2N",
+        "email": "Vincent.Douillot@swisspro.ch",
+        "telephone": "+41 79 768 50 10",
+        "clientId": "OkF8L3PAbPgNjUFSWOAk",
+        "prenom": "Vincent",
+        "nom": "Douillot"
+      },
+      {
+        "id": "D1EBHt1R5PywFmixscSn",
+        "nom": "Neves ",
+        "email": "loic.neves@etavis.ch",
+        "telephone": "+41796916899",
+        "prenom": "Loic",
+        "clientId": "UqipehMWNWkmNoeAZUU0"
+      },
+      {
+        "id": "NG6VjtEv7nyHfSqEW7WF",
+        "nom": "Rossi",
+        "email": "mario.rossi@dallelec.ch",
+        "telephone": "079 123 4567",
+        "prenom": "Mario"
+      },
+      {
+        "id": "a2lBDYkApwMsmTohabOs",
+        "prenom": "Antony",
+        "telephone": "+41793665753",
+        "clientId": "zuXHEnFIftspTlio8dlA",
+        "nom": "Maggitti",
+        "email": "AMaggitti@cielelectricite.com"
+      },
+      {
+        "id": "fbewLfOPGfIJe0dy4AWC",
+        "clientId": "UqipehMWNWkmNoeAZUU0",
+        "nom": "Bouslah",
+        "email": "loihade.bouslah@etavis.ch",
+        "telephone": "41787507952",
+        "prenom": "Loihade"
+      },
+      {
+        "id": "hQxjCyZTcAhymtEiNHZ4",
+        "email": "frederic.chalmeau@etavis.ch",
+        "prenom": "Frederic",
+        "telephone": "+41 79 537 17 16",
+        "nom": "Chalmeau",
+        "clientId": "UqipehMWNWkmNoeAZUU0"
+      },
+      {
+        "id": "jWxpMeNTxH5OJ0cBC3M8",
+        "telephone": "+41768240615",
+        "nom": "Buri",
+        "prenom": "Marc",
+        "email": "marcb@lumielec.ch",
+        "clientId": "M3CPGLVrrG8llpHfq3dJ"
+      },
+      {
+        "id": "kEBdzHveSmOdNl394dPY",
+        "email": "luca.bianchi@dallelec.ch",
+        "prenom": "Luca",
+        "telephone": "079 765 4321",
+        "nom": "Bianchi"
+      },
+      {
+        "id": "n113EeA28Xo26FaCmcW3",
+        "telephone": "+41 79 392 80 57",
+        "email": "benjamin.vernay@oiken.ch",
+        "clientId": "vkSi2DL8qqPv3yV9gCu3",
+        "nom": "Vernay",
+        "prenom": "Benjamin"
+      },
+      {
+        "id": "wqCCPfvWIscswngsLgDJ",
+        "telephone": "+41793121031",
+        "nom": "Thana",
+        "prenom": "Wicky",
+        "email": "wicky@cielelectricite.com",
+        "clientId": "zuXHEnFIftspTlio8dlA"
+      }
+    ],
+    "familles": [
+      {
+        "id": "2NHusCOWNrd3f7K5TUfW",
+        "ordrePDF": 5,
+        "visiblePDF": true,
+        "visibleInPdf": true,
+        "nom": "Distance entre le supports",
+        "ordre": 5
+      },
+      {
+        "id": "2dwiVwENDOTbpyI1ZpFz",
+        "ordrePDF": 0,
+        "visiblePDF": false,
+        "nom": "taille chantier",
+        "ordre": 8
+      },
+      {
+        "id": "AAepWPfPRTsRXYBIqAZy",
+        "ordrePDF": 0,
+        "visiblePDF": false,
+        "ordre": 9,
+        "nom": "type chantier"
+      },
+      {
+        "id": "FjxM7Q8vYkslrQMCsOaY",
+        "nom": "Prises et interrupteurs",
+        "ordre": 3
+      },
+      {
+        "id": "HBn19GnAmja854mq1yKV",
+        "nom": "type de supports",
+        "visibleInPdf": true,
+        "visiblePDF": true,
+        "ordrePDF": 3,
+        "ordre": 4
+      },
+      {
+        "id": "JM1dUgoh3Uv2KoPq7Mff",
+        "ordre": 4,
+        "nom": "Tableaux électriques"
+      },
+      {
+        "id": "OQWY4gFSed2xzMtuVnaa",
+        "nom": "Éclairage",
+        "ordre": 2
+      },
+      {
+        "id": "UE0nBj1Auj7S99DZDxX3",
+        "ordre": 10,
+        "visiblePDF": false,
+        "nom": "limitation horaires",
+        "ordrePDF": 0
+      },
+      {
+        "id": "Vj9CryTk6iuWSLrtetnD",
+        "ordrePDF": 2,
+        "ordre": 1,
+        "visiblePDF": true,
+        "nom": "marque ",
+        "visibleInPdf": true
+      },
+      {
+        "id": "XT5IrayqKIJzHHxmQrTa",
+        "visibleInPdf": true,
+        "visiblePDF": true,
+        "nom": "type de pendard",
+        "ordrePDF": 6,
+        "ordre": 6
+      },
+      {
+        "id": "iGv0TmwH15mGXJSKPGhr",
+        "nom": "continuité travail",
+        "ordre": 11,
+        "visibleInPdf": false,
+        "ordrePDF": 0,
+        "visiblePDF": false
+      },
+      {
+        "id": "mUrNYuMnQLxajKMYUkfy",
+        "ordre": 1,
+        "nom": "Électricité générale"
+      },
+      {
+        "id": "rnOzO1O1JvaHhSDT04Hw",
+        "nom": "hauteur de travail",
+        "ordre": 2,
+        "ordrePDF": 1,
+        "visibleInPdf": true,
+        "visiblePDF": true
+      },
+      {
+        "id": "tE3iYKxZWmAr9bHo28nI",
+        "ordrePDF": 4,
+        "visibleInPdf": true,
+        "visiblePDF": true,
+        "ordre": 3,
+        "nom": "type de fixation"
+      },
+      {
+        "id": "zhhAw1veB6Jm45Zwmc5x",
+        "visibleInPdf": true,
+        "ordre": 7,
+        "ordrePDF": 7,
+        "nom": "taille pendard",
+        "visiblePDF": true
+      }
+    ],
+    "sousfamilles": [
+      {
+        "id": "0Yp6k3PPHHGaDbjwkWeB",
+        "ordre": 1,
+        "familleId": "zhhAw1veB6Jm45Zwmc5x",
+        "nom": "600/800 mm.",
+        "pourcentage": 5
+      },
+      {
+        "id": "11RZHiiD3UA8B5QQluZW",
+        "familleId": "2NHusCOWNrd3f7K5TUfW",
+        "pourcentage": 1,
+        "ordre": 1,
+        "nom": "110 cm."
+      },
+      {
+        "id": "1EE7H4cUJb5ZYvk2IN9t",
+        "ordre": 4,
+        "nom": "> 1500 mm.",
+        "pourcentage": 0,
+        "familleId": "zhhAw1veB6Jm45Zwmc5x"
+      },
+      {
+        "id": "1kxLOgSeQsefWWPDBvHt",
+        "familleId": "Vj9CryTk6iuWSLrtetnD",
+        "ordre": 1,
+        "nom": "niedax",
+        "pourcentage": 5
+      },
+      {
+        "id": "34oRvTFnc9zXmcCJWbyn",
+        "nom": "legère",
+        "pourcentage": 6,
+        "familleId": "XT5IrayqKIJzHHxmQrTa"
+      },
+      {
+        "id": "5QC4DlFYu9QAHCBtJUNL",
+        "nom": "900/1200 mm.",
+        "ordre": 2,
+        "pourcentage": 4,
+        "familleId": "zhhAw1veB6Jm45Zwmc5x"
+      },
+      {
+        "id": "73aAMBLwfuZ3AyeOYPq4",
+        "ordre": 1,
+        "familleId": "XT5IrayqKIJzHHxmQrTa",
+        "pourcentage": 3,
+        "nom": "standard"
+      },
+      {
+        "id": "AXbbCttofJvaiT9v2x7j",
+        "nom": "> 5000 m.",
+        "ordre": 3,
+        "familleId": "2dwiVwENDOTbpyI1ZpFz",
+        "pourcentage": 6
+      },
+      {
+        "id": "BmIk9sMDF9UfRiPbtoVe",
+        "pourcentage": 0,
+        "nom": "< 1000 m.",
+        "familleId": "2dwiVwENDOTbpyI1ZpFz"
+      },
+      {
+        "id": "BvnuesdgM51Ky0q5FTU4",
+        "ordre": 5,
+        "nom": "150 cm.",
+        "pourcentage": 8,
+        "familleId": "2NHusCOWNrd3f7K5TUfW"
+      },
+      {
+        "id": "D35Egst2wqHISYXMCYSn",
+        "familleId": "tE3iYKxZWmAr9bHo28nI",
+        "nom": "DIN et chimique",
+        "pourcentage": 0
+      },
+      {
+        "id": "FO8eRnpxOgMklkff30d1",
+        "ordre": 4,
+        "nom": "400/500 cm.",
+        "pourcentage": 2,
+        "familleId": "rnOzO1O1JvaHhSDT04Hw"
+      },
+      {
+        "id": "FmrCI1YyEyG0JUXi3BE2",
+        "familleId": "UE0nBj1Auj7S99DZDxX3",
+        "ordre": 1,
+        "pourcentage": 10,
+        "nom": "non"
+      },
+      {
+        "id": "FxhSyO8HLtEmzcXLa3JG",
+        "nom": "2000/5000 m.",
+        "pourcentage": 4,
+        "ordre": 2,
+        "familleId": "2dwiVwENDOTbpyI1ZpFz"
+      },
+      {
+        "id": "GYcDq9rszxkrFEGTgscs",
+        "nom": "220/250 cm.",
+        "familleId": "rnOzO1O1JvaHhSDT04Hw",
+        "pourcentage": 5,
+        "ordre": 1
+      },
+      {
+        "id": "Gx0OEC8QVtnEN0Jaj7ep",
+        "nom": "300/400 cm.",
+        "pourcentage": 3,
+        "ordre": 3,
+        "familleId": "rnOzO1O1JvaHhSDT04Hw"
+      },
+      {
+        "id": "IusNfa4qnfrejg5cJZ4Z",
+        "ordre": 2,
+        "nom": "Maintenance",
+        "familleId": "mUrNYuMnQLxajKMYUkfy"
+      },
+      {
+        "id": "JBsGI3zhbbR1ayi4wEp7",
+        "nom": "< 500 mm.",
+        "pourcentage": 6,
+        "familleId": "zhhAw1veB6Jm45Zwmc5x"
+      },
+      {
+        "id": "NFpATSANKE5binhourtz",
+        "nom": "140 cm.",
+        "ordre": 4,
+        "pourcentage": 6,
+        "familleId": "2NHusCOWNrd3f7K5TUfW"
+      },
+      {
+        "id": "NJ3XWNbTjadEPlh9dw8T",
+        "nom": "clou (brides)",
+        "pourcentage": 10,
+        "familleId": "tE3iYKxZWmAr9bHo28nI"
+      },
+      {
+        "id": "O3SDDbPu06zx6gsw5gEy",
+        "ordre": 2,
+        "nom": "oui",
+        "pourcentage": 5,
+        "familleId": "iGv0TmwH15mGXJSKPGhr"
+      },
+      {
+        "id": "PGf8KXmLVcJaE5QLSQYw",
+        "familleId": "iGv0TmwH15mGXJSKPGhr",
+        "ordre": 1,
+        "pourcentage": 0,
+        "nom": "non"
+      },
+      {
+        "id": "Pryxbfz57FgRoPz7DIcq",
+        "familleId": "zhhAw1veB6Jm45Zwmc5x",
+        "nom": "1300/1500 mm.",
+        "pourcentage": 2,
+        "ordre": 3
+      },
+      {
+        "id": "SNFDK5xtGh3rjVZOgXGW",
+        "pourcentage": 6,
+        "nom": "< 220 cm.",
+        "familleId": "rnOzO1O1JvaHhSDT04Hw",
+        "ordre": 0
+      },
+      {
+        "id": "U6CagTr3smbRdw6maz6k",
+        "nom": "Vis Béton",
+        "familleId": "tE3iYKxZWmAr9bHo28nI",
+        "pourcentage": 6
+      },
+      {
+        "id": "UTbqz11ArA5kBS18JlPb",
+        "ordre": 2,
+        "nom": "Halogène",
+        "familleId": "OQWY4gFSed2xzMtuVnaa"
+      },
+      {
+        "id": "V2ly0wu6tvLG1sGAJEkl",
+        "pourcentage": 5,
+        "nom": "pendard et console plafond",
+        "familleId": "HBn19GnAmja854mq1yKV"
+      },
+      {
+        "id": "XG5y3X7KHfRSenvDLEoS",
+        "familleId": "HBn19GnAmja854mq1yKV",
+        "pourcentage": 3,
+        "nom": "tiges fileté"
+      },
+      {
+        "id": "ZCjoBmZPLdqbUwltV7m3",
+        "familleId": "OQWY4gFSed2xzMtuVnaa",
+        "nom": "LED",
+        "ordre": 1
+      },
+      {
+        "id": "a5sCp6QmRL890Tbqw6bX",
+        "pourcentage": 0,
+        "familleId": "UE0nBj1Auj7S99DZDxX3",
+        "nom": "oui"
+      },
+      {
+        "id": "aWp72AFe4Gk6VXZoSgzj",
+        "familleId": "2NHusCOWNrd3f7K5TUfW",
+        "ordre": 2,
+        "pourcentage": 2,
+        "nom": "120 cm."
+      },
+      {
+        "id": "abYZpUPuwydh3VUGYYQH",
+        "familleId": "AAepWPfPRTsRXYBIqAZy",
+        "pourcentage": 10,
+        "nom": "nouveau bâtiment"
+      },
+      {
+        "id": "dF8kaccf9WKHxPeV8G8k",
+        "ordre": 1,
+        "familleId": "AAepWPfPRTsRXYBIqAZy",
+        "nom": "rénovation",
+        "pourcentage": 0
+      },
+      {
+        "id": "jYta1hR62mto7kbckqLF",
+        "familleId": "XT5IrayqKIJzHHxmQrTa",
+        "ordre": 2,
+        "pourcentage": 0,
+        "nom": "lourde"
+      },
+      {
+        "id": "jbH51QvnN0VkuBELno6p",
+        "familleId": "HBn19GnAmja854mq1yKV",
+        "nom": "Console au mur",
+        "pourcentage": 8
+      },
+      {
+        "id": "lfBTrpjP8Ofru2hoiBai",
+        "ordre": 5,
+        "familleId": "rnOzO1O1JvaHhSDT04Hw",
+        "pourcentage": 0,
+        "nom": "> 500 cm."
+      },
+      {
+        "id": "mJsRGY0lndGGmOYZIcTy",
+        "familleId": "tE3iYKxZWmAr9bHo28nI",
+        "nom": "Gujon",
+        "pourcentage": 3
+      },
+      {
+        "id": "npg57x10c5NVMXhGqj7z",
+        "pourcentage": 0,
+        "familleId": "Vj9CryTk6iuWSLrtetnD",
+        "ordre": 2,
+        "nom": "Lanz"
+      },
+      {
+        "id": "oWdcbo2QrukpdBF53bKI",
+        "pourcentage": 2,
+        "nom": "1000/2000 m.",
+        "familleId": "2dwiVwENDOTbpyI1ZpFz",
+        "ordre": 1
+      },
+      {
+        "id": "pjMhWwEsSgWLs6yo93q3",
+        "familleId": "HBn19GnAmja854mq1yKV",
+        "nom": "Direct au mur ou plafond",
+        "pourcentage": 12
+      },
+      {
+        "id": "qINVhaKV9NctlGn9pfJi",
+        "familleId": "2NHusCOWNrd3f7K5TUfW",
+        "pourcentage": 0,
+        "nom": "100 cm."
+      },
+      {
+        "id": "tmYXhbcTAD5MBksyuTDc",
+        "pourcentage": 5,
+        "nom": "Obo Bettermann",
+        "familleId": "Vj9CryTk6iuWSLrtetnD"
+      },
+      {
+        "id": "twPqOUBOvqVHKEOVjgru",
+        "familleId": "HBn19GnAmja854mq1yKV",
+        "nom": "pendard et consoles DIN",
+        "pourcentage": 0
+      },
+      {
+        "id": "ug4jlQ0zekbXPZXsR9ev",
+        "familleId": "tE3iYKxZWmAr9bHo28nI",
+        "pourcentage": 3,
+        "nom": "cheville a frapper"
+      },
+      {
+        "id": "w0t8hkEgSygbIdDQP0Pi",
+        "nom": "Installation",
+        "ordre": 1,
+        "familleId": "mUrNYuMnQLxajKMYUkfy"
+      },
+      {
+        "id": "yEuxOswNan9pPtg6qP5g",
+        "familleId": "2NHusCOWNrd3f7K5TUfW",
+        "nom": "130 cm.",
+        "pourcentage": 4,
+        "ordre": 3
+      },
+      {
+        "id": "ySAf1513FNWGUGVXqjDC",
+        "familleId": "rnOzO1O1JvaHhSDT04Hw",
+        "nom": "250/300 cm.",
+        "pourcentage": 4,
+        "ordre": 2
+      }
+    ]
+  }
+}

@@ -77,8 +77,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -101,21 +100,34 @@ export default {
     const editClient = ref({});
 
     const fetchClients = async () => {
-      const querySnapshot = await getDocs(collection(db, 'clients'));
-      clients.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('nom');
+      
+      if (!error && data) {
+        clients.value = data;
+      }
     };
 
     const addClient = async () => {
-      await addDoc(collection(db, 'clients'), newClient.value);
-      newClient.value = {
-        nom: '',
-        adresse: '',
-        ville: '',
-        telephone: '',
-        email_contact: '',
-        email_compta: ''
-      };
-      fetchClients();
+      const { error } = await supabase
+        .from('clients')
+        .insert([newClient.value]);
+      
+      if (error) {
+        console.error('Errore aggiunta client:', error);
+      } else {
+        newClient.value = {
+          nom: '',
+          adresse: '',
+          ville: '',
+          telephone: '',
+          email_contact: '',
+          email_compta: ''
+        };
+        fetchClients();
+      }
     };
 
     const startEdit = (client) => {
@@ -129,16 +141,31 @@ export default {
     };
 
     const updateClient = async (id) => {
-      const docRef = doc(db, 'clients', id);
-      await updateDoc(docRef, editClient.value);
-      cancelEdit();
-      fetchClients();
+      const { error } = await supabase
+        .from('clients')
+        .update(editClient.value)
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Errore aggiornamento client:', error);
+      } else {
+        cancelEdit();
+        fetchClients();
+      }
     };
 
     const deleteClient = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'clients', id));
-        fetchClients();
+        const { error } = await supabase
+          .from('clients')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Errore eliminazione client:', error);
+        } else {
+          fetchClients();
+        }
       }
     };
 

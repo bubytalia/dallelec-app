@@ -159,7 +159,7 @@
                 </td>
               </template>
               <template v-else>
-                <td><strong>{{ chantier.numeroCantiere || 'N/A' }}</strong></td>
+                <td><strong>{{ chantier.numero_cantiere || 'N/A' }}</strong></td>
                 <td>{{ chantier.nom }}</td>
                 <td>{{ chantier.adresse }}</td>
                 <td>{{ chantier.ville }}</td>
@@ -167,13 +167,13 @@
                 <td>{{ chantier.technicien }}</td>
                 <td>{{ getDevisName(chantier.devisId) }}</td>
                 <td>
-                  <span class="badge" :class="chantier.modalitaResoconto === 'percentuale' ? 'bg-info' : 'bg-secondary'">
-                    {{ chantier.modalitaResoconto === 'percentuale' ? '📊 Percentuel' : '📏 Métrages' }}
+                  <span class="badge" :class="chantier.modalita_resoconto === 'percentuale' ? 'bg-info' : 'bg-secondary'">
+                    {{ chantier.modalita_resoconto === 'percentuale' ? '📊 Percentuel' : '📏 Métrages' }}
                   </span>
                 </td>
                 <td>{{ getChefName(chantier.capocantiere) }}</td>
-                <td>{{ chantier.prixRegie || '-' }} CHF</td>
-                <td>{{ chantier.percentualeImpresa || 30 }}%</td>
+                <td>{{ chantier.prix_regie || '-' }} CHF</td>
+                <td>{{ chantier.percentuale_impresa || 30 }}%</td>
                 <td>
                   <button class="btn btn-warning btn-sm" @click="startEdit(chantier)">✎</button>
                   <button class="btn btn-danger btn-sm" @click="deleteChantier(chantier.id)">🗑</button>
@@ -336,8 +336,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -391,33 +390,33 @@ export default {
     const editChantier = ref({});
 
     const fetchChantiers = async () => {
-      const snapshot = await getDocs(collection(db, 'chantiers'));
-      chantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await supabase.from('chantiers').select('*').order('nom');
+      if (!error) chantiers.value = data || [];
     };
 
     const fetchClients = async () => {
-      const snapshot = await getDocs(collection(db, 'clients'));
-      clients.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await supabase.from('clients').select('*').order('nom');
+      if (!error) clients.value = data || [];
     };
 
     const fetchTechniciens = async () => {
-      const snapshot = await getDocs(collection(db, 'techniciens'));
-      techniciens.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await supabase.from('techniciens').select('*').order('nom');
+      if (!error) techniciens.value = data || [];
     };
 
     const fetchDevis = async () => {
-      const snapshot = await getDocs(collection(db, 'devis'));
-      devis.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // TODO: Implementare quando devis saranno migrati
+      devis.value = [];
     };
 
     const fetchCollaborateurs = async () => {
-      const snapshot = await getDocs(collection(db, 'collaborateurs'));
-      collaborateurs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // TODO: Implementare quando collaborateurs saranno migrati
+      collaborateurs.value = [];
     };
 
     const fetchChefDeChantiers = async () => {
-      const snapshot = await getDocs(collection(db, 'chefdechantiers'));
-      chefDeChantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // TODO: Implementare quando chefdechantiers saranno migrati
+      chefDeChantiers.value = [];
     };
 
     const fetchPrixRegieDefault = async () => {
@@ -486,9 +485,22 @@ export default {
     };
 
     const addChantier = async () => {
-      await addDoc(collection(db, 'chantiers'), newChantier.value);
-      newChantier.value = { numeroCantiere: '', nom: '', adresse: '', ville: '', client: '', technicien: '', devisId: '', modalitaResoconto: 'metrages', capocantiere: '', prixRegie: 65, percentualeImpresa: 30 };
-      fetchChantiers();
+      const { error } = await supabase.from('chantiers').insert([{
+        numero_cantiere: newChantier.value.numeroCantiere,
+        nom: newChantier.value.nom,
+        adresse: newChantier.value.adresse,
+        ville: newChantier.value.ville,
+        client: newChantier.value.client,
+        technicien: newChantier.value.technicien,
+        modalita_resoconto: newChantier.value.modalitaResoconto,
+        capocantiere: newChantier.value.capocantiere,
+        prix_regie: newChantier.value.prixRegie,
+        percentuale_impresa: newChantier.value.percentualeImpresa
+      }]);
+      if (!error) {
+        newChantier.value = { numeroCantiere: '', nom: '', adresse: '', ville: '', client: '', technicien: '', devisId: '', modalitaResoconto: 'metrages', capocantiere: '', prixRegie: 65, percentualeImpresa: 30 };
+        fetchChantiers();
+      }
     };
 
     const addHeure = async () => {
@@ -560,16 +572,28 @@ export default {
     };
 
     const updateChantier = async (id) => {
-      const docRef = doc(db, 'chantiers', id);
-      await updateDoc(docRef, editChantier.value);
-      cancelEdit();
-      fetchChantiers();
+      const { error } = await supabase.from('chantiers').update({
+        numero_cantiere: editChantier.value.numeroCantiere,
+        nom: editChantier.value.nom,
+        adresse: editChantier.value.adresse,
+        ville: editChantier.value.ville,
+        client: editChantier.value.client,
+        technicien: editChantier.value.technicien,
+        modalita_resoconto: editChantier.value.modalitaResoconto,
+        capocantiere: editChantier.value.capocantiere,
+        prix_regie: editChantier.value.prixRegie,
+        percentuale_impresa: editChantier.value.percentualeImpresa
+      }).eq('id', id);
+      if (!error) {
+        cancelEdit();
+        fetchChantiers();
+      }
     };
 
     const deleteChantier = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'chantiers', id));
-        fetchChantiers();
+        const { error } = await supabase.from('chantiers').delete().eq('id', id);
+        if (!error) fetchChantiers();
       }
     };
 

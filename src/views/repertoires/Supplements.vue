@@ -53,8 +53,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -69,25 +68,48 @@ export default {
     const editData = ref({ nom: '', valeur: null, ordre: 0 });
 
     const fetchSupplements = async () => {
-      const snap = await getDocs(collection(db, 'supplements'));
-      supplements.value = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      const { data, error } = await supabase
+        .from('supplements')
+        .select('*')
+        .order('ordre');
+      
+      if (error) {
+        console.error('Errore caricamento supplements:', error);
+      } else {
+        supplements.value = data || [];
+      }
     };
 
     const addSupplement = async () => {
       if (!newSupplement.value.nom || newSupplement.value.valeur === null) return;
-      await addDoc(collection(db, 'supplements'), {
-        nom: newSupplement.value.nom,
-        valeur: newSupplement.value.valeur,
-        ordre: newSupplement.value.ordre || 0
-      });
-      newSupplement.value = { nom: '', valeur: null, ordre: 0 };
-      fetchSupplements();
+      
+      const { error } = await supabase
+        .from('supplements')
+        .insert([{
+          nom: newSupplement.value.nom,
+          valeur: newSupplement.value.valeur,
+          ordre: newSupplement.value.ordre || 0
+        }]);
+      
+      if (error) {
+        console.error('Errore aggiunta supplement:', error);
+      } else {
+        newSupplement.value = { nom: '', valeur: null, ordre: 0 };
+        fetchSupplements();
+      }
     };
 
     const deleteSupplement = async (id) => {
-      await deleteDoc(doc(db, 'supplements', id));
-      fetchSupplements();
+      const { error } = await supabase
+        .from('supplements')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Errore eliminazione supplement:', error);
+      } else {
+        fetchSupplements();
+      }
     };
 
     const startEdit = (supp) => {
@@ -96,14 +118,22 @@ export default {
     };
 
     const confirmEdit = async (id) => {
-      await updateDoc(doc(db, 'supplements', id), {
-        nom: editData.value.nom,
-        valeur: editData.value.valeur,
-        ordre: editData.value.ordre || 0
-      });
-      editId.value = null;
-      editData.value = { nom: '', valeur: null, ordre: 0 };
-      fetchSupplements();
+      const { error } = await supabase
+        .from('supplements')
+        .update({
+          nom: editData.value.nom,
+          valeur: editData.value.valeur,
+          ordre: editData.value.ordre || 0
+        })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Errore aggiornamento supplement:', error);
+      } else {
+        editId.value = null;
+        editData.value = { nom: '', valeur: null, ordre: 0 };
+        fetchSupplements();
+      }
     };
 
     onMounted(fetchSupplements);

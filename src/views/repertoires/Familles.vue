@@ -72,8 +72,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -89,20 +88,39 @@ export default {
     const editFamille = ref({ nom: '' });
 
     const fetchFamilles = async () => {
-      const querySnapshot = await getDocs(collection(db, 'familles'));
-      familles.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => (a.ordrePDF || 0) - (b.ordrePDF || 0));
+      const { data, error } = await supabase
+        .from('familles')
+        .select('*')
+        .order('ordre_pdf');
+      
+      if (error) {
+        console.error('Errore caricamento familles:', error);
+      } else {
+        familles.value = (data || []).map(f => ({
+          ...f,
+          visiblePDF: f.visible_pdf,
+          ordrePDF: f.ordre_pdf
+        }));
+      }
     };
 
     const addFamille = async () => {
       if (newFamille.value.nom.trim() === '') return;
-      await addDoc(collection(db, 'familles'), {
-        nom: newFamille.value.nom,
-        visiblePDF: newFamille.value.visiblePDF !== false,
-        ordrePDF: newFamille.value.ordrePDF || 0
-      });
-      newFamille.value = { nom: '', visiblePDF: false, ordrePDF: 0 };
-      fetchFamilles();
+      
+      const { error } = await supabase
+        .from('familles')
+        .insert([{
+          nom: newFamille.value.nom,
+          visible_pdf: newFamille.value.visiblePDF !== false,
+          ordre_pdf: newFamille.value.ordrePDF || 0
+        }]);
+      
+      if (error) {
+        console.error('Errore aggiunta famille:', error);
+      } else {
+        newFamille.value = { nom: '', visiblePDF: false, ordrePDF: 0 };
+        fetchFamilles();
+      }
     };
 
     const startEdit = (famille) => {
@@ -120,19 +138,35 @@ export default {
     };
 
     const updateFamille = async (id) => {
-      await updateDoc(doc(db, 'familles', id), {
-        nom: editFamille.value.nom,
-        visiblePDF: editFamille.value.visiblePDF !== false,
-        ordrePDF: editFamille.value.ordrePDF || 0
-      });
-      cancelEdit();
-      fetchFamilles();
+      const { error } = await supabase
+        .from('familles')
+        .update({
+          nom: editFamille.value.nom,
+          visible_pdf: editFamille.value.visiblePDF !== false,
+          ordre_pdf: editFamille.value.ordrePDF || 0
+        })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Errore aggiornamento famille:', error);
+      } else {
+        cancelEdit();
+        fetchFamilles();
+      }
     };
 
     const deleteFamille = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'familles', id));
-        fetchFamilles();
+        const { error } = await supabase
+          .from('familles')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Errore eliminazione famille:', error);
+        } else {
+          fetchFamilles();
+        }
       }
     };
 

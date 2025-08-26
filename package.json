@@ -12,6 +12,7 @@
     "deploy-secure": "npm run security-audit && npm run build && firebase deploy"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.56.0",
     "bootstrap": "^5.3.7",
     "bootstrap-icons": "^1.13.1",
     "firebase": "^11.10.0",

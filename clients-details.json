@@ -1,0 +1,57 @@
+[
+  {
+    "nom": "Lumielec SA",
+    "adresse": " Rue de Genève 122",
+    "ville": "1226 Thônex",
+    "telephone": "+4122 559 30 39",
+    "email_contact": "Info@lumielec.ch",
+    "email_compta": ""
+  },
+  {
+    "nom": "Swisspro SA",
+    "adresse": "Avenue de Longemalle 13",
+    "ville": "Renens",
+    "telephone": "+4121 654 22 22",
+    "email_contact": " infosr@swisspro.ch",
+    "email_compta": ""
+  },
+  {
+    "nom": "Etavis SA",
+    "adresse": "Rue du Caudray 6",
+    "ville": "1020 Renens",
+    "telephone": "+4121 614 44 44",
+    "email_contact": "lausanne@etavis.ch",
+    "email_compta": "",
+    "conditionsPaiement": ""
+  },
+  {
+    "nom": "Azienda Demo Sàrl",
+    "adresse": "Strada Demo 2",
+    "ville": "Bellinzona",
+    "telephone": "091 765 4321",
+    "email": "demo@azienda.ch"
+  },
+  {
+    "nom": "Client Test SA",
+    "adresse": "Via Esempio 1",
+    "ville": "Lugano",
+    "telephone": "091 123 4567",
+    "email": "test@client.ch"
+  },
+  {
+    "nom": "Oiken Solutions SA",
+    "adresse": "Rue de l'Industrie 43",
+    "ville": "1951 Sion",
+    "telephone": "+4127 617 30 00",
+    "email_contact": "",
+    "email_compta": ""
+  },
+  {
+    "nom": "CIEL Electricité SA",
+    "adresse": "Av. de Sévelin 18",
+    "ville": "1004 Lausanne",
+    "telephone": "+4121 623 35 35",
+    "email_contact": "info@cielelectricite.com",
+    "email_compta": ""
+  }
+]

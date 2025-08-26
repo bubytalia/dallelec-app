@@ -16,7 +16,7 @@
             {{ isCreatingBackup ? 'Creazione...' : 'Crea Backup Ora' }}
           </button>
           <small class="text-muted d-block mt-2">
-            Scarica tutti i dati del database in formato JSON
+            Scarica tutti i dati del database in formato JSON (backup locale)
           </small>
         </div>
         
@@ -49,7 +49,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { BackupService } from '@/utils/backupService'
+import { SimpleBackup } from '@/utils/simpleBackup'
 
 const isCreatingBackup = ref(false)
 const autoBackupEnabled = ref(false)
@@ -61,11 +61,11 @@ const createBackup = async () => {
   backupStatus.value = null
   
   try {
-    const result = await BackupService.createBackup()
+    const result = await SimpleBackup.createBackup()
     if (result.success) {
       backupStatus.value = {
         success: true,
-        message: `✅ Backup creato: ${result.filename}`
+        message: `✅ Backup locale creato: ${result.filename} (${result.dataCount} records)`
       }
       lastBackup.value = new Date().toLocaleString()
       localStorage.setItem('lastBackup', lastBackup.value)
@@ -86,28 +86,15 @@ const createBackup = async () => {
 }
 
 const toggleAutoBackup = () => {
-  if (autoBackupEnabled.value) {
-    BackupService.scheduleAutoBackup()
-    localStorage.setItem('autoBackupEnabled', 'true')
-    backupStatus.value = {
-      success: true,
-      message: '✅ Backup automatico attivato (ogni domenica alle 2:00)'
-    }
-  } else {
-    localStorage.setItem('autoBackupEnabled', 'false')
-    backupStatus.value = {
-      success: true,
-      message: '⏸️ Backup automatico disattivato'
-    }
+  localStorage.setItem('autoBackupEnabled', autoBackupEnabled.value ? 'true' : 'false')
+  backupStatus.value = {
+    success: true,
+    message: autoBackupEnabled.value ? '✅ Backup automatico attivato' : '⏸️ Backup automatico disattivato'
   }
 }
 
 onMounted(() => {
-  lastBackup.value = localStorage.getItem('lastBackup') || ''
+  lastBackup.value = localStorage.getItem('lastBackup') || 'Nessun backup trovato'
   autoBackupEnabled.value = localStorage.getItem('autoBackupEnabled') === 'true'
-  
-  if (autoBackupEnabled.value) {
-    BackupService.scheduleAutoBackup()
-  }
 })
 </script>

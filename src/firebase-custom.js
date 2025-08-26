@@ -13,19 +13,12 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Validazione configurazione
-const requiredEnvVars = ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID'];
-for (const envVar of requiredEnvVars) {
-  if (!import.meta.env[envVar]) {
-    throw new Error(`Missing required environment variable: ${envVar}`);
-  }
-}
-
 let firebaseApp, db, auth, storage;
 
 try {
   firebaseApp = initializeApp(firebaseConfig);
-  db = getFirestore(firebaseApp);
+  // Usa database personalizzato invece di default
+  db = getFirestore(firebaseApp, 'dallelec-db');
   auth = getAuth(firebaseApp);
   storage = getStorage(firebaseApp);
 } catch (error) {

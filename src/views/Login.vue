@@ -26,9 +26,7 @@
 </template>
 
 <script>
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '@/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { supabase } from '../supabase.js';
 
 export default {
   name: 'Login',
@@ -51,88 +49,23 @@ export default {
       this.error = '';
       
       try {
-        // Autenticazione Firebase
-        const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
-        const user = userCredential.user;
+        // Autenticazione Supabase
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email: this.email,
+          password: this.password
+        });
         
-        // Determina il tipo di utente e controlla first login
-        const userInfo = await this.getUserInfo(user.email);
+        if (authError) throw authError;
         
-        if (!userInfo) {
-          this.error = 'Utilisateur non autorisé';
-          await auth.signOut();
-          return;
-        }
-        
-        // Controlla se è il primo login
-        if (userInfo.firstLogin) {
-          this.$router.push('/change-password');
-          return;
-        }
-        
-        // Redirect basato sul tipo
-        if (userInfo.type === 'admin') {
-          this.$router.push('/admin');
-        } else if (userInfo.type === 'chef') {
-          this.$router.push('/chef');
-        } else if (userInfo.type === 'ouvrier') {
-          this.$router.push('/ouvrier');
-        }
+        // Per ora redirect diretto ad admin
+        this.$router.push('/admin');
         
       } catch (error) {
         console.error('Erreur login:', error);
-        if (error.code === 'auth/user-not-found') {
-          this.error = 'Utilisateur non trouvé';
-        } else if (error.code === 'auth/wrong-password') {
-          this.error = 'Mot de passe incorrect';
-        } else if (error.code === 'auth/invalid-email') {
-          this.error = 'Email invalide';
-        } else {
-          this.error = 'Erreur de connexion';
-        }
+        this.error = error.message || 'Erreur de connexion';
       } finally {
         this.loading = false;
       }
-    },
-    
-    async getUserInfo(email) {
-      // Verifica se è admin
-      const adminsQuery = query(collection(db, 'admins'), where('email', '==', email));
-      const adminsSnapshot = await getDocs(adminsQuery);
-      if (!adminsSnapshot.empty) {
-        const adminData = adminsSnapshot.docs[0].data();
-        return {
-          type: 'admin',
-          firstLogin: adminData.firstLogin || false,
-          userData: adminData
-        };
-      }
-      
-      // Verifica se è chef de chantier
-      const chefsQuery = query(collection(db, 'chefdechantiers'), where('email', '==', email));
-      const chefsSnapshot = await getDocs(chefsQuery);
-      if (!chefsSnapshot.empty) {
-        const chefData = chefsSnapshot.docs[0].data();
-        return {
-          type: 'chef',
-          firstLogin: chefData.firstLogin || false,
-          userData: chefData
-        };
-      }
-      
-      // Verifica se è collaboratore/ouvrier
-      const collabQuery = query(collection(db, 'collaborateurs'), where('email', '==', email));
-      const collabSnapshot = await getDocs(collabQuery);
-      if (!collabSnapshot.empty) {
-        const collabData = collabSnapshot.docs[0].data();
-        return {
-          type: 'ouvrier',
-          firstLogin: collabData.firstLogin || false,
-          userData: collabData
-        };
-      }
-      
-      return null; // Utente non riconosciuto
     }
   }
 };

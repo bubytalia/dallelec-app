@@ -91,7 +91,7 @@
             <td>{{ prod.unite }}</td>
             <td>{{ prod.prix }}</td>
             <td>
-              <span v-if="prod.prezzoNetto" class="badge bg-warning">💰 Prix net</span>
+              <span v-if="prod.prezzo_netto" class="badge bg-warning">💰 Prix net</span>
               <span v-else class="text-muted">-</span>
             </td>
             <td>
@@ -107,8 +107,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -131,15 +130,36 @@ export default {
     const editProduit = ref({});
 
     const fetchProduits = async () => {
-      const querySnapshot = await getDocs(collection(db, 'produits'));
-      produits.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => a.article.localeCompare(b.article));
+      const { data, error } = await supabase
+        .from('produits')
+        .select('*')
+        .order('article');
+      
+      if (error) {
+        console.error('Errore caricamento produits:', error);
+      } else {
+        produits.value = data || [];
+      }
     };
 
     const addProduit = async () => {
-      await addDoc(collection(db, 'produits'), newProduit.value);
-      newProduit.value = { article: '', taille: '', description: '', unite: '', prix: '', prezzoNetto: false };
-      fetchProduits();
+      const { error } = await supabase
+        .from('produits')
+        .insert([{
+          article: newProduit.value.article,
+          taille: newProduit.value.taille,
+          description: newProduit.value.description,
+          unite: newProduit.value.unite,
+          prix: parseFloat(newProduit.value.prix),
+          prezzo_netto: newProduit.value.prezzoNetto
+        }]);
+      
+      if (error) {
+        console.error('Errore aggiunta produit:', error);
+      } else {
+        newProduit.value = { article: '', taille: '', description: '', unite: '', prix: '', prezzoNetto: false };
+        fetchProduits();
+      }
     };
 
     const startEdit = (prod) => {
@@ -154,16 +174,39 @@ export default {
 
     const updateProduit = async (id) => {
       if (confirm('Confermi la modifica? I devis già salvati manterranno i prezzi originali.')) {
-        await updateDoc(doc(db, 'produits', id), editProduit.value);
-        cancelEdit();
-        fetchProduits();
+        const { error } = await supabase
+          .from('produits')
+          .update({
+            article: editProduit.value.article,
+            taille: editProduit.value.taille,
+            description: editProduit.value.description,
+            unite: editProduit.value.unite,
+            prix: parseFloat(editProduit.value.prix),
+            prezzo_netto: editProduit.value.prezzoNetto
+          })
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Errore aggiornamento produit:', error);
+        } else {
+          cancelEdit();
+          fetchProduits();
+        }
       }
     };
 
     const deleteProduit = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'produits', id));
-        fetchProduits();
+        const { error } = await supabase
+          .from('produits')
+          .delete()
+          .eq('id', id);
+        
+        if (error) {
+          console.error('Errore eliminazione produit:', error);
+        } else {
+          fetchProduits();
+        }
       }
     };
 

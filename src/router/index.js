@@ -55,6 +55,7 @@ import Interimaires from '@/views/repertoires/Interimaires.vue';
 import Factures from '@/views/repertoires/Factures.vue';
 import Regies from '@/views/repertoires/Regies.vue';
 import Admins from '@/views/repertoires/Admins.vue';
+import AdminBackup from '@/views/AdminBackup.vue';
 
 // Bilans
 // import Bilans from '@/views/Bilans.vue'; // Vecchio placeholder
@@ -87,6 +88,7 @@ const routes = [
   { path: '/admin/repertoires/factures', name: 'Factures', component: Factures },
   { path: '/admin/repertoires/regies', name: 'Regies', component: Regies },
   { path: '/admin/repertoires/admins', name: 'Admins', component: Admins },
+  { path: '/admin/backup', name: 'AdminBackup', component: AdminBackup },
   { path: '/admin/bilans', name: 'AdminBilans', component: AdminBilans },
   { path: '/admin/report-mensuel', name: 'AdminReportMensuel', component: AdminReportMensuel },
   { path: '/admin/gestion-feries', name: 'AdminGestionFeries', component: AdminGestionFeries },
