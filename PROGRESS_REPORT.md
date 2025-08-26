@@ -2,9 +2,11 @@
 *Ultimo aggiornamento: Dicembre 2024 - SISTEMA DEVIS COMPLETAMENTE FUNZIONANTE*
 
 ## 🚀 SISTEMA IN PRODUZIONE
-**URL PUBBLICO**: https://dallelec-gestion-58a49.web.app  
-**Progetto Firebase**: dallelec-gestion-58a49  
+**URL PUBBLICO**: https://dallelec.com  
+**Hosting**: Netlify (neon-cactus-5f0217)  
 **Repository GitHub**: https://github.com/bubytalia/dallelec-app  
+**Branch Deploy**: fix-produits-devis  
+**Database**: Firebase Firestore (dallelec-gestion-58a49)  
 **Status**: ✅ ONLINE E OPERATIVO - SICUREZZA ENTERPRISE GRADE
 **Livello Sicurezza**: 🛡️ 10/10 - MASSIMA PROTEZIONE
 
@@ -175,10 +177,13 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - ✅ **CORRETTO**: Testo pulsante "Voir historique métrées"
 - ✅ **MIGLIORATO**: Visualizzazione nome cantiere con numero in tutte le interfacce
 
-### **MODIFICA TEMPORANEA SISTEMA ORE** ⚠️ **TEMPORANEO - DA RIPRISTINARE**
-- ⚠️ **MODIFICATO**: Limite inserimento ore da 2 giorni → tutto il mese corrente
-- ⚠️ **FILE MODIFICATI**: OuvrierHeures.vue, ChefHeures.vue
-- ⚠️ **MOTIVO**: Permettere inserimento ore complete del mese per tutti i collaboratori
+### **MODIFICA TEMPORANEA SISTEMA ORE** ✅ **COMPLETATA E DEPLOYATA**
+- ✅ **MODIFICATO**: Rimosso completamente blocco temporale inserimento ore
+- ✅ **FILE MODIFICATI**: OuvrierHeures.vue, ChefHeures.vue
+- ✅ **FUNZIONE**: isDateBlocked() ritorna sempre false
+- ✅ **RISULTATO**: Ouvriers e Chef possono inserire ore per qualsiasi data
+- ✅ **DEPLOY**: Netlify su branch fix-produits-devis (Deploy ID: 68ad89783ff0e372433e65e4)
+- ✅ **STORICO ORE**: Ouvriers vedono tutte le ore inserite (non solo settimana corrente)
 - ⚠️ **DA RIPRISTINARE**: Fine mese → tornare al limite di 2 giorni
 
 ## 📋 MODULI PIANIFICATI (Non ancora sviluppati)
@@ -256,12 +261,40 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 ## ✅ DEPLOY PRODUZIONE COMPLETATO
 
 ### **SISTEMA ONLINE** ⭐ **COMPLETATO**
-- ✅ **Deploy Firebase Hosting**: https://dallelec-gestion-58a49.web.app
-- ✅ **Progetto Firebase**: dallelec-gestion-58a49 (esistente con database)
-- ✅ **Repository GitHub**: Codice sincronizzato e aggiornato
+- ✅ **Deploy Netlify**: https://dallelec.com (neon-cactus-5f0217)
+- ✅ **Branch Deploy**: fix-produits-devis (IMPORTANTE: usare questo branch!)
+- ✅ **Database Firebase**: dallelec-gestion-58a49 (Firestore + Auth)
+- ✅ **Repository GitHub**: https://github.com/bubytalia/dallelec-app
 - ✅ **Build produzione**: Ottimizzato e compresso
 - ✅ **Configurazione hosting**: SPA routing configurato
 - ✅ **Sistema completo**: Tutti i moduli accessibili online
+
+## ⚠️ CONFIGURAZIONE DEPLOY - IMPORTANTE PER FUTURE CHAT
+
+### **HOSTING E DEPLOY**
+- **URL PRODUZIONE**: https://dallelec.com
+- **HOSTING**: Netlify (NON Firebase Hosting!)
+- **SITE ID**: neon-cactus-5f0217
+- **BRANCH DEPLOY**: fix-produits-devis (CRITICO: usare sempre questo branch!)
+- **COMANDO DEPLOY**: `npx netlify deploy --prod --dir dist`
+
+### **DATABASE**
+- **TIPO**: Firebase Firestore
+- **PROGETTO**: dallelec-gestion-58a49
+- **AUTENTICAZIONE**: Firebase Auth
+
+### **REPOSITORY**
+- **GITHUB**: https://github.com/bubytalia/dallelec-app
+- **BRANCH PRINCIPALE**: fix-produits-devis
+- **BRANCH MASTER**: Usato per sviluppo, NON per deploy
+
+### **PROCEDURA DEPLOY CORRETTA**
+1. Assicurarsi di essere su branch `fix-produits-devis`
+2. Fare modifiche e commit
+3. Push su `origin fix-produits-devis`
+4. Deploy automatico Netlify o manuale con `npx netlify deploy --prod --dir dist`
+
+---
 
 ## 🎯 PROSSIMI STEP OPERATIVI
 
@@ -312,7 +345,7 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - **PDF**: jsPDF, jspdf-autotable
 - **Versioning**: Git + GitHub (bubytalia/dallelec-app)
 - **Build**: Vite (ottimizzato per produzione)
-- **Deploy**: Firebase CLI
+- **Deploy**: Netlify CLI (branch: fix-produits-devis)
 
 ## 🛡️ SICUREZZA E BACKUP - IMPLEMENTAZIONE COMPLETA
 
@@ -534,8 +567,10 @@ Una volta ripristinato, eliminare la sezione "MODIFICA TEMPORANEA SISTEMA ORE" e
 **DALLELEC Management System v2.0 ENTERPRISE** 🚀  
 *Sistema di gestione aziendale con sicurezza enterprise-grade*
 
-**🌐 ACCESSO SISTEMA**: https://dallelec-gestion-58a49.web.app  
-**🛡️ SECURITY DASHBOARD**: https://dallelec-gestion-58a49.web.app/admin/security  
+**🌐 ACCESSO SISTEMA**: https://dallelec.com  
+**🛡️ SECURITY DASHBOARD**: https://dallelec.com/admin/security  
+**🔧 DEPLOY**: Netlify (branch: fix-produits-devis)  
+**📊 DATABASE**: Firebase Firestore (dallelec-gestion-58a49)  
 **📧 SUPPORTO**: daniele.dallelec@gmail.com  
 **📅 DEPLOY**: Dicembre 2024  
 **✅ STATUS**: IN PRODUZIONE - ENTERPRISE SECURITY  
