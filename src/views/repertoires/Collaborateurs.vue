@@ -32,7 +32,7 @@
         </select>
       </div>
       <div class="col-md-4">
-        <input v-model.number="newCollaborateur.coutHoraire" type="number" class="form-control" placeholder="Coût horaire (€)" required />
+        <input v-model.number="newCollaborateur.cout_horaire" type="number" class="form-control" placeholder="Coût horaire (€)" required />
       </div>
       <div class="col-md-4">
         <div class="form-check">

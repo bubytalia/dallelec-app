@@ -99,8 +99,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -124,22 +123,21 @@ export default {
     const editChef = ref({});
 
     const fetchChefs = async () => {
-      const querySnapshot = await getDocs(collection(db, 'chefdechantiers'));
-      chefs.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await supabase.from('chefdechantiers').select('*').order('nom');
+      if (!error) chefs.value = data || [];
     };
 
     const addChef = async () => {
-      await addDoc(collection(db, 'chefdechantiers'), newChef.value);
-      newChef.value = {
-        nom: '',
-        prenom: '',
-        telephone: '',
-        email: '',
-        etat: '',
-        coutHoraire: null,
-        excludeFromReport: false
-      };
-      fetchChefs();
+      const { error } = await supabase.from('chefdechantiers').insert([{
+        nom: newChef.value.nom,
+        prenom: newChef.value.prenom,
+        telephone: newChef.value.telephone,
+        email: newChef.value.email
+      }]);
+      if (!error) {
+        newChef.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false };
+        fetchChefs();
+      }
     };
 
     const startEdit = (chef) => {
@@ -153,16 +151,22 @@ export default {
     };
 
     const updateChef = async (id) => {
-      const docRef = doc(db, 'chefdechantiers', id);
-      await updateDoc(docRef, editChef.value);
-      cancelEdit();
-      fetchChefs();
+      const { error } = await supabase.from('chefdechantiers').update({
+        nom: editChef.value.nom,
+        prenom: editChef.value.prenom,
+        telephone: editChef.value.telephone,
+        email: editChef.value.email
+      }).eq('id', id);
+      if (!error) {
+        cancelEdit();
+        fetchChefs();
+      }
     };
 
     const deleteChef = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'chefdechantiers', id));
-        fetchChefs();
+        const { error } = await supabase.from('chefdechantiers').delete().eq('id', id);
+        if (!error) fetchChefs();
       }
     };
 

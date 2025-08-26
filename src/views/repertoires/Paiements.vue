@@ -46,8 +46,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -63,15 +62,17 @@ export default {
     const editPaiement = ref({ nom: '' });
 
     const fetchPaiements = async () => {
-      const snapshot = await getDocs(collection(db, 'paiements'));
-      paiements.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await supabase.from('paiements').select('*').order('nom');
+      if (!error) paiements.value = data || [];
     };
 
     const addPaiement = async () => {
       if (newPaiement.value.nom.trim()) {
-        await addDoc(collection(db, 'paiements'), newPaiement.value);
-        newPaiement.value.nom = '';
-        fetchPaiements();
+        const { error } = await supabase.from('paiements').insert([newPaiement.value]);
+        if (!error) {
+          newPaiement.value.nom = '';
+          fetchPaiements();
+        }
       }
     };
 
@@ -86,15 +87,17 @@ export default {
     };
 
     const updatePaiement = async (id) => {
-      await updateDoc(doc(db, 'paiements', id), editPaiement.value);
-      cancelEdit();
-      fetchPaiements();
+      const { error } = await supabase.from('paiements').update(editPaiement.value).eq('id', id);
+      if (!error) {
+        cancelEdit();
+        fetchPaiements();
+      }
     };
 
     const deletePaiement = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'paiements', id));
-        fetchPaiements();
+        const { error } = await supabase.from('paiements').delete().eq('id', id);
+        if (!error) fetchPaiements();
       }
     };
 

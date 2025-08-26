@@ -102,8 +102,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 const interimaires = ref([]);
@@ -122,11 +121,14 @@ const newInterimaire = ref({
 
 const fetchInterimaires = async () => {
   try {
-    const snapshot = await getDocs(collection(db, 'interimaires'));
-    interimaires.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await supabase.from('interimaires').select('*').order('nom');
+    if (!error) {
+      interimaires.value = data || [];
+    } else {
+      console.error('Erreur lors du chargement des intérimaires:', error);
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des intérimaires:', error);
-    alert('Erreur lors du chargement: ' + error.message);
   }
 };
 
@@ -143,17 +145,18 @@ const saveInterimaire = async () => {
       telephone: newInterimaire.value.telephone,
       email: newInterimaire.value.email,
       specialite: newInterimaire.value.specialite,
-      tarifHoraire: newInterimaire.value.tarifHoraire || 0,
+      tarif_horaire: newInterimaire.value.tarifHoraire || 0,
       agence: newInterimaire.value.agence,
-      notes: newInterimaire.value.notes,
-      createdAt: new Date()
+      notes: newInterimaire.value.notes
     };
 
     if (editingInterimaire.value) {
-      await updateDoc(doc(db, 'interimaires', editingInterimaire.value.id), interimaireData);
+      const { error } = await supabase.from('interimaires').update(interimaireData).eq('id', editingInterimaire.value.id);
+      if (error) throw error;
       alert('Intérimaire modifié avec succès');
     } else {
-      await addDoc(collection(db, 'interimaires'), interimaireData);
+      const { error } = await supabase.from('interimaires').insert([interimaireData]);
+      if (error) throw error;
       alert('Intérimaire ajouté avec succès');
     }
 
@@ -188,7 +191,8 @@ const deleteInterimaire = async (id) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer cet intérimaire ?')) return;
 
   try {
-    await deleteDoc(doc(db, 'interimaires', id));
+    const { error } = await supabase.from('interimaires').delete().eq('id', id);
+    if (error) throw error;
     alert('Intérimaire supprimé avec succès');
     fetchInterimaires();
   } catch (error) {
