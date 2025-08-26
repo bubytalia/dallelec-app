@@ -57,8 +57,69 @@ export default {
         
         if (authError) throw authError;
         
-        // Per ora redirect diretto ad admin
-        this.$router.push('/admin');
+        // Determina ruolo controllando le anagrafiche
+        let role = null;
+        let userName = '';
+        
+        // Controlla se è admin
+        const { data: adminData } = await supabase
+          .from('admins')
+          .select('nom, prenom')
+          .eq('email', this.email.toLowerCase())
+          .single();
+        
+        if (adminData) {
+          role = 'admin';
+          userName = `${adminData.prenom} ${adminData.nom}`;
+        } else {
+          // Controlla se è chef de chantier
+          const { data: chefData } = await supabase
+            .from('chefdechantiers')
+            .select('nom, prenom')
+            .eq('email', this.email.toLowerCase())
+            .single();
+          
+          if (chefData) {
+            role = 'chef';
+            userName = `${chefData.prenom} ${chefData.nom}`;
+          } else {
+            // Controlla se è ouvrier (collaborateur)
+            const { data: ouvrierData } = await supabase
+              .from('collaborateurs')
+              .select('nom, prenom')
+              .eq('email', this.email.toLowerCase())
+              .single();
+            
+            if (ouvrierData) {
+              role = 'ouvrier';
+              userName = `${ouvrierData.prenom} ${ouvrierData.nom}`;
+            }
+          }
+        }
+        
+        if (!role) {
+          throw new Error('Accesso non autorizzato. Email non trovata nelle anagrafiche: ' + this.email);
+        }
+        
+        // Salva il ruolo nel localStorage
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('userEmail', this.email);
+        localStorage.setItem('userName', userName);
+        
+        // Redirect basato sul ruolo
+        switch (role) {
+          case 'admin':
+            this.$router.push('/admin');
+            break;
+          case 'chef':
+            this.$router.push('/chef');
+            break;
+          case 'ouvrier':
+            this.$router.push('/ouvrier');
+            break;
+          default:
+            throw new Error('Ruolo utente non valido: ' + role);
+        }
         
       } catch (error) {
         console.error('Erreur login:', error);

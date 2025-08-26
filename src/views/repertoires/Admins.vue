@@ -4,19 +4,35 @@
 
     <h2 class="text-center mb-4">Administrateurs</h2>
     
-    <div class="row mb-3">
-      <div class="col">
-        <input v-model="newAdmin.nom" placeholder="Nom" class="form-control" />
-      </div>
-      <div class="col">
-        <input v-model="newAdmin.prenom" placeholder="Prénom" class="form-control" />
-      </div>
-      <div class="col">
-        <input v-model="newAdmin.email" placeholder="Email" class="form-control" type="email" />
-      </div>
+    <div v-if="!tableExists" class="alert alert-warning text-center">
+      <h5>⚠️ Tabella 'admins' non trovata</h5>
+      <p>Esegui questo SQL nel dashboard Supabase:</p>
+      <code class="d-block bg-light p-2 mt-2">
+        CREATE TABLE admins (<br>
+        &nbsp;&nbsp;id SERIAL PRIMARY KEY,<br>
+        &nbsp;&nbsp;nom TEXT NOT NULL,<br>
+        &nbsp;&nbsp;prenom TEXT,<br>
+        &nbsp;&nbsp;email TEXT UNIQUE,<br>
+        &nbsp;&nbsp;created_at TIMESTAMP DEFAULT NOW()<br>
+        );
+      </code>
     </div>
-    <div class="text-center mb-4">
-      <button @click="addAdmin" class="btn btn-primary">Ajouter</button>
+    
+    <div v-if="tableExists">
+      <div class="row mb-3">
+        <div class="col">
+          <input v-model="newAdmin.nom" placeholder="Nom" class="form-control" />
+        </div>
+        <div class="col">
+          <input v-model="newAdmin.prenom" placeholder="Prénom" class="form-control" />
+        </div>
+        <div class="col">
+          <input v-model="newAdmin.email" placeholder="Email" class="form-control" type="email" />
+        </div>
+      </div>
+      <div class="text-center mb-4">
+        <button @click="addAdmin" class="btn btn-primary">Ajouter</button>
+      </div>
     </div>
 
     <table class="table table-striped">
@@ -71,22 +87,59 @@ export default {
       prenom: '',
       email: ''
     });
-
     const editId = ref(null);
     const editAdmin = ref({});
+    const tableExists = ref(true);
+
+    // Crea la tabella se non esiste
+    const createTableIfNeeded = async () => {
+      try {
+        const { error } = await supabase
+          .from('admins')
+          .select('id')
+          .limit(1);
+        
+        if (error && error.code === 'PGRST116') {
+          // Tabella non esiste
+          tableExists.value = false;
+          console.log('⚠️ Tabella admins non trovata');
+        }
+      } catch (error) {
+        console.error('Errore controllo tabella:', error);
+      }
+    };
 
     const fetchAdmins = async () => {
-      const { data, error } = await supabase.from('admins').select('*').order('nom');
+      if (!tableExists.value) return;
+      
+      const { data, error } = await supabase
+        .from('admins')
+        .select('*')
+        .order('nom');
+        
       if (!error) {
-        admins.value = (data || []).filter(admin => admin.nom); // Filtra admin senza nome
+        admins.value = (data || []).filter(admin => admin.nom);
+      } else if (error.code === 'PGRST116') {
+        tableExists.value = false;
       }
     };
 
     const addAdmin = async () => {
-      const { error } = await supabase.from('admins').insert([newAdmin.value]);
+      if (!tableExists.value) {
+        alert('Tabella admins non trovata. Contatta l\'amministratore.');
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('admins')
+        .insert([newAdmin.value]);
+        
       if (!error) {
         newAdmin.value = { nom: '', prenom: '', email: '' };
         fetchAdmins();
+      } else {
+        console.error('Errore inserimento:', error);
+        alert('Errore durante l\'inserimento');
       }
     };
 
@@ -101,7 +154,11 @@ export default {
     };
 
     const updateAdmin = async (id) => {
-      const { error } = await supabase.from('admins').update(editAdmin.value).eq('id', id);
+      const { error } = await supabase
+        .from('admins')
+        .update(editAdmin.value)
+        .eq('id', id);
+        
       if (!error) {
         cancelEdit();
         fetchAdmins();
@@ -110,12 +167,19 @@ export default {
 
     const deleteAdmin = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        const { error } = await supabase.from('admins').delete().eq('id', id);
+        const { error } = await supabase
+          .from('admins')
+          .delete()
+          .eq('id', id);
+          
         if (!error) fetchAdmins();
       }
     };
 
-    onMounted(fetchAdmins);
+    onMounted(async () => {
+      await createTableIfNeeded();
+      await fetchAdmins();
+    });
 
     return {
       admins,
@@ -126,7 +190,8 @@ export default {
       startEdit,
       cancelEdit,
       updateAdmin,
-      deleteAdmin
+      deleteAdmin,
+      tableExists
     };
   }
 };

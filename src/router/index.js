@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { requireAuth, requireRole } from './guards.js';
 
 // Auth
 import Login from '@/views/Login.vue';
@@ -64,15 +65,15 @@ const routes = [
   { path: '/', name: 'Login', component: Login },
   
   // Admin routes
-  { path: '/admin', name: 'AdminDashboard', component: AdminDashboard },
-  { path: '/admin/devis', name: 'Devis', component: Devis },
-  { path: '/admin/devis/create', name: 'DevisCreate', component: DevisCreate },
-  { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate },
-  { path: '/admin/devis/list', name: 'DevisList', component: DevisList },
-  { path: '/admin/devis/produits/:id', name: 'DevisProduits', component: DevisProduits },
-  { path: '/devis/produits/:id', name: 'DevisProduitsShort', component: DevisProduits },
-  { path: '/admin/devis/conditions/:id', name: 'DevisConditions', component: DevisConditions },
-  { path: '/admin/repertoires', name: 'Repertoires', component: Repertoires },
+  { path: '/admin', name: 'AdminDashboard', component: AdminDashboard, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/devis', name: 'Devis', component: Devis, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/devis/create', name: 'DevisCreate', component: DevisCreate, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/devis/edit/:id', name: 'DevisEdit', component: DevisCreate, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/devis/list', name: 'DevisList', component: DevisList, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/devis/produits/:id', name: 'DevisProduits', component: DevisProduits, beforeEnter: requireRole(['admin']) },
+  { path: '/devis/produits/:id', name: 'DevisProduitsShort', component: DevisProduits, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/devis/conditions/:id', name: 'DevisConditions', component: DevisConditions, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/repertoires', name: 'Repertoires', component: Repertoires, beforeEnter: requireRole(['admin']) },
   { path: '/admin/repertoires/chantiers', name: 'Chantiers', component: Chantiers },
   { path: '/admin/repertoires/collaborateurs', name: 'Collaborateurs', component: Collaborateurs },
   { path: '/admin/repertoires/chefdechantiers', name: 'ChefDeChantiers', component: ChefDeChantiers },
@@ -102,10 +103,10 @@ const routes = [
   { path: '/change-password', name: 'ChangePassword', component: () => import('@/views/ChangePassword.vue') },
 
   // Chef routes
-  { path: '/chef', name: 'ChefDashboard', component: ChefDashboard },
-  { path: '/chef/heures', name: 'ChefHeures', component: ChefHeures },
-  { path: '/chef/chantiers', name: 'ChefChantiers', component: ChefChantiers },
-  { path: '/chef/absences', name: 'ChefAbsences', component: ChefAbsences },
+  { path: '/chef', name: 'ChefDashboard', component: ChefDashboard, beforeEnter: requireRole(['chef']) },
+  { path: '/chef/heures', name: 'ChefHeures', component: ChefHeures, beforeEnter: requireRole(['chef']) },
+  { path: '/chef/chantiers', name: 'ChefChantiers', component: ChefChantiers, beforeEnter: requireRole(['chef']) },
+  { path: '/chef/absences', name: 'ChefAbsences', component: ChefAbsences, beforeEnter: requireRole(['chef']) },
   { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan }, // TODO: creare componente specifico
   { path: '/chef/chantiers/metrages', name: 'ChefSelectionCantiere', component: ChefSelectionCantiere },
   { path: '/chef/chantiers/metrages-detail', name: 'ChefMetrages', component: ChefMetrages },
@@ -115,10 +116,10 @@ const routes = [
   { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers }, // TODO: creare componente specifico
 
   // Ouvrier routes
-  { path: '/ouvrier', name: 'OuvrierDashboard', component: OuvrierDashboard },
-  { path: '/ouvrier/heures', name: 'OuvrierHeures', component: OuvrierHeures },
-  { path: '/ouvrier/historique', name: 'OuvrierHistorique', component: OuvrierHeures }, // Stessa pagina per ora
-  { path: '/ouvrier/absences', name: 'OuvrierAbsences', component: OuvrierAbsences },
+  { path: '/ouvrier', name: 'OuvrierDashboard', component: OuvrierDashboard, beforeEnter: requireRole(['ouvrier']) },
+  { path: '/ouvrier/heures', name: 'OuvrierHeures', component: OuvrierHeures, beforeEnter: requireRole(['ouvrier']) },
+  { path: '/ouvrier/historique', name: 'OuvrierHistorique', component: OuvrierHeures, beforeEnter: requireRole(['ouvrier']) }, // Stessa pagina per ora
+  { path: '/ouvrier/absences', name: 'OuvrierAbsences', component: OuvrierAbsences, beforeEnter: requireRole(['ouvrier']) },
 ];
 
 const router = createRouter({

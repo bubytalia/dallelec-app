@@ -1,13 +1,8 @@
-import { auth } from '@/firebase'
-import { onAuthStateChanged } from 'firebase/auth'
+import { supabase } from '@/supabase'
 
-export const getCurrentUser = () => {
-  return new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      unsubscribe()
-      resolve(user)
-    }, reject)
-  })
+export const getCurrentUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
 export const requireAuth = async (to, from, next) => {
@@ -33,14 +28,32 @@ export const requireRole = (allowedRoles) => {
         return
       }
       
-      // Qui dovresti verificare il ruolo dell'utente dal database
-      // Per ora assumiamo che il ruolo sia nel path
-      const userRole = to.path.split('/')[1] // admin, chef, ouvrier
+      // Controlla il ruolo dal localStorage
+      const userRole = localStorage.getItem('userRole')
+      
+      if (!userRole) {
+        // Se non c'è ruolo, vai al login
+        next({ name: 'Login' })
+        return
+      }
       
       if (allowedRoles.includes(userRole)) {
         next()
       } else {
-        next({ name: 'Login' })
+        // Redirect al dashboard corretto per il ruolo
+        switch (userRole) {
+          case 'admin':
+            next('/admin')
+            break
+          case 'chef':
+            next('/chef')
+            break
+          case 'ouvrier':
+            next('/ouvrier')
+            break
+          default:
+            next({ name: 'Login' })
+        }
       }
     } catch (error) {
       console.error('Role guard error:', encodeURIComponent(error.message))
