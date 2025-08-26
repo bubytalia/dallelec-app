@@ -56,8 +56,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -77,15 +76,18 @@ export default {
     const editAdmin = ref({});
 
     const fetchAdmins = async () => {
-      const querySnapshot = await getDocs(collection(db, 'admins'));
-      admins.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => a.nom.localeCompare(b.nom));
+      const { data, error } = await supabase.from('admins').select('*').order('nom');
+      if (!error) {
+        admins.value = (data || []).filter(admin => admin.nom); // Filtra admin senza nome
+      }
     };
 
     const addAdmin = async () => {
-      await addDoc(collection(db, 'admins'), newAdmin.value);
-      newAdmin.value = { nom: '', prenom: '', email: '' };
-      fetchAdmins();
+      const { error } = await supabase.from('admins').insert([newAdmin.value]);
+      if (!error) {
+        newAdmin.value = { nom: '', prenom: '', email: '' };
+        fetchAdmins();
+      }
     };
 
     const startEdit = (admin) => {
@@ -99,15 +101,17 @@ export default {
     };
 
     const updateAdmin = async (id) => {
-      await updateDoc(doc(db, 'admins', id), editAdmin.value);
-      cancelEdit();
-      fetchAdmins();
+      const { error } = await supabase.from('admins').update(editAdmin.value).eq('id', id);
+      if (!error) {
+        cancelEdit();
+        fetchAdmins();
+      }
     };
 
     const deleteAdmin = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'admins', id));
-        fetchAdmins();
+        const { error } = await supabase.from('admins').delete().eq('id', id);
+        if (!error) fetchAdmins();
       }
     };
 
