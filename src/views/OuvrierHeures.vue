@@ -29,9 +29,9 @@
               </div>
               <div class="col-md-6 mb-3">
                 <label>Date:</label>
-                <input v-model="nouvelleHeure.date" type="date" class="form-control" :max="maxDate" required />
-                <small v-if="isDateBlocked(nouvelleHeure.date)" class="text-danger">
-                  ⚠️ Date trop ancienne (>2 jours). Contactez l'admin.
+                <input v-model="nouvelleHeure.date" type="date" class="form-control" required />
+                <small class="text-muted">
+                  Vous pouvez insérer des heures pour n'importe quelle date
                 </small>
               </div>
             </div>
@@ -128,19 +128,15 @@ const maxDate = computed(() => {
   return new Date().toISOString().split('T')[0];
 });
 
-// Controlla se data è bloccata - TEMPORANEO: permette tutto il mese corrente
+// Controlla se data è bloccata - TEMPORANEO: nessun blocco
 const isDateBlocked = (date) => {
-  if (!date) return false;
-  const selectedDate = new Date(date);
-  const today = new Date();
-  
-  // TEMPORANEO: Permette inserimento per tutto il mese corrente
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  
-  // Blocca solo se la data è prima dell'inizio del mese corrente
-  return selectedDate < startOfMonth && !adminOverride.value;
+  // TEMPORANEO: Nessun blocco - permette inserimento di qualsiasi data
+  return false;
   
   // ORIGINALE (da ripristinare): 
+  // if (!date) return false;
+  // const selectedDate = new Date(date);
+  // const today = new Date();
   // const twoDaysAgo = new Date(today);
   // twoDaysAgo.setDate(today.getDate() - 2);
   // twoDaysAgo.setHours(0, 0, 0, 0);

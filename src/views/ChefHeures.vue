@@ -22,10 +22,7 @@
             </div>
             <div class="mb-3">
               <label>Date:</label>
-              <input v-model="newHeure.date" type="date" class="form-control" :max="maxDate" />
-              <small v-if="isDateBlocked(newHeure.date)" class="text-danger">
-                ⚠️ Date trop ancienne (>2 jours). Contactez l'admin.
-              </small>
+              <input v-model="newHeure.date" type="date" class="form-control" />
             </div>
             <div class="mb-3">
               <label>Heures propres:</label>
@@ -53,10 +50,7 @@
             </div>
             <div class="mb-3">
               <label>Date:</label>
-              <input v-model="newHeureInterim.date" type="date" class="form-control" :max="maxDate" />
-              <small v-if="isDateBlocked(newHeureInterim.date)" class="text-danger">
-                ⚠️ Date trop ancienne (>2 jours). Contactez l'admin.
-              </small>
+              <input v-model="newHeureInterim.date" type="date" class="form-control" />
             </div>
             <div class="mb-3">
               <label>Intérimaire:</label>
@@ -305,17 +299,13 @@ const maxDate = computed(() => {
 });
 
 const isDateBlocked = (date) => {
-  if (!date) return false;
-  const selectedDate = new Date(date);
-  const today = new Date();
-  
-  // TEMPORANEO: Permette inserimento per tutto il mese corrente
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  
-  // Blocca solo se la data è prima dell'inizio del mese corrente
-  return selectedDate < startOfMonth;
+  // TEMPORANEO: Nessun blocco - permette inserimento di qualsiasi data
+  return false;
   
   // ORIGINALE (da ripristinare):
+  // if (!date) return false;
+  // const selectedDate = new Date(date);
+  // const today = new Date();
   // const diffTime = today - selectedDate;
   // const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   // return diffDays > 2;
