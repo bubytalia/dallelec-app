@@ -63,16 +63,16 @@
       </div>
     </div>
 
-    <!-- Heures de la semaine -->
+    <!-- Toutes mes heures -->
     <div class="row justify-content-center mt-4">
-      <div class="col-md-8">
+      <div class="col-md-10">
         <div class="card">
           <div class="card-header">
-            <h5>Mes heures cette semaine</h5>
+            <h5>Toutes mes heures</h5>
           </div>
           <div class="card-body">
             <div v-if="heuresSemaine.length === 0" class="text-center text-muted py-4">
-              Aucune heure enregistrée cette semaine
+              Aucune heure enregistrée
             </div>
             <div v-else>
               <table class="table table-sm">
@@ -100,7 +100,7 @@
                 </tbody>
               </table>
               <div class="text-end fw-bold">
-                Total semaine: {{ totalHeuresSemaine }}h
+                Total heures: {{ totalHeuresSemaine }}h
               </div>
             </div>
           </div>
@@ -189,12 +189,6 @@ const fetchHeuresSemaine = async () => {
   if (!currentUser.value) return;
   
   try {
-    // Calcola inizio settimana (lunedì)
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-    startOfWeek.setHours(0, 0, 0, 0);
-    
     const q = query(
       collection(db, 'heures_ouvriers'),
       where('ouvrierId', '==', currentUser.value.email)
@@ -203,11 +197,8 @@ const fetchHeuresSemaine = async () => {
     const snapshot = await getDocs(q);
     const allHeures = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Filtra solo le ore di questa settimana
-    heuresSemaine.value = allHeures.filter(heure => {
-      const heureDate = new Date(heure.date);
-      return heureDate >= startOfWeek;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Mostra tutte le ore, ordinate per data decrescente
+    heuresSemaine.value = allHeures.sort((a, b) => new Date(b.date) - new Date(a.date));
     
   } catch (error) {
     console.error('Erreur lors du chargement des heures:', error);
