@@ -1,5 +1,5 @@
 # DALLELEC - PROGRESS REPORT
-*Ultimo aggiornamento: Dicembre 2024 - SISTEMA DEVIS COMPLETAMENTE FUNZIONANTE*
+*Ultimo aggiornamento: Dicembre 2024 - SISTEMA RÉGIES MIGLIORATO*
 
 ## 🚀 SISTEMA IN PRODUZIONE
 **URL PUBBLICO**: https://dallelec.com  
@@ -176,6 +176,15 @@ Sviluppo di un sistema completo di gestione aziendale per DALLELEC Sarl (azienda
 - ✅ **CORRETTO**: Calcolo ML totali nell'historique (ora include supplementi)
 - ✅ **CORRETTO**: Testo pulsante "Voir historique métrées"
 - ✅ **MIGLIORATO**: Visualizzazione nome cantiere con numero in tutte le interfacce
+
+### **SISTEMA RÉGIES MIGLIORATO** (100% completato) ⭐ **NUOVO**
+- ✅ **ANAGRAFICA SEMPLIFICATA**: Un solo prezzo di default aziendale (non più lista complessa)
+- ✅ **CONFIGURAZIONE CENTRALIZZATA**: Salvataggio in `configuration/regies` collection
+- ✅ **CARICAMENTO AUTOMATICO**: Prezzo default si popola automaticamente nei cantieri
+- ✅ **PERSONALIZZAZIONE**: Possibilità di modificare prezzo per cantiere specifico
+- ✅ **UX MIGLIORATA**: Input-group con CHF, indicazione valore default
+- ✅ **PULIZIA REPERTOIRES**: Rimosso duplicato "Factures" (già in AdminFacturation)
+- ✅ **INTERFACCIA INTUITIVA**: Spiegazioni chiare su come funziona il sistema
 
 ### **MODIFICA TEMPORANEA SISTEMA ORE** ✅ **COMPLETATA E DEPLOYATA**
 - ✅ **MODIFICATO**: Rimosso completamente blocco temporale inserimento ore
