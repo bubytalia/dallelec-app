@@ -32,7 +32,6 @@ export default {
         { name: 'collaborateurs', label: 'Collaborateurs / Ouvriers', path: '/admin/repertoires/collaborateurs' },
         { name: 'chefdechantiers', label: 'Chefs de chantier', path: '/admin/repertoires/chefdechantiers' },
         { name: 'interimaires', label: 'Intérimaires', path: '/admin/repertoires/interimaires' },
-        { name: 'factures', label: 'Factures', path: '/admin/repertoires/factures' },
         { name: 'chantiers', label: 'Chantiers', path: '/admin/repertoires/chantiers' },
         { name: 'clients', label: 'Clients', path: '/admin/repertoires/clients' },
         { name: 'produits', label: 'Produits', path: '/admin/repertoires/produits' },

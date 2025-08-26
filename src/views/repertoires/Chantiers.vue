@@ -76,7 +76,11 @@
           </div>
           <div class="col-md-2">
             <label>Prix régie/h (CHF)</label>
-            <input v-model.number="newChantier.prixRegie" placeholder="65" class="form-control" type="number" step="1" />
+            <div class="input-group">
+              <input v-model.number="newChantier.prixRegie" class="form-control" type="number" step="1" />
+              <span class="input-group-text">CHF</span>
+            </div>
+            <small class="text-muted">Défaut: {{ newChantier.prixRegie || 65 }} CHF</small>
           </div>
           <div class="col-md-2">
             <label>% Impresa</label>
@@ -416,6 +420,19 @@ export default {
       chefDeChantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     };
 
+    const fetchPrixRegieDefault = async () => {
+      try {
+        const docRef = doc(db, 'configuration', 'regies');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const prixDefault = docSnap.data().prixDefault || 65;
+          newChantier.value.prixRegie = prixDefault;
+        }
+      } catch (error) {
+        console.log('Utilisation prix par défaut: 65 CHF');
+      }
+    };
+
     const loadChantierData = async () => {
       if (!selectedChantierId.value) {
         selectedChantier.value = null;
@@ -621,6 +638,7 @@ export default {
       fetchDevis();
       fetchCollaborateurs();
       fetchChefDeChantiers();
+      fetchPrixRegieDefault();
     });
 
     return {
@@ -660,7 +678,8 @@ export default {
       totalHeuresInterim,
       totalHeuresGeneral,
       resumeOeuvres,
-      getChefName
+      getChefName,
+      fetchPrixRegieDefault
     };
   }
 };

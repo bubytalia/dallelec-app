@@ -2,61 +2,54 @@
   <div class="container py-5">
     <RetourButton to="/admin/repertoires" />
 
-    <h2 class="text-center mb-4">Régies</h2>
+    <h2 class="text-center mb-4">Configuration Régies</h2>
     
-    <div class="row mb-3">
-      <div class="col">
-        <input v-model="newRegie.nom" placeholder="Nom régie" class="form-control" />
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>Prix régie par défaut</h5>
+            <small class="text-muted">Ce prix sera utilisé automatiquement lors de la création de nouveaux cantiers</small>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label class="form-label">Prix par heure (CHF)</label>
+              <input 
+                v-model.number="prixRegieDefault" 
+                type="number" 
+                step="1" 
+                class="form-control form-control-lg text-center" 
+                placeholder="65"
+              />
+            </div>
+            <div class="text-center">
+              <button @click="savePrixDefault" class="btn btn-primary btn-lg">
+                💾 Sauvegarder prix par défaut
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col">
-        <input v-model="newRegie.description" placeholder="Description" class="form-control" />
-      </div>
-      <div class="col">
-        <input v-model="newRegie.prixHeure" placeholder="Prix/heure (CHF)" class="form-control" type="number" step="0.01" />
-      </div>
-    </div>
-    <div class="text-center mb-4">
-      <button @click="addRegie" class="btn btn-primary">Ajouter</button>
     </div>
 
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Nom</th>
-          <th>Description</th>
-          <th>Prix/heure (CHF)</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="regie in regies" :key="regie.id">
-          <template v-if="editId === regie.id">
-            <td><input v-model="editRegie.nom" class="form-control" /></td>
-            <td><input v-model="editRegie.description" class="form-control" /></td>
-            <td><input v-model="editRegie.prixHeure" class="form-control" type="number" step="0.01" /></td>
-            <td>
-              <button @click="updateRegie(regie.id)" class="btn btn-success btn-sm">✔</button>
-              <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
-            </td>
-          </template>
-          <template v-else>
-            <td>{{ regie.nom }}</td>
-            <td>{{ regie.description }}</td>
-            <td>{{ regie.prixHeure }} CHF</td>
-            <td>
-              <button @click="startEdit(regie)" class="btn btn-warning btn-sm">✎</button>
-              <button @click="deleteRegie(regie.id)" class="btn btn-danger btn-sm">🗑</button>
-            </td>
-          </template>
-        </tr>
-      </tbody>
-    </table>
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <div class="alert alert-info">
+          <h6>ℹ️ Comment ça fonctionne :</h6>
+          <ul class="mb-0">
+            <li>Définissez ici le <strong>prix régie par défaut</strong> de votre entreprise</li>
+            <li>Ce prix sera automatiquement proposé lors de la création de nouveaux cantiers</li>
+            <li>Vous pourrez toujours modifier le prix pour chaque cantier individuellement</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import RetourButton from '@/components/RetourButton.vue';
 
@@ -66,63 +59,39 @@ export default {
     RetourButton
   },
   setup() {
-    const regies = ref([]);
-    const newRegie = ref({
-      nom: '',
-      description: '',
-      prixHeure: ''
-    });
+    const prixRegieDefault = ref(65);
 
-    const editId = ref(null);
-    const editRegie = ref({});
-
-    const fetchRegies = async () => {
-      const querySnapshot = await getDocs(collection(db, 'regies'));
-      regies.value = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a, b) => a.nom.localeCompare(b.nom));
-    };
-
-    const addRegie = async () => {
-      await addDoc(collection(db, 'regies'), newRegie.value);
-      newRegie.value = { nom: '', description: '', prixHeure: '' };
-      fetchRegies();
-    };
-
-    const startEdit = (regie) => {
-      editId.value = regie.id;
-      editRegie.value = { ...regie };
-    };
-
-    const cancelEdit = () => {
-      editId.value = null;
-      editRegie.value = {};
-    };
-
-    const updateRegie = async (id) => {
-      await updateDoc(doc(db, 'regies', id), editRegie.value);
-      cancelEdit();
-      fetchRegies();
-    };
-
-    const deleteRegie = async (id) => {
-      if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'regies', id));
-        fetchRegies();
+    const fetchPrixDefault = async () => {
+      try {
+        const docRef = doc(db, 'configuration', 'regies');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          prixRegieDefault.value = docSnap.data().prixDefault || 65;
+        }
+      } catch (error) {
+        console.log('Aucune configuration trouvée, utilisation valeur par défaut');
       }
     };
 
-    onMounted(fetchRegies);
+    const savePrixDefault = async () => {
+      try {
+        const docRef = doc(db, 'configuration', 'regies');
+        await setDoc(docRef, {
+          prixDefault: prixRegieDefault.value,
+          updatedAt: new Date()
+        });
+        alert('✅ Prix par défaut sauvegardé avec succès!');
+      } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        alert('❌ Erreur lors de la sauvegarde');
+      }
+    };
+
+    onMounted(fetchPrixDefault);
 
     return {
-      regies,
-      newRegie,
-      addRegie,
-      editId,
-      editRegie,
-      startEdit,
-      cancelEdit,
-      updateRegie,
-      deleteRegie
+      prixRegieDefault,
+      savePrixDefault
     };
   }
 };
