@@ -143,11 +143,7 @@ const saveInterimaire = async () => {
       nom: newInterimaire.value.nom,
       prenom: newInterimaire.value.prenom,
       telephone: newInterimaire.value.telephone,
-      email: newInterimaire.value.email,
-      specialite: newInterimaire.value.specialite,
-      tarif_horaire: newInterimaire.value.tarifHoraire || 0,
-      agence: newInterimaire.value.agence,
-      notes: newInterimaire.value.notes
+      email: newInterimaire.value.email
     };
 
     if (editingInterimaire.value) {
