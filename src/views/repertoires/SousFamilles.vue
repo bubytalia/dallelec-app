@@ -70,9 +70,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { ref, onMounted, computed, inject } from 'vue';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -99,10 +97,15 @@ export default {
       ordre: 0
     });
 
+    const supabase = inject('supabase');
+
     const fetchFamilles = async () => {
-      const snapshot = await getDocs(collection(db, 'familles'));
-      familles.value = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+      const { data, error } = await supabase.from('familles').select('*');
+      if (error) {
+        console.error('Errore caricamento familles:', error);
+        return;
+      }
+      familles.value = data
         .sort((a, b) => {
           const aOrder = Number.isFinite(Number(a.ordrePDF)) ? Number(a.ordrePDF) : Number.POSITIVE_INFINITY;
           const bOrder = Number.isFinite(Number(b.ordrePDF)) ? Number(b.ordrePDF) : Number.POSITIVE_INFINITY;
@@ -112,18 +115,26 @@ export default {
     };
 
     const fetchSousFamilles = async () => {
-      const snapshot = await getDocs(collection(db, 'sousfamilles'));
-      sousFamilles.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const { data, error } = await supabase.from('sousfamilles').select('*');
+      if (error) {
+        console.error('Errore caricamento sousfamilles:', error);
+        return;
+      }
+      sousFamilles.value = data || [];
     };
 
     const addSousFamille = async () => {
       if (!newSousFamille.value.nom || !newSousFamille.value.familleId) return;
-      await addDoc(collection(db, 'sousfamilles'), {
+      const { error } = await supabase.from('sousfamilles').insert({
         nom: newSousFamille.value.nom,
         pourcentage: newSousFamille.value.pourcentage,
         familleId: newSousFamille.value.familleId,
         ordre: newSousFamille.value.ordre || 0
       });
+      if (error) {
+        console.error('Errore aggiunta sousfamille:', error);
+        return;
+      }
       newSousFamille.value = { nom: '', pourcentage: null, familleId: '', ordre: 0 };
       fetchSousFamilles();
     };
@@ -144,19 +155,27 @@ export default {
     };
 
     const updateSousFamille = async (id) => {
-      await updateDoc(doc(db, 'sousfamilles', id), {
+      const { error } = await supabase.from('sousfamilles').update({
         nom: editSousFamille.value.nom,
         pourcentage: editSousFamille.value.pourcentage,
         familleId: editSousFamille.value.familleId,
         ordre: editSousFamille.value.ordre || 0
-      });
+      }).eq('id', id);
+      if (error) {
+        console.error('Errore aggiornamento sousfamille:', error);
+        return;
+      }
       cancelEdit();
       fetchSousFamilles();
     };
 
     const deleteSousFamille = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'sousfamilles', id));
+        const { error } = await supabase.from('sousfamilles').delete().eq('id', id);
+        if (error) {
+          console.error('Errore cancellazione sousfamille:', error);
+          return;
+        }
         fetchSousFamilles();
       }
     };

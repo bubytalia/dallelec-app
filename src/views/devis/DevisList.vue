@@ -73,10 +73,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, inject } from 'vue';
 import { useRouter } from 'vue-router';
-import { db } from '@/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 // Prop per controllare se visualizzare il titolo
 defineProps({
@@ -102,19 +100,25 @@ const router = useRouter();
 // Opzioni di stato disponibili per i devis (escludiamo "Brouillon" in quanto gestito dal flag draft)
 const statusOptions = ['En cours', 'Accepté', 'Non accepté'];
 
-// Fetch data da Firestore (devis, clients, techniciens e sousfamilles)
-onMounted(async () => {
-  const [devisSnap, clientsSnap, techSnap, sousSnap] = await Promise.all([
-    getDocs(collection(db, 'devis')),
-    getDocs(collection(db, 'clients')),
-    getDocs(collection(db, 'techniciens')),
-    getDocs(collection(db, 'sousfamilles'))
-  ]);
+const supabase = inject('supabase');
 
-  devis.value = devisSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  clients.value = clientsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  techniciens.value = techSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  sousfamilles.value = sousSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+// Fetch data da Supabase (devis, clients, techniciens e sousfamilles)
+onMounted(async () => {
+  try {
+    const [devisRes, clientsRes, techRes, sousRes] = await Promise.all([
+      supabase.from('devis').select('*'),
+      supabase.from('clients').select('*'),
+      supabase.from('techniciens').select('*'),
+      supabase.from('sousfamilles').select('*')
+    ]);
+
+    devis.value = devisRes.data || [];
+    clients.value = clientsRes.data || [];
+    techniciens.value = techRes.data || [];
+    sousfamilles.value = sousRes.data || [];
+  } catch (error) {
+    console.error('Errore caricamento dati:', error);
+  }
 });
 
 // Computed per filtrare e ordinare i devis in base a client, technicien, stato e numero
@@ -180,10 +184,11 @@ const voirDevis = (id) => {
   router.push(`/admin/devis/edit/${id}`);
 };
 
-// Aggiorna lo stato del devis su Firestore quando l'utente seleziona un nuovo stato.
+// Aggiorna lo stato del devis su Supabase quando l'utente seleziona un nuovo stato.
 const updateDevisStatus = async (id, newStatus) => {
   try {
-    await updateDoc(doc(db, 'devis', id), { status: newStatus });
+    const { error } = await supabase.from('devis').update({ status: newStatus }).eq('id', id);
+    if (error) throw error;
   } catch (error) {
     console.error('Erreur lors de la mise à jour du statut du devis:', error);
   }
@@ -196,7 +201,8 @@ const effacerDevis = async (id) => {
   }
   
   try {
-    await deleteDoc(doc(db, 'devis', id));
+    const { error } = await supabase.from('devis').delete().eq('id', id);
+    if (error) throw error;
     // Rimuovi il devis dalla lista locale
     devis.value = devis.value.filter(d => d.id !== id);
     alert('Devis supprimé avec succès.');
