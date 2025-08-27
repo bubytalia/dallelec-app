@@ -26,6 +26,8 @@
 </template>
 
 <script>
+import { auth } from '../firebase.js';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { supabase } from '../supabase.js';
 
 export default {
@@ -49,13 +51,9 @@ export default {
       this.error = '';
       
       try {
-        // Autenticazione Supabase
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email: this.email,
-          password: this.password
-        });
-        
-        if (authError) throw authError;
+        // Autenticazione Firebase
+        const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
+        const user = userCredential.user;
         
         // Determina ruolo controllando le anagrafiche
         let role = null;
