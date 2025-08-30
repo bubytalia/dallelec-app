@@ -1,0 +1,152 @@
+[
+  {
+    "id": 50,
+    "firebase_id": "2NHusCOWNrd3f7K5TUfW",
+    "nom": "Distance entre le supports",
+    "ordre": 5,
+    "visible_pdf": true,
+    "ordre_pdf": 5,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 51,
+    "firebase_id": "2dwiVwENDOTbpyI1ZpFz",
+    "nom": "taille chantier",
+    "ordre": 8,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 52,
+    "firebase_id": "AAepWPfPRTsRXYBIqAZy",
+    "nom": "type chantier",
+    "ordre": 9,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 53,
+    "firebase_id": "FjxM7Q8vYkslrQMCsOaY",
+    "nom": "Prises et interrupteurs",
+    "ordre": 3,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 54,
+    "firebase_id": "HBn19GnAmja854mq1yKV",
+    "nom": "type de supports",
+    "ordre": 4,
+    "visible_pdf": true,
+    "ordre_pdf": 3,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 55,
+    "firebase_id": "JM1dUgoh3Uv2KoPq7Mff",
+    "nom": "Tableaux électriques",
+    "ordre": 4,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 56,
+    "firebase_id": "OQWY4gFSed2xzMtuVnaa",
+    "nom": "Éclairage",
+    "ordre": 2,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 57,
+    "firebase_id": "UE0nBj1Auj7S99DZDxX3",
+    "nom": "limitation horaires",
+    "ordre": 10,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 58,
+    "firebase_id": "Vj9CryTk6iuWSLrtetnD",
+    "nom": "marque ",
+    "ordre": 1,
+    "visible_pdf": true,
+    "ordre_pdf": 2,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 59,
+    "firebase_id": "XT5IrayqKIJzHHxmQrTa",
+    "nom": "type de pendard",
+    "ordre": 6,
+    "visible_pdf": true,
+    "ordre_pdf": 6,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 60,
+    "firebase_id": "iGv0TmwH15mGXJSKPGhr",
+    "nom": "continuité travail",
+    "ordre": 11,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 61,
+    "firebase_id": "mUrNYuMnQLxajKMYUkfy",
+    "nom": "Électricité générale",
+    "ordre": 1,
+    "visible_pdf": false,
+    "ordre_pdf": 0,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 62,
+    "firebase_id": "rnOzO1O1JvaHhSDT04Hw",
+    "nom": "hauteur de travail",
+    "ordre": 2,
+    "visible_pdf": true,
+    "ordre_pdf": 1,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 63,
+    "firebase_id": "tE3iYKxZWmAr9bHo28nI",
+    "nom": "type de fixation",
+    "ordre": 3,
+    "visible_pdf": true,
+    "ordre_pdf": 4,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  },
+  {
+    "id": 64,
+    "firebase_id": "zhhAw1veB6Jm45Zwmc5x",
+    "nom": "taille pendard",
+    "ordre": 7,
+    "visible_pdf": true,
+    "ordre_pdf": 7,
+    "created_at": "2025-08-30T15:48:52.064268",
+    "updated_at": "2025-08-30T15:48:52.064268"
+  }
+]

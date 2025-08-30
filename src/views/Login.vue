@@ -21,12 +21,24 @@
           {{ loading ? 'Connexion...' : 'Se connecter' }}
         </button>
       </form>
+      
+      <div class="text-center mt-3">
+        <router-link to="/register" class="text-decoration-none">
+          Pas encore de compte ? S'inscrire
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { supabase } from '../supabase.js';
+import { createClient } from '@supabase/supabase-js';
+
+// Configurazione Supabase con credenziali dirette
+const supabaseUrl = 'https://aumhdoiwtichjlvbrnrl.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1bWhkb2l3dGljaGpsdmJybnJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NjU5OTEsImV4cCI6MjA3MjE0MTk5MX0.5FXNRebRq55y3SkeoSeKdR-kN4nf1H864nSpwa7rSeA';
+const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
 export default {
   name: 'Login',
@@ -48,39 +60,41 @@ export default {
       this.loading = true;
       this.error = '';
       
-      // Test connessione Supabase
-      console.log('Testing Supabase connection...');
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
-      console.log('Attempting login for:', this.email);
-      
       try {
-        // LOGIN TEMPORANEO - Bypass autenticazione
-        console.log('Login temporaneo per testare i dati');
-        const user = { email: this.email };
+        // AUTENTICAZIONE SUPABASE REALE
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: this.email,
+          password: this.password
+        });
         
-        // Determina ruolo basato sull'email
-        let role = null;
-        let userName = this.email;
-        
-        if (this.email === 'admin@dallelec.com') {
-          role = 'admin';
-          userName = 'Admin Dallelec';
-        } else if (this.email === 'chef@dallelec.com') {
-          role = 'chef';
-          userName = 'Chef Dallelec';
-        } else if (this.email === 'ouvrier@dallelec.com') {
-          role = 'ouvrier';
-          userName = 'Ouvrier Dallelec';
+        if (error) {
+          throw error;
         }
         
-        if (!role) {
-          throw new Error('Accesso non autorizzato. Email non trovata nelle anagrafiche: ' + this.email);
+        if (!data.user) {
+          throw new Error('Errore di autenticazione');
         }
         
-        // Salva il ruolo nel localStorage
+        // Ottieni il ruolo dell'utente dal database
+        const { data: userData, error: userError } = await supabaseClient
+          .from('users')
+          .select('role, name')
+          .eq('email', this.email)
+          .single();
+        
+        let role = 'ouvrier'; // Default
+        let userName = data.user.email;
+        
+        if (userData && !userError) {
+          role = userData.role || 'ouvrier';
+          userName = userData.name || data.user.email;
+        }
+        
+        // Salva i dati utente
         localStorage.setItem('userRole', role);
-        localStorage.setItem('userEmail', this.email);
+        localStorage.setItem('userEmail', data.user.email);
         localStorage.setItem('userName', userName);
+        localStorage.setItem('userId', data.user.id);
         
         // Redirect basato sul ruolo
         switch (role) {
@@ -94,12 +108,20 @@ export default {
             this.$router.push('/ouvrier');
             break;
           default:
-            throw new Error('Ruolo utente non valido: ' + role);
+            this.$router.push('/ouvrier'); // Default fallback
         }
         
       } catch (error) {
         console.error('Erreur login:', error);
-        this.error = error.message || 'Erreur de connexion';
+        
+        // Messaggi di errore user-friendly
+        if (error.message === 'Invalid login credentials') {
+          this.error = 'Email ou mot de passe incorrect';
+        } else if (error.message === 'Email not confirmed') {
+          this.error = 'Veuillez confirmer votre email';
+        } else {
+          this.error = error.message || 'Erreur de connexion';
+        }
       } finally {
         this.loading = false;
       }

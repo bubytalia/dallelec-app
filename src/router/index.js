@@ -3,6 +3,7 @@ import { requireAuth, requireRole } from './guards.js';
 
 // Auth
 import Login from '@/views/Login.vue';
+import Register from '@/views/Register.vue';
 
 // Dashboard
 import AdminDashboard from '@/views/AdminDashboard.vue';
@@ -64,6 +65,8 @@ import AdminBackup from '@/views/AdminBackup.vue';
 
 const routes = [
   { path: '/', name: 'Login', component: Login },
+  { path: '/login', name: 'LoginPage', component: Login },
+  { path: '/register', name: 'Register', component: Register },
   
   // Admin routes
   { path: '/admin', name: 'AdminDashboard', component: AdminDashboard, beforeEnter: requireRole(['admin']) },

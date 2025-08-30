@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "firebase_id": "M3CPGLVrrG8llpHfq3dJ",
+    "nom": "Lumielec SA",
+    "adresse": " Rue de Genève 122",
+    "ville": "1226 Thônex",
+    "telephone": "+4122 559 30 39",
+    "email_contact": "Info@lumielec.ch",
+    "email_compta": "",
+    "created_at": "2025-08-30T15:02:51.079787",
+    "updated_at": "2025-08-30T15:02:51.079787"
+  },
+  {
+    "id": 2,
+    "firebase_id": "OkF8L3PAbPgNjUFSWOAk",
+    "nom": "Swisspro SA",
+    "adresse": "Avenue de Longemalle 13",
+    "ville": "Renens",
+    "telephone": "+4121 654 22 22",
+    "email_contact": " infosr@swisspro.ch",
+    "email_compta": "",
+    "created_at": "2025-08-30T15:02:51.079787",
+    "updated_at": "2025-08-30T15:02:51.079787"
+  },
+  {
+    "id": 3,
+    "firebase_id": "UqipehMWNWkmNoeAZUU0",
+    "nom": "Etavis SA",
+    "adresse": "Rue du Caudray 6",
+    "ville": "1020 Renens",
+    "telephone": "+4121 614 44 44",
+    "email_contact": "lausanne@etavis.ch",
+    "email_compta": "",
+    "created_at": "2025-08-30T15:02:51.079787",
+    "updated_at": "2025-08-30T15:02:51.079787"
+  },
+  {
+    "id": 4,
+    "firebase_id": "oPCD1Aw4irihXrdXLnDb",
+    "nom": "Azienda Demo Sàrl",
+    "adresse": "Strada Demo 2",
+    "ville": "Bellinzona",
+    "telephone": "091 765 4321",
+    "email_contact": null,
+    "email_compta": "",
+    "created_at": "2025-08-30T15:02:51.079787",
+    "updated_at": "2025-08-30T15:02:51.079787"
+  },
+  {
+    "id": 5,
+    "firebase_id": "sjNBXqAWRtH7ZY08J4ZY",
+    "nom": "Client Test SA",
+    "adresse": "Via Esempio 1",
+    "ville": "Lugano",
+    "telephone": "091 123 4567",
+    "email_contact": null,
+    "email_compta": "",
+    "created_at": "2025-08-30T15:02:51.079787",
+    "updated_at": "2025-08-30T15:02:51.079787"
+  },
+  {
+    "id": 6,
+    "firebase_id": "vkSi2DL8qqPv3yV9gCu3",
+    "nom": "Oiken Solutions SA",
+    "adresse": "Rue de l’Industrie 43",
+    "ville": "1951 Sion",
+    "telephone": "+4127 617 30 00",
+    "email_contact": "",
+    "email_compta": "",
+    "created_at": "2025-08-30T15:02:51.079787",
+    "updated_at": "2025-08-30T15:02:51.079787"
+  },
+  {
+    "id": 7,
+    "firebase_id": "zuXHEnFIftspTlio8dlA",
+    "nom": "CIEL Electricité SA",
+    "adresse": "Av. de Sévelin 18",
+    "ville": "1004 Lausanne",
+    "telephone": "+4121 623 35 35",
+    "email_contact": "info@cielelectricite.com",
+    "email_compta": "",
+    "created_at": "2025-08-30T15:02:51.079787",
+    "updated_at": "2025-08-30T15:02:51.079787"
+  }
+]
