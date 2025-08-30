@@ -1,0 +1,38 @@
+BACKUP AUTOMATICO DALLELEC
+============================
+Data: 30/08/2025, 19:59:45
+Database: Supabase (rilevamento automatico)
+Tabelle rilevate: 14
+Tabelle con dati: 8
+Totale record: 203
+
+DETTAGLIO TABELLE:
+- produits: 99 record
+- sousfamilles: 47 record
+- familles: 15 record
+- chantiers: 12 record
+- techniciens: 10 record
+- clients: 7 record
+- supplements: 7 record
+- devis: 6 record
+- metrages: 0 record
+- factures: 0 record
+- collaborateurs: 0 record
+- conditions: 0 record
+- heures: 0 record
+- heuresChef: 0 record
+
+FILE CREATI:
+- backup-completo.json (backup principale con tutte le tabelle)
+- clients.json (7 record)
+- chantiers.json (12 record)
+- devis.json (6 record)
+- produits.json (99 record)
+- supplements.json (7 record)
+- techniciens.json (10 record)
+- familles.json (15 record)
+- sousfamilles.json (47 record)
+
+NOTA: Questo backup è stato generato automaticamente.
+Tutte le tabelle presenti nel database sono state rilevate e salvate.
+Non è necessario aggiornare manualmente la lista delle tabelle.

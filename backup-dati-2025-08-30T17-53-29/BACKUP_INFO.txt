@@ -1,0 +1,39 @@
+BACKUP DALLELEC DATI
+========================
+Data: 30/08/2025, 19:53:31
+Database: Supabase
+Totale record: 203
+Tabelle salvate: 14
+
+DETTAGLIO TABELLE:
+- clients: 7 record
+- chantiers: 12 record
+- devis: 6 record
+- produits: 99 record
+- supplements: 7 record
+- metrages: 0 record
+- factures: 0 record
+- collaborateurs: 0 record
+- techniciens: 10 record
+- familles: 15 record
+- sousfamilles: 47 record
+- conditions: 0 record
+- heures: 0 record
+- heuresChef: 0 record
+
+FILE CREATI:
+- backup-completo.json (backup principale)
+- clients.json
+- chantiers.json
+- devis.json
+- produits.json
+- supplements.json
+- metrages.json
+- factures.json
+- collaborateurs.json
+- techniciens.json
+- familles.json
+- sousfamilles.json
+- conditions.json
+- heures.json
+- heuresChef.json

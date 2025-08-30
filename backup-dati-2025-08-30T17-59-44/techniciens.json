@@ -1,0 +1,112 @@
+[
+  {
+    "id": 1,
+    "firebase_id": "6TBlTUp4cuLTGR4Lid2N",
+    "nom": "Douillot",
+    "prenom": "Vincent",
+    "email": "Vincent.Douillot@swisspro.ch",
+    "telephone": "+41 79 768 50 10",
+    "client_id": "OkF8L3PAbPgNjUFSWOAk",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 2,
+    "firebase_id": "D1EBHt1R5PywFmixscSn",
+    "nom": "Neves ",
+    "prenom": "Loic",
+    "email": "loic.neves@etavis.ch",
+    "telephone": "+41796916899",
+    "client_id": "UqipehMWNWkmNoeAZUU0",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 3,
+    "firebase_id": "NG6VjtEv7nyHfSqEW7WF",
+    "nom": "Rossi",
+    "prenom": "Mario",
+    "email": "mario.rossi@dallelec.ch",
+    "telephone": "079 123 4567",
+    "client_id": null,
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 4,
+    "firebase_id": "a2lBDYkApwMsmTohabOs",
+    "nom": "Maggitti",
+    "prenom": "Antony",
+    "email": "AMaggitti@cielelectricite.com",
+    "telephone": "+41793665753",
+    "client_id": "zuXHEnFIftspTlio8dlA",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 5,
+    "firebase_id": "fbewLfOPGfIJe0dy4AWC",
+    "nom": "Bouslah",
+    "prenom": "Loihade",
+    "email": "loihade.bouslah@etavis.ch",
+    "telephone": "41787507952",
+    "client_id": "UqipehMWNWkmNoeAZUU0",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 6,
+    "firebase_id": "hQxjCyZTcAhymtEiNHZ4",
+    "nom": "Chalmeau",
+    "prenom": "Frederic",
+    "email": "frederic.chalmeau@etavis.ch",
+    "telephone": "+41 79 537 17 16",
+    "client_id": "UqipehMWNWkmNoeAZUU0",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 7,
+    "firebase_id": "jWxpMeNTxH5OJ0cBC3M8",
+    "nom": "Buri",
+    "prenom": "Marc",
+    "email": "marcb@lumielec.ch",
+    "telephone": "+41768240615",
+    "client_id": "M3CPGLVrrG8llpHfq3dJ",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 8,
+    "firebase_id": "kEBdzHveSmOdNl394dPY",
+    "nom": "Bianchi",
+    "prenom": "Luca",
+    "email": "luca.bianchi@dallelec.ch",
+    "telephone": "079 765 4321",
+    "client_id": null,
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 9,
+    "firebase_id": "n113EeA28Xo26FaCmcW3",
+    "nom": "Vernay",
+    "prenom": "Benjamin",
+    "email": "benjamin.vernay@oiken.ch",
+    "telephone": "+41 79 392 80 57",
+    "client_id": "vkSi2DL8qqPv3yV9gCu3",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  },
+  {
+    "id": 10,
+    "firebase_id": "wqCCPfvWIscswngsLgDJ",
+    "nom": "Thana",
+    "prenom": "Wicky",
+    "email": "wicky@cielelectricite.com",
+    "telephone": "+41793121031",
+    "client_id": "zuXHEnFIftspTlio8dlA",
+    "created_at": "2025-08-30T15:02:51.264405",
+    "updated_at": "2025-08-30T15:02:51.264405"
+  }
+]

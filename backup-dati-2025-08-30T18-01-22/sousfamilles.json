@@ -1,0 +1,472 @@
+[
+  {
+    "id": 146,
+    "firebase_id": "0Yp6k3PPHHGaDbjwkWeB",
+    "nom": "600/800 mm.",
+    "famille_id": "zhhAw1veB6Jm45Zwmc5x",
+    "ordre": 1,
+    "pourcentage": 2,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 147,
+    "firebase_id": "11RZHiiD3UA8B5QQluZW",
+    "nom": "110 cm.",
+    "famille_id": "2NHusCOWNrd3f7K5TUfW",
+    "ordre": 1,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 148,
+    "firebase_id": "1EE7H4cUJb5ZYvk2IN9t",
+    "nom": "> 1500 mm.",
+    "famille_id": "zhhAw1veB6Jm45Zwmc5x",
+    "ordre": 4,
+    "pourcentage": 2,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 149,
+    "firebase_id": "1kxLOgSeQsefWWPDBvHt",
+    "nom": "niedax",
+    "famille_id": "Vj9CryTk6iuWSLrtetnD",
+    "ordre": 1,
+    "pourcentage": 8,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 150,
+    "firebase_id": "34oRvTFnc9zXmcCJWbyn",
+    "nom": "legère",
+    "famille_id": "XT5IrayqKIJzHHxmQrTa",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 151,
+    "firebase_id": "5QC4DlFYu9QAHCBtJUNL",
+    "nom": "900/1200 mm.",
+    "famille_id": "zhhAw1veB6Jm45Zwmc5x",
+    "ordre": 2,
+    "pourcentage": 2,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 152,
+    "firebase_id": "73aAMBLwfuZ3AyeOYPq4",
+    "nom": "standard",
+    "famille_id": "XT5IrayqKIJzHHxmQrTa",
+    "ordre": 1,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 153,
+    "firebase_id": "AXbbCttofJvaiT9v2x7j",
+    "nom": "> 5000 m.",
+    "famille_id": "2dwiVwENDOTbpyI1ZpFz",
+    "ordre": 3,
+    "pourcentage": 6,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 154,
+    "firebase_id": "BmIk9sMDF9UfRiPbtoVe",
+    "nom": "< 1000 m.",
+    "famille_id": "2dwiVwENDOTbpyI1ZpFz",
+    "ordre": 0,
+    "pourcentage": 6,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 155,
+    "firebase_id": "BvnuesdgM51Ky0q5FTU4",
+    "nom": "150 cm.",
+    "famille_id": "2NHusCOWNrd3f7K5TUfW",
+    "ordre": 5,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 156,
+    "firebase_id": "D35Egst2wqHISYXMCYSn",
+    "nom": "DIN et chimique",
+    "famille_id": "tE3iYKxZWmAr9bHo28nI",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 157,
+    "firebase_id": "FO8eRnpxOgMklkff30d1",
+    "nom": "400/500 cm.",
+    "famille_id": "rnOzO1O1JvaHhSDT04Hw",
+    "ordre": 4,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 158,
+    "firebase_id": "FmrCI1YyEyG0JUXi3BE2",
+    "nom": "non",
+    "famille_id": "UE0nBj1Auj7S99DZDxX3",
+    "ordre": 1,
+    "pourcentage": 0,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 159,
+    "firebase_id": "FxhSyO8HLtEmzcXLa3JG",
+    "nom": "2000/5000 m.",
+    "famille_id": "2dwiVwENDOTbpyI1ZpFz",
+    "ordre": 2,
+    "pourcentage": 6,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 160,
+    "firebase_id": "GYcDq9rszxkrFEGTgscs",
+    "nom": "220/250 cm.",
+    "famille_id": "rnOzO1O1JvaHhSDT04Hw",
+    "ordre": 1,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 161,
+    "firebase_id": "Gx0OEC8QVtnEN0Jaj7ep",
+    "nom": "300/400 cm.",
+    "famille_id": "rnOzO1O1JvaHhSDT04Hw",
+    "ordre": 3,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 162,
+    "firebase_id": "IusNfa4qnfrejg5cJZ4Z",
+    "nom": "Maintenance",
+    "famille_id": "mUrNYuMnQLxajKMYUkfy",
+    "ordre": 2,
+    "pourcentage": 7,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 163,
+    "firebase_id": "JBsGI3zhbbR1ayi4wEp7",
+    "nom": "< 500 mm.",
+    "famille_id": "zhhAw1veB6Jm45Zwmc5x",
+    "ordre": 0,
+    "pourcentage": 2,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 164,
+    "firebase_id": "NFpATSANKE5binhourtz",
+    "nom": "140 cm.",
+    "famille_id": "2NHusCOWNrd3f7K5TUfW",
+    "ordre": 4,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 165,
+    "firebase_id": "NJ3XWNbTjadEPlh9dw8T",
+    "nom": "clou (brides)",
+    "famille_id": "tE3iYKxZWmAr9bHo28nI",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 166,
+    "firebase_id": "O3SDDbPu06zx6gsw5gEy",
+    "nom": "oui",
+    "famille_id": "iGv0TmwH15mGXJSKPGhr",
+    "ordre": 2,
+    "pourcentage": 4,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 167,
+    "firebase_id": "PGf8KXmLVcJaE5QLSQYw",
+    "nom": "non",
+    "famille_id": "iGv0TmwH15mGXJSKPGhr",
+    "ordre": 1,
+    "pourcentage": 0,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 168,
+    "firebase_id": "Pryxbfz57FgRoPz7DIcq",
+    "nom": "1300/1500 mm.",
+    "famille_id": "zhhAw1veB6Jm45Zwmc5x",
+    "ordre": 3,
+    "pourcentage": 2,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 169,
+    "firebase_id": "SNFDK5xtGh3rjVZOgXGW",
+    "nom": "< 220 cm.",
+    "famille_id": "rnOzO1O1JvaHhSDT04Hw",
+    "ordre": 0,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 170,
+    "firebase_id": "U6CagTr3smbRdw6maz6k",
+    "nom": "Vis Béton",
+    "famille_id": "tE3iYKxZWmAr9bHo28nI",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 171,
+    "firebase_id": "UTbqz11ArA5kBS18JlPb",
+    "nom": "Halogène",
+    "famille_id": "OQWY4gFSed2xzMtuVnaa",
+    "ordre": 2,
+    "pourcentage": 6,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 172,
+    "firebase_id": "V2ly0wu6tvLG1sGAJEkl",
+    "nom": "pendard et console plafond",
+    "famille_id": "HBn19GnAmja854mq1yKV",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 173,
+    "firebase_id": "XG5y3X7KHfRSenvDLEoS",
+    "nom": "tiges fileté",
+    "famille_id": "HBn19GnAmja854mq1yKV",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 174,
+    "firebase_id": "ZCjoBmZPLdqbUwltV7m3",
+    "nom": "LED",
+    "famille_id": "OQWY4gFSed2xzMtuVnaa",
+    "ordre": 1,
+    "pourcentage": 4,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 175,
+    "firebase_id": "a5sCp6QmRL890Tbqw6bX",
+    "nom": "oui",
+    "famille_id": "UE0nBj1Auj7S99DZDxX3",
+    "ordre": 0,
+    "pourcentage": 4,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 176,
+    "firebase_id": "aWp72AFe4Gk6VXZoSgzj",
+    "nom": "120 cm.",
+    "famille_id": "2NHusCOWNrd3f7K5TUfW",
+    "ordre": 2,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 177,
+    "firebase_id": "abYZpUPuwydh3VUGYYQH",
+    "nom": "nouveau bâtiment",
+    "famille_id": "AAepWPfPRTsRXYBIqAZy",
+    "ordre": 0,
+    "pourcentage": 8,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 178,
+    "firebase_id": "dF8kaccf9WKHxPeV8G8k",
+    "nom": "rénovation",
+    "famille_id": "AAepWPfPRTsRXYBIqAZy",
+    "ordre": 1,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 179,
+    "firebase_id": "jYta1hR62mto7kbckqLF",
+    "nom": "lourde",
+    "famille_id": "XT5IrayqKIJzHHxmQrTa",
+    "ordre": 2,
+    "pourcentage": 15,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 180,
+    "firebase_id": "jbH51QvnN0VkuBELno6p",
+    "nom": "Console au mur",
+    "famille_id": "HBn19GnAmja854mq1yKV",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 181,
+    "firebase_id": "lfBTrpjP8Ofru2hoiBai",
+    "nom": "> 500 cm.",
+    "famille_id": "rnOzO1O1JvaHhSDT04Hw",
+    "ordre": 5,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 182,
+    "firebase_id": "mJsRGY0lndGGmOYZIcTy",
+    "nom": "Gujon",
+    "famille_id": "tE3iYKxZWmAr9bHo28nI",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 183,
+    "firebase_id": "npg57x10c5NVMXhGqj7z",
+    "nom": "Lanz",
+    "famille_id": "Vj9CryTk6iuWSLrtetnD",
+    "ordre": 2,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 184,
+    "firebase_id": "oWdcbo2QrukpdBF53bKI",
+    "nom": "1000/2000 m.",
+    "famille_id": "2dwiVwENDOTbpyI1ZpFz",
+    "ordre": 1,
+    "pourcentage": 6,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 185,
+    "firebase_id": "pjMhWwEsSgWLs6yo93q3",
+    "nom": "Direct au mur ou plafond",
+    "famille_id": "HBn19GnAmja854mq1yKV",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 186,
+    "firebase_id": "qINVhaKV9NctlGn9pfJi",
+    "nom": "100 cm.",
+    "famille_id": "2NHusCOWNrd3f7K5TUfW",
+    "ordre": 0,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 187,
+    "firebase_id": "tmYXhbcTAD5MBksyuTDc",
+    "nom": "Obo Bettermann",
+    "famille_id": "Vj9CryTk6iuWSLrtetnD",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 188,
+    "firebase_id": "twPqOUBOvqVHKEOVjgru",
+    "nom": "pendard et consoles DIN",
+    "famille_id": "HBn19GnAmja854mq1yKV",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 189,
+    "firebase_id": "ug4jlQ0zekbXPZXsR9ev",
+    "nom": "cheville a frapper",
+    "famille_id": "tE3iYKxZWmAr9bHo28nI",
+    "ordre": 0,
+    "pourcentage": 5,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 190,
+    "firebase_id": "w0t8hkEgSygbIdDQP0Pi",
+    "nom": "Installation",
+    "famille_id": "mUrNYuMnQLxajKMYUkfy",
+    "ordre": 1,
+    "pourcentage": 9,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 191,
+    "firebase_id": "yEuxOswNan9pPtg6qP5g",
+    "nom": "130 cm.",
+    "famille_id": "2NHusCOWNrd3f7K5TUfW",
+    "ordre": 3,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  },
+  {
+    "id": 192,
+    "firebase_id": "ySAf1513FNWGUGVXqjDC",
+    "nom": "250/300 cm.",
+    "famille_id": "rnOzO1O1JvaHhSDT04Hw",
+    "ordre": 2,
+    "pourcentage": 3,
+    "created_at": "2025-08-30T15:48:52.102935",
+    "updated_at": "2025-08-30T15:48:52.102935"
+  }
+]

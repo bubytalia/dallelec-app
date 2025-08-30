@@ -1,0 +1,65 @@
+[
+  {
+    "id": 26,
+    "firebase_id": "0HlIIEXFYLYQb9ZLFFYO",
+    "nom": "T avec CDC",
+    "valeur": 4,
+    "ordre": 4,
+    "created_at": "2025-08-30T15:48:52.008061",
+    "updated_at": "2025-08-30T15:48:52.008061"
+  },
+  {
+    "id": 27,
+    "firebase_id": "0xevKjwH3VqepTPovLiv",
+    "nom": "virage fabbriqué",
+    "valeur": 3,
+    "ordre": 1,
+    "created_at": "2025-08-30T15:48:52.008061",
+    "updated_at": "2025-08-30T15:48:52.008061"
+  },
+  {
+    "id": 28,
+    "firebase_id": "6Yb1iUnnWemqoqbbmgOT",
+    "nom": "T fabbriqué",
+    "valeur": 3,
+    "ordre": 3,
+    "created_at": "2025-08-30T15:48:52.008061",
+    "updated_at": "2025-08-30T15:48:52.008061"
+  },
+  {
+    "id": 29,
+    "firebase_id": "FSn9E9FjvlzZY4dqUPEO",
+    "nom": "réduction",
+    "valeur": 3,
+    "ordre": 6,
+    "created_at": "2025-08-30T15:48:52.008061",
+    "updated_at": "2025-08-30T15:48:52.008061"
+  },
+  {
+    "id": 30,
+    "firebase_id": "Zg4k5hTPsy7t4LdkEHRs",
+    "nom": "monté et descente",
+    "valeur": 3,
+    "ordre": 5,
+    "created_at": "2025-08-30T15:48:52.008061",
+    "updated_at": "2025-08-30T15:48:52.008061"
+  },
+  {
+    "id": 31,
+    "firebase_id": "e09VdR90WRWa14jghOaU",
+    "nom": "virage avec CDC",
+    "valeur": 4,
+    "ordre": 2,
+    "created_at": "2025-08-30T15:48:52.008061",
+    "updated_at": "2025-08-30T15:48:52.008061"
+  },
+  {
+    "id": 32,
+    "firebase_id": "juHnbvSax7ZghSxJSv2A",
+    "nom": "départ/arrivé",
+    "valeur": 1.5,
+    "ordre": 7,
+    "created_at": "2025-08-30T15:48:52.008061",
+    "updated_at": "2025-08-30T15:48:52.008061"
+  }
+]
