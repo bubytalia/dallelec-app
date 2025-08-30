@@ -70,7 +70,8 @@
 </template>
 
 <script>
-import { ref, onMounted, computed, inject } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -97,7 +98,7 @@ export default {
       ordre: 0
     });
 
-    const supabase = inject('supabase');
+
 
     const fetchFamilles = async () => {
       const { data, error } = await supabase.from('familles').select('*');
@@ -120,7 +121,10 @@ export default {
         console.error('Errore caricamento sousfamilles:', error);
         return;
       }
-      sousFamilles.value = data || [];
+      sousFamilles.value = (data || []).map(sf => ({
+        ...sf,
+        familleId: sf.famille_id
+      }));
     };
 
     const addSousFamille = async () => {
@@ -128,7 +132,7 @@ export default {
       const { error } = await supabase.from('sousfamilles').insert({
         nom: newSousFamille.value.nom,
         pourcentage: newSousFamille.value.pourcentage,
-        familleId: newSousFamille.value.familleId,
+        famille_id: newSousFamille.value.familleId,
         ordre: newSousFamille.value.ordre || 0
       });
       if (error) {
@@ -158,7 +162,7 @@ export default {
       const { error } = await supabase.from('sousfamilles').update({
         nom: editSousFamille.value.nom,
         pourcentage: editSousFamille.value.pourcentage,
-        familleId: editSousFamille.value.familleId,
+        famille_id: editSousFamille.value.familleId,
         ordre: editSousFamille.value.ordre || 0
       }).eq('id', id);
       if (error) {

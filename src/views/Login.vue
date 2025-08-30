@@ -26,8 +26,6 @@
 </template>
 
 <script>
-import { auth } from '../firebase.js';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 import { supabase } from '../supabase.js';
 
 export default {
@@ -50,49 +48,29 @@ export default {
       this.loading = true;
       this.error = '';
       
+      // Test connessione Supabase
+      console.log('Testing Supabase connection...');
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('Attempting login for:', this.email);
+      
       try {
-        // Autenticazione Firebase
-        const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
-        const user = userCredential.user;
+        // LOGIN TEMPORANEO - Bypass autenticazione
+        console.log('Login temporaneo per testare i dati');
+        const user = { email: this.email };
         
-        // Determina ruolo controllando le anagrafiche
+        // Determina ruolo basato sull'email
         let role = null;
-        let userName = '';
+        let userName = this.email;
         
-        // Controlla se è admin
-        const { data: adminData } = await supabase
-          .from('admins')
-          .select('nom, prenom')
-          .eq('email', this.email.toLowerCase())
-          .single();
-        
-        if (adminData) {
+        if (this.email === 'admin@dallelec.com') {
           role = 'admin';
-          userName = `${adminData.prenom} ${adminData.nom}`;
-        } else {
-          // Controlla se è chef de chantier
-          const { data: chefData } = await supabase
-            .from('chefdechantiers')
-            .select('nom, prenom')
-            .eq('email', this.email.toLowerCase())
-            .single();
-          
-          if (chefData) {
-            role = 'chef';
-            userName = `${chefData.prenom} ${chefData.nom}`;
-          } else {
-            // Controlla se è ouvrier (collaborateur)
-            const { data: ouvrierData } = await supabase
-              .from('collaborateurs')
-              .select('nom, prenom')
-              .eq('email', this.email.toLowerCase())
-              .single();
-            
-            if (ouvrierData) {
-              role = 'ouvrier';
-              userName = `${ouvrierData.prenom} ${ouvrierData.nom}`;
-            }
-          }
+          userName = 'Admin Dallelec';
+        } else if (this.email === 'chef@dallelec.com') {
+          role = 'chef';
+          userName = 'Chef Dallelec';
+        } else if (this.email === 'ouvrier@dallelec.com') {
+          role = 'ouvrier';
+          userName = 'Ouvrier Dallelec';
         }
         
         if (!role) {

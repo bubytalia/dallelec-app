@@ -100,24 +100,26 @@ export default {
     const editClient = ref({});
 
     const fetchClients = async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('nom');
-      
-      if (!error && data) {
-        clients.value = data;
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .order('nom');
+        
+        if (error) throw error;
+        clients.value = data || [];
+      } catch (error) {
+        console.error('Errore caricamento clients:', error);
       }
     };
 
     const addClient = async () => {
-      const { error } = await supabase
-        .from('clients')
-        .insert([newClient.value]);
-      
-      if (error) {
-        console.error('Errore aggiunta client:', error);
-      } else {
+      try {
+        const { error } = await supabase
+          .from('clients')
+          .insert(newClient.value);
+        
+        if (error) throw error;
         newClient.value = {
           nom: '',
           adresse: '',
@@ -127,6 +129,8 @@ export default {
           email_compta: ''
         };
         fetchClients();
+      } catch (error) {
+        console.error('Errore aggiunta client:', error);
       }
     };
 
@@ -141,30 +145,32 @@ export default {
     };
 
     const updateClient = async (id) => {
-      const { error } = await supabase
-        .from('clients')
-        .update(editClient.value)
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Errore aggiornamento client:', error);
-      } else {
+      try {
+        const { error } = await supabase
+          .from('clients')
+          .update(editClient.value)
+          .eq('id', id);
+        
+        if (error) throw error;
         cancelEdit();
         fetchClients();
+      } catch (error) {
+        console.error('Errore aggiornamento client:', error);
       }
     };
 
     const deleteClient = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        const { error } = await supabase
-          .from('clients')
-          .delete()
-          .eq('id', id);
-        
-        if (error) {
-          console.error('Errore eliminazione client:', error);
-        } else {
+        try {
+          const { error } = await supabase
+            .from('clients')
+            .delete()
+            .eq('id', id);
+          
+          if (error) throw error;
           fetchClients();
+        } catch (error) {
+          console.error('Errore eliminazione client:', error);
         }
       }
     };

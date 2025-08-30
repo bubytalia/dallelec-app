@@ -34,6 +34,7 @@ export default {
         { name: 'interimaires', label: 'Intérimaires', path: '/admin/repertoires/interimaires' },
         { name: 'chantiers', label: 'Chantiers', path: '/admin/repertoires/chantiers' },
         { name: 'clients', label: 'Clients', path: '/admin/repertoires/clients' },
+        { name: 'devis', label: '📋 Devis', path: '/admin/repertoires/devis' },
         { name: 'produits', label: 'Produits', path: '/admin/repertoires/produits' },
         { name: 'familles', label: 'Familles de remises', path: '/admin/repertoires/familles' },
         { name: 'sousfamilles', label: 'Sous-familles', path: '/admin/repertoires/sousfamilles' },

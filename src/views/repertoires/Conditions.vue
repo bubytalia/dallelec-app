@@ -29,7 +29,7 @@
             v-model="newCondition.default"
             id="newDefault"
           />
-          <label class="form-check-label" for="newDefault">Par défaut</label>
+          <label class="form-check-label" for="newDefault">Actif</label>
         </div>
       </div>
     </div>
@@ -67,10 +67,10 @@
             </td>
           </template>
           <template v-else>
-            <td>{{ cond.texte }}</td>
+            <td>{{ cond.nom }}</td>
             <td>{{ cond.type === 'comprend' ? 'Comprend' : 'Ne comprend pas' }}</td>
             <td class="text-center">
-              <span v-if="cond.default">✔</span>
+              <span v-if="cond.active">✔</span>
             </td>
             <td>
               <button class="btn btn-warning btn-sm me-1" @click="startEdit(cond)">✎</button>
@@ -85,8 +85,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 export default {
@@ -102,15 +101,37 @@ export default {
     const editCondition = ref({ texte: '', type: '', default: false });
 
     const fetchConditions = async () => {
-      const snapshot = await getDocs(collection(db, 'conditions'));
-      conditions.value = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      try {
+        const { data, error } = await supabase
+          .from('conditions')
+          .select('*')
+          .order('ordre');
+        
+        if (error) throw error;
+        conditions.value = data || [];
+      } catch (error) {
+        console.error('Errore caricamento condizioni:', error);
+      }
     };
 
     const addCondition = async () => {
       if (newCondition.value.texte.trim() && newCondition.value.type) {
-        await addDoc(collection(db, 'conditions'), newCondition.value);
-        newCondition.value = { texte: '', type: '', default: false };
-        fetchConditions();
+        try {
+          const { error } = await supabase
+            .from('conditions')
+            .insert({
+              nom: newCondition.value.texte,
+              description: newCondition.value.texte,
+              type: newCondition.value.type,
+              active: newCondition.value.default
+            });
+          
+          if (error) throw error;
+          newCondition.value = { texte: '', type: '', default: false };
+          fetchConditions();
+        } catch (error) {
+          console.error('Errore aggiunta condizione:', error);
+        }
       }
     };
 
@@ -129,15 +150,38 @@ export default {
     };
 
     const updateCondition = async (id) => {
-      await updateDoc(doc(db, 'conditions', id), editCondition.value);
-      cancelEdit();
-      fetchConditions();
+      try {
+        const { error } = await supabase
+          .from('conditions')
+          .update({
+            nom: editCondition.value.texte,
+            description: editCondition.value.texte,
+            type: editCondition.value.type,
+            active: editCondition.value.default
+          })
+          .eq('id', id);
+        
+        if (error) throw error;
+        cancelEdit();
+        fetchConditions();
+      } catch (error) {
+        console.error('Errore aggiornamento condizione:', error);
+      }
     };
 
     const deleteCondition = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'conditions', id));
-        fetchConditions();
+        try {
+          const { error } = await supabase
+            .from('conditions')
+            .delete()
+            .eq('id', id);
+          
+          if (error) throw error;
+          fetchConditions();
+        } catch (error) {
+          console.error('Errore eliminazione condizione:', error);
+        }
       }
     };
 

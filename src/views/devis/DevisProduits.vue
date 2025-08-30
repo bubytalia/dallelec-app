@@ -110,9 +110,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, onBeforeRouteLeave } from 'vue-router';
-import { db } from '@/firebase';
-// Importiamo solo le funzioni necessarie per questo componente
-import { doc, getDoc, updateDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { supabase } from '../../supabase.js';
 import ProduitForm from '@/components/ProduitForm.vue';
 import SupplementDetails from '@/components/SupplementDetails.vue';
 import DataIntegrityCheck from '@/components/DataIntegrityCheck.vue';
@@ -154,12 +152,12 @@ const sauvegarderDevis = async (asDraft = false) => {
       total: devisTotal.value,
       discount: Number(remiseSupplementaire.value) || 0,
       draft: asDraft,
-      updatedAt: new Date()
+      updated_at: new Date().toISOString()
     };
     
     // Se non è una bozza, congela i dati per l'integrità storica
     if (!asDraft) {
-      updateData.dataCongelati = {
+      updateData.data_congelati = {
         produits: devisItems.value.map(item => ({
           ...item,
           congelatoIl: new Date().toISOString()
@@ -170,7 +168,12 @@ const sauvegarderDevis = async (asDraft = false) => {
       };
     }
     
-    await updateDoc(doc(db, 'devis', devisId), updateData);
+    const { error } = await supabase
+      .from('devis')
+      .update(updateData)
+      .eq('id', devisId);
+    
+    if (error) throw error;
     
     localStorage.removeItem('devisItems');
     // quando viene salvato definitivamente eliminiamo anche i dati del form e delle remises
@@ -205,13 +208,19 @@ const abandonnerDevis = async () => {
     return;
   }
   try {
-    await deleteDoc(doc(db, 'devis', devisId));
+    const { error } = await supabase
+      .from('devis')
+      .delete()
+      .eq('id', devisId);
+    
+    if (error) throw error;
+    
     localStorage.removeItem('devisItems');
     alert('Bozza eliminata.');
     router.push('/admin/devis/list');
   } catch (error) {
-    console.error('Erreur Firestore:', error);
-    alert('Erreur Firestore: ' + error.message);
+    console.error('Erreur Supabase:', error);
+    alert('Erreur Supabase: ' + error.message);
   }
 };
 
@@ -266,48 +275,58 @@ onBeforeRouteLeave(async (to, from, next) => {
 
 // Carica numero devis
 onMounted(async () => {
-  const devisRef = doc(db, 'devis', devisId);
-  const devisSnap = await getDoc(devisRef);
+  try {
+    const { data: devisData, error } = await supabase
+      .from('devis')
+      .select('*')
+      .eq('id', devisId)
+      .single();
+    
+    if (error) throw error;
 
-  if (devisSnap.exists()) {
-    const data = devisSnap.data();
-    numeroDevis.value = data.numero || '';
-    nomClient.value = data.nom || '';
-    nomChantier.value = data.adresse || '';
-    zones.value = data.zones || [];
-    modalitaPrezzi.value = data.modalitaPrezzi || 'scontistica';
+    if (devisData) {
+      numeroDevis.value = devisData.numero || '';
+      nomClient.value = devisData.nom || '';
+      nomChantier.value = devisData.adresse || '';
+      zones.value = devisData.zones || [];
+      modalitaPrezzi.value = devisData.modalita_prezzi || 'scontistica';
     
 
     
 
-    // Carica gli items del devis (prodotti) dal documento se esistenti
-    if (Array.isArray(data.produits) && data.produits.length > 0) {
-      devisItems.value = data.produits.map(item => ({ ...item }));
-    }
-    // Se esiste uno sconto salvato nel documento, caricalo come valore di default (verrà sovrascritto dal valore locale se presente)
-    if (data.discount !== undefined) {
-      remiseSupplementaire.value = Number(data.discount) || 0;
-    }
+      // Carica gli items del devis (prodotti) dal documento se esistenti
+      if (Array.isArray(devisData.produits) && devisData.produits.length > 0) {
+        devisItems.value = devisData.produits.map(item => ({ ...item }));
+      }
+      // Se esiste uno sconto salvato nel documento, caricalo come valore di default
+      if (devisData.discount !== undefined) {
+        remiseSupplementaire.value = Number(devisData.discount) || 0;
+      }
 
-    // Calcola la remise totale derivante dalle famiglie/sottofamiglie selezionate
-    // memorizzate nel campo `remises` del documento devis. Ogni chiave di `remises`
-    // rappresenta l'ID della famiglia e il valore è l'ID della sottofamiglia.
-    try {
-      const remisesObj = data.remises || {};
-      // Otteniamo tutti i documenti delle sousfamilles per poter leggerne il pourcentage.
-      const sousSnap = await getDocs(collection(db, 'sousfamilles'));
-      const allSous = sousSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      let totalPct = 0;
-      Object.values(remisesObj).forEach((sousId) => {
-        const sous = allSous.find(s => s.id === sousId);
-        if (sous && typeof sous.pourcentage !== 'undefined') {
-          totalPct += Number(sous.pourcentage) || 0;
-        }
-      });
-      remiseFamilles.value = totalPct;
-    } catch (e) {
-      console.warn('Errore nel calcolo della remise familière', e);
+      // Calcola la remise totale derivante dalle famiglie/sottofamiglie selezionate
+      try {
+        const remisesObj = devisData.remises || {};
+        // Otteniamo tutti i documenti delle sousfamilles per poter leggerne il pourcentage
+        const { data: allSous, error: sousError } = await supabase
+          .from('sousfamilles')
+          .select('*');
+        
+        if (sousError) throw sousError;
+        
+        let totalPct = 0;
+        Object.values(remisesObj).forEach((sousId) => {
+          const sous = allSous.find(s => s.id === sousId);
+          if (sous && typeof sous.pourcentage !== 'undefined') {
+            totalPct += Number(sous.pourcentage) || 0;
+          }
+        });
+        remiseFamilles.value = totalPct;
+      } catch (e) {
+        console.warn('Errore nel calcolo della remise familière', e);
+      }
     }
+  } catch (error) {
+    console.error('Errore caricamento devis:', error);
   }
 
   // Dopo aver caricato eventuali dati dal documento, cerchiamo un backup locale degli items.
@@ -326,16 +345,22 @@ onMounted(async () => {
     }
   }
 
-  const produitsSnap = await getDoc(doc(db, 'produits', 'liste'));
-if (produitsSnap.exists()) {
-  // Normalizziamo i prodotti in modo da avere sempre `article` e `description`
-  const items = produitsSnap.data().items || [];
-  produits.value = items.map(p => ({
-    ...p,
-    article: p.article ?? p.code ?? '',
-    description: p.description ?? p.nom ?? ''
-  }));
-}
+  // Carica prodotti da Supabase
+  try {
+    const { data: produitsData, error: produitsError } = await supabase
+      .from('produits')
+      .select('*');
+    
+    if (produitsError) throw produitsError;
+    
+    produits.value = (produitsData || []).map(p => ({
+      ...p,
+      article: p.article || '',
+      description: p.description || p.nom || ''
+    }));
+  } catch (error) {
+    console.error('Errore caricamento prodotti:', error);
+  }
 
   // Carica eventuale remiseSupplementaire dal localStorage
   try {

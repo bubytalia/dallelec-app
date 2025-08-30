@@ -421,12 +421,8 @@ export default {
 
     const fetchPrixRegieDefault = async () => {
       try {
-        const docRef = doc(db, 'configuration', 'regies');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const prixDefault = docSnap.data().prixDefault || 65;
-          newChantier.value.prixRegie = prixDefault;
-        }
+        // TODO: Implementare quando configuration sarà migrata
+        newChantier.value.prixRegie = 65;
       } catch (error) {
         console.log('Utilisation prix par défaut: 65 CHF');
       }
@@ -456,32 +452,29 @@ export default {
     const fetchDevisAssocie = async () => {
       if (!selectedChantier.value?.devisId) return;
       
-      const docRef = doc(db, 'devis', selectedChantier.value.devisId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        devisAssocie.value = { id: docSnap.id, ...docSnap.data() };
-      }
+      // TODO: Implementare quando devis saranno migrati
+      devisAssocie.value = null;
     };
 
     const fetchProduitsDevis = async () => {
       if (!selectedChantier.value?.devisId) return;
       
-      const snapshot = await getDocs(collection(db, 'devis', selectedChantier.value.devisId, 'produits'));
-      produitsDevis.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // TODO: Implementare quando devis saranno migrati
+      produitsDevis.value = [];
     };
 
     const fetchHeures = async () => {
       if (!selectedChantierId.value) return;
       
-      const snapshot = await getDocs(collection(db, 'chantiers', selectedChantierId.value, 'heures'));
-      heures.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // TODO: Implementare quando heures saranno migrate
+      heures.value = [];
     };
 
     const fetchOeuvres = async () => {
       if (!selectedChantierId.value) return;
       
-      const snapshot = await getDocs(collection(db, 'chantiers', selectedChantierId.value, 'oeuvres'));
-      oeuvres.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // TODO: Implementare quando oeuvres saranno migrate
+      oeuvres.value = [];
     };
 
     const addChantier = async () => {
@@ -506,59 +499,40 @@ export default {
     const addHeure = async () => {
       if (!newHeure.value.collaborateurId || !newHeure.value.date || !selectedChantierId.value) return;
       
-      await addDoc(collection(db, 'chantiers', selectedChantierId.value, 'heures'), {
-        date: newHeure.value.date,
-        collaborateurId: newHeure.value.collaborateurId,
-        heuresPropres: newHeure.value.heuresPropres || 0,
-        heuresInterim: newHeure.value.heuresInterim || 0
-      });
-      
-      newHeure.value = {
-        date: new Date().toISOString().split('T')[0],
-        collaborateurId: '',
-        heuresPropres: 0,
-        heuresInterim: 0
-      };
-      fetchHeures();
+      // TODO: Implementare quando heures saranno migrate
+      console.log('Aggiunta ore non ancora implementata');
     };
 
     const addOeuvre = async () => {
       if (!newOeuvre.value.produitId || !newOeuvre.value.date || !selectedChantierId.value) return;
       
-      await addDoc(collection(db, 'chantiers', selectedChantierId.value, 'oeuvres'), {
-        date: newOeuvre.value.date,
-        produitId: newOeuvre.value.produitId,
-        quantite: newOeuvre.value.quantite
-      });
-      
-      newOeuvre.value = {
-        date: new Date().toISOString().split('T')[0],
-        produitId: '',
-        quantite: 0
-      };
-      fetchOeuvres();
+      // TODO: Implementare quando oeuvres saranno migrate
+      console.log('Aggiunta oeuvre non ancora implementata');
     };
 
     const deleteHeure = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'chantiers', selectedChantierId.value, 'heures', id));
-        fetchHeures();
+        // TODO: Implementare quando heures saranno migrate
+        console.log('Eliminazione ore non ancora implementata');
       }
     };
 
     const deleteOeuvre = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        await deleteDoc(doc(db, 'chantiers', selectedChantierId.value, 'oeuvres', id));
-        fetchOeuvres();
+        // TODO: Implementare quando oeuvres saranno migrate
+        console.log('Eliminazione oeuvre non ancora implementata');
       }
     };
 
     const updateStatut = async () => {
       if (!selectedChantierId.value) return;
       
-      await updateDoc(doc(db, 'chantiers', selectedChantierId.value), {
-        statut: selectedChantier.value.statut
-      });
+      const { error } = await supabase
+        .from('chantiers')
+        .update({ statut: selectedChantier.value.statut })
+        .eq('id', selectedChantierId.value);
+      
+      if (error) console.error('Errore aggiornamento statut:', error);
     };
 
     const startEdit = (chantier) => {

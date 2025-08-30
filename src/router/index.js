@@ -56,6 +56,7 @@ import Interimaires from '@/views/repertoires/Interimaires.vue';
 import Factures from '@/views/repertoires/Factures.vue';
 import Regies from '@/views/repertoires/Regies.vue';
 import Admins from '@/views/repertoires/Admins.vue';
+import DevisRepertoire from '@/views/repertoires/Devis.vue';
 import AdminBackup from '@/views/AdminBackup.vue';
 
 // Bilans
@@ -78,6 +79,7 @@ const routes = [
   { path: '/admin/repertoires/collaborateurs', name: 'Collaborateurs', component: Collaborateurs },
   { path: '/admin/repertoires/chefdechantiers', name: 'ChefDeChantiers', component: ChefDeChantiers },
   { path: '/admin/repertoires/clients', name: 'Clients', component: Clients },
+  { path: '/admin/repertoires/devis', name: 'DevisRepertoire', component: DevisRepertoire },
   { path: '/admin/repertoires/produits', name: 'Produits', component: Produits },
   { path: '/admin/repertoires/familles', name: 'Familles', component: Familles },
   { path: '/admin/repertoires/sousfamilles', name: 'SousFamilles', component: SousFamilles },

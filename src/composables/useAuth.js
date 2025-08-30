@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import { supabase } from '../supabase.js'
+import { auth } from '../firebase.js'
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 
 const user = ref(null)
 const loading = ref(false)
@@ -9,15 +10,9 @@ export function useAuth() {
   const login = async (email, password) => {
     loading.value = true
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      
-      if (error) throw error
-      
-      user.value = data.user
-      return data.user
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      user.value = userCredential.user
+      return userCredential.user
     } catch (error) {
       console.error('Login error:', error.message)
       throw error
@@ -29,9 +24,7 @@ export function useAuth() {
   const logout = async () => {
     loading.value = true
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      
+      await signOut(auth)
       user.value = null
     } catch (error) {
       console.error('Logout error:', error.message)
@@ -41,15 +34,13 @@ export function useAuth() {
     }
   }
 
-  const getCurrentUser = async () => {
-    const { data: { user: currentUser } } = await supabase.auth.getUser()
-    user.value = currentUser
-    return currentUser
+  const getCurrentUser = () => {
+    return auth.currentUser
   }
 
   // Ascolta cambiamenti di autenticazione
-  supabase.auth.onAuthStateChange((event, session) => {
-    user.value = session?.user || null
+  onAuthStateChanged(auth, (currentUser) => {
+    user.value = currentUser
   })
 
   return {

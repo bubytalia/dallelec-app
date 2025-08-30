@@ -130,41 +130,46 @@ export default {
     const editProduit = ref({});
 
     const fetchProduits = async () => {
-      const { data, error } = await supabase
-        .from('produits')
-        .select('*')
-        .order('article');
-      
-      if (error) {
-        console.error('Errore caricamento produits:', error);
-      } else {
+      try {
+        const { data, error } = await supabase
+          .from('produits')
+          .select('*')
+          .order('article');
+        
+        if (error) throw error;
         produits.value = data || [];
+      } catch (error) {
+        console.error('Errore caricamento produits:', error);
       }
     };
 
     const addProduit = async () => {
-      const { error } = await supabase
-        .from('produits')
-        .insert([{
-          article: newProduit.value.article,
-          taille: newProduit.value.taille,
-          description: newProduit.value.description,
-          unite: newProduit.value.unite,
-          prix: parseFloat(newProduit.value.prix),
-          prezzo_netto: newProduit.value.prezzoNetto
-        }]);
-      
-      if (error) {
-        console.error('Errore aggiunta produit:', error);
-      } else {
+      try {
+        const { error } = await supabase
+          .from('produits')
+          .insert({
+            article: newProduit.value.article,
+            taille: newProduit.value.taille,
+            description: newProduit.value.description,
+            unite: newProduit.value.unite,
+            prix: parseFloat(newProduit.value.prix),
+            prezzo_netto: newProduit.value.prezzoNetto
+          });
+        
+        if (error) throw error;
         newProduit.value = { article: '', taille: '', description: '', unite: '', prix: '', prezzoNetto: false };
         fetchProduits();
+      } catch (error) {
+        console.error('Errore aggiunta produit:', error);
       }
     };
 
     const startEdit = (prod) => {
       editId.value = prod.id;
-      editProduit.value = { ...prod };
+      editProduit.value = { 
+        ...prod,
+        prezzoNetto: prod.prezzo_netto
+      };
     };
 
     const cancelEdit = () => {
@@ -174,38 +179,40 @@ export default {
 
     const updateProduit = async (id) => {
       if (confirm('Confermi la modifica? I devis già salvati manterranno i prezzi originali.')) {
-        const { error } = await supabase
-          .from('produits')
-          .update({
-            article: editProduit.value.article,
-            taille: editProduit.value.taille,
-            description: editProduit.value.description,
-            unite: editProduit.value.unite,
-            prix: parseFloat(editProduit.value.prix),
-            prezzo_netto: editProduit.value.prezzoNetto
-          })
-          .eq('id', id);
-        
-        if (error) {
-          console.error('Errore aggiornamento produit:', error);
-        } else {
+        try {
+          const { error } = await supabase
+            .from('produits')
+            .update({
+              article: editProduit.value.article,
+              taille: editProduit.value.taille,
+              description: editProduit.value.description,
+              unite: editProduit.value.unite,
+              prix: parseFloat(editProduit.value.prix),
+              prezzo_netto: editProduit.value.prezzoNetto || editProduit.value.prezzo_netto
+            })
+            .eq('id', id);
+          
+          if (error) throw error;
           cancelEdit();
           fetchProduits();
+        } catch (error) {
+          console.error('Errore aggiornamento produit:', error);
         }
       }
     };
 
     const deleteProduit = async (id) => {
       if (confirm('Confirmer la suppression ?')) {
-        const { error } = await supabase
-          .from('produits')
-          .delete()
-          .eq('id', id);
-        
-        if (error) {
-          console.error('Errore eliminazione produit:', error);
-        } else {
+        try {
+          const { error } = await supabase
+            .from('produits')
+            .delete()
+            .eq('id', id);
+          
+          if (error) throw error;
           fetchProduits();
+        } catch (error) {
+          console.error('Errore eliminazione produit:', error);
         }
       }
     };

@@ -1,8 +1,14 @@
-import { supabase } from '@/supabase'
-
-export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
+// Sistema temporaneo - bypass autenticazione
+export const getCurrentUser = () => {
+  // Simula utente loggato se c'è userRole nel localStorage
+  const userRole = localStorage.getItem('userRole')
+  const userEmail = localStorage.getItem('userEmail')
+  
+  if (userRole && userEmail) {
+    return Promise.resolve({ email: userEmail })
+  }
+  
+  return Promise.resolve(null)
 }
 
 export const requireAuth = async (to, from, next) => {

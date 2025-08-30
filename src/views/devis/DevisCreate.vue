@@ -24,7 +24,7 @@
         <div class="col">
           <select v-model="form.client" class="form-select">
             <option disabled value="">Sélectionner un client</option>
-            <option v-for="client in clients" :key="client.id" :value="client.id">
+            <option v-for="client in clients" :key="client.id" :value="client.firebase_id || client.id">
               {{ client.nom }}
             </option>
           </select>
@@ -57,7 +57,7 @@
 
     <!-- Modalità Prezzi -->
     <div class="card p-4 mb-4">
-      <h5>Modalità Prezzi</h5>
+      <h5>Modalità Prezzi <small class="text-muted">(Attuale: {{ modalitaPrezzi }})</small></h5>
       <div class="form-check mb-3">
         <input 
           class="form-check-input" 
@@ -105,7 +105,7 @@
               <select v-model="remiseSelection[fam.id]" class="form-select">
                 <option disabled value="">Sélectionnez une sous-famille</option>
                 <option
-                  v-for="sous in sousfamilles.filter(s => s.familleId === fam.id)"
+                  v-for="sous in sousfamilles.filter(s => s.famille_id === fam.firebase_id)"
                   :key="sous.id"
                   :value="sous.id"
                 >
@@ -167,8 +167,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { db } from '@/firebase';
-import { collection, getDocs, addDoc, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 const router = useRouter();
@@ -210,7 +209,7 @@ const removeZone = (index) => {
 };
 
 const filteredTechniciens = computed(() =>
-  techniciens.value.filter(t => t.clientId === form.value.client)
+  techniciens.value.filter(t => t.client_id === form.value.client)
 );
 
 const getRemisePourcentage = (familleId) => {
@@ -250,16 +249,21 @@ const continuerVersDevis = async () => {
     // Se stiamo modificando un devis esistente, aggiorniamolo e navighiamo alla pagina prodotti
     if (editingId.value) {
       const id = editingId.value;
-      await updateDoc(doc(db, 'devis', id), {
-        nom: form.value.nom,
-        adresse: form.value.adresse,
-        clientId: form.value.client,
-        technicien: form.value.technicien,
-        zones: zones.value,
-        modalitaPrezzi: modalitaPrezzi.value,
-        remises: modalitaPrezzi.value === 'scontistica' ? remiseSelection.value : {},
-        updatedAt: new Date()
-      });
+      const { error } = await supabase
+        .from('devis')
+        .update({
+          nom: form.value.nom,
+          adresse: form.value.adresse,
+          client_id: form.value.client,
+          technicien: form.value.technicien,
+          zones: zones.value,
+          modalita_prezzi: modalitaPrezzi.value,
+          remises: modalitaPrezzi.value === 'scontistica' ? remiseSelection.value : {},
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
       // Pulizia localStorage (solo i dati del form)
       try {
         localStorage.removeItem('devisForm');
@@ -275,34 +279,32 @@ const continuerVersDevis = async () => {
     }
 
     // Altrimenti si tratta di un nuovo devis: generiamo numero progressivo
-    const counterRef = doc(db, 'counters', 'devis');
-    let numeroDevis = 'DEV-0001';
-    const counterSnap = await getDoc(counterRef);
-    if (counterSnap.exists()) {
-      const last = counterSnap.data().lastNumber || 0;
-      const next = last + 1;
-      numeroDevis = `DEV-${next.toString().padStart(4, '0')}`;
-      await updateDoc(counterRef, { lastNumber: next });
-    } else {
-      await setDoc(counterRef, { lastNumber: 1 });
-    }
+    // Per ora usiamo un numero semplice basato sul timestamp
+    const numeroDevis = `DEV-${Date.now().toString().slice(-6)}`;
 
     const newDevis = {
       numero: numeroDevis,
       nom: form.value.nom,
       adresse: form.value.adresse,
-      clientId: form.value.client,
+      client_id: form.value.client,
       technicien: form.value.technicien,
       zones: zones.value,
-      modalitaPrezzi: modalitaPrezzi.value,
+      modalita_prezzi: modalitaPrezzi.value,
       remises: modalitaPrezzi.value === 'scontistica' ? remiseSelection.value : {},
-      createdAt: new Date(),
+      created_at: new Date().toISOString(),
       produits: [],
       total: 0,
       draft: true,
       status: 'En cours'
     };
-    const docRef = await addDoc(collection(db, 'devis'), newDevis);
+    
+    const { data: docRef, error } = await supabase
+      .from('devis')
+      .insert(newDevis)
+      .select()
+      .single();
+    
+    if (error) throw error;
     // Pulizia localStorage
     try {
       localStorage.removeItem('devisForm');
@@ -328,17 +330,18 @@ const retourListe = () => {
 
 
 onMounted(async () => {
-  const [clientSnap, techSnap, famSnap, sousSnap] = await Promise.all([
-    getDocs(collection(db, 'clients')),
-    getDocs(collection(db, 'techniciens')),
-    getDocs(collection(db, 'familles')),
-    getDocs(collection(db, 'sousfamilles'))
-  ]);
+  try {
+    const [clientsRes, techRes, famRes, sousRes] = await Promise.all([
+      supabase.from('clients').select('*'),
+      supabase.from('techniciens').select('*'),
+      supabase.from('familles').select('*'),
+      supabase.from('sousfamilles').select('*')
+    ]);
 
-  clients.value = clientSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  techniciens.value = techSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  familles.value = famSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-  sousfamilles.value = sousSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    clients.value = clientsRes.data || [];
+    techniciens.value = techRes.data || [];
+    familles.value = famRes.data || [];
+    sousfamilles.value = sousRes.data || [];
 
   // Carica dati dal localStorage solo se NON siamo in modalità modifica
   if (!editingId.value) {
@@ -369,38 +372,46 @@ onMounted(async () => {
     }
   }
 
-  // Se siamo in modalità modifica, carichiamo il devis esistente e popoliamo i campi
-  if (editingId.value) {
-    try {
-      const devisRef = doc(db, 'devis', editingId.value);
-      const devisSnap = await getDoc(devisRef);
-      if (devisSnap.exists()) {
-        const data = devisSnap.data();
-        // Popola i campi del form
-        form.value.nom = data.nom || '';
-        form.value.adresse = data.adresse || '';
-        form.value.client = data.clientId || '';
-        form.value.technicien = data.technicien || '';
-        zones.value = Array.isArray(data.zones) ? [...data.zones] : [];
-        modalitaPrezzi.value = data.modalitaPrezzi || 'scontistica';
-        remiseSelection.value = data.remises || {};
-        // Salva anche nei localStorage per mantenere i dati se l'utente naviga via router (retour)
-        try {
-          localStorage.setItem('devisForm', JSON.stringify({
-            nom: form.value.nom,
-            adresse: form.value.adresse,
-            client: form.value.client,
-            technicien: form.value.technicien
-          }));
-          localStorage.setItem('zonesCantiere', JSON.stringify(zones.value));
-          localStorage.setItem('devisRemises', JSON.stringify(remiseSelection.value));
-        } catch (err) {
-          console.warn("Erreur lors de l'enregistrement des données du devis en édition dans le localStorage", err);
+    // Se siamo in modalità modifica, carichiamo il devis esistente e popoliamo i campi
+    if (editingId.value) {
+      try {
+        const { data: devisData, error } = await supabase
+          .from('devis')
+          .select('*')
+          .eq('id', editingId.value)
+          .single();
+        
+        if (error) throw error;
+        
+        if (devisData) {
+          // Popola i campi del form
+          form.value.nom = devisData.nom || '';
+          form.value.adresse = devisData.adresse || '';
+          form.value.client = devisData.client_id || '';
+          form.value.technicien = devisData.technicien || '';
+          zones.value = Array.isArray(devisData.zones) ? [...devisData.zones] : [];
+          modalitaPrezzi.value = devisData.modalita_prezzi || 'scontistica';
+          remiseSelection.value = devisData.remises || {};
+          // Salva anche nei localStorage per mantenere i dati se l'utente naviga via router (retour)
+          try {
+            localStorage.setItem('devisForm', JSON.stringify({
+              nom: form.value.nom,
+              adresse: form.value.adresse,
+              client: form.value.client,
+              technicien: form.value.technicien
+            }));
+            localStorage.setItem('zonesCantiere', JSON.stringify(zones.value));
+            localStorage.setItem('devisRemises', JSON.stringify(remiseSelection.value));
+          } catch (err) {
+            console.warn("Erreur lors de l'enregistrement des données du devis en édition dans le localStorage", err);
+          }
         }
+      } catch (err) {
+        console.warn('Erreur lors du chargement du devis en édition:', err);
       }
-    } catch (err) {
-      console.warn('Erreur lors du chargement du devis en édition:', err);
     }
+  } catch (error) {
+    console.error('Errore caricamento dati:', error);
   }
 });
 

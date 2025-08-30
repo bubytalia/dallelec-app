@@ -47,7 +47,7 @@
         <tr v-for="devis in filteredDevis" :key="devis.id">
           <td>{{ formatDate(devis.createdAt) }}</td>
           <td>{{ devis.numero }}</td>
-          <td>{{ getClientName(devis.clientId) }}</td>
+          <td>{{ getClientName(devis.client_id) }}</td>
           <td>{{ devis.technicien }}</td>
           <td>{{ devis.nom || devis.adresse }}</td>
           <td>{{ formatMontant(devis.total) }}</td>
@@ -73,8 +73,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, inject } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { supabase } from '../../supabase.js';
 
 // Prop per controllare se visualizzare il titolo
 defineProps({
@@ -100,7 +101,7 @@ const router = useRouter();
 // Opzioni di stato disponibili per i devis (escludiamo "Brouillon" in quanto gestito dal flag draft)
 const statusOptions = ['En cours', 'Accepté', 'Non accepté'];
 
-const supabase = inject('supabase');
+
 
 // Fetch data da Supabase (devis, clients, techniciens e sousfamilles)
 onMounted(async () => {
@@ -125,7 +126,7 @@ onMounted(async () => {
 const filteredDevis = computed(() => {
   // Applichiamo i filtri
   const list = devis.value.filter(d => {
-    const clientName = getClientName(d.clientId);
+    const clientName = getClientName(d.client_id);
     const matchClient = !filterClient.value || clientName === filterClient.value;
     const matchTech = !filterTechnicien.value || d.technicien === filterTechnicien.value;
     const state = getStatus(d);
@@ -142,8 +143,10 @@ const filteredDevis = computed(() => {
 });
 
 // Helpers
-const getClientName = (id) => {
-  return clients.value.find(c => c.id === id)?.nom || 'Inconnu';
+const getClientName = (clientId) => {
+  if (!clientId) return 'Inconnu';
+  const client = clients.value.find(c => c.firebase_id === clientId);
+  return client ? client.nom : 'Inconnu';
 };
 
 const formatDate = (date) => {
