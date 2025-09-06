@@ -1467,13 +1467,21 @@ const genererPDF = async (facture) => {
   // 2. GENERA FACTURE (semplificata)
   console.log('Creazione documento fattura...');
   const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
-  drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
-  console.log('Header fattura creato');
+  
+  try {
+    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+    console.log('Header fattura creato');
+  } catch (error) {
+    console.error('Errore header fattura:', error);
+    throw error;
+  }
   
   // Date e informazioni facture (font più piccolo)
+  console.log('Impostazione date fattura...');
   docFacture.setFontSize(9);
   docFacture.setFont('Helvetica', 'normal');
   docFacture.text(`Date: ${formatDate(facture.date_facture || facture.dateFacture)}`, 10, 50);
+  console.log('Date fattura impostate');
   
   let yFactureInfo = 55;
   if (facture.date_echeance || facture.dateEcheance) {
@@ -1489,10 +1497,12 @@ const genererPDF = async (facture) => {
   }
   
   // Informations client (font più piccolo)
+  console.log('Impostazione dati cliente...');
   docFacture.setFontSize(10);
   docFacture.setFont('Helvetica', 'bold');
   const yFactureA = Math.max(yFactureInfo + 5, 70);
   docFacture.text('FACTURÉ À:', 10, yFactureA);
+  console.log('Dati cliente impostati');
   
   docFacture.setFontSize(8);
   docFacture.setFont('Helvetica', 'normal');
@@ -1521,10 +1531,13 @@ const genererPDF = async (facture) => {
   docFacture.text(`Chantier: ${getChantierName(chantierId)}`, 10, yClient + 6);
   
   // Tabella facture con struttura corretta (posizione ottimizzata)
+  console.log('Preparazione tabella fattura...');
   let factureTableY = Math.max(yClient + 10, 100);
   let totalFactureHT = 0;
+  console.log('Variabili tabella inizializzate');
   
   if (resocontoDoc) {
+    console.log('Creazione tabella resoconto...');
     // Référence et objet (con spaziatura corretta)
     docFacture.setFontSize(9);
     docFacture.setFont('helvetica', 'bold');
