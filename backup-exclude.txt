@@ -1,0 +1,9 @@
+.git\
+dist\
+.netlify\
+.firebase\
+backup-log.txt
+firebase-residui-report.txt
+pulizia-log.txt
+backup-hd-log.txt
+backup-dati-log.txt
