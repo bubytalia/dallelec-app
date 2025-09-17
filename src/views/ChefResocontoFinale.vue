@@ -213,8 +213,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { db } from '@/firebase';
-import { doc, getDoc, collection, getDocs, addDoc, query, where } from 'firebase/firestore';
+import { supabase } from '@/supabase';
 import { useAuth } from '@/composables/useAuth';
 import RetourButton from '@/components/RetourButton.vue';
 import { jsPDF } from 'jspdf';
@@ -298,9 +297,12 @@ const fetchChantiers = async () => {
     return;
   }
   
-  const snapshot = await getDocs(collection(db, 'chantiers'));
-  const allChantiers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  chantiers.value = allChantiers.filter(c => c.capocantiere === user.value.email);
+  const { data: allChantiers } = await supabase
+    .from('chantiers')
+    .select('*')
+    .eq('capocantiere', user.value.email);
+  
+  chantiers.value = allChantiers || [];
 };
 
 const loadChantierData = async () => {
@@ -310,9 +312,14 @@ const loadChantierData = async () => {
   if (!chantier?.devisId) return;
   
   // Carica devis
-  const devisDoc = await getDoc(doc(db, 'devis', chantier.devisId));
-  if (devisDoc.exists()) {
-    devisData.value = devisDoc.data();
+  const { data: devisDoc } = await supabase
+    .from('devis')
+    .select('*')
+    .eq('id', chantier.devisId)
+    .single();
+  
+  if (devisDoc) {
+    devisData.value = devisDoc;
     
     // Estrai zone
     const zoneSet = new Set();
@@ -323,13 +330,13 @@ const loadChantierData = async () => {
   }
   
   // Carica resoconti percentuali
-  const q = query(
-    collection(db, 'resoconti_percentuali'),
-    where('chantierId', '==', selectedChantierId.value),
-    where('status', '==', 'approved')
-  );
-  const snapshot = await getDocs(q);
-  resocontiPercentuali.value = snapshot.docs.map(doc => doc.data());
+  const { data: resocontiData } = await supabase
+    .from('resoconti_percentuali')
+    .select('*')
+    .eq('chantierId', selectedChantierId.value)
+    .eq('status', 'approved');
+  
+  resocontiPercentuali.value = resocontiData || [];
 };
 
 const loadZoneData = () => {
@@ -393,12 +400,19 @@ const salvaResocontoFinale = async () => {
     totalSupplementi: totalSupplementi.value,
     conguaglioFinale: conguaglioFinale.value,
     capocantiere: user.value?.email || 'unknown',
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     status: 'completato'
   };
   
-  await addDoc(collection(db, 'resoconti_finali'), resocontoFinale);
-  alert('Resoconto finale salvato con successo!');
+  const { error } = await supabase
+    .from('resoconti_finali')
+    .insert([resocontoFinale]);
+  
+  if (error) {
+    alert('Errore nel salvataggio: ' + error.message);
+  } else {
+    alert('Resoconto finale salvato con successo!');
+  }
 };
 
 const generaPdfConguaglio = () => {

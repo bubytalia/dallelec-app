@@ -86,6 +86,35 @@ export default {
           if (adminData && !adminError) {
             role = 'admin';
             userName = `${adminData.prenom} ${adminData.nom}`;
+            console.log('✅ Trovato ADMIN:', userName);
+          } else {
+            // 2. Cerca in chefdechantiers
+            const { data: chefData, error: chefError } = await supabase
+              .from('chefdechantiers')
+              .select('nom, prenom, email')
+              .eq('email', this.email)
+              .maybeSingle();
+            
+            if (chefData && !chefError) {
+              role = 'chef';
+              userName = `${chefData.prenom} ${chefData.nom}`;
+              console.log('✅ Trovato CHEF:', userName);
+            } else {
+              // 3. Cerca in collaborateurs
+              const { data: ouvrierData, error: ouvrierError } = await supabase
+                .from('collaborateurs')
+                .select('nom, prenom, email')
+                .eq('email', this.email)
+                .maybeSingle();
+              
+              if (ouvrierData && !ouvrierError) {
+                role = 'ouvrier';
+                userName = `${ouvrierData.prenom} ${ouvrierData.nom}`;
+                console.log('✅ Trovato OUVRIER:', userName);
+              } else {
+                console.log('❌ Utente non trovato in nessuna anagrafica');
+              }
+            }
           }
         } catch (error) {
           console.log('❌ Errore anagrafica:', error);

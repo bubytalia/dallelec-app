@@ -1,5 +1,4 @@
-import { db } from '@/firebase'
-import { collection, getDocs } from 'firebase/firestore'
+import { supabase } from '@/supabase'
 
 export class BackupService {
   static async createBackup() {
@@ -18,15 +17,14 @@ export class BackupService {
     try {
       for (const collectionName of collections) {
         console.log(`📦 Backup collection: ${collectionName}`)
-        const snapshot = await getDocs(collection(db, collectionName))
-        backup.data[collectionName] = []
+        const { data, error } = await supabase.from(collectionName).select('*')
         
-        snapshot.docs.forEach(doc => {
-          backup.data[collectionName].push({
-            id: doc.id,
-            ...doc.data()
-          })
-        })
+        if (error) {
+          console.warn(`⚠️ Errore collection ${collectionName}:`, error)
+          backup.data[collectionName] = []
+        } else {
+          backup.data[collectionName] = data || []
+        }
       }
 
       // Salva il backup come JSON

@@ -165,7 +165,10 @@
                 <td>{{ chantier.ville }}</td>
                 <td>{{ chantier.client }}</td>
                 <td>{{ chantier.technicien }}</td>
-                <td>{{ getDevisName(chantier.devisId) }}</td>
+                <td>
+                  <span v-if="chantier.devis_id || chantier.devisId" class="badge bg-success">Oui</span>
+                  <span v-else class="badge bg-warning">Non</span>
+                </td>
                 <td>
                   <span class="badge" :class="chantier.modalita_resoconto === 'percentuale' ? 'bg-info' : 'bg-secondary'">
                     {{ chantier.modalita_resoconto === 'percentuale' ? '📊 Percentuel' : '📏 Métrages' }}

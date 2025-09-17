@@ -57,8 +57,7 @@
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+// Firebase rimosso - ora usa props
 
 const props = defineProps({
   zones: { type: Array, default: () => [] },

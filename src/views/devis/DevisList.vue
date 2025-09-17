@@ -54,7 +54,7 @@
           <td>{{ calculerRemise(devis.remises, devis.modalita_prezzi) }}%</td>
           <td>
             <!-- Se il devis è in bozza, mostriamo lo stato senza possibilità di modifica -->
-            <span v-if="devis.draft">Brouillon</span>
+            <span v-if="devis.draft === true">Brouillon</span>
             <select v-else v-model="devis.status" @change="updateDevisStatus(devis.id, devis.status)" class="form-select form-select-sm">
               <option v-for="opt in statusOptions" :key="opt" :value="opt">{{ opt }}</option>
             </select>
@@ -117,6 +117,16 @@ onMounted(async () => {
     clients.value = clientsRes.data || [];
     techniciens.value = techRes.data || [];
     sousfamilles.value = sousRes.data || [];
+    
+    // Correggi devis esistenti senza campo draft
+    const devisToFix = devis.value.filter(d => d.draft === null && d.total > 0);
+    if (devisToFix.length > 0) {
+      console.log(`Correzione ${devisToFix.length} devis esistenti...`);
+      for (const d of devisToFix) {
+        await supabase.from('devis').update({ draft: false }).eq('id', d.id);
+        d.draft = false; // Aggiorna anche localmente
+      }
+    }
   } catch (error) {
     console.error('Errore caricamento dati:', error);
   }
@@ -178,7 +188,7 @@ const calculerRemise = (remises = {}, modalitaPrezzi = 'scontistica') => {
 
 // Ritorna lo stato del devis: "Brouillon" se draft=true, altrimenti il campo status
 const getStatus = (devisItem) => {
-  return devisItem.draft ? 'Brouillon' : (devisItem.status || 'En cours');
+  return devisItem.draft === true ? 'Brouillon' : (devisItem.status || 'En cours');
 };
 
 // Format euro con due decimali

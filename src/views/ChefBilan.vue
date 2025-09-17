@@ -270,8 +270,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
 const chantiers = ref([]);
@@ -312,28 +311,28 @@ const setDefaultDates = () => {
 };
 
 const fetchChantiers = async () => {
-  const snapshot = await getDocs(collection(db, 'chantiers'));
-  chantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('chantiers').select('*');
+  chantiers.value = data || [];
 };
 
 const fetchCollaborateurs = async () => {
-  const snapshot = await getDocs(collection(db, 'collaborateurs'));
-  collaborateurs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('collaborateurs').select('*');
+  collaborateurs.value = data || [];
 };
 
 const fetchChefs = async () => {
-  const snapshot = await getDocs(collection(db, 'chefdechantiers'));
-  chefs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('chefdechantiers').select('*');
+  chefs.value = data || [];
 };
 
 const fetchHeuresPropres = async () => {
-  const snapshot = await getDocs(collection(db, 'heures_chef_propres'));
-  heuresPropres.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('heures_chef_propres').select('*');
+  heuresPropres.value = data || [];
 };
 
 const fetchHeuresInterim = async () => {
-  const snapshot = await getDocs(collection(db, 'heures_chef_interim'));
-  heuresInterim.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('heures_chef_interim').select('*');
+  heuresInterim.value = data || [];
 };
 
 const formatDate = (date) => {

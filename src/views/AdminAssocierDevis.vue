@@ -95,7 +95,7 @@
             <div class="row">
               <div class="col-md-6">
                 <p><strong>Numéro:</strong> {{ selectedDevis.numero }}</p>
-                <p><strong>Client:</strong> {{ getClientName(selectedDevis.clientId) }}</p>
+                <p><strong>Client:</strong> {{ getClientName(selectedDevis.client_id) }}</p>
                 <p><strong>Adresse:</strong> {{ selectedDevis.adresse }}</p>
               </div>
               <div class="col-md-6">
@@ -143,7 +143,7 @@
                  <tbody>
                    <tr v-for="devis in devis" :key="devis.id">
                      <td>{{ devis.numero }}</td>
-                     <td>{{ getClientName(devis.clientId) }}</td>
+                     <td>{{ getClientName(devis.client_id) }}</td>
                      <td>{{ devis.nom || 'N/A' }}</td>
                      <td>{{ devis.adresse }}</td>
                      <td>{{ devis.technicien }}</td>
@@ -229,8 +229,8 @@ const devisAssocies = computed(() => {
 
 // Fonctions utilitaires
 const getClientName = (clientId) => {
-  const client = clients.value.find(c => c.id === clientId)
-  return client ? client.nom : 'Inconnu'
+  const client = clients.value.find(c => c.id == clientId)
+  return client?.nom || 'Inconnu'
 }
 
 const getDevisInfo = (devisId) => {

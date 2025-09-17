@@ -324,8 +324,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
 const showBilanType = ref('chantiers');
@@ -366,7 +365,7 @@ const availableYears = computed(() => {
   const years = new Set();
   devis.value.forEach(d => {
     if (d.createdAt) {
-      years.add(d.createdAt.toDate().getFullYear());
+      years.add(new Date(d.createdAt).getFullYear());
     }
   });
   return Array.from(years).sort((a, b) => b - a);
@@ -387,26 +386,26 @@ const availableTechniciens = computed(() => {
 const loadData = async () => {
   try {
     // Chantiers
-    const chantiersSnap = await getDocs(collection(db, 'chantiers'));
-    chantiers.value = chantiersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: chantiersData } = await supabase.from('chantiers').select('*');
+    chantiers.value = chantiersData || [];
 
     // Devis
-    const devisSnap = await getDocs(collection(db, 'devis'));
-    devis.value = devisSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: devisData } = await supabase.from('devis').select('*');
+    devis.value = devisData || [];
 
     // Factures
-    const facturesSnap = await getDocs(collection(db, 'factures'));
-    factures.value = facturesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: facturesData } = await supabase.from('factures').select('*');
+    factures.value = facturesData || [];
 
     // Heures
-    const heuresChefSnap = await getDocs(collection(db, 'heures_chef_propres'));
-    heuresChef.value = heuresChefSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: heuresChefData } = await supabase.from('heures_chef_propres').select('*');
+    heuresChef.value = heuresChefData || [];
 
-    const heuresOuvriersSnap = await getDocs(collection(db, 'heures_ouvriers'));
-    heuresOuvriers.value = heuresOuvriersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*');
+    heuresOuvriers.value = heuresOuvriersData || [];
 
-    const heuresInterimSnap = await getDocs(collection(db, 'heures_chef_interim'));
-    heuresInterim.value = heuresInterimSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*');
+    heuresInterim.value = heuresInterimData || [];
 
     calculateKPIs();
     calculateBilansChantiers();
@@ -515,7 +514,7 @@ const loadBilansMensuels = () => {
     // Devis du mois
     const monthDevis = devis.value.filter(d => {
       if (!d.createdAt) return false;
-      const date = d.createdAt.toDate();
+      const date = new Date(d.createdAt);
       return date.getFullYear() === year && date.getMonth() === month && !d.draft;
     });
 
@@ -615,8 +614,8 @@ const calculateBilansClients = () => {
       client.coutsHeures += heuresChef + heuresOuvriers + heuresInterim;
     }
     
-    if (!client.dernierChantier || (d.createdAt && d.createdAt.toDate() > new Date(client.dernierChantier))) {
-      client.dernierChantier = d.createdAt?.toDate().toLocaleDateString('fr-FR') || 'N/A';
+    if (!client.dernierChantier || (d.createdAt && new Date(d.createdAt) > new Date(client.dernierChantier))) {
+      client.dernierChantier = d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : 'N/A';
     }
   });
 

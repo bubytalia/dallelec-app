@@ -66,12 +66,7 @@
       <div class="col-md-3 m-2">
         <router-link to="/admin/security" class="btn btn-outline-danger w-100">🛡️ Sécurité</router-link>
       </div>
-      <div class="col-md-3 m-2">
-        <button @click="runFirstLoginScript" class="btn btn-outline-danger w-100" :disabled="scriptRunning">
-          <span v-if="scriptRunning" class="spinner-border spinner-border-sm me-2"></span>
-          🔐 Reset Logins
-        </button>
-      </div>
+
       <div class="col-md-3 m-2">
         <BackupOptions />
       </div>
@@ -80,30 +75,24 @@
       </div>
     </div>
     
-    <!-- Alert risultato script -->
-    <div v-if="scriptResult" class="alert mt-3" :class="scriptResult.success ? 'alert-success' : 'alert-danger'">
-      <strong>{{ scriptResult.success ? '✅ Succès!' : '❌ Erreur!' }}</strong>
-      {{ scriptResult.message }}
-    </div>
+
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/firebase';
+import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
-import { setFirstLoginForAllUsers } from '@/utils/setFirstLoginAll';
+
 import BackupOptions from '@/components/BackupOptions.vue';
 
 const router = useRouter();
-const scriptRunning = ref(false);
-const scriptResult = ref(null);
+
 
 const handleLogout = async () => {
   try {
     console.log('Logout in corso...');
-    await signOut(auth);
+    await supabase.auth.signOut();
     console.log('Logout completato, reindirizzamento...');
     window.location.href = '/';
   } catch (error) {
@@ -112,25 +101,5 @@ const handleLogout = async () => {
   }
 };
 
-const runFirstLoginScript = async () => {
-  scriptRunning.value = true;
-  scriptResult.value = null;
-  
-  try {
-    const result = await setFirstLoginForAllUsers();
-    scriptResult.value = {
-      success: result.success,
-      message: result.success 
-        ? `${result.updated} utilisateurs mis à jour avec succès`
-        : `Erreur: ${result.error}`
-    };
-  } catch (error) {
-    scriptResult.value = {
-      success: false,
-      message: `Erreur: ${error.message}`
-    };
-  } finally {
-    scriptRunning.value = false;
-  }
-};
+
 </script>

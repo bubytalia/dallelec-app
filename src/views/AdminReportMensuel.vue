@@ -165,8 +165,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
@@ -179,32 +178,22 @@ const generateReport = async () => {
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
     
     // Fetch tutti i dipendenti (chef + collaboratori)
-    const collaborateursSnapshot = await getDocs(collection(db, 'collaborateurs'));
-    const collaborateurs = collaborateursSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    const chefsSnapshot = await getDocs(collection(db, 'chefdechantiers'));
-    const chefs = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: collaborateurs } = await supabase.from('collaborateurs').select('*');
+    const { data: chefs } = await supabase.from('chefdechantiers').select('*');
     
     // Lista completa dipendenti (esclusi quelli marcati)
     const employes = [
-      ...chefs.filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'chef' })),
-      ...collaborateurs.filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'ouvrier' }))
+      ...(chefs || []).filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'chef' })),
+      ...(collaborateurs || []).filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'ouvrier' }))
     ];
     
     // Fetch ore di tutti i dipendenti
-    const heuresChefSnapshot = await getDocs(collection(db, 'heures_chef_propres'));
-    const heuresChef = heuresChefSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    const heuresInterimSnapshot = await getDocs(collection(db, 'heures_chef_interim'));
-    const heuresInterim = heuresInterimSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Fetch ore ouvriers
-    const heuresOuvriersSnapshot = await getDocs(collection(db, 'heures_ouvriers'));
-    const heuresOuvriers = heuresOuvriersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*');
+    const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*');
+    const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*');
     
     // Fetch assenze
-    const absencesSnapshot = await getDocs(collection(db, 'absences'));
-    const absences = absencesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: absences } = await supabase.from('absences').select('*');
     
     // Genera report per ogni dipendente
     const employesReport = [];
@@ -218,20 +207,20 @@ const generateReport = async () => {
       
       if (employe.type === 'chef') {
         // Per il chef: ore proprie + ore interim
-        heuresEmploye = heuresChef.filter(h => 
+        heuresEmploye = (heuresChef || []).filter(h => 
           h.date >= startDate && 
           h.date <= endDate && 
           h.chefId === employe.email
         );
         
-        heuresInterimEmploye = heuresInterim.filter(h => 
+        heuresInterimEmploye = (heuresInterim || []).filter(h => 
           h.date >= startDate && 
           h.date <= endDate && 
           h.chefId === employe.email
         );
       } else {
         // Per gli ouvriers: solo ore ouvriers
-        heuresEmploye = heuresOuvriers.filter(h => 
+        heuresEmploye = (heuresOuvriers || []).filter(h => 
           h.date >= startDate && 
           h.date <= endDate && 
           h.ouvrierId === employe.email
@@ -239,7 +228,7 @@ const generateReport = async () => {
       }
       
       // Assenze del dipendente
-      const absencesEmploye = absences.filter(absence => 
+      const absencesEmploye = (absences || []).filter(absence => 
         absence.userId === employe.email &&
         ((absence.startDate >= startDate && absence.startDate <= endDate) ||
          (absence.endDate >= startDate && absence.endDate <= endDate) ||
@@ -323,10 +312,10 @@ const generateReport = async () => {
       const jourSemaine = currentDate.getDay();
       
       // Conta ore e assenze per questo giorno
-      const heuresChefJour = heuresChef.filter(h => h.date === dateStr);
-      const heuresInterimJour = heuresInterim.filter(h => h.date === dateStr);
-      const heuresOuvriersJour = heuresOuvriers.filter(h => h.date === dateStr);
-      const absencesJour = absences.filter(a => 
+      const heuresChefJour = (heuresChef || []).filter(h => h.date === dateStr);
+      const heuresInterimJour = (heuresInterim || []).filter(h => h.date === dateStr);
+      const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr);
+      const absencesJour = (absences || []).filter(a => 
         a.startDate <= dateStr && a.endDate >= dateStr
       );
       

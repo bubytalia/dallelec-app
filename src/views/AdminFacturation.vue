@@ -72,11 +72,11 @@
               <!-- Métrages -->
               <tr v-for="metrage in metragesEnAttente" :key="'m-' + metrage.id">
                 <td><span class="badge bg-secondary">📏 Métrage</span></td>
-                <td>{{ getChantierNameWithNumber(metrage.chantierId) }}</td>
-                <td>{{ getClientName(metrage.chantierId) }}</td>
-                <td>{{ formatDate(metrage.createdAt) }}</td>
+                <td>{{ getChantierNameWithNumber(metrage.chantier_id) }}</td>
+                <td>{{ getClientName(metrage.chantier_id) }}</td>
+                <td>{{ formatDate(metrage.created_at) }}</td>
                 <td>{{ formatPeriodeMetrage(metrage) }}</td>
-                <td>{{ metrage.zones?.join(', ') || 'Toutes' }} - {{ metrage.totalML?.toFixed(2) || '0.00' }} ML</td>
+                <td>{{ metrage.zones?.join(', ') || 'Toutes' }} - {{ (metrage.total_ml || 0).toFixed(2) }} ML</td>
                 <td>
                   <button @click="voirDetailMetrage(metrage)" class="btn btn-sm btn-info me-1">
                     👁
@@ -235,27 +235,45 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5>Détail Métrage - {{ getChantierName(detailMetrage.chantierId) }}</h5>
+            <h5>Détail Métrage - {{ getChantierName(detailMetrage.chantier_id) }}</h5>
             <button @click="showDetailMetrage = false" class="btn-close"></button>
           </div>
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
                 <h6>Informations Générales</h6>
-                <p><strong>Chantier:</strong> {{ getChantierName(detailMetrage.chantierId) }}</p>
-                <p><strong>Client:</strong> {{ getClientName(detailMetrage.chantierId) }}</p>
-                <p><strong>Date:</strong> {{ formatDate(detailMetrage.createdAt) }}</p>
-                <p><strong>Chef:</strong> {{ detailMetrage.chefId }}</p>
+                <p><strong>Chantier:</strong> {{ getChantierName(detailMetrage.chantier_id) }}</p>
+                <p><strong>Client:</strong> {{ getClientName(detailMetrage.chantier_id) }}</p>
+                <p><strong>Date:</strong> {{ formatDate(detailMetrage.created_at) }}</p>
+                <p><strong>Chef:</strong> {{ detailMetrage.chef_id }}</p>
               </div>
               <div class="col-md-6">
                 <h6>Métrages</h6>
-                <p><strong>Total ML:</strong> {{ detailMetrage.totalML?.toFixed(2) }} ML</p>
-                <p><strong>Produits:</strong> {{ detailMetrage.totalProduits || 0 }}</p>
+                <p><strong>Total ML:</strong> {{ (detailMetrage.total_ml || 0).toFixed(2) }} ML</p>
+                <p><strong>Produits:</strong> {{ detailMetrage.total_produits || 0 }}</p>
                 <p><strong>Zones:</strong> {{ detailMetrage.zones?.join(', ') || 'N/A' }}</p>
                 <p><strong>Montant Estimé:</strong> {{ formatCurrency(calculateMontantEstime(detailMetrage)) }}</p>
               </div>
             </div>
             <div class="mt-3">
+              <div class="mb-3">
+                <h6>Détail des items:</h6>
+                <div v-if="detailMetrage.items && detailMetrage.items.length > 0">
+                  <div v-for="item in detailMetrage.items" :key="item.article" class="border p-2 mb-2">
+                    <strong>{{ item.article }} - {{ item.nom }}</strong><br>
+                    Zone: {{ item.zone }} | Taille: {{ item.taille }}<br>
+                    ML Posé: {{ item.mlPosee }} | Total ML: {{ item.totalML }}<br>
+                    <div v-if="item.supplements && item.supplements.length > 0">
+                      <small>Suppléments: 
+                        <span v-for="supp in item.supplements" :key="supp.supplement">
+                          {{ supp.supplement }} ({{ supp.qtePosee }})
+                        </span>
+                      </small>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-muted">Aucun détail disponible</div>
+              </div>
               <button @click="autoriserFacturation(detailMetrage)" class="btn btn-success me-2">
                 ✅ Autoriser Facturation
               </button>
@@ -377,7 +395,7 @@ const metragesEnAttente = computed(() => {
     !m.draft && // Métrage sauvegardé (non brouillon)
     (m.status === 'en_attente' || !m.status) && // En attente d'approbation ou ancien
     !m.facture && // Pas encore facturé
-    m.totalML > 0 // A du contenu
+    (m.total_ml || m.totalML) > 0 // A du contenu
   );
 });
 
@@ -490,8 +508,8 @@ const autoriserFacturation = async (metrage) => {
       })
       .eq('id', metrage.id);
     
-    const chantier = chantiers.value.find(c => c.id === metrage.chantierId);
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+    const chantier = chantiers.value.find(c => c.id === metrage.chantier_id);
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
     
     const montantTravauxHT = calculateMontantEstime(metrage);
     
@@ -506,14 +524,14 @@ const autoriserFacturation = async (metrage) => {
       .from('factures')
       .insert([{
         numero: numeroFacture,
-        chantier_id: metrage.chantierId,
+        chantier_id: metrage.chantier_id,
         metrage_id: metrage.id,
         date_facture: new Date().toISOString().split('T')[0],
         montant_ht: montantHT,
         taux_tva: 20,
         montant_ttc: montantHT * 1.2,
         statut: 'emise',
-        client_nom: chantierDevis?.nom || 'Client',
+        client_nom: chantier?.client || 'Client',
         date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         notes: `Facture générée automatiquement depuis métrage du ${formatDate(metrage.createdAt)}`,
         created_at: new Date().toISOString()
@@ -855,19 +873,19 @@ const supprimerFacture = async (facture) => {
 };
 
 const getChantierName = (id) => {
-  const chantier = chantiers.value.find(c => c.id === id);
+  const chantier = chantiers.value.find(c => c.id == id);
   return chantier ? chantier.nom : 'N/A';
 };
 
 const getChantierNameWithNumber = (id) => {
-  const chantier = chantiers.value.find(c => c.id === id);
+  const chantier = chantiers.value.find(c => c.id == id);
   if (!chantier) return 'N/A';
-  const numero = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+  const numero = chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
   return `${numero}${chantier.nom}`;
 };
 
 const getClientName = (chantierId) => {
-  const chantier = chantiers.value.find(c => c.id === chantierId);
+  const chantier = chantiers.value.find(c => c.id == chantierId);
   return chantier?.client || 'N/A';
 };
 
@@ -908,14 +926,14 @@ const formatCurrency = (amount) => {
 };
 
 const formatPeriodeMetrage = (metrage) => {
-  if (metrage.periodeDebut && metrage.periodeFin) {
-    return `${metrage.periodeDebut} - ${metrage.periodeFin}`;
+  if (metrage.periode_debut && metrage.periode_fin) {
+    return `${metrage.periode_debut} - ${metrage.periode_fin}`;
   }
-  if (metrage.periodeDebut) {
-    return `Du ${metrage.periodeDebut}`;
+  if (metrage.periode_debut) {
+    return `Du ${metrage.periode_debut}`;
   }
-  if (metrage.periodeFin) {
-    return `Jusqu'au ${metrage.periodeFin}`;
+  if (metrage.periode_fin) {
+    return `Jusqu'au ${metrage.periode_fin}`;
   }
   return '-';
 };
@@ -1429,7 +1447,7 @@ const genererPDF = async (facture) => {
 
       
       autoTable(docMetrees, {
-        head: head,
+        head: tableHead,
         body: body,
         startY: tableStartY + 4,
         theme: 'grid',
@@ -1466,178 +1484,159 @@ const genererPDF = async (facture) => {
     console.log('Saltando creazione métrées per fattura manuelle');
   }
   
-  console.log('Inizio creazione fattura...');
-  
-  // 2. GENERA FACTURE (semplificata)
-  console.log('Creazione documento fattura...');
+  // 2. GENERA FACTURE (pulita e semplice)
   const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
   
-  try {
-    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
-    console.log('Header fattura creato');
-  } catch (error) {
-    console.error('Errore header fattura:', error);
-    throw error;
-  }
+  // Header
+  drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
   
-  // Date e informazioni facture (font più piccolo)
-  console.log('Impostazione date fattura...');
+  // Date
   docFacture.setFontSize(9);
-  docFacture.setFont('Helvetica', 'normal');
   docFacture.text(`Date: ${formatDate(facture.date_facture || facture.dateFacture)}`, 10, 50);
-  console.log('Date fattura impostate');
-  
-  let yFactureInfo = 55;
   if (facture.date_echeance || facture.dateEcheance) {
-    docFacture.text(`Échéance: ${formatDate(facture.date_echeance || facture.dateEcheance)}`, 10, yFactureInfo);
-    yFactureInfo += 5;
+    docFacture.text(`Échéance: ${formatDate(facture.date_echeance || facture.dateEcheance)}`, 10, 55);
   }
   
-  // Periodo di riferimento se disponibile
-  if (metrageDoc && (metrageDoc.periodeDebut || metrageDoc.periodeFin)) {
-    const periodeText = `Période: ${metrageDoc.periodeDebut || ''} - ${metrageDoc.periodeFin || ''}`;
-    docFacture.text(periodeText, 10, yFactureInfo);
-    yFactureInfo += 5;
+  // Periodo
+  if (metrageDoc && (metrageDoc.periode_debut || metrageDoc.periode_fin)) {
+    docFacture.text(`Période: ${metrageDoc.periode_debut || ''} - ${metrageDoc.periode_fin || ''}`, 10, 60);
   }
   
-  // Informations client (font più piccolo)
-  console.log('Impostazione dati cliente...');
+  // Cliente
   docFacture.setFontSize(10);
-  docFacture.setFont('Helvetica', 'bold');
-  const yFactureA = Math.max(yFactureInfo + 5, 70);
-  docFacture.text('FACTURÉ À:', 10, yFactureA);
-  console.log('Dati cliente impostati');
+  docFacture.setFont('helvetica', 'bold');
+  docFacture.text('FACTURÉ À:', 10, 70);
   
-  docFacture.setFontSize(8);
-  docFacture.setFont('Helvetica', 'normal');
+  docFacture.setFontSize(9);
+  docFacture.setFont('helvetica', 'normal');
+  const nomeClienteFacture = facture.client_nom || facture.clientNom || chantier?.client || 'Client';
+  docFacture.text(nomeClienteFacture, 10, 77);
   
-  // Dati completi del cliente (compatti)
-  let yClient = yFactureA + 7;
-  if (clienteCompleto) {
-    docFacture.text(clienteCompleto.nom, 10, yClient);
-    yClient += 4;
-    if (clienteCompleto.adresse) {
-      docFacture.text(clienteCompleto.adresse, 10, yClient);
-      yClient += 4;
-    }
-    if (clienteCompleto.ville) {
-      docFacture.text(clienteCompleto.ville, 10, yClient);
-      yClient += 4;
-    }
-  } else {
-    docFacture.text(nomeCliente, 10, yClient);
-    yClient += 4;
-  }
+  // Cantiere
+  const numeroCantiere = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
+  docFacture.text(`Chantier: ${numeroCantiere}${chantier?.nom || 'N/A'}`, 10, 84);
   
-  docFacture.setFontSize(8);
-  const numeroCantiereText = chantier?.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
-  docFacture.text(`Chantier: ${numeroCantiereText}${getChantierName(chantierId)}`, 10, yClient + 2);
+  // Tabella prodotti (stessi del métrage + prezzi)
+  let totalHT = 0;
+  const tableHead = [['Code', 'Description', 'Zone', 'ML Posé', 'Prix/ML', 'Total HT']];
+  const tableBody = [];
   
-  // Tabella facture con struttura corretta (posizione ottimizzata)
-  console.log('Preparazione tabella fattura...');
-  let factureTableY = Math.max(yClient + 10, 100);
-  let totalFactureHT = 0;
-  console.log('Variabili tabella inizializzate');
-  
-  // Tabella fattura professionale
-  const head = [['Description', 'Quantité', 'Prix unitaire', 'Total HT']];
-  const body = [];
-  
-  if (resocontoDoc) {
-    // Per resoconti: calcola importi per zona
-    const percentualiGiaFatturate = {};
-    const fatturePassate = factures.value.filter(f => 
-      f.chantierId === facture.chantierId && 
-      f.resocontoId && 
-      f.id !== facture.id
-    );
-    
-    for (const fatturaPassata of fatturePassate) {
-      const resocontoPassato = resocontiPercentuali.value.find(r => r.id === fatturaPassata.resocontoId);
-      if (resocontoPassato?.avancementi) {
-        Object.entries(resocontoPassato.avancementi).forEach(([zona, pct]) => {
-          percentualiGiaFatturate[zona] = (percentualiGiaFatturate[zona] || 0) + Number(pct || 0);
-        });
-      }
-    }
-    
-    const importoPerZona = {};
-    if (chantierDevis?.produits) {
-      chantierDevis.produits.forEach(prodotto => {
-        const zona = prodotto.zone;
-        const importoProdotto = Number(prodotto.totalML || prodotto.ml || 0) * Number(prodotto.prix || 0);
-        importoPerZona[zona] = (importoPerZona[zona] || 0) + importoProdotto;
-      });
-    }
-    
-    Object.entries(resocontoDoc.avancementi || {}).forEach(([zona, percentualeCorrente]) => {
-      const importoDevis = Number(importoPerZona[zona] || 0);
-      const percentualeDaFatturare = Number(percentualeCorrente || 0);
-      const importoFatturato = importoDevis * (percentualeDaFatturare / 100);
-      totalFactureHT += importoFatturato;
-      
-      body.push([
-        `Travaux électriques - Zone ${zona}`,
-        `${percentualeDaFatturare}%`,
-        `${importoDevis.toFixed(2)} CHF`,
-        `${importoFatturato.toFixed(2)} CHF`
-      ]);
-    });
-  }
-  else if (metrageDoc && metrageDoc.items) {
-    // Per métrages: raggruppa per zona e calcola totali
-    const grouped = {};
+  if (metrageDoc?.items) {
     metrageDoc.items.forEach(item => {
-      if (!grouped[item.zone]) {
-        grouped[item.zone] = { totalML: 0, items: [] };
-      }
-      grouped[item.zone].totalML += Number(item.totalML || 0);
-      grouped[item.zone].items.push(item);
-    });
-    
-    // Trova prezzo medio per ML dal devis
-    const prezzoMedioML = chantierDevis?.produits ? 
-      chantierDevis.produits.reduce((sum, p) => sum + Number(p.prix || 0), 0) / chantierDevis.produits.length : 50;
-    
-    Object.entries(grouped).forEach(([zoneName, zoneData]) => {
-      const totalML = zoneData.totalML;
-      const importoZona = totalML * prezzoMedioML;
-      totalFactureHT += importoZona;
+      const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+      const prezzoML = Number(prodottoDevis?.prix || 50);
+      const mlPosato = Number(item.totalML || 0);
+      const totaleItem = mlPosato * prezzoML;
       
-      body.push([
-        `Travaux électriques - Zone ${zoneName}`,
-        `${totalML.toFixed(2)} ML`,
-        `${prezzoMedioML.toFixed(2)} CHF/ML`,
-        `${importoZona.toFixed(2)} CHF`
+      totalHT += totaleItem;
+      
+      tableBody.push([
+        item.article || '',
+        item.nom || '',
+        item.zone || '',
+        mlPosato.toFixed(2),
+        `${prezzoML.toFixed(2)} CHF`,
+        `${totaleItem.toFixed(2)} CHF`
       ]);
     });
-  } else if (facture.type === 'manuelle' && facture.lignes) {
-    // Tabella per fatture manuali con lignes
-    const head = [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']];
-    const body = [];
+  }
+  
+  autoTable(docFacture, {
+    head: tableHead,
+    body: tableBody,
+    startY: 95,
+    theme: 'grid',
+    headStyles: { fillColor: [230, 230, 230], fontSize: 9 },
+    bodyStyles: { fontSize: 8 }
+  });
+  
+  let finalYFacture = docFacture.lastAutoTable.finalY + 10;
+  
+  // Régies (manteniamo la sezione che funziona)
+  if (metrageDoc?.regies?.length > 0) {
+    docFacture.setFontSize(10);
+    docFacture.setFont('helvetica', 'bold');
+    docFacture.text('RÉGIES', 10, finalYFacture);
     
-    facture.lignes.forEach(ligne => {
-      const total = ligne.quantite * ligne.prixUnitaire;
-      totalFactureHT += total;
+    const regieHead = [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']];
+    const regieBody = [];
+    let totalRegies = 0;
+    
+    metrageDoc.regies.forEach(regie => {
+      const totRegie = Number(regie.heures) * Number(regie.prixHeure);
+      totalRegies += totRegie;
       
-      body.push([
-        ligne.description || '',
-        `${ligne.quantite} ${ligne.unite || ''}`,
-        `${ligne.prixUnitaire.toFixed(2)} CHF`,
-        `${total.toFixed(2)} CHF`
+      regieBody.push([
+        regie.zone,
+        regie.description,
+        `${regie.heures}h`,
+        `${regie.prixHeure} CHF`,
+        `${totRegie.toFixed(2)} CHF`
       ]);
     });
+    
+    autoTable(docFacture, {
+      head: regieHead,
+      body: regieBody,
+      startY: finalYFacture + 5,
+      theme: 'grid',
+      headStyles: { fillColor: [230, 230, 230], fontSize: 9 },
+      bodyStyles: { fontSize: 8 }
+    });
+    
+    totalHT += totalRegies;
+    finalYFacture = docFacture.lastAutoTable.finalY + 10;
+  }
+  
+  // Totali
+  const tva = totalHT * 0.081; // 8.1% Svizzera
+  const totalTTC = totalHT + tva;
+  
+  docFacture.setFontSize(10);
+  docFacture.text('Total HT:', 140, finalYFacture);
+  docFacture.text(`${totalHT.toFixed(2)} CHF`, 180, finalYFacture, { align: 'right' });
+  
+  docFacture.text('TVA (8.1%):', 140, finalYFacture + 7);
+  docFacture.text(`${tva.toFixed(2)} CHF`, 180, finalYFacture + 7, { align: 'right' });
+  
+  docFacture.setFont('helvetica', 'bold');
+  docFacture.text('TOTAL TTC:', 140, finalYFacture + 17);
+  docFacture.text(`${totalTTC.toFixed(2)} CHF`, 180, finalYFacture + 17, { align: 'right' });
+  
+  // Condizioni pagamento
+  docFacture.setFontSize(8);
+  docFacture.setFont('helvetica', 'normal');
+  docFacture.text('Conditions de paiement: 30 jours net', 10, finalYFacture + 35);
+  
+  // Aggiungi footer e numerazione pagine
+  const totalPagesFactureNew = docFacture.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPagesFactureNew; i++) {
+    docFacture.setPage(i);
+    drawFooter(docFacture);
+  }
+  addPageNumbers(docFacture);
+  
+  if (!isFactureManuelle && docMetrees) {
+    // Aggiungi footer al documento métrées
+    const totalPagesMetrees = docMetrees.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPagesMetrees; i++) {
+      docMetrees.setPage(i);
+      drawFooter(docMetrees);
+    }
+    addPageNumbers(docMetrees);
+    
+    // Salva entrambi i documenti
+    const docType = resocontoDoc ? 'Resoconto_Percentuale' : 'Metrees_Detaillees';
+    const alertType = resocontoDoc ? 'Resoconto percentuale' : 'Métrées détaillées';
+    
+    docMetrees.save(`${docType}_${facture.numero}.pdf`);
+    docFacture.save(`Facture_${facture.numero}.pdf`);
+    
+    alert(`Deux documents générés:\n1. ${alertType} (pour technicien)\n2. Facture (pour comptabilité)`);
   } else {
-    // Tabella semplificata se non ci sono détails
-    const montantHT = Number(facture.montant_ht || facture.montantHT || 0);
-    totalFactureHT = montantHT;
-    
-    body.push([
-      `Travaux électriques - ${getChantierName(chantierId)}`,
-      '1',
-      `${montantHT.toFixed(2)} CHF`,
-      `${montantHT.toFixed(2)} CHF`
-    ]);
+    // Solo fattura per fatture manuali
+    docFacture.save(`Facture_${facture.numero}.pdf`);
+    alert('Facture générée avec succès!');
   }
   
   // Genera la tabella fattura
@@ -1783,8 +1782,10 @@ const genererPDF = async (facture) => {
     alert('Facture générée avec succès!');
   }
   } catch (error) {
-    console.error('Errore generazione PDF:', error);
-    alert('Erreur génération PDF: ' + error.message);
+    console.error('Errore generazione PDF completo:', error);
+    console.error('Stack trace:', error.stack);
+    console.error('Messaggio:', error.message);
+    alert('Erreur génération PDF: ' + error.message + '\n\nVedi console per dettagli');
   }
 };
 

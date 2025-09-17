@@ -122,8 +122,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
@@ -166,19 +165,16 @@ const loadMonitoringData = async () => {
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
     
     // Carica dipendenti
-    const collaborateursSnapshot = await getDocs(collection(db, 'collaborateurs'));
-    const collaborateurs = collaborateursSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    const chefsSnapshot = await getDocs(collection(db, 'chefdechantiers'));
-    const chefs = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: collaborateurs } = await supabase.from('collaborateurs').select('*');
+    const { data: chefs } = await supabase.from('chefdechantiers').select('*');
     
     const employes = [
-      ...chefs.filter(c => !c.excludeFromReport).map(c => ({ 
+      ...(chefs || []).filter(c => !c.excludeFromReport).map(c => ({ 
         email: c.email, 
         nom: `${c.nom} ${c.prenom}`, 
         type: 'chef' 
       })),
-      ...collaborateurs.filter(c => !c.excludeFromReport).map(c => ({ 
+      ...(collaborateurs || []).filter(c => !c.excludeFromReport).map(c => ({ 
         email: c.email, 
         nom: `${c.nom} ${c.prenom}`, 
         type: 'ouvrier' 
@@ -186,18 +182,12 @@ const loadMonitoringData = async () => {
     ];
     
     // Carica ore
-    const heuresChefSnapshot = await getDocs(collection(db, 'heures_chef_propres'));
-    const heuresChef = heuresChefSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    const heuresInterimSnapshot = await getDocs(collection(db, 'heures_chef_interim'));
-    const heuresInterim = heuresInterimSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    const heuresOuvriersSnapshot = await getDocs(collection(db, 'heures_ouvriers'));
-    const heuresOuvriers = heuresOuvriersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*');
+    const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*');
+    const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*');
     
     // Carica assenze
-    const absencesSnapshot = await getDocs(collection(db, 'absences'));
-    const absences = absencesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data: absences } = await supabase.from('absences').select('*');
     
     // Genera dati monitoring
     const monitoring = [];
@@ -230,17 +220,17 @@ const loadMonitoringData = async () => {
         
         // Controlla ore
         if (employe.type === 'chef') {
-          const heuresChefJour = heuresChef.filter(h => h.date === dateStr && h.chefId === employe.email);
-          const heuresInterimJour = heuresInterim.filter(h => h.date === dateStr && h.chefId === employe.email);
+          const heuresChefJour = (heuresChef || []).filter(h => h.date === dateStr && h.chefId === employe.email);
+          const heuresInterimJour = (heuresInterim || []).filter(h => h.date === dateStr && h.chefId === employe.email);
           heuresJour = heuresChefJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
                       heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
         } else {
-          const heuresOuvriersJour = heuresOuvriers.filter(h => h.date === dateStr && h.ouvrierId === employe.email);
+          const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr && h.ouvrierId === employe.email);
           heuresJour = heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
         }
         
         // Controlla assenze
-        const absenceJour = absences.find(a => 
+        const absenceJour = (absences || []).find(a => 
           a.userId === employe.email &&
           a.startDate <= dateStr && 
           a.endDate >= dateStr

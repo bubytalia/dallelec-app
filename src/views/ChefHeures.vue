@@ -10,11 +10,11 @@
     <h2 class="text-center mb-4">Saisie des Heures - Chef</h2>
     
     <div class="row">
-      <!-- Mes heures -->
+      <!-- Mes heures propres -->
       <div class="col-md-6">
         <div class="card">
           <div class="card-header">
-            <h5>Mes heures</h5>
+            <h5>Mes heures propres</h5>
           </div>
           <div class="card-body">
             <div class="mb-3">
@@ -32,9 +32,11 @@
             </div>
             <div class="mb-3">
               <label>Heures propres:</label>
-              <input v-model.number="newHeure.heuresPropres" type="number" step="0.5" class="form-control" />
+              <input v-model.number="newHeure.heures" type="number" step="0.5" class="form-control" />
             </div>
-            <button @click="addHeurePropre" class="btn btn-primary" :disabled="!newHeure.chantierId">Ajouter mes heures</button>
+            <button @click="addHeurePropre" class="btn btn-primary" :disabled="!newHeure.chantierId">
+              Ajouter mes heures
+            </button>
           </div>
         </div>
       </div>
@@ -64,23 +66,26 @@
               <select v-model="newHeureInterim.interimaireId" class="form-control">
                 <option value="">Sélectionner un intérimaire</option>
                 <option v-for="interimaire in interimaires" :key="interimaire.id" :value="interimaire.id">
-                  {{ interimaire.nom }} {{ interimaire.prenom }} - {{ interimaire.specialite || 'N/A' }}
+                  {{ interimaire.nom }} {{ interimaire.prenom }}
                 </option>
               </select>
             </div>
             <div class="mb-3">
               <label>Heures intérimaires:</label>
-              <input v-model.number="newHeureInterim.heuresInterim" type="number" step="0.5" class="form-control" />
+              <input v-model.number="newHeureInterim.heures" type="number" step="0.5" class="form-control" />
             </div>
-            <button @click="addHeureInterim" class="btn btn-success" :disabled="!newHeureInterim.chantierId">Ajouter heures intérim</button>
+            <button @click="addHeureInterim" class="btn btn-success" :disabled="!newHeureInterim.chantierId">
+              Ajouter heures intérim
+            </button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Liste des heures -->
     <div class="row mt-4">
       <div class="col-md-6">
-        <h5>Mes heures</h5>
+        <h5>Mes heures propres</h5>
         <table class="table table-sm">
           <thead>
             <tr>
@@ -94,7 +99,7 @@
             <tr v-for="heure in heuresPropres" :key="heure.id">
               <td>{{ getChantierName(heure.chantier_id) }}</td>
               <td>{{ formatDate(heure.date) }}</td>
-              <td>{{ heure.heures_propres }}</td>
+              <td>{{ heure.total_heures }}</td>
               <td>
                 <button @click="deleteHeure(heure.id, 'propres')" class="btn btn-danger btn-sm">🗑</button>
               </td>
@@ -119,8 +124,8 @@
             <tr v-for="heure in heuresInterim" :key="heure.id">
               <td>{{ getChantierName(heure.chantier_id) }}</td>
               <td>{{ formatDate(heure.date) }}</td>
-              <td>{{ getInterimaireName(heure.interimaire_id) }}</td>
-              <td>{{ heure.heures_interim }}</td>
+              <td>{{ heure.interinaire_nom }}</td>
+              <td>{{ heure.total_heures }}</td>
               <td>
                 <button @click="deleteHeure(heure.id, 'interim')" class="btn btn-danger btn-sm">🗑</button>
               </td>
@@ -133,7 +138,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '@/supabase.js';
 
@@ -146,14 +151,14 @@ const heuresInterim = ref([]);
 const newHeure = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
-  heuresPropres: 0
+  heures: 0
 });
 
 const newHeureInterim = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
   interimaireId: '',
-  heuresInterim: 0
+  heures: 0
 });
 
 const logout = async () => {
@@ -168,10 +173,7 @@ const logout = async () => {
 
 const fetchInterimaires = async () => {
   try {
-    const { data, error } = await supabase
-      .from('interimaires')
-      .select('*');
-    
+    const { data, error } = await supabase.from('interimaires').select('*');
     if (error) throw error;
     interimaires.value = data || [];
   } catch (error) {
@@ -181,10 +183,7 @@ const fetchInterimaires = async () => {
 
 const fetchChantiers = async () => {
   try {
-    const { data, error } = await supabase
-      .from('chantiers')
-      .select('*');
-    
+    const { data, error } = await supabase.from('chantiers').select('*');
     if (error) throw error;
     chantiers.value = data || [];
   } catch (error) {
@@ -194,9 +193,11 @@ const fetchChantiers = async () => {
 
 const fetchHeuresPropres = async () => {
   try {
+    const userEmail = localStorage.getItem('userEmail');
     const { data, error } = await supabase
       .from('heures_chef_propres')
       .select('*')
+      .eq('chef_id', userEmail)
       .order('date', { ascending: false });
     
     if (error) throw error;
@@ -208,9 +209,11 @@ const fetchHeuresPropres = async () => {
 
 const fetchHeuresInterim = async () => {
   try {
+    const userEmail = localStorage.getItem('userEmail');
     const { data, error } = await supabase
       .from('heures_chef_interim')
       .select('*')
+      .eq('chef_id', userEmail)
       .order('date', { ascending: false });
     
     if (error) throw error;
@@ -222,7 +225,7 @@ const fetchHeuresInterim = async () => {
 
 const addHeurePropre = async () => {
   const userEmail = localStorage.getItem('userEmail');
-  if (!newHeure.value.chantierId || !newHeure.value.date || !newHeure.value.heuresPropres || !userEmail) return;
+  if (!newHeure.value.chantierId || !newHeure.value.date || !newHeure.value.heures || !userEmail) return;
   
   try {
     const { error } = await supabase
@@ -230,7 +233,8 @@ const addHeurePropre = async () => {
       .insert([{
         chantier_id: newHeure.value.chantierId,
         date: newHeure.value.date,
-        heures_propres: newHeure.value.heuresPropres,
+        heures_normales: newHeure.value.heures,
+        total_heures: newHeure.value.heures,
         chef_id: userEmail
       }]);
     
@@ -239,7 +243,7 @@ const addHeurePropre = async () => {
     newHeure.value = {
       chantierId: '',
       date: new Date().toISOString().split('T')[0],
-      heuresPropres: 0
+      heures: 0
     };
     fetchHeuresPropres();
   } catch (error) {
@@ -250,7 +254,7 @@ const addHeurePropre = async () => {
 
 const addHeureInterim = async () => {
   const userEmail = localStorage.getItem('userEmail');
-  if (!newHeureInterim.value.chantierId || !newHeureInterim.value.date || !newHeureInterim.value.interimaireId || !newHeureInterim.value.heuresInterim || !userEmail) return;
+  if (!newHeureInterim.value.chantierId || !newHeureInterim.value.date || !newHeureInterim.value.interimaireId || !newHeureInterim.value.heures || !userEmail) return;
   
   try {
     const { error } = await supabase
@@ -258,8 +262,9 @@ const addHeureInterim = async () => {
       .insert([{
         chantier_id: newHeureInterim.value.chantierId,
         date: newHeureInterim.value.date,
-        interimaire_id: newHeureInterim.value.interimaireId,
-        heures_interim: newHeureInterim.value.heuresInterim,
+        interinaire_nom: getInterimaireName(newHeureInterim.value.interimaireId),
+        heures_normales: newHeureInterim.value.heures,
+        total_heures: newHeureInterim.value.heures,
         chef_id: userEmail
       }]);
     
@@ -269,7 +274,7 @@ const addHeureInterim = async () => {
       chantierId: '',
       date: new Date().toISOString().split('T')[0],
       interimaireId: '',
-      heuresInterim: 0
+      heures: 0
     };
     fetchHeuresInterim();
   } catch (error) {
@@ -282,10 +287,7 @@ const deleteHeure = async (id, type) => {
   if (confirm('Confirmer la suppression ?')) {
     try {
       const tableName = type === 'propres' ? 'heures_chef_propres' : 'heures_chef_interim';
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from(tableName).delete().eq('id', id);
       
       if (error) throw error;
       

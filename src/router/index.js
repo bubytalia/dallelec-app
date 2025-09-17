@@ -108,7 +108,7 @@ const routes = [
   { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },
   { path: '/admin/backup', name: 'AdminBackup', component: () => import('@/components/BackupSupabase.vue') },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },
-  { path: '/change-password', name: 'ChangePassword', component: () => import('@/views/ChangePassword.vue') },
+
 
   // Chef routes
   { path: '/chef', name: 'ChefDashboard', component: ChefDashboard, beforeEnter: requireRole(['chef']) },

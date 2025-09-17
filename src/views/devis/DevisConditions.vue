@@ -364,15 +364,11 @@ onMounted(async () => {
  * Si asDraft est true, marque le devis comme brouillon; sinon, resta dans son état actuel.
  */
 const sauvegarder = async (asDraft) => {
+  console.log('Salvando devis con draft:', asDraft);
   try {
     const { error } = await supabase
       .from('devis')
       .update({
-        paiement: selectedPaiement.value,
-        conditions_generales: [...selectedGeneralesIds.value],
-        conditions_comprend: [...selectedComprendIds.value],
-        conditions_ne_comprend_pas: [...selectedExcluIds.value],
-        notes: notes.value,
         draft: asDraft,
         updated_at: new Date().toISOString(),
       })

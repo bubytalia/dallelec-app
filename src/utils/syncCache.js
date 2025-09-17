@@ -1,8 +1,7 @@
-import { db } from '@/firebase'
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore'
+import { supabase } from '@/supabase'
 
 export class CacheSync {
-  static async syncCacheToFirestore() {
+  static async syncCacheToSupabase() {
     const collections = [
       'clients', 'chantiers', 'produits', 'techniciens', 
       'collaborateurs', 'chefdechantiers', 'interimaires',
@@ -15,17 +14,14 @@ export class CacheSync {
       try {
         console.log(`🔄 Sincronizzando ${collectionName}...`)
         
-        // Leggi dalla cache/offline
-        const snapshot = await getDocs(collection(db, collectionName))
-        let count = 0
+        // Leggi da Supabase
+        const { data: items, error } = await supabase.from(collectionName).select('*')
         
-        for (const docSnapshot of snapshot.docs) {
-          const data = docSnapshot.data()
-          
-          // Forza scrittura su Firestore
-          await setDoc(doc(db, collectionName, docSnapshot.id), data, { merge: true })
-          count++
+        if (error) {
+          throw error
         }
+        
+        let count = items?.length || 0
         
         results.push({ collection: collectionName, synced: count })
         console.log(`✅ ${collectionName}: ${count} documenti sincronizzati`)

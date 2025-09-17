@@ -1,16 +1,14 @@
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { useFirebase } from './useFirebase'
+import { supabase } from '../supabase'
 import { useAuth } from './useAuth'
 
 export function useAuditLog() {
-  const { db } = useFirebase()
   const { user } = useAuth()
 
   const logAction = async (action, resource, details = {}) => {
     try {
       const logEntry = {
-        timestamp: serverTimestamp(),
-        userId: user.value?.uid || 'anonymous',
+        timestamp: new Date().toISOString(),
+        userId: user.value?.id || 'anonymous',
         userEmail: user.value?.email || 'unknown',
         action: encodeURIComponent(action),
         resource: encodeURIComponent(resource),
@@ -24,7 +22,7 @@ export function useAuditLog() {
         userAgent: navigator.userAgent.substring(0, 200) // Limitato per sicurezza
       }
 
-      await addDoc(collection(db, 'audit_log'), logEntry)
+      await supabase.from('audit_log').insert([logEntry])
     } catch (error) {
       console.error('Audit log error:', encodeURIComponent(error.message))
     }

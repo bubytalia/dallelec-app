@@ -121,11 +121,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { collection, query, orderBy, limit, getDocs, where, Timestamp } from 'firebase/firestore'
-import { useFirebase } from '@/composables/useFirebase'
+import { supabase } from '@/supabase'
 // import BackupManager from './BackupManager.vue' // Temporaneamente disabilitato
-
-const { db } = useFirebase()
 
 const securityMetrics = ref({
   successfulLogins: 0,
@@ -142,39 +139,47 @@ const loadSecurityMetrics = async () => {
     const yesterday = new Date()
     yesterday.setDate(yesterday.getDate() - 1)
     
-    // Login metrics from audit log
-    const loginQuery = query(
-      collection(db, 'audit_log'),
-      where('action', '==', 'login'),
-      where('timestamp', '>=', Timestamp.fromDate(yesterday))
-    )
-    
-    const loginSnapshot = await getDocs(loginQuery)
-    let successful = 0
-    let failed = 0
-    
-    loginSnapshot.docs.forEach(doc => {
-      const data = doc.data()
-      if (data.details.status === 'success') {
-        successful++
-      } else {
-        failed++
+    // Login metrics from audit log (se esiste la tabella)
+    try {
+      const { data: loginData, error } = await supabase
+        .from('audit_log')
+        .select('*')
+        .eq('action', 'login')
+        .gte('timestamp', yesterday.toISOString())
+      
+      if (!error && loginData) {
+        let successful = 0
+        let failed = 0
+        
+        loginData.forEach(log => {
+          if (log.details?.status === 'success') {
+            successful++
+          } else {
+            failed++
+          }
+        })
+        
+        securityMetrics.value.successfulLogins = successful
+        securityMetrics.value.failedLogins = failed
+        
+        // Check for security alerts
+        if (failed > 10) {
+          securityAlerts.value.push({
+            id: 'high-failed-logins',
+            severity: 'danger',
+            title: 'High Failed Login Attempts',
+            message: `${failed} tentativi di login falliti nelle ultime 24 ore`,
+            timestamp: new Date().toLocaleString()
+          })
+        }
       }
-    })
-    
-    securityMetrics.value.successfulLogins = successful
-    securityMetrics.value.failedLogins = failed
-    
-    // Check for security alerts
-    if (failed > 10) {
-      securityAlerts.value.push({
-        id: 'high-failed-logins',
-        severity: 'danger',
-        title: 'High Failed Login Attempts',
-        message: `${failed} tentativi di login falliti nelle ultime 24 ore`,
-        timestamp: new Date().toLocaleString()
-      })
+    } catch (auditError) {
+      console.log('Audit log non disponibile:', auditError)
+      // Valori di default se non c'è audit log
+      securityMetrics.value.successfulLogins = 0
+      securityMetrics.value.failedLogins = 0
     }
+
     
     // Last backup info
     const lastBackup = localStorage.getItem('lastBackup')
@@ -197,25 +202,27 @@ const loadSecurityMetrics = async () => {
 
 const loadRecentLogs = async () => {
   try {
-    const logsQuery = query(
-      collection(db, 'audit_log'),
-      orderBy('timestamp', 'desc'),
-      limit(20)
-    )
+    const { data: logs, error } = await supabase
+      .from('audit_log')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(20)
     
-    const snapshot = await getDocs(logsQuery)
-    recentLogs.value = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    if (!error && logs) {
+      recentLogs.value = logs
+    } else {
+      console.log('Audit log non disponibile')
+      recentLogs.value = []
+    }
   } catch (error) {
     console.error('Error loading recent logs:', error)
+    recentLogs.value = []
   }
 }
 
 const formatDate = (timestamp) => {
   if (!timestamp) return 'N/A'
-  return timestamp.toDate ? timestamp.toDate().toLocaleString() : new Date(timestamp).toLocaleString()
+  return new Date(timestamp).toLocaleString()
 }
 
 onMounted(() => {
