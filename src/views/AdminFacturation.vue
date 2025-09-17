@@ -1394,21 +1394,25 @@ const genererPDF = async (facture) => {
         Object.values(grouped).forEach((group) => {
           // Aggiungiamo le righe del gruppo
           group.entries.forEach((s) => {
-            const totalML = s.totalML || (s.qte && s.valeur ? s.qte * s.valeur : 0);
+            const qteValue = Number(s.qte || 0);
+            const valeurValue = Number(s.valeur || 0);
+            const totalML = s.totalML || (qteValue && valeurValue ? qteValue * valeurValue : 0);
             body.push([
               s.article || '',
               s.nom || '',
               s.taille || '',
               s.supplement || '',
-              s.qte != null ? String(s.qte) : '',
-              s.valeur != null ? Number(s.valeur || 0).toFixed(2) : '0.00',
-              Number(totalML).toFixed(2)
+              s.qte != null ? String(qteValue) : '',
+              valeurValue.toFixed(2),
+              Number(totalML || 0).toFixed(2)
             ]);
           });
           
           // Aggiungiamo la riga totale per il gruppo
           const groupTotal = group.entries.reduce((sum, e) => {
-            const totalML = e.totalML || (e.qte && e.valeur ? e.qte * e.valeur : 0);
+            const qteValue = Number(e.qte || 0);
+            const valeurValue = Number(e.valeur || 0);
+            const totalML = e.totalML || (qteValue && valeurValue ? qteValue * valeurValue : 0);
             return sum + Number(totalML || 0);
           }, 0);
           
@@ -1526,9 +1530,8 @@ const genererPDF = async (facture) => {
   }
   
   docFacture.setFontSize(8);
-  const numeroCantiereText = chantier?.numeroCantiere ? `N° ${chantier.numeroCantiere}` : 'N/A';
-  docFacture.text(`N° Chantier: ${numeroCantiereText}`, 10, yClient + 2);
-  docFacture.text(`Chantier: ${getChantierName(chantierId)}`, 10, yClient + 6);
+  const numeroCantiereText = chantier?.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+  docFacture.text(`Chantier: ${numeroCantiereText}${getChantierName(chantierId)}`, 10, yClient + 2);
   
   // Tabella facture con struttura corretta (posizione ottimizzata)
   console.log('Preparazione tabella fattura...');
@@ -1536,22 +1539,12 @@ const genererPDF = async (facture) => {
   let totalFactureHT = 0;
   console.log('Variabili tabella inizializzate');
   
+  // Tabella fattura professionale
+  const head = [['Description', 'Quantité', 'Prix unitaire', 'Total HT']];
+  const body = [];
+  
   if (resocontoDoc) {
-    console.log('Creazione tabella resoconto...');
-    // Référence et objet (con spaziatura corretta)
-    docFacture.setFontSize(9);
-    docFacture.setFont('helvetica', 'bold');
-    docFacture.text(`Référence Devis: ${chantierDevis?.numero || 'N/A'}`, 10, factureTableY);
-    docFacture.setFont('helvetica', 'normal');
-    docFacture.text('Objet: Pose de chemin de câbles', 10, factureTableY + 5);
-    
-    factureTableY += 15; // Sposta la tabella più in basso
-    
-    // Tabella facture per resoconto percentuale
-    const head = [['Zone', 'Montant Devis', '% Réalisé', '% Déjà Facturé', '% Facturé', 'Montant HT']];
-    const body = [];
-    
-    // Calcola percentuali già fatturate per zona
+    // Per resoconti: calcola importi per zona
     const percentualiGiaFatturate = {};
     const fatturePassate = factures.value.filter(f => 
       f.chantierId === facture.chantierId && 
@@ -1563,76 +1556,61 @@ const genererPDF = async (facture) => {
       const resocontoPassato = resocontiPercentuali.value.find(r => r.id === fatturaPassata.resocontoId);
       if (resocontoPassato?.avancementi) {
         Object.entries(resocontoPassato.avancementi).forEach(([zona, pct]) => {
-          percentualiGiaFatturate[zona] = (percentualiGiaFatturate[zona] || 0) + pct;
+          percentualiGiaFatturate[zona] = (percentualiGiaFatturate[zona] || 0) + Number(pct || 0);
         });
       }
     }
     
-    // Calcola importo devis per zona basandosi sui prodotti reali
     const importoPerZona = {};
     if (chantierDevis?.produits) {
       chantierDevis.produits.forEach(prodotto => {
         const zona = prodotto.zone;
-        const importoProdotto = (prodotto.totalML || prodotto.ml || 0) * (prodotto.prix || 0);
+        const importoProdotto = Number(prodotto.totalML || prodotto.ml || 0) * Number(prodotto.prix || 0);
         importoPerZona[zona] = (importoPerZona[zona] || 0) + importoProdotto;
       });
     }
     
-    // Genera righe per ogni zona
     Object.entries(resocontoDoc.avancementi || {}).forEach(([zona, percentualeCorrente]) => {
-      const importoDevis = importoPerZona[zona] || 0;
-      const percentualeGiaFatt = percentualiGiaFatturate[zona] || 0;
-      const percentualeDaFatturare = percentualeCorrente;
+      const importoDevis = Number(importoPerZona[zona] || 0);
+      const percentualeDaFatturare = Number(percentualeCorrente || 0);
       const importoFatturato = importoDevis * (percentualeDaFatturare / 100);
-      const percentualeTotaleRealizzata = percentualeGiaFatt + percentualeCorrente;
       totalFactureHT += importoFatturato;
       
       body.push([
-        zona,
-        importoDevis.toFixed(2) + ' CHF',
-        percentualeTotaleRealizzata.toFixed(1) + '%',
-        percentualeGiaFatt.toFixed(1) + '%',
-        percentualeDaFatturare.toFixed(1) + '%',
-        importoFatturato.toFixed(2) + ' CHF'
+        `Travaux électriques - Zone ${zona}`,
+        `${percentualeDaFatturare}%`,
+        `${importoDevis.toFixed(2)} CHF`,
+        `${importoFatturato.toFixed(2)} CHF`
       ]);
     });
-    
-    autoTable(docFacture, {
-      head,
-      body,
-      startY: factureTableY,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [230, 230, 230],
-        textColor: 20,
-        fontSize: 9
-      },
-      bodyStyles: {
-        fontSize: 9
-      }
-    });
-    
-    factureTableY = docFacture.lastAutoTable.finalY + 10;
   }
-  else if (metrageDoc) {
-    // Usa il montant già calcolato dalla fattura
-    const montantTravauxHT = facture.montant_ht || facture.montantHT || 0;
-    const head = [['Description', 'Montant HT']];
-    const body = [[
-      `Travaux électriques - ${getChantierName(chantierId)}`,
-      montantTravauxHT.toFixed(2) + ' CHF'
-    ]];
-    
-    autoTable(docFacture, {
-      head,
-      body,
-      startY: factureTableY,
-      theme: 'grid',
-      headStyles: { fillColor: [230, 230, 230] }
+  else if (metrageDoc && metrageDoc.items) {
+    // Per métrages: raggruppa per zona e calcola totali
+    const grouped = {};
+    metrageDoc.items.forEach(item => {
+      if (!grouped[item.zone]) {
+        grouped[item.zone] = { totalML: 0, items: [] };
+      }
+      grouped[item.zone].totalML += Number(item.totalML || 0);
+      grouped[item.zone].items.push(item);
     });
     
-    totalFactureHT = montantTravauxHT;
-    factureTableY = docFacture.lastAutoTable.finalY + 10;
+    // Trova prezzo medio per ML dal devis
+    const prezzoMedioML = chantierDevis?.produits ? 
+      chantierDevis.produits.reduce((sum, p) => sum + Number(p.prix || 0), 0) / chantierDevis.produits.length : 50;
+    
+    Object.entries(grouped).forEach(([zoneName, zoneData]) => {
+      const totalML = zoneData.totalML;
+      const importoZona = totalML * prezzoMedioML;
+      totalFactureHT += importoZona;
+      
+      body.push([
+        `Travaux électriques - Zone ${zoneName}`,
+        `${totalML.toFixed(2)} ML`,
+        `${prezzoMedioML.toFixed(2)} CHF/ML`,
+        `${importoZona.toFixed(2)} CHF`
+      ]);
+    });
   } else if (facture.type === 'manuelle' && facture.lignes) {
     // Tabella per fatture manuali con lignes
     const head = [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']];
@@ -1644,51 +1622,47 @@ const genererPDF = async (facture) => {
       
       body.push([
         ligne.description || '',
-        ligne.unite || '',
-        ligne.quantite.toString(),
-        ligne.prixUnitaire.toFixed(2) + ' CHF',
-        total.toFixed(2) + ' CHF'
+        `${ligne.quantite} ${ligne.unite || ''}`,
+        `${ligne.prixUnitaire.toFixed(2)} CHF`,
+        `${total.toFixed(2)} CHF`
       ]);
     });
-    
-    autoTable(docFacture, {
-      head,
-      body,
-      startY: factureTableY,
-      theme: 'grid',
-      headStyles: { fillColor: [230, 230, 230] },
-      columnStyles: {
-        0: { cellWidth: 60 },  // Description
-        1: { cellWidth: 20 },  // Unité
-        2: { cellWidth: 25 },  // Quantité
-        3: { cellWidth: 30 },  // Prix unitaire
-        4: { cellWidth: 30 }   // Total HT
-      }
-    });
-    
-    factureTableY = docFacture.lastAutoTable.finalY + 10;
   } else {
-    // Tabella semplificata se non ci sono détails métrage
-    const montantHT = facture.montant_ht || facture.montantHT || 0;
-    const head = [['Description', 'Quantité', 'Prix unitaire', 'Total HT']];
-    const body = [[
+    // Tabella semplificata se non ci sono détails
+    const montantHT = Number(facture.montant_ht || facture.montantHT || 0);
+    totalFactureHT = montantHT;
+    
+    body.push([
       `Travaux électriques - ${getChantierName(chantierId)}`,
       '1',
-      montantHT.toFixed(2) + ' CHF',
-      montantHT.toFixed(2) + ' CHF'
-    ]];
-    
-    autoTable(docFacture, {
-      head,
-      body,
-      startY: factureTableY,
-      theme: 'grid',
-      headStyles: { fillColor: [230, 230, 230] }
-    });
-    
-    totalFactureHT = montantHT;
-    factureTableY = docFacture.lastAutoTable.finalY + 10;
+      `${montantHT.toFixed(2)} CHF`,
+      `${montantHT.toFixed(2)} CHF`
+    ]);
   }
+  
+  // Genera la tabella fattura
+  autoTable(docFacture, {
+    head,
+    body,
+    startY: factureTableY,
+    theme: 'grid',
+    headStyles: { 
+      fillColor: [230, 230, 230],
+      textColor: 20,
+      fontSize: 10
+    },
+    bodyStyles: {
+      fontSize: 9
+    },
+    columnStyles: {
+      0: { cellWidth: 80 },  // Description
+      1: { cellWidth: 30 },  // Quantité
+      2: { cellWidth: 35 },  // Prix unitaire
+      3: { cellWidth: 35 }   // Total HT
+    }
+  });
+  
+  factureTableY = docFacture.lastAutoTable.finalY + 10;
   
   // Sezione Regie nella fattura
   let totalRegiesHT = 0;
@@ -1749,9 +1723,9 @@ const genererPDF = async (facture) => {
   
   // Totaux usando i dati reali della fattura
   const finalY = factureTableY;
-  const realMontantHT = facture.montant_ht || facture.montantHT || 0;
-  const realTauxTVA = facture.taux_tva || facture.tauxTVA || 7.7;
-  const realMontantTTC = facture.montant_ttc || facture.montantTTC || 0;
+  const realMontantHT = Number(facture.montant_ht || facture.montantHT || 0);
+  const realTauxTVA = Number(facture.taux_tva || facture.tauxTVA || 7.7);
+  const realMontantTTC = Number(facture.montant_ttc || facture.montantTTC || 0);
   const realMontantTVA = realMontantTTC - realMontantHT;
   
   docFacture.setFontSize(10);

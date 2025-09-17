@@ -73,7 +73,7 @@
         </button>
       </div>
       <div class="col-md-3 m-2">
-        <BackupSupabase />
+        <BackupOptions />
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/aide" class="btn btn-outline-danger w-100">❓ Aide</router-link>
@@ -94,7 +94,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/firebase';
 import { useRouter } from 'vue-router';
 import { setFirstLoginForAllUsers } from '@/utils/setFirstLoginAll';
-import BackupSupabase from '@/components/BackupSupabase.vue';
+import BackupOptions from '@/components/BackupOptions.vue';
 
 const router = useRouter();
 const scriptRunning = ref(false);

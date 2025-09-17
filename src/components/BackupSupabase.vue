@@ -171,9 +171,32 @@ export default {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       
-      // Messaggio per l'utente
+      // Prova a salvare anche sul Samsung T5
+      try {
+        await saveToSamsungT5(jsonData, filename)
+      } catch (error) {
+        console.log('Backup salvato in Download. Samsung T5 non disponibile.')
+      }
+      
       console.log(`File scaricato: ${filename}`)
-      console.log('IMPORTANTE: Sposta il file dalla cartella Download a OneDrive/DallelecBackups/')
+    }
+
+    const saveToSamsungT5 = async (jsonData, filename) => {
+      // Usa File System Access API se disponibile
+      if ('showDirectoryPicker' in window) {
+        try {
+          const dirHandle = await window.showDirectoryPicker()
+          const fileHandle = await dirHandle.getFileHandle(filename, { create: true })
+          const writable = await fileHandle.createWritable()
+          await writable.write(jsonData)
+          await writable.close()
+          console.log('✅ Backup salvato anche sul drive esterno!')
+        } catch (error) {
+          throw error
+        }
+      } else {
+        throw new Error('File System Access API non supportata')
+      }
     }
 
     return {
