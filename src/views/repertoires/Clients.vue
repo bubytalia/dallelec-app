@@ -26,6 +26,14 @@
       <div class="col">
         <input v-model="newClient.email_compta" placeholder="Email de comptabilité" class="form-control" />
       </div>
+      <div class="col">
+        <select v-model="newClient.paiement_id" class="form-control">
+          <option value="">Conditions de paiement</option>
+          <option v-for="paiement in paiements" :key="paiement.id" :value="paiement.id">
+            {{ paiement.nom }}
+          </option>
+        </select>
+      </div>
     </div>
     <div class="text-center mb-4">
       <button @click="addClient" class="btn btn-primary">Ajouter</button>
@@ -40,6 +48,7 @@
           <th>Téléphone</th>
           <th>Email contact</th>
           <th>Email comptabilité</th>
+          <th>Conditions paiement</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -53,6 +62,14 @@
             <td><input v-model="editClient.email_contact" class="form-control" /></td>
             <td><input v-model="editClient.email_compta" class="form-control" /></td>
             <td>
+              <select v-model="editClient.paiement_id" class="form-control">
+                <option value="">-</option>
+                <option v-for="paiement in paiements" :key="paiement.id" :value="paiement.id">
+                  {{ paiement.nom }}
+                </option>
+              </select>
+            </td>
+            <td>
               <button @click="updateClient(client.id)" class="btn btn-success btn-sm">✔</button>
               <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
             </td>
@@ -64,6 +81,7 @@
             <td>{{ client.telephone }}</td>
             <td>{{ client.email_contact }}</td>
             <td>{{ client.email_compta }}</td>
+            <td>{{ getPaiementNom(client.paiement_id) }}</td>
             <td>
               <button @click="startEdit(client)" class="btn btn-warning btn-sm">✎</button>
               <button @click="deleteClient(client.id)" class="btn btn-danger btn-sm">🗑</button>
@@ -87,13 +105,15 @@ export default {
   },
   setup() {
     const clients = ref([]);
+    const paiements = ref([]);
     const newClient = ref({
       nom: '',
       adresse: '',
       ville: '',
       telephone: '',
       email_contact: '',
-      email_compta: ''
+      email_compta: '',
+      paiement_id: ''
     });
 
     const editId = ref(null);
@@ -113,6 +133,25 @@ export default {
       }
     };
 
+    const fetchPaiements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('paiements')
+          .select('*')
+          .order('nom');
+        
+        if (error) throw error;
+        paiements.value = data || [];
+      } catch (error) {
+        console.error('Errore caricamento paiements:', error);
+      }
+    };
+
+    const getPaiementNom = (paiementId) => {
+      const paiement = paiements.value.find(p => p.id === paiementId);
+      return paiement ? paiement.nom : '-';
+    };
+
     const addClient = async () => {
       try {
         const { error } = await supabase
@@ -126,7 +165,8 @@ export default {
           ville: '',
           telephone: '',
           email_contact: '',
-          email_compta: ''
+          email_compta: '',
+          paiement_id: ''
         };
         fetchClients();
       } catch (error) {
@@ -175,10 +215,14 @@ export default {
       }
     };
 
-    onMounted(fetchClients);
+    onMounted(() => {
+      fetchClients();
+      fetchPaiements();
+    });
 
     return {
       clients,
+      paiements,
       newClient,
       addClient,
       editId,
@@ -186,7 +230,8 @@ export default {
       startEdit,
       cancelEdit,
       updateClient,
-      deleteClient
+      deleteClient,
+      getPaiementNom
     };
   }
 };

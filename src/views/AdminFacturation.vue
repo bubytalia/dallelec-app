@@ -121,7 +121,7 @@
               <tr v-for="facture in facturesRecentes" :key="facture.id">
                 <td><strong>{{ facture.numero }}</strong></td>
                 <td>{{ getChantierName(facture.chantier_id || facture.chantierId) }}</td>
-                <td>{{ facture.client_nom || facture.clientNom }}</td>
+                <td>{{ facture.client_nom || facture.clientNom || getClientName(facture.chantier_id || facture.chantierId) }}</td>
                 <td>{{ formatDate(facture.date_facture || facture.dateFacture) }}</td>
                 <td>{{ formatCurrency(facture.montant_ttc || facture.montantTTC) }}</td>
                 <td>
@@ -941,406 +941,531 @@ const formatPeriodeMetrage = (metrage) => {
 
 
 const genererPDF = async (facture) => {
-  // Fatture manuali: PDF con layout professionale
-  if (facture.type === 'manuelle') {
+  try {
+    // Import logo
+    let logo;
     try {
-      // Import logo
-      let logo;
-      try {
-        const logoModule = await import('@/assets/logo.jpg');
-        logo = logoModule.default;
-      } catch (e) {
-        console.warn('Logo non trovato');
-      }
-      
+      const logoModule = await import('@/assets/logo.jpg');
+      logo = logoModule.default;
+    } catch (e) {
+      console.warn('Logo non trovato');
+    }
+
+    // Fatture manuali: PDF semplice
+    if (facture.type === 'manuelle') {
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
       
-      // Logo Dallelec
-      if (logo) {
-        const logoW = 55;
-        const logoH = logoW / 5.32;
-        doc.addImage(logo, 'JPEG', 10, 10, logoW, logoH);
-      }
-      
-      // Dati aziendali
+      if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
       doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      const companyInfo = [
-        'DALLELEC Sarl',
-        'Rue de Bourgogne 25', 
-        '1203 Genève',
-        'contact@dallelec.ch'
-      ];
-      let y = 12;
-      doc.setTextColor(80);
-      companyInfo.forEach((line) => {
-        doc.text(line, 200, y, { align: 'right' });
-        y += 4;
-      });
-      
-      // Titolo
+      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
       doc.setFontSize(20);
-      doc.setFont('Helvetica', 'bold');
-      doc.setTextColor(40);
+      doc.setFont('helvetica', 'bold');
       doc.text(`FACTURE N. ${facture.numero}`, 10, 40);
-      
-      // Date e informazioni
       doc.setFontSize(9);
-      doc.setFont('Helvetica', 'normal');
-      doc.text(`Date: ${formatDate(facture.date_facture || facture.dateFacture)}`, 10, 50);
-      if (facture.date_echeance || facture.dateEcheance) {
-        doc.text(`Échéance: ${formatDate(facture.date_echeance || facture.dateEcheance)}`, 10, 55);
-      }
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
+      doc.text(`Client: ${facture.client_nom}`, 10, 60);
       
-      // Client
-      doc.setFontSize(10);
-      doc.setFont('Helvetica', 'bold');
-      doc.text('FACTURÉ À:', 10, 70);
-      doc.setFontSize(8);
-      doc.setFont('Helvetica', 'normal');
-      doc.text(facture.client_nom || facture.clientNom, 10, 77);
-      
-      // Cantiere se presente
-      if (facture.chantier_id || facture.chantierId) {
-        const chantier = chantiers.value.find(c => c.id === (facture.chantier_id || facture.chantierId));
-        if (chantier) {
-          const numeroChantier = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
-          doc.text(`Chantier: ${numeroChantier}${chantier.nom}`, 10, 84);
-        }
-      }
-      
-      // Tabella lignes
       const tableData = facture.lignes.map(ligne => [
         ligne.description,
-        ligne.unite,
         ligne.quantite.toString(),
         `${ligne.prixUnitaire.toFixed(2)} CHF`,
         `${(ligne.quantite * ligne.prixUnitaire).toFixed(2)} CHF`
       ]);
       
       autoTable(doc, {
-        head: [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']],
+        head: [['Description', 'Quantité', 'Prix unitaire', 'Total HT']],
         body: tableData,
-        startY: 95,
-        theme: 'grid',
-        headStyles: { fillColor: [230, 230, 230] },
-        margin: { left: 10, right: 10 },
-        columnStyles: {
-          0: { cellWidth: 85 },  // Description
-          1: { cellWidth: 15 },  // Unité ridotta
-          2: { cellWidth: 25 },  // Quantité
-          3: { cellWidth: 30 },  // Prix unitaire
-          4: { cellWidth: 30 }   // Total HT
-        }
+        startY: 70,
+        theme: 'grid'
       });
       
-      // Totaux alignés avec la fin de la tabella
       const finalY = doc.lastAutoTable.finalY + 10;
       const totalHT = facture.montant_ht || facture.montantHT;
       const tva = totalHT * 0.077;
       const ttc = totalHT + tva;
       
-      doc.setFontSize(10);
-      doc.text(`Total HT:`, 140, finalY);
-      doc.text(`${totalHT.toFixed(2)} CHF`, 190, finalY, { align: 'right' });
+      doc.text(`Total HT: ${totalHT.toFixed(2)} CHF`, 140, finalY);
+      doc.text(`TVA: ${tva.toFixed(2)} CHF`, 140, finalY + 7);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`TOTAL TTC: ${ttc.toFixed(2)} CHF`, 140, finalY + 17);
       
-      doc.text(`TVA (7.7%):`, 140, finalY + 7);
-      doc.text(`${tva.toFixed(2)} CHF`, 190, finalY + 7, { align: 'right' });
+      doc.save(`Facture_${facture.numero}.pdf`);
+      alert('Facture générée avec succès!');
+      return;
+    }
+
+    // Dati base
+    const chantierId = facture.chantier_id || facture.chantierId;
+    const metrageId = facture.metrage_id || facture.metrageId;
+    const chantier = chantiers.value.find(c => c.id === chantierId);
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
+    const metrageDoc = metrages.value.find(m => m.id === metrageId);
+    // Dati cliente completi con mode de paiement
+    const nomeCliente = facture.client_nom || chantier?.client || 'Client';
+    let clienteCompleto = null;
+    let modePaiement = '30 jours net';
+    
+    try {
+      const { data: clients } = await supabase
+        .from('clients')
+        .select('*, paiements(nom)')
+        .eq('nom', nomeCliente)
+        .single();
       
-      doc.setFontSize(12);
-      doc.setFont(undefined, 'bold');
-      doc.text(`TOTAL TTC:`, 140, finalY + 17);
-      doc.text(`${ttc.toFixed(2)} CHF`, 190, finalY + 17, { align: 'right' });
+      if (clients) {
+        clienteCompleto = clients;
+        if (clients.paiements?.nom) {
+          modePaiement = clients.paiements.nom;
+        }
+      }
+    } catch (error) {
+      console.log('Errore caricamento cliente:', error);
+    }
+    
+    const numeroChantier = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
+    const nomeChantier = chantier?.nom || 'N/A';
+    
+    // Periodo di riferimento
+    let periodoRef = '';
+    if (metrageDoc?.periode_debut && metrageDoc?.periode_fin) {
+      periodoRef = `Période: ${metrageDoc.periode_debut} - ${metrageDoc.periode_fin}`;
+    } else if (metrageDoc?.created_at) {
+      const date = new Date(metrageDoc.created_at);
+      const mese = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      periodoRef = `Période: ${mese}`;
+    }
+
+    // Funzioni helper
+    const drawHeader = (doc, title) => {
+      if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
+      doc.setFontSize(8);
+      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 10, 40);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
+      if (periodoRef) doc.text(periodoRef, 10, 57);
+      doc.text(`Client: ${nomeCliente}`, 10, periodoRef ? 64 : 57);
+      doc.text(`Chantier: ${numeroChantier}${nomeChantier}`, 10, periodoRef ? 71 : 64);
+    };
+
+    // 1. PDF MÉTRÉES (sans prix)
+    const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
+    drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
+    
+    let yPos = periodoRef ? 85 : 80;
+    
+    if (metrageDoc?.items) {
+      // Raggruppa per zone
+      const itemsByZone = {};
+      metrageDoc.items.forEach(item => {
+        if (!itemsByZone[item.zone]) itemsByZone[item.zone] = [];
+        itemsByZone[item.zone].push(item);
+      });
       
-      // Notes se presenti
-      if (facture.notes) {
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(60);
-        doc.text('Notes:', 10, finalY + 35);
-        doc.text(facture.notes, 10, finalY + 42);
+      // Per ogni zona
+      Object.entries(itemsByZone).forEach(([zoneName, items]) => {
+        docMetrees.setFontSize(12);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.text(`Zone: ${zoneName}`, 10, yPos);
+        
+        // Calcola totale supplementi per ogni item
+        const tableData = items.map(item => {
+          const quantite = Number(item.mlPosee) || 0;
+          let totalSuppl = 0;
+          
+          // Calcola totale supplementi da supplements array
+          if (item.supplements && Array.isArray(item.supplements)) {
+            totalSuppl = item.supplements.reduce((sum, supp) => {
+              const qte = Number(supp.qte || supp.qtePosee) || 0;
+              const valeur = Number(supp.valeur) || 0;
+              return sum + (qte * valeur);
+            }, 0);
+          }
+          
+          const total = quantite + totalSuppl;
+          
+          return [
+            item.article || '',
+            item.nom || '',
+            item.taille || '',
+            'm',
+            quantite.toFixed(2),
+            totalSuppl.toFixed(2),
+            total.toFixed(2)
+          ];
+        });
+        
+        autoTable(docMetrees, {
+          head: [['Code Article', 'Produit', 'Taille', 'Unité', 'Quantité', 'Total Suppl.', 'Total']],
+          body: tableData,
+          startY: yPos + 5,
+          theme: 'grid',
+          headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
+          bodyStyles: { fontSize: 8 }
+        });
+        
+        yPos = docMetrees.lastAutoTable.finalY + 5;
+        
+        // Sous-total zone
+        const zoneTotal = tableData.reduce((sum, row) => sum + Number(row[6]), 0);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.text(`Sous-total: ${zoneTotal.toFixed(2)} ML`, 150, yPos);
+        yPos += 15;
+      });
+      
+      // Détail suppléments par zone
+      yPos += 10;
+      docMetrees.setFontSize(14);
+      docMetrees.setFont('helvetica', 'bold');
+      docMetrees.text('Détail des Suppléments par Zone', 10, yPos);
+      yPos += 10;
+      
+      Object.entries(itemsByZone).forEach(([zoneName, items]) => {
+        docMetrees.setFontSize(12);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.text(`Zone: ${zoneName}`, 10, yPos);
+        yPos += 5;
+        
+        // Raggruppa supplementi per prodotto
+        const suppByProduct = {};
+        items.forEach(item => {
+          if (item.supplements?.length > 0) {
+            const key = `${item.article}-${item.nom}-${item.taille}`;
+            if (!suppByProduct[key]) {
+              suppByProduct[key] = {
+                article: item.article,
+                nom: item.nom,
+                taille: item.taille,
+                supplements: []
+              };
+            }
+            suppByProduct[key].supplements.push(...item.supplements);
+          }
+        });
+        
+        Object.values(suppByProduct).forEach(product => {
+          const suppData = product.supplements.map(supp => [
+            product.article,
+            product.nom,
+            product.taille,
+            supp.supplement || supp.nom || '',
+            (Number(supp.qte || supp.qtePosee) || 0).toString(),
+            (Number(supp.valeur) || 0).toFixed(1),
+            ((Number(supp.qte || supp.qtePosee) || 0) * (Number(supp.valeur) || 0)).toFixed(2) + ' ML'
+          ]);
+          
+          const totalSupp = product.supplements.reduce((sum, s) => 
+            sum + ((Number(s.qte || s.qtePosee) || 0) * (Number(s.valeur) || 0)), 0
+          );
+          
+          suppData.push([
+            '', '', '', 
+            { content: `Total Suppléments (${product.nom}):`, colSpan: 3, styles: { fontStyle: 'bold' } },
+            { content: `${totalSupp.toFixed(2)} ML`, styles: { fontStyle: 'bold' } }
+          ]);
+          
+          autoTable(docMetrees, {
+            head: [['Code Article', 'Produit', 'Taille', 'Supplément', 'Qté', 'Valeur', 'Total ML']],
+            body: suppData,
+            startY: yPos,
+            theme: 'grid',
+            headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
+            bodyStyles: { fontSize: 8 }
+          });
+          
+          yPos = docMetrees.lastAutoTable.finalY + 5;
+        });
+        
+        yPos += 10;
+      });
+    }
+    
+    // 2. PDF FACTURE (avec prix)
+    const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
+    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+    
+    yPos = 80;
+    let totalFactureHT = 0;
+    
+    if (metrageDoc?.items) {
+      // Raggruppa per zone
+      const itemsByZone = {};
+      metrageDoc.items.forEach(item => {
+        if (!itemsByZone[item.zone]) itemsByZone[item.zone] = [];
+        itemsByZone[item.zone].push(item);
+      });
+      
+      // Per ogni zona con prezzi
+      Object.entries(itemsByZone).forEach(([zoneName, items]) => {
+        docFacture.setFontSize(12);
+        docFacture.setFont('helvetica', 'bold');
+        docFacture.text(`Zone: ${zoneName}`, 10, yPos);
+        
+        let zoneTotal = 0;
+        const tableData = items.map(item => {
+          const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+          const prezzoUnit = Number(prodottoDevis?.prix || 50);
+          const quantite = Number(item.mlPosee) || 0;
+          
+          // Calcola totale supplementi
+          let totalSuppl = 0;
+          if (item.supplements && Array.isArray(item.supplements)) {
+            totalSuppl = item.supplements.reduce((sum, supp) => {
+              const qte = Number(supp.qte || supp.qtePosee) || 0;
+              const valeur = Number(supp.valeur) || 0;
+              return sum + (qte * valeur);
+            }, 0);
+          }
+          
+          const total = quantite + totalSuppl;
+          const totalItem = total * prezzoUnit;
+          zoneTotal += totalItem;
+          totalFactureHT += totalItem;
+          
+          return [
+            item.article || '',
+            item.nom || '',
+            item.taille || '',
+            'm',
+            quantite.toFixed(2),
+            totalSuppl.toFixed(2),
+            total.toFixed(2),
+            `${prezzoUnit.toFixed(2)} CHF`,
+            `${totalItem.toFixed(2)} CHF`
+          ];
+        });
+        
+        autoTable(docFacture, {
+          head: [['Code Article', 'Produit', 'Taille', 'Unité', 'Quantité', 'Total Suppl.', 'Total', 'Prix Unit.', 'Total']],
+          body: tableData,
+          startY: yPos + 5,
+          theme: 'grid',
+          headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
+          bodyStyles: { fontSize: 8 }
+        });
+        
+        yPos = docFacture.lastAutoTable.finalY + 5;
+        
+        // Sous-total zone
+        docFacture.setFont('helvetica', 'bold');
+        docFacture.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 150, yPos);
+        yPos += 15;
+      });
+    }
+    
+    // Régies se presenti
+    if (metrageDoc?.regies?.length > 0) {
+      docFacture.setFontSize(12);
+      docFacture.setFont('helvetica', 'bold');
+      docFacture.text('RÉGIES', 10, yPos);
+      
+      const regieData = metrageDoc.regies.map(regie => {
+        const total = (Number(regie.heures) || 0) * (Number(regie.prixHeure) || 0);
+        totalFactureHT += total;
+        return [
+          regie.zone || '',
+          regie.description || '',
+          `${regie.heures || 0}h`,
+          `${(Number(regie.prixHeure) || 0).toFixed(2)} CHF`,
+          `${total.toFixed(2)} CHF`
+        ];
+      });
+      
+      autoTable(docFacture, {
+        head: [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']],
+        body: regieData,
+        startY: yPos + 5,
+        theme: 'grid',
+        headStyles: { fillColor: [230, 230, 230], fontSize: 9 },
+        bodyStyles: { fontSize: 8 }
+      });
+      
+      yPos = docFacture.lastAutoTable.finalY + 10;
+    }
+    
+    // Totali finali
+    const realMontantHT = totalFactureHT;
+    const realTauxTVA = 8.1; // TVA svizzera 8.1%
+    const realMontantTVA = realMontantHT * (realTauxTVA / 100);
+    const realMontantTTC = realMontantHT + realMontantTVA;
+    
+    docFacture.setFontSize(10);
+    docFacture.text(`Total HT: ${realMontantHT.toFixed(2)} CHF`, 140, yPos);
+    docFacture.text(`TVA (${realTauxTVA}%): ${realMontantTVA.toFixed(2)} CHF`, 140, yPos + 7);
+    docFacture.setFont('helvetica', 'bold');
+    docFacture.text(`TOTAL TTC: ${realMontantTTC.toFixed(2)} CHF`, 140, yPos + 17);
+    
+    // Conditions de paiement et référence
+    docFacture.setFont('helvetica', 'normal');
+    docFacture.setFontSize(9);
+    
+    docFacture.text(`Conditions de paiement: ${modePaiement}`, 10, yPos + 35);
+    if (periodoRef) {
+      docFacture.text(`Facture établie sur la base des métrées ${periodoRef.toLowerCase()}`, 10, yPos + 42);
+    }
+    
+    // Salva documenti
+    docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
+    docFacture.save(`Facture_${facture.numero}.pdf`);
+    
+    alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
+    
+  } catch (error) {
+    console.error('Erreur génération PDF:', error);
+    alert('Erreur génération PDF: ' + error.message);
+  }
+  try {
+    // Import logo
+    let logo;
+    try {
+      const logoModule = await import('@/assets/logo.jpg');
+      logo = logoModule.default;
+    } catch (e) {
+      console.warn('Logo non trovato');
+    }
+
+    // Fatture manuali: PDF semplice
+    if (facture.type === 'manuelle') {
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      
+      // Header
+      if (logo) {
+        doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
       }
       
-      // Footer
+      doc.setFontSize(8);
+      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
+      
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`FACTURE N. ${facture.numero}`, 10, 40);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
+      doc.text(`Client: ${facture.client_nom}`, 10, 60);
+      
+      // Tabella
+      const tableData = facture.lignes.map(ligne => [
+        ligne.description,
+        ligne.quantite.toString(),
+        `${ligne.prixUnitaire.toFixed(2)} CHF`,
+        `${(ligne.quantite * ligne.prixUnitaire).toFixed(2)} CHF`
+      ]);
+      
+      autoTable(doc, {
+        head: [['Description', 'Quantité', 'Prix unitaire', 'Total HT']],
+        body: tableData,
+        startY: 70,
+        theme: 'grid'
+      });
+      
+      // Totali
+      const finalY = doc.lastAutoTable.finalY + 10;
+      const totalHT = facture.montant_ht || facture.montantHT;
+      const tva = totalHT * 0.077;
+      const ttc = totalHT + tva;
+      
+      doc.text(`Total HT: ${totalHT.toFixed(2)} CHF`, 140, finalY);
+      doc.text(`TVA: ${tva.toFixed(2)} CHF`, 140, finalY + 7);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`TOTAL TTC: ${ttc.toFixed(2)} CHF`, 140, finalY + 17);
+      
+      doc.save(`Facture_${facture.numero}.pdf`);
+      alert('Facture générée avec succès!');
+      return;
+    }
+    
+    // Fatture automatiche da métrages
+    const chantierId = facture.chantier_id || facture.chantierId;
+    const metrageId = facture.metrage_id || facture.metrageId;
+    
+    const chantier = chantiers.value.find(c => c.id === chantierId);
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
+    const metrageDoc = metrages.value.find(m => m.id === metrageId);
+    
+    // Dati cliente
+    const nomeCliente = chantier?.client || 'Client';
+    let clienteCompleto = null;
+    try {
+      const { data: clients } = await supabase.from('clients').select('*');
+      if (clients) {
+        clienteCompleto = clients.find(c => c.nom === nomeCliente);
+      }
+    } catch (error) {
+      console.log('Errore caricamento clienti:', error);
+    }
+    
+    // Funzioni helper per PDF
+    const drawHeader = (doc, title) => {
+      if (logo) {
+        doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
+      }
+      doc.setFontSize(8);
+      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 10, 40);
+    };
+    
+    const drawFooter = (doc) => {
       doc.setFontSize(8);
       doc.setTextColor(150);
       doc.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
-      
-      // Numerazione pagina
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.text('Page 1/1', 200, 290, { align: 'right' });
-      
-      doc.save(`Facture_${facture.numero}.pdf`);
-      return;
-    } catch (error) {
-      alert('Erreur PDF: ' + error.message);
-      return;
-    }
-  }
-  
-  // Fatture automatiche: codice complesso esistente
-  try {
-    const chantierId = facture.chantier_id || facture.chantierId;
-    const metrageId = facture.metrage_id || facture.metrageId;
-    const resocontoId = facture.resoconto_id || facture.resocontoId;
+    };
     
-    const chantier = chantiers.value.find(c => c.id === chantierId);
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
-    const metrageDoc = metrages.value.find(m => m.id === metrageId);
-    const resocontoDoc = resocontiPercentuali.value.find(r => r.id === resocontoId);
-  
-  // Carica i dati completi del cliente dall'anagrafica
-  let clienteCompleto = null;
-  const nomeCliente = chantier?.client || chantierDevis?.nom || 'Client';
-  
-  try {
-    const { data: clients, error } = await supabase
-      .from('clients')
-      .select('*');
-    if (!error && clients) {
-      clienteCompleto = clients.find(c => c.nom === nomeCliente);
-    }
-  } catch (error) {
-    console.error('Erreur chargement clients:', error);
-  }
-  
-  // Import logo
-  let logo;
-  try {
-    const logoModule = await import('@/assets/logo.jpg');
-    logo = logoModule.default;
-  } catch (e) {
-    console.warn('Logo non trovato');
-  }
-  
-  const drawHeader = (doc, title) => {
-    // Logo Dallelec
-    if (logo) {
-      const logoW = 55;
-      const logoH = logoW / 5.32;
-      doc.addImage(logo, 'JPEG', 10, 10, logoW, logoH);
-    }
+    // 1. DOCUMENTO MÉTRÉES (resoconto tecnico senza prezzi)
+    const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
+    drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
     
-    // Dati aziendali reali Dallelec
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    const companyInfo = [
-      'DALLELEC Sarl',
-      'Rue de Bourgogne 25', 
-      '1203 Genève',
-      'contact@dallelec.ch'
-    ];
-    let y = 12;
-    doc.setTextColor(80);
-    companyInfo.forEach((line) => {
-      doc.text(line, 200, y, { align: 'right' });
-      y += 4;
-    });
-    
-    // Titolo documento
-    doc.setFontSize(20);
-    doc.setFont('Helvetica', 'bold');
-    doc.setTextColor(40);
-    doc.text(title, 10, 40);
-  };
-  
-  const drawFooter = (doc) => {
-    // Pied de page (dati Svizzera)
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
-  };
-  
-  const addPageNumbers = (doc) => {
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(100);
-      doc.text(`Page ${i}/${totalPages}`, 200, 290, { align: 'right' });
-    }
-  };
-  
-  // Controlla se è fattura manuelle (non genera documento métrées)
-  const isFactureManuelle = facture.type === 'manuelle';
-  console.log('È fattura manuelle:', isFactureManuelle);
-  
-  let docMetrees = null;
-  if (!isFactureManuelle) {
-    console.log('Creazione documento métrées...');
-    // 1. GENERA DOCUMENTO PRINCIPALE (Métrées ou Resoconto) solo se non è manuelle
-    docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
-    const titleDoc = resocontoDoc ? 'RESOCONTO PERCENTUALE' : 'MÉTRÉES DÉTAILLÉES';
-    drawHeader(docMetrees, `${titleDoc} - ${facture.numero}`);
-    
-    // Informazioni generali métrées (font più piccolo)
-  docMetrees.setFontSize(9);
-  docMetrees.setFont('Helvetica', 'normal');
-  docMetrees.text(`Date: ${formatDate(facture.date_facture || facture.dateFacture)}`, 10, 50);
-  
-  // Periodo di riferimento se disponibile
-  if (metrageDoc && (metrageDoc.periodeDebut || metrageDoc.periodeFin)) {
-    const periodeText = `Période: ${metrageDoc.periodeDebut || ''} - ${metrageDoc.periodeFin || ''}`;
-    docMetrees.text(periodeText, 10, 55);
-  }
-  
-  // Dati completi del cliente anche nelle métrées (compatti)
-  let yClientMetrees = metrageDoc && (metrageDoc.periodeDebut || metrageDoc.periodeFin) ? 62 : 57;
-  if (clienteCompleto) {
-    docMetrees.text(`Client: ${clienteCompleto.nom}`, 10, yClientMetrees);
-    yClientMetrees += 4;
-    if (clienteCompleto.adresse) {
-      docMetrees.text(`${clienteCompleto.adresse}`, 10, yClientMetrees);
-      yClientMetrees += 4;
-    }
-    if (clienteCompleto.ville) {
-      docMetrees.text(`${clienteCompleto.ville}`, 10, yClientMetrees);
-      yClientMetrees += 4;
-    }
-  } else {
-    docMetrees.text(`Client: ${nomeCliente}`, 10, yClientMetrees);
-    yClientMetrees += 4;
-  }
-  
-  const numeroCantiereMetrees = chantier?.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
-  docMetrees.text(`Chantier: ${numeroCantiereMetrees}${getChantierName(chantierId)}`, 10, yClientMetrees + 2);
-  
-  let tableStartY = Math.max(yClientMetrees + 10, 80);
-  
-  // Tabella resoconto percentuale
-  if (resocontoDoc) {
-    // Riferimento devis
-    docMetrees.setFontSize(10);
-    docMetrees.setFont('helvetica', 'bold');
-    docMetrees.text(`Référence Devis: ${chantierDevis?.numero || 'N/A'}`, 10, tableStartY);
+    // Informazioni métrées
+    docMetrees.setFontSize(9);
     docMetrees.setFont('helvetica', 'normal');
-    docMetrees.text('Objet: Pose de chemin de câbles', 10, tableStartY + 5);
+    docMetrees.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
+    docMetrees.text(`Client: ${nomeCliente}`, 10, 57);
     
-    docMetrees.setFontSize(12);
-    docMetrees.setFont('helvetica', 'bold');
-    docMetrees.text('DÉTAIL PAR ZONE', 10, tableStartY + 15);
+    const numeroChantier = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
+    docMetrees.text(`Chantier: ${numeroChantier}${chantier?.nom || 'N/A'}`, 10, 64);
     
-    // Spiegazione calcolo
-    docMetrees.setFontSize(8);
-    docMetrees.setFont('helvetica', 'italic');
-    docMetrees.text('Calcul: Pourcentage Réalisé - Pourcentage Déjà Facturé = Pourcentage à Facturer ce mois', 10, tableStartY + 22);
+    let tableStartY = 80;
     
-    const head = [['Zone', 'Montant Devis (CHF)', '% Réalisé', '% Déjà Facturé', '% à Facturer', 'Montant (CHF)']];
-    const body = [];
-    
-    tableStartY += 30;
-    
-    // Calcola percentuali già fatturate per zona
-    const percentualiGiaFatturate = {};
-    
-    // Trova tutte le fatture precedenti per questo cantiere da resoconti
-    const fatturePassate = factures.value.filter(f => 
-      f.chantierId === facture.chantierId && 
-      f.resocontoId && 
-      f.id !== facture.id
-    );
-    
-    // Per ogni fattura passata, somma le percentuali
-    for (const fatturaPassata of fatturePassate) {
-      const resocontoPassato = resocontiPercentuali.value.find(r => r.id === fatturaPassata.resocontoId);
-      if (resocontoPassato?.avancementi) {
-        Object.entries(resocontoPassato.avancementi).forEach(([zona, pct]) => {
-          percentualiGiaFatturate[zona] = (percentualiGiaFatturate[zona] || 0) + pct;
-        });
-      }
-    }
-    
-    // Calcola importo devis per zona basandosi sui prodotti reali
-    const importoPerZona = {};
-    if (chantierDevis?.produits) {
-      chantierDevis.produits.forEach(prodotto => {
-        const zona = prodotto.zone;
-        const importoProdotto = (prodotto.totalML || prodotto.ml || 0) * (prodotto.prix || 0);
-        importoPerZona[zona] = (importoPerZona[zona] || 0) + importoProdotto;
+    // Tabella métrées (senza prezzi)
+    if (metrageDoc && metrageDoc.items) {
+      const grouped = {};
+      metrageDoc.items.forEach(item => {
+        if (!grouped[item.zone]) grouped[item.zone] = [];
+        grouped[item.zone].push(item);
       });
-    }
-    
-    // Genera righe per ogni zona nel resoconto corrente
-    Object.entries(resocontoDoc.avancementi || {}).forEach(([zona, percentualeCorrente]) => {
-      const importoDevis = importoPerZona[zona] || 0;
-      const percentualeGiaFatt = percentualiGiaFatturate[zona] || 0;
-      const percentualeDaFatturare = percentualeCorrente; // Questo mese
-      const importoFatturato = importoDevis * (percentualeDaFatturare / 100);
-      const percentualeTotaleRealizzata = percentualeGiaFatt + percentualeCorrente;
       
-      body.push([
-        zona,
-        importoDevis.toFixed(2),
-        percentualeTotaleRealizzata.toFixed(1) + '%',
-        percentualeGiaFatt.toFixed(1) + '%',
-        percentualeDaFatturare.toFixed(1) + '%',
-        importoFatturato.toFixed(2)
-      ]);
-    });
-    
-    autoTable(docMetrees, {
-      head,
-      body,
-      startY: tableStartY + 4,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [230, 230, 230],
-        textColor: 20,
-        fontSize: 9
-      },
-      bodyStyles: {
-        fontSize: 9
-      }
-    });
-    
-    tableStartY = docMetrees.lastAutoTable.finalY + 10;
-  }
-  // Tabella métrées détaillées
-  else if (metrageDoc && metrageDoc.items) {
-    const grouped = {};
-    metrageDoc.items.forEach(item => {
-      if (!grouped[item.zone]) grouped[item.zone] = [];
-      grouped[item.zone].push(item);
-    });
-    
-    Object.entries(grouped).forEach(([zoneName, items]) => {
-      docMetrees.setFontSize(12);
-      docMetrees.setFont('helvetica', 'bold');
-      docMetrees.text(`Zone: ${zoneName}`, 10, tableStartY);
-      
-      const head = [['Code', 'Produit', 'Taille', 'ML', 'ML Suppléments', 'ML Total']];
-      const body = [];
-      
-      items.forEach(item => {
-        body.push([
+      Object.entries(grouped).forEach(([zoneName, items]) => {
+        docMetrees.setFontSize(12);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.text(`Zone: ${zoneName}`, 10, tableStartY);
+        
+        const tableData = items.map(item => [
           item.article || '',
           item.nom || '',
           item.taille || '',
-          (item.mlPosee || 0).toFixed(2),
-          (item.totalSuppML || 0).toFixed(2),
-          (item.totalML || 0).toFixed(2)
+          (Number(item.mlPosee) || 0).toFixed(2),
+          (Number(item.totalML) || 0).toFixed(2)
         ]);
+        
+        autoTable(docMetrees, {
+          head: [['Code', 'Produit', 'Taille', 'ML Posé', 'ML Total']],
+          body: tableData,
+          startY: tableStartY + 4,
+          theme: 'grid',
+          headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
+          bodyStyles: { fontSize: 8 }
+        });
+        
+        tableStartY = docMetrees.lastAutoTable.finalY + 10;
       });
-      
-      autoTable(docMetrees, {
-        head,
-        body,
-        startY: tableStartY + 4,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [230, 230, 230],
-          textColor: 20,
-          fontSize: 8
-        },
-        bodyStyles: {
-          fontSize: 8
-        }
-      });
-      
-      tableStartY = docMetrees.lastAutoTable.finalY + 10;
-    });
-  }
+    }
   
   // Détail des suppléments (sezione analitica completa)
   // Ricostruisco supplementParZone dai dati salvati
@@ -1438,8 +1563,10 @@ const genererPDF = async (facture) => {
             '',
             '',
             '',
-            { content: `Total Suppléments (${group.nom}):`, colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } },
-            { content: Number(groupTotal || 0).toFixed(2) + ' ML', colSpan: 1, styles: { fontStyle: 'bold' } }
+            `Total Suppléments:`,
+            '',
+            '',
+            `${Number(groupTotal || 0).toFixed(2)} ML`
           ]);
         });
       }
@@ -1447,347 +1574,104 @@ const genererPDF = async (facture) => {
 
       
       autoTable(docMetrees, {
-        head: tableHead,
+        head: head,
         body: body,
         startY: tableStartY + 4,
         theme: 'grid',
-        margin: { top: 35 },
         headStyles: {
           fillColor: [230, 230, 230],
-          textColor: 20,
-          halign: 'center',
-          valign: 'middle',
           fontSize: 8
         },
         bodyStyles: {
-          textColor: [0, 0, 0],
-          fontSize: 8,
-          valign: 'middle'
+          fontSize: 8
         },
         columnStyles: {
-          0: { cellWidth: 20 },  // Code (uguale)
-          1: { cellWidth: 45 },  // Produit (più grande)
-          2: { cellWidth: 15 },  // Taille (uguale)
-          3: { cellWidth: 45 },  // Supplement (più grande)
-          4: { cellWidth: 12 },  // Qté (leggermente più grande)
-          5: { cellWidth: 18 },  // Valeur (più grande)
-          6: { cellWidth: 18 }   // Total ML (più grande)
-        },
-
+          0: { cellWidth: 20 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 15 },
+          3: { cellWidth: 40 },
+          4: { cellWidth: 15 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 20 }
+        }
       });
       
       // Aggiorniamo la posizione per la prossima zona
       tableStartY = docMetrees.lastAutoTable.finalY + 10;
     });
   }
-  } else {
-    console.log('Saltando creazione métrées per fattura manuelle');
-  }
-  
-  // 2. GENERA FACTURE (pulita e semplice)
-  const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
-  
-  // Header
-  drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
-  
-  // Date
-  docFacture.setFontSize(9);
-  docFacture.text(`Date: ${formatDate(facture.date_facture || facture.dateFacture)}`, 10, 50);
-  if (facture.date_echeance || facture.dateEcheance) {
-    docFacture.text(`Échéance: ${formatDate(facture.date_echeance || facture.dateEcheance)}`, 10, 55);
-  }
-  
-  // Periodo
-  if (metrageDoc && (metrageDoc.periode_debut || metrageDoc.periode_fin)) {
-    docFacture.text(`Période: ${metrageDoc.periode_debut || ''} - ${metrageDoc.periode_fin || ''}`, 10, 60);
-  }
-  
-  // Cliente
-  docFacture.setFontSize(10);
-  docFacture.setFont('helvetica', 'bold');
-  docFacture.text('FACTURÉ À:', 10, 70);
-  
-  docFacture.setFontSize(9);
-  docFacture.setFont('helvetica', 'normal');
-  const nomeClienteFacture = facture.client_nom || facture.clientNom || chantier?.client || 'Client';
-  docFacture.text(nomeClienteFacture, 10, 77);
-  
-  // Cantiere
-  const numeroCantiere = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
-  docFacture.text(`Chantier: ${numeroCantiere}${chantier?.nom || 'N/A'}`, 10, 84);
-  
-  // Tabella prodotti (stessi del métrage + prezzi)
-  let totalHT = 0;
-  const tableHead = [['Code', 'Description', 'Zone', 'ML Posé', 'Prix/ML', 'Total HT']];
-  const tableBody = [];
-  
-  if (metrageDoc?.items) {
-    metrageDoc.items.forEach(item => {
-      const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
-      const prezzoML = Number(prodottoDevis?.prix || 50);
-      const mlPosato = Number(item.totalML || 0);
-      const totaleItem = mlPosato * prezzoML;
-      
-      totalHT += totaleItem;
-      
-      tableBody.push([
-        item.article || '',
-        item.nom || '',
-        item.zone || '',
-        mlPosato.toFixed(2),
-        `${prezzoML.toFixed(2)} CHF`,
-        `${totaleItem.toFixed(2)} CHF`
-      ]);
-    });
-  }
-  
-  autoTable(docFacture, {
-    head: tableHead,
-    body: tableBody,
-    startY: 95,
-    theme: 'grid',
-    headStyles: { fillColor: [230, 230, 230], fontSize: 9 },
-    bodyStyles: { fontSize: 8 }
-  });
-  
-  let finalYFacture = docFacture.lastAutoTable.finalY + 10;
-  
-  // Régies (manteniamo la sezione che funziona)
-  if (metrageDoc?.regies?.length > 0) {
-    docFacture.setFontSize(10);
-    docFacture.setFont('helvetica', 'bold');
-    docFacture.text('RÉGIES', 10, finalYFacture);
     
-    const regieHead = [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']];
-    const regieBody = [];
-    let totalRegies = 0;
+    // 2. DOCUMENTO FACTURE (con prezzi)
+    const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
+    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
     
-    metrageDoc.regies.forEach(regie => {
-      const totRegie = Number(regie.heures) * Number(regie.prixHeure);
-      totalRegies += totRegie;
-      
-      regieBody.push([
-        regie.zone,
-        regie.description,
-        `${regie.heures}h`,
-        `${regie.prixHeure} CHF`,
-        `${totRegie.toFixed(2)} CHF`
-      ]);
-    });
+    // Informazioni fattura
+    docFacture.setFontSize(9);
+    docFacture.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
+    docFacture.text(`Client: ${nomeCliente}`, 10, 57);
+    docFacture.text(`Chantier: ${numeroChantier}${chantier?.nom || 'N/A'}`, 10, 64);
+    
+    // Tabella con prezzi
+    let totalHT = 0;
+    const factureTableData = [];
+    
+    if (metrageDoc?.items) {
+      metrageDoc.items.forEach(item => {
+        const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+        const prezzoML = Number(prodottoDevis?.prix || 50);
+        const mlPosato = Number(item.totalML || 0);
+        const totaleItem = mlPosato * prezzoML;
+        
+        totalHT += totaleItem;
+        
+        factureTableData.push([
+          item.article || '',
+          item.nom || '',
+          item.zone || '',
+          mlPosato.toFixed(2),
+          `${prezzoML.toFixed(2)} CHF`,
+          `${totaleItem.toFixed(2)} CHF`
+        ]);
+      });
+    }
     
     autoTable(docFacture, {
-      head: regieHead,
-      body: regieBody,
-      startY: finalYFacture + 5,
+      head: [['Code', 'Description', 'Zone', 'ML Posé', 'Prix/ML', 'Total HT']],
+      body: factureTableData,
+      startY: 75,
       theme: 'grid',
       headStyles: { fillColor: [230, 230, 230], fontSize: 9 },
       bodyStyles: { fontSize: 8 }
     });
     
-    totalHT += totalRegies;
-    finalYFacture = docFacture.lastAutoTable.finalY + 10;
-  }
-  
-  // Totali
-  const tva = totalHT * 0.081; // 8.1% Svizzera
-  const totalTTC = totalHT + tva;
-  
-  docFacture.setFontSize(10);
-  docFacture.text('Total HT:', 140, finalYFacture);
-  docFacture.text(`${totalHT.toFixed(2)} CHF`, 180, finalYFacture, { align: 'right' });
-  
-  docFacture.text('TVA (8.1%):', 140, finalYFacture + 7);
-  docFacture.text(`${tva.toFixed(2)} CHF`, 180, finalYFacture + 7, { align: 'right' });
-  
-  docFacture.setFont('helvetica', 'bold');
-  docFacture.text('TOTAL TTC:', 140, finalYFacture + 17);
-  docFacture.text(`${totalTTC.toFixed(2)} CHF`, 180, finalYFacture + 17, { align: 'right' });
-  
-  // Condizioni pagamento
-  docFacture.setFontSize(8);
-  docFacture.setFont('helvetica', 'normal');
-  docFacture.text('Conditions de paiement: 30 jours net', 10, finalYFacture + 35);
-  
-  // Aggiungi footer e numerazione pagine
-  const totalPagesFactureNew = docFacture.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPagesFactureNew; i++) {
-    docFacture.setPage(i);
-    drawFooter(docFacture);
-  }
-  addPageNumbers(docFacture);
-  
-  if (!isFactureManuelle && docMetrees) {
-    // Aggiungi footer al documento métrées
-    const totalPagesMetrees = docMetrees.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPagesMetrees; i++) {
-      docMetrees.setPage(i);
-      drawFooter(docMetrees);
-    }
-    addPageNumbers(docMetrees);
+    // Totali usando dati reali della fattura
+    const finalY = docFacture.lastAutoTable.finalY + 10;
+    const realMontantHT = Number(facture.montant_ht || totalHT);
+    const realTauxTVA = Number(facture.taux_tva || 7.7);
+    const realMontantTTC = Number(facture.montant_ttc || realMontantHT * (1 + realTauxTVA/100));
+    const realMontantTVA = realMontantTTC - realMontantHT;
     
-    // Salva entrambi i documenti
-    const docType = resocontoDoc ? 'Resoconto_Percentuale' : 'Metrees_Detaillees';
-    const alertType = resocontoDoc ? 'Resoconto percentuale' : 'Métrées détaillées';
-    
-    docMetrees.save(`${docType}_${facture.numero}.pdf`);
-    docFacture.save(`Facture_${facture.numero}.pdf`);
-    
-    alert(`Deux documents générés:\n1. ${alertType} (pour technicien)\n2. Facture (pour comptabilité)`);
-  } else {
-    // Solo fattura per fatture manuali
-    docFacture.save(`Facture_${facture.numero}.pdf`);
-    alert('Facture générée avec succès!');
-  }
-  
-  // Genera la tabella fattura
-  autoTable(docFacture, {
-    head,
-    body,
-    startY: factureTableY,
-    theme: 'grid',
-    headStyles: { 
-      fillColor: [230, 230, 230],
-      textColor: 20,
-      fontSize: 10
-    },
-    bodyStyles: {
-      fontSize: 9
-    },
-    columnStyles: {
-      0: { cellWidth: 80 },  // Description
-      1: { cellWidth: 30 },  // Quantité
-      2: { cellWidth: 35 },  // Prix unitaire
-      3: { cellWidth: 35 }   // Total HT
-    }
-  });
-  
-  factureTableY = docFacture.lastAutoTable.finalY + 10;
-  
-  // Sezione Regie nella fattura
-  let totalRegiesHT = 0;
-  if ((resocontoDoc?.regies && resocontoDoc.regies.length > 0) || (metrageDoc?.regies && metrageDoc.regies.length > 0)) {
-    const regiesData = resocontoDoc?.regies || metrageDoc?.regies || [];
-    
-    // Controlla se c'è spazio sufficiente (almeno 60mm dal fondo)
-    if (factureTableY > 220) {
-      docFacture.addPage();
-      drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
-      factureTableY = 50;
-    }
-    
-    docFacture.setFontSize(12);
+    docFacture.setFontSize(10);
+    docFacture.text(`Total HT: ${realMontantHT.toFixed(2)} CHF`, 140, finalY);
+    docFacture.text(`TVA (${realTauxTVA}%): ${realMontantTVA.toFixed(2)} CHF`, 140, finalY + 7);
     docFacture.setFont('helvetica', 'bold');
-    docFacture.text('RÉGIES (Heures supplémentaires)', 10, factureTableY);
+    docFacture.text(`TOTAL TTC: ${realMontantTTC.toFixed(2)} CHF`, 140, finalY + 17);
     
-    const headRegies = [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']];
-    const bodyRegies = [];
-    
-    regiesData.forEach(regie => {
-      const totalRegie = regie.heures * regie.prixHeure;
-      totalRegiesHT += totalRegie;
-      
-      bodyRegies.push([
-        regie.zone,
-        regie.description,
-        regie.heures + 'h',
-        regie.prixHeure + ' CHF',
-        totalRegie.toFixed(2) + ' CHF'
-      ]);
-    });
-    
-    autoTable(docFacture, {
-      head: headRegies,
-      body: bodyRegies,
-      startY: factureTableY + 4,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [230, 230, 230],
-        textColor: 20,
-        fontSize: 9
-      },
-      bodyStyles: {
-        fontSize: 9
-      }
-    });
-    
-    factureTableY = docFacture.lastAutoTable.finalY + 10;
-  }
-  
-  // Controlla spazio per totali (almeno 40mm dal fondo)
-  if (factureTableY > 240) {
-    docFacture.addPage();
-    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
-    factureTableY = 50;
-  }
-  
-  // Totaux usando i dati reali della fattura
-  const finalY = factureTableY;
-  const realMontantHT = Number(facture.montant_ht || facture.montantHT || 0);
-  const realTauxTVA = Number(facture.taux_tva || facture.tauxTVA || 7.7);
-  const realMontantTTC = Number(facture.montant_ttc || facture.montantTTC || 0);
-  const realMontantTVA = realMontantTTC - realMontantHT;
-  
-  docFacture.setFontSize(10);
-  docFacture.text(`Total HT:`, 130, finalY);
-  docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 170, finalY);
-  
-  docFacture.text(`TVA (${realTauxTVA}%):`, 130, finalY + 7);
-  docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 170, finalY + 7);
-  
-  docFacture.setFontSize(12);
-  docFacture.setFont(undefined, 'bold');
-  docFacture.text(`TOTAL TTC:`, 130, finalY + 17);
-  docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 170, finalY + 17);
-  
-  // Conditions de paiement (Suisse)
-  docFacture.setFontSize(8);
-  docFacture.setFont(undefined, 'normal');
-  docFacture.setTextColor(100);
-  docFacture.text('Conditions de paiement: 30 jours net', 20, finalY + 35);
-  
-  if (facture.notes) {
-    docFacture.text(`Notes: ${facture.notes}`, 20, finalY + 45);
-  }
-  
-  // Aggiungi footer a tutte le pagine
-  const totalPagesFacture = docFacture.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPagesFacture; i++) {
-    docFacture.setPage(i);
+    // Footer
     drawFooter(docFacture);
-  }
-  
-  // Aggiungi numerazione pagine
-  addPageNumbers(docFacture);
-  
-  if (!isFactureManuelle && docMetrees) {
-    // Aggiungi footer e numerazione al documento métrées
-    const totalPagesMetrees = docMetrees.internal.getNumberOfPages();
-    for (let i = 1; i <= totalPagesMetrees; i++) {
-      docMetrees.setPage(i);
-      drawFooter(docMetrees);
-    }
-    addPageNumbers(docMetrees);
     
     // Salva entrambi i documenti
-    const docType = resocontoDoc ? 'Resoconto_Percentuale' : 'Metrees_Detaillees';
-    const alertType = resocontoDoc ? 'Resoconto percentuale' : 'Métrées détaillées';
-    
-    docMetrees.save(`${docType}_${facture.numero}.pdf`);
+    docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
     docFacture.save(`Facture_${facture.numero}.pdf`);
     
-    alert(`Deux documents générés:\n1. ${alertType} (pour technicien)\n2. Facture (pour comptabilité)`);
-  } else {
-    // Solo fattura per fatture manuali
-    docFacture.save(`Facture_${facture.numero}.pdf`);
-    alert('Facture générée avec succès!');
-  }
+    alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
+    
   } catch (error) {
-    console.error('Errore generazione PDF completo:', error);
-    console.error('Stack trace:', error.stack);
-    console.error('Messaggio:', error.message);
-    alert('Erreur génération PDF: ' + error.message + '\n\nVedi console per dettagli');
+    console.error('Erreur génération PDF:', error);
+    alert('Erreur génération PDF: ' + error.message);
   }
 };
+
 
 onMounted(() => {
   loadData();
