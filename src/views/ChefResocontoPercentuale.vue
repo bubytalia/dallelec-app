@@ -128,16 +128,8 @@
           <label>Heures:</label>
           <input v-model.number="nouvelleRegie.heures" type="number" step="0.5" class="form-control" placeholder="2.0">
         </div>
-        <div class="col-md-2">
-          <label>Type régie:</label>
-          <select v-model="nouvelleRegie.regieId" class="form-control">
-            <option value="">Sélectionner type</option>
-            <option v-for="regie in regiesDisponibles" :key="regie.id" :value="regie.id">
-              {{ regie.nom }} ({{ regie.prixHeure }} CHF/h)
-            </option>
-          </select>
-        </div>
-        <div class="col-md-4">
+
+        <div class="col-md-6">
           <label>Description travail:</label>
           <input v-model="nouvelleRegie.description" type="text" class="form-control" placeholder="Modification installation électrique...">
         </div>

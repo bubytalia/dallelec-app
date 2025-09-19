@@ -41,10 +41,10 @@
               <!-- Resoconti percentuali -->
               <tr v-for="resoconto in resocontiEnAttente" :key="'r-' + resoconto.id">
                 <td><span class="badge bg-info">📊 Percentuel</span></td>
-                <td>{{ getChantierNameWithNumber(resoconto.chantierId) }}</td>
-                <td>{{ getClientName(resoconto.chantierId) }}</td>
-                <td>{{ formatDate(resoconto.createdAt) }}</td>
-                <td>{{ resoconto.periodeMonth }}</td>
+                <td>{{ getChantierNameWithNumber(resoconto.chantier_id) }}</td>
+                <td>{{ getClientName(resoconto.chantier_id) }}</td>
+                <td>{{ formatDate(resoconto.created_at) }}</td>
+                <td>{{ resoconto.periode_month }}</td>
                 <td>{{ Object.keys(resoconto.avancementi || {}).join(', ') }}</td>
                 <td>
                   <button @click="voirDetailResoconto(resoconto)" class="btn btn-sm btn-info me-1">
@@ -198,23 +198,55 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5>Détail Resoconto - {{ getChantierName(detailResoconto.chantierId) }}</h5>
+            <h5>Détail Resoconto - {{ getChantierName(detailResoconto.chantier_id) }}</h5>
             <button @click="showDetailResoconto = false" class="btn-close"></button>
           </div>
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
                 <h6>Informations Générales</h6>
-                <p><strong>Chantier:</strong> {{ getChantierName(detailResoconto.chantierId) }}</p>
-                <p><strong>Période:</strong> {{ detailResoconto.periodeMonth }}</p>
+                <p><strong>Chantier:</strong> {{ getChantierName(detailResoconto.chantier_id) }}</p>
+                <p><strong>Période:</strong> {{ detailResoconto.periode_month }}</p>
                 <p><strong>Description:</strong> {{ detailResoconto.descrizione || '-' }}</p>
-                <p><strong>Date soumission:</strong> {{ formatDate(detailResoconto.createdAt) }}</p>
+                <p><strong>Date soumission:</strong> {{ formatDate(detailResoconto.created_at) }}</p>
               </div>
               <div class="col-md-6">
                 <h6>Avancement par zone</h6>
                 <div v-for="(percentage, zone) in detailResoconto.avancementi" :key="zone">
                   <p><strong>{{ zone }}:</strong> +{{ percentage }}%</p>
                 </div>
+              </div>
+            </div>
+            <div class="row mt-3" v-if="detailResoconto.regies && detailResoconto.regies.length > 0">
+              <div class="col-md-12">
+                <h6>Régies (Heures supplémentaires)</h6>
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Zone</th>
+                      <th>Heures</th>
+                      <th>Prix/h</th>
+                      <th>Total</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="regie in detailResoconto.regies" :key="regie.zone + regie.description">
+                      <td>{{ regie.zone }}</td>
+                      <td>{{ regie.heures }}h</td>
+                      <td>{{ regie.prixHeure }} CHF</td>
+                      <td><strong>{{ (regie.heures * regie.prixHeure).toFixed(2) }} CHF</strong></td>
+                      <td>{{ regie.description }}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="table-warning">
+                      <td colspan="3"><strong>Total Régies:</strong></td>
+                      <td><strong>{{ detailResoconto.regies.reduce((sum, r) => sum + (r.heures * r.prixHeure), 0).toFixed(2) }} CHF</strong></td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </div>
             <div class="mt-3">

@@ -29,6 +29,7 @@ import ChefResocontoPercentuale from '@/views/ChefResocontoPercentuale.vue';
 import ChefResocontoFinale from '@/views/ChefResocontoFinale.vue';
 import ChefSelectionCantiere from '@/views/ChefSelectionCantiere.vue';
 import ChefPremi from '@/views/ChefPremi.vue';
+import ChefMetragesHistorique from '@/views/ChefMetragesHistorique.vue';
 
 // Ouvrier pages
 import OuvrierDashboard from '@/views/OuvrierDashboard.vue';
@@ -123,6 +124,7 @@ const routes = [
   { path: '/chef/chantiers/metrages-detail', name: 'ChefMetrages', component: ChefMetrages },
   { path: '/chef/chantiers/resoconto-percentuale', name: 'ChefResocontoPercentuale', component: ChefResocontoPercentuale },
   { path: '/chef/chantiers/resoconto-finale', name: 'ChefResocontoFinale', component: ChefResocontoFinale },
+  { path: '/chef/chantiers/metrages-historique', name: 'ChefMetragesHistorique', component: ChefMetragesHistorique },
   { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
   { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers }, // TODO: creare componente specifico
 

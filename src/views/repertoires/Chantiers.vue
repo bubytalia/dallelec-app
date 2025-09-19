@@ -578,9 +578,33 @@ export default {
     };
 
     const deleteChantier = async (id) => {
-      if (confirm('Confirmer la suppression ?')) {
-        const { error } = await supabase.from('chantiers').delete().eq('id', id);
-        if (!error) fetchChantiers();
+      console.log('🗑️ Tentativo eliminazione cantiere ID:', id);
+      if (confirm('Confirmer la suppression ? Cela supprimera aussi tous les métrages associés.')) {
+        try {
+          // Prima elimina i métrages associati
+          const { error: metragesError } = await supabase
+            .from('metrages')
+            .delete()
+            .eq('chantier_id', id);
+          
+          if (metragesError) {
+            console.error('❌ Errore eliminazione métrages:', metragesError);
+          }
+          
+          // Poi elimina il cantiere
+          const { error } = await supabase.from('chantiers').delete().eq('id', id);
+          if (error) {
+            console.error('❌ Errore eliminazione cantiere:', error);
+            alert('Erreur lors de la suppression: ' + error.message);
+          } else {
+            console.log('✅ Cantiere eliminato con successo');
+            await fetchChantiers();
+            alert('Chantier supprimé avec succès');
+          }
+        } catch (error) {
+          console.error('❌ Errore generale:', error);
+          alert('Erreur: ' + error.message);
+        }
       }
     };
 
