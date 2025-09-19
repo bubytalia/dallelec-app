@@ -10,6 +10,7 @@
 5. **Approvazione Admin** → ✅ Lista, dettagli, approvazione
 6. **Fatturazione Automatica** → ✅ Genera fatture da métrages
 7. **PDF Métrages** → ✅ Genera documento tecnico perfetto
+8. **Sistema Numerazione Fatture** → ✅ Import storiche + numerazione automatica
 
 ### 🔧 SISTEMA CORE
 - ✅ **Autenticazione** Supabase
@@ -26,6 +27,12 @@
 - **Soluzione:** Rifare sezione PDF fattura da zero (2-3 ore)
 - **Dettaglio:** PDF métrage funziona, solo fattura da sistemare
 - **File:** `AdminFacturation.vue` linee ~1500-1800
+
+### 2. Sistema Numerazione Fatture ✅ COMPLETATO
+- **Implementato:** Pagina import fatture storiche
+- **Implementato:** Configurazione numero di partenza
+- **Implementato:** Numerazione automatica intelligente
+- **Risultato:** Risolve problema calcolo premi + numerazione corretta
 
 ### 2. Pulizia Debug
 - Rimuovere `console.log` sparsi nel codice
@@ -52,14 +59,15 @@
 
 ## 🔄 PROSSIMI STEP
 
-1. **Domani:** Sistemare PDF fattura (2-3 ore max)
-2. **Poi:** Test bilanci e sezioni rimanenti
-3. **Infine:** Deploy produzione
+1. **Ora:** Immissione dati fatture storiche (cantiere con premi)
+2. **Poi:** Sistemare PDF fattura (2-3 ore max)
+3. **Infine:** Test bilanci e deploy produzione
 
 ## 📊 STATO CONVERSIONE
 - **Core System:** 100% ✅
 - **Main Flow:** 100% ✅  
+- **Numerazione Fatture:** 100% ✅
 - **PDF System:** 80% (métrage OK, fattura KO)
-- **Overall:** 95% ✅
+- **Overall:** 97% ✅
 
-**🎯 OBIETTIVO: Sistema pronto per produzione entro domani sera**
+**🎯 OBIETTIVO: Immissione dati + sistema pronto per produzione**
