@@ -1,14 +1,14 @@
-// Sistema temporaneo - bypass autenticazione
-export const getCurrentUser = () => {
-  // Simula utente loggato se c'è userRole nel localStorage
-  const userRole = localStorage.getItem('userRole')
-  const userEmail = localStorage.getItem('userEmail')
-  
-  if (userRole && userEmail) {
-    return Promise.resolve({ email: userEmail })
+import { supabase } from '../supabase.js'
+
+export const getCurrentUser = async () => {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error) throw error
+    return user
+  } catch (error) {
+    console.error('Auth error:', error.message)
+    return null
   }
-  
-  return Promise.resolve(null)
 }
 
 export const requireAuth = async (to, from, next) => {
@@ -34,35 +34,10 @@ export const requireRole = (allowedRoles) => {
         return
       }
       
-      // Controlla il ruolo dal localStorage
-      const userRole = localStorage.getItem('userRole')
-      
-      if (!userRole) {
-        // Se non c'è ruolo, vai al login
-        next({ name: 'Login' })
-        return
-      }
-      
-      if (allowedRoles.includes(userRole)) {
-        next()
-      } else {
-        // Redirect al dashboard corretto per il ruolo
-        switch (userRole) {
-          case 'admin':
-            next('/admin')
-            break
-          case 'chef':
-            next('/chef')
-            break
-          case 'ouvrier':
-            next('/ouvrier')
-            break
-          default:
-            next({ name: 'Login' })
-        }
-      }
+      // Utenti gestiti manualmente - passa sempre
+      next()
     } catch (error) {
-      console.error('Role guard error:', encodeURIComponent(error.message))
+      console.error('Role guard error:', error.message)
       next({ name: 'Login' })
     }
   }

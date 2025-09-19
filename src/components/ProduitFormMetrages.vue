@@ -55,8 +55,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../supabase.js';
 
 const { editingItem, chantierId, zone, produits, zonesChantier, produitsDevis } = defineProps<{
   editingItem: any;
@@ -92,12 +91,16 @@ const produitsDisponibili = computed(() => {
   return produitsDevis && produitsDevis.length > 0 ? produitsDevis : [];
 });
 
-// Caricamento supplementi da Firestore
+// Caricamento supplementi da Supabase
 onMounted(async () => {
   try {
-    const supplementsSnap = await getDocs(collection(db, 'supplements'));
-    supplements.value = supplementsSnap.docs.map(d => ({ id: d.id, ...d.data() } as Supplement))
-      .sort((a, b) => ((a as any).ordre || 0) - ((b as any).ordre || 0));
+    const { data, error } = await supabase
+      .from('supplements')
+      .select('*')
+      .order('ordre');
+    
+    if (error) throw error;
+    supplements.value = data || [];
   } catch (error) {
     console.error('Erreur lors du chargement des suppléments:', error);
     supplements.value = [];

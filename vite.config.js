@@ -22,9 +22,11 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['vue', 'vue-router'],
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore']
+          supabase: ['@supabase/supabase-js'],
+          pdf: ['jspdf', 'jspdf-autotable']
         }
       }
-    }
+    },
+    chunkSizeWarningLimit: 1000
   }
 })

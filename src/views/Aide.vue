@@ -395,9 +395,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth, db } from '@/firebase'
-import { collection, getDocs } from 'firebase/firestore'
+import { supabase } from '@/supabase.js'
+import { useAuth } from '@/composables/useAuth.js'
 
 const activeTab = ref('ouvrier')
 const userType = ref('ouvrier')
@@ -409,19 +408,17 @@ const getUserType = async (email) => {
     console.log('Checking user type for:', email)
     
     // Controlla admin
-    const adminsSnapshot = await getDocs(collection(db, 'admins'))
-    const admins = adminsSnapshot.docs.map(doc => doc.data())
+    const { data: admins } = await supabase.from('admins').select('*')
     console.log('Admins found:', admins)
-    if (admins.some(admin => admin.email === email)) {
+    if (admins && admins.some(admin => admin.email === email)) {
       console.log('User is admin')
       return 'admin'
     }
     
     // Controlla chef
-    const chefsSnapshot = await getDocs(collection(db, 'chefdechantiers'))
-    const chefs = chefsSnapshot.docs.map(doc => doc.data())
+    const { data: chefs } = await supabase.from('chefdechantiers').select('*')
     console.log('Chefs found:', chefs)
-    if (chefs.some(chef => chef.email === email)) {
+    if (chefs && chefs.some(chef => chef.email === email)) {
       console.log('User is chef')
       return 'chef'
     }
@@ -452,18 +449,20 @@ const setupUserTabs = (type) => {
   }
 }
 
-onMounted(() => {
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      console.log('User authenticated:', user.email)
-      const type = await getUserType(user.email)
-      console.log('User type determined:', type)
-      setupUserTabs(type)
-      loading.value = false
-    } else {
-      loading.value = false
-    }
-  })
+onMounted(async () => {
+  const { user } = useAuth()
+  
+  // Ottieni utente corrente da Supabase
+  const { data: { user: currentUser } } = await supabase.auth.getUser()
+  
+  if (currentUser) {
+    console.log('User authenticated:', currentUser.email)
+    const type = await getUserType(currentUser.email)
+    console.log('User type determined:', type)
+    setupUserTabs(type)
+  }
+  
+  loading.value = false
 })
 </script>
 

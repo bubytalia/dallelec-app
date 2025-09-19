@@ -6,13 +6,12 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-import { db, auth } from './firebase.js';
+import { supabase } from './supabase.js';
 
 const app = createApp(App);
 
 app.use(router);
 
-app.provide('db', db);
-app.provide('auth', auth);
+app.provide('supabase', supabase);
 
 app.mount('#app');

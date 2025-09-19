@@ -231,8 +231,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
-import { db } from '../firebase'
+import { supabase } from '../supabase.js'
 import RetourButton from '../components/RetourButton.vue'
 import jsPDF from 'jspdf'
 
@@ -486,24 +485,22 @@ const setDefaultDates = () => {
 const fetchData = async () => {
   try {
     // Charger les chantiers
-    const chantiersSnapshot = await getDocs(collection(db, 'chantiers'))
-    chantiers.value = chantiersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const { data: chantiersData } = await supabase.from('chantiers').select('*')
+    chantiers.value = chantiersData || []
 
     // Charger les collaborateurs
-    const collaborateursSnapshot = await getDocs(collection(db, 'collaborateurs'))
-    collaborateurs.value = collaborateursSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const { data: collaborateursData } = await supabase.from('collaborateurs').select('*')
+    collaborateurs.value = collaborateursData || []
 
     // Charger les chefs
-    const chefsSnapshot = await getDocs(collection(db, 'chefdechantiers'))
-    chefs.value = chefsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    const { data: chefsData } = await supabase.from('chefdechantiers').select('*')
+    chefs.value = chefsData || []
 
-    // Charger les heures propres
-    const heuresPropresSnapshot = await getDocs(collection(db, 'heures_chef_propres'))
-    heuresPropres.value = heuresPropresSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    // Charger les heures propres (TODO: implementare quando tabelle saranno create)
+    heuresPropres.value = []
 
-    // Charger les heures intérimaires
-    const heuresInterimSnapshot = await getDocs(collection(db, 'heures_chef_interim'))
-    heuresInterim.value = heuresInterimSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    // Charger les heures intérimaires (TODO: implementare quando tabelle saranno create)
+    heuresInterim.value = []
 
     setDefaultDates()
     calculerBilans()

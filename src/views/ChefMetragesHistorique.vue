@@ -198,8 +198,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { db } from '@/firebase';
-import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { supabase } from '@/supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 const router = useRouter();

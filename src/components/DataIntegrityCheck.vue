@@ -14,8 +14,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { supabase } from '@/supabase.js';
 
 const props = defineProps({
   devisItems: {
@@ -32,8 +31,12 @@ const hasChanges = computed(() => changes.value.length > 0);
 const checkIntegrity = async () => {
   if (!props.devisItems?.length) return;
   
-  const snapshot = await getDocs(collection(db, 'produits'));
-  produitsAttuali.value = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const { data, error } = await supabase.from('produits').select('*');
+  if (error) {
+    console.error('Errore caricamento produits:', error);
+    return;
+  }
+  produitsAttuali.value = data || [];
   
   changes.value = [];
   

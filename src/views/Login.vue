@@ -32,17 +32,26 @@
 </template>
 
 <script>
+import { useAuth } from '../composables/useAuth.js';
 import { supabase } from '../supabase.js';
 
 export default {
   name: 'Login',
+  setup() {
+    const { login, loading } = useAuth();
+    return { authLogin: login, authLoading: loading };
+  },
   data() {
     return {
       email: '',
       password: '',
-      loading: false,
       error: ''
     };
+  },
+  computed: {
+    loading() {
+      return this.authLoading;
+    }
   },
   methods: {
     async handleLogin() {
@@ -51,27 +60,19 @@ export default {
         return;
       }
       
-      this.loading = true;
       this.error = '';
       
       try {
-        // AUTENTICAZIONE SUPABASE REALE
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: this.email,
-          password: this.password
-        });
+        // Usa il composable unificato
+        const user = await this.authLogin(this.email, this.password);
         
-        if (error) {
-          throw error;
-        }
-        
-        if (!data.user) {
+        if (!user) {
           throw new Error('Errore di autenticazione');
         }
         
         // Cerca ruolo nelle anagrafiche (logica originale)
         let role = 'ouvrier'; // Default
-        let userName = data.user.email;
+        let userName = user.email;
         
         console.log('🔍 DEBUG LOGIN - Email:', this.email);
         
@@ -123,7 +124,7 @@ export default {
         console.log('🎯 RUOLO FINALE:', role, userName);
         
         // FALLBACK: Account di prova se non trovati nelle anagrafiche
-        if (role === 'ouvrier' && userName === data.user.email) {
+        if (role === 'ouvrier' && userName === user.email) {
           if (this.email === 'admin@dallelec.com') {
             role = 'admin';
             userName = 'Admin Dallelec (Test)';
@@ -138,9 +139,9 @@ export default {
         
         // Salva i dati utente
         localStorage.setItem('userRole', role);
-        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userEmail', user.email);
         localStorage.setItem('userName', userName);
-        localStorage.setItem('userId', data.user.id);
+        localStorage.setItem('userId', user.id);
         
         // Redirect basato sul ruolo
         switch (role) {
@@ -168,8 +169,6 @@ export default {
         } else {
           this.error = error.message || 'Erreur de connexion';
         }
-      } finally {
-        this.loading = false;
       }
     }
   }
