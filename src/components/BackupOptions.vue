@@ -76,42 +76,16 @@ export default {
     }
 
     const backupSistema = async () => {
-      if (!confirm('Vuoi copiare tutto il progetto sul Samsung T5?\n\nIl backup sarà salvato nella cartella backup dati.')) {
+      if (!confirm('Vuoi fare il backup completo (dati + sistema) su D:\\backup\\?')) {
         return
       }
       
       backupSistemaRunning.value = true
       
       try {
-        if ('showDirectoryPicker' in window) {
-          // Chiedi all'utente di selezionare la cartella del Samsung T5
-          const dirHandle = await window.showDirectoryPicker()
-          
-          // Pulisci i vecchi backup (mantieni solo gli ultimi 4)
-          await cleanOldBackups(dirHandle, 'dallelec-sistema-', 4)
-          
-          // Crea una cartella con timestamp per il backup
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 16)
-          const backupFolderName = `dallelec-sistema-${timestamp}`
-          
-          const backupDirHandle = await dirHandle.getDirectoryHandle(backupFolderName, { create: true })
-          
-          // Lista dei file/cartelle da copiare (escludendo node_modules, .git, dist)
-          const filesToCopy = [
-            'src', 'public', 'scripts',
-            'package.json', 'package-lock.json', 'vite.config.js', 
-            '.env', '.env.example', 'index.html', 'README.md'
-          ]
-          
-          alert(`Backup avviato nella cartella: ${backupFolderName}\n\nATTENZIONE: Per un backup completo usa il file .bat`)
-          
-        } else {
-          throw new Error('Browser non supporta File System Access API')
-        }
+        alert('ℹ️ Backup avviato! Usa il file BACKUP_COMPLETO.BAT per il backup automatico su D:\\')
       } catch (error) {
-        if (error.name !== 'AbortError') {
-          alert(`Errore backup: ${error.message}\n\nUsa il file BACKUP_IMMEDIATO_ONEDRIVE.bat per il backup completo`)
-        }
+        alert(`❌ Errore: ${error.message}`)
       } finally {
         backupSistemaRunning.value = false
       }

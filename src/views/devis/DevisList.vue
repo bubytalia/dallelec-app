@@ -162,7 +162,7 @@ const getClientName = (clientId) => {
 const formatDate = (date) => {
   if (!date) return '';
   let d = date;
-  // Se viene da Firestore come Timestamp
+  // Se viene da database come Timestamp
   if (typeof date === 'object' && typeof date.toDate === 'function') {
     d = date.toDate();
   }

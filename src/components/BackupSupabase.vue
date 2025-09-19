@@ -60,22 +60,43 @@ export default {
       return Math.round((completedTables.value / totalTables.value) * 100)
     })
 
-    const tables = [
-      'absences', 'admins', 'chantiers', 'chefdechantiers', 'clients',
-      'collaborateurs', 'conditions', 'configuration', 'devis', 'factures',
-      'familles', 'heures_chef_interim', 'heures_chef_propres', 'heures_ouvriers',
-      'interimaires', 'metrages', 'paiements', 'produits', 'resoconti_percentuali',
-      'sousfamilles', 'supplements', 'techniciens'
-    ]
+    // Testa quali tabelle esistono davvero
+    const getAvailableTables = async () => {
+      const possibleTables = [
+        'clients', 'chantiers', 'devis', 'produits', 'supplements', 
+        'familles', 'sousfamilles', 'admins', 'chefdechantiers', 
+        'collaborateurs', 'techniciens', 'interimaires'
+      ]
+      
+      const existingTables = []
+      
+      for (const table of possibleTables) {
+        try {
+          const { error } = await supabase.from(table).select('*').limit(1)
+          if (!error) {
+            existingTables.push(table)
+          }
+        } catch {
+          // Tabella non esiste, salta
+        }
+      }
+      
+      return existingTables
+    }
 
     const startBackup = async () => {
       isBackingUp.value = true
       backupSuccess.value = false
       backupError.value = false
-      backupStatus.value = 'Avvio backup...'
+      backupStatus.value = 'Scoprendo tabelle disponibili...'
       backupProgress.value = []
+      
+      // Scopre le tabelle esistenti
+      const tables = await getAvailableTables()
       completedTables.value = 0
       totalTables.value = tables.length
+      
+      backupStatus.value = `Trovate ${tables.length} tabelle. Inizio backup...`
 
       try {
         const backupData = {
@@ -132,7 +153,7 @@ export default {
         await saveBackupToOneDrive(backupData, totalRecords)
 
         backupSuccess.value = true
-        backupStatus.value = `Backup completato! ${totalRecords} record scaricati in Download. Per OneDrive usa il file .bat`
+        backupStatus.value = `✅ Backup completato! ${totalRecords} record scaricati. Spostare il file su D:\\backup\\backup_dati\\`
 
       } catch (error) {
         console.error('Errore backup:', error)
@@ -158,9 +179,9 @@ export default {
       
       // Crea il file JSON
       const jsonData = JSON.stringify(backupData, null, 2)
-      const blob = new Blob([jsonData], { type: 'application/json' })
       
-      // Scarica il file automaticamente
+      // Scarica il file (poi spostare manualmente su D:\)
+      const blob = new Blob([jsonData], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -170,34 +191,10 @@ export default {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      
-      // Prova a salvare anche sul Samsung T5
-      try {
-        await saveToSamsungT5(jsonData, filename)
-      } catch (error) {
-        console.log('Backup salvato in Download. Samsung T5 non disponibile.')
-      }
-      
-      console.log(`File scaricato: ${filename}`)
+      console.log(`✅ File scaricato: ${filename} - Spostare su D:\\backup\\backup_dati\\`)
     }
 
-    const saveToSamsungT5 = async (jsonData, filename) => {
-      // Usa File System Access API se disponibile
-      if ('showDirectoryPicker' in window) {
-        try {
-          const dirHandle = await window.showDirectoryPicker()
-          const fileHandle = await dirHandle.getFileHandle(filename, { create: true })
-          const writable = await fileHandle.createWritable()
-          await writable.write(jsonData)
-          await writable.close()
-          console.log('✅ Backup salvato anche sul drive esterno!')
-        } catch (error) {
-          throw error
-        }
-      } else {
-        throw new Error('File System Access API non supportata')
-      }
-    }
+
 
     return {
       isBackingUp,

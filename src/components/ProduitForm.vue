@@ -57,7 +57,7 @@
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue';
-// Firebase rimosso - ora usa props
+
 
 const props = defineProps({
   zones: { type: Array, default: () => [] },
@@ -96,7 +96,7 @@ const formValide = computed(() => {
 
 
 
-// Usa i prodotti passati come prop invece di caricarli da Firebase
+
 const produits = computed(() => {
   return (props.produits || []).sort((a, b) => {
     const codeA = (a.article || '').toLowerCase();

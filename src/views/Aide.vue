@@ -348,7 +348,7 @@
                 </h2>
                 <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                   <div class="accordion-body">
-                    <strong>Les données sont automatiquement sauvegardées</strong> dans le cloud Firebase.
+                    <strong>Les données sont automatiquement sauvegardées</strong> dans le cloud Supabase.
                     <ul>
                       <li>✅ <strong>Sauvegarde automatique</strong> à chaque modification</li>
                       <li>✅ <strong>Redondance</strong> sur plusieurs serveurs</li>

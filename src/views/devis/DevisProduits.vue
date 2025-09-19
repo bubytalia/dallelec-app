@@ -144,7 +144,7 @@ const remiseFamilles = ref(0);
 const modalitaPrezzi = ref('scontistica');
 
 /**
- * Salva il devis su Firestore.
+ * Salva il devis su Supabase.
  * Se asDraft è true, imposta draft: true (bozza); altrimenti draft: false.
  * Aggiorna anche updatedAt e total.
  */
@@ -199,7 +199,7 @@ const sauvegarderDevis = async (asDraft = false) => {
     }
   } catch (error) {
     console.error('❌ ERRORE SALVATAGGIO:', error);
-    alert('Erreur Firestore: ' + error.message);
+    alert('Erreur Supabase: ' + error.message);
   }
 };
 
