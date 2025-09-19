@@ -545,7 +545,7 @@ const autoriserFacturation = async (metrage) => {
     const montantRegiesHT = (metrage.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
     const montantHT = montantTravauxHT + montantRegiesHT;
     
-    const numeroFacture = generateNumeroFacture();
+    const numeroFacture = await generateNumeroFacture();
     
     // Crée la facture
     const { error } = await supabase
@@ -628,7 +628,7 @@ const approuverResoconto = async (resoconto) => {
     const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
     const montantHT = montantTravauxHT + montantRegiesHT;
     
-    const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
+    const numeroFacture = await generateNumeroFacture();
     
     const { error } = await supabase
       .from('factures')
@@ -718,7 +718,7 @@ const generarFactureResoconto = async (resoconto) => {
     const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
     const montantHT = montantTravauxHT + montantRegiesHT;
     
-    const numeroFacture = `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(4, '0')}`;
+    const numeroFacture = await generateNumeroFacture();
     
     const factureData = {
       numero: numeroFacture,
@@ -1012,8 +1012,27 @@ const formatDate = (date) => {
   return date.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
 };
 
-const generateNumeroFacture = () => {
-  return `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(3, '0')}`;
+const generateNumeroFacture = async () => {
+  try {
+    const { data: config } = await supabase
+      .from('configurazione_fatture')
+      .select('*')
+      .single();
+    
+    const ultimoNumero = config?.ultimo_numero || 0;
+    const anno = config?.anno || new Date().getFullYear();
+    const prefisso = config?.prefisso || 'F';
+    
+    const fattureAnno = factures.value.filter(f => {
+      const dataFattura = new Date(f.date_facture || f.dateFacture);
+      return dataFattura.getFullYear() === anno;
+    }).length;
+    
+    const prossimoNumero = ultimoNumero + fattureAnno + 1;
+    return `${prefisso}${anno}-${String(prossimoNumero).padStart(3, '0')}`;
+  } catch (error) {
+    return `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(3, '0')}`;
+  }
 };
 
 const formatCurrency = (amount) => {
