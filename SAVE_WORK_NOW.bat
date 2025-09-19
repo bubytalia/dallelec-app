@@ -3,7 +3,7 @@ echo ========================================
 echo SALVATAGGIO LAVORO DALLELEC - URGENTE
 echo ========================================
 
-cd /d "c:\Users\TestQ\Desktop\gestionale\Dallelec_app"
+cd /d "C:\Users\bubyt\Desktop\gestionalequater\Dallelec_app_new"
 
 echo.
 echo 1. Verifica stato Git...
