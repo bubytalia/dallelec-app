@@ -170,48 +170,56 @@ const selectedMonth = ref('');
 const selectedYear = ref(new Date().getFullYear());
 
 const fetchChantiers = async () => {
-  const snapshot = await getDocs(collection(db, 'chantiers'));
-  chantiers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('chantiers').select('*');
+  chantiers.value = data || [];
 };
 
 const fetchDevis = async () => {
-  const snapshot = await getDocs(collection(db, 'devis'));
-  devis.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('devis').select('*');
+  devis.value = data || [];
 };
 
 const fetchMetrages = async () => {
-  const snapshot = await getDocs(collection(db, 'metrages'));
-  metrages.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('metrages').select('*');
+  metrages.value = data || [];
 };
 
 const fetchHeuresPropres = async () => {
-  const snapshot = await getDocs(collection(db, 'heures_chef_propres'));
-  heuresPropres.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('heures_chef_propres').select('*');
+  heuresPropres.value = data || [];
 };
 
 const fetchHeuresInterim = async () => {
-  const snapshot = await getDocs(collection(db, 'heures_chef_interim'));
-  heuresInterim.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('heures_chef_interim').select('*');
+  heuresInterim.value = data || [];
 };
 
 const fetchHeuresOuvriers = async () => {
-  const snapshot = await getDocs(collection(db, 'heures_ouvriers'));
-  heuresOuvriers.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  try {
+    let { data, error } = await supabase.from('heures_ouvriers').select('*');
+    if (error) {
+      const result = await supabase.from('heures').select('*');
+      data = result.data;
+    }
+    heuresOuvriers.value = data || [];
+  } catch (error) {
+    heuresOuvriers.value = [];
+  }
 };
 
 const fetchFactures = async () => {
-  const snapshot = await getDocs(collection(db, 'factures'));
-  factures.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('factures').select('*');
+  factures.value = data || [];
 };
 
 const fetchCollaborateurs = async () => {
-  const snapshot = await getDocs(collection(db, 'collaborateurs'));
-  collaborateurs.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('collaborateurs').select('*');
+  collaborateurs.value = data || [];
 };
 
 const fetchInterimaires = async () => {
-  const snapshot = await getDocs(collection(db, 'interimaires'));
-  interimaires.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const { data } = await supabase.from('interimaires').select('*');
+  interimaires.value = data || [];
 };
 
 const formatDate = (date) => {
@@ -263,43 +271,61 @@ const chantiersAvecMetrages = computed(() => {
   
   chantiers.value.forEach(chantier => {
     // 1. Trova factures per questo cantiere (quantità posate fatturate)
-    const facturesChantier = factures.value.filter(f => f.chantierId === chantier.id);
-    if (facturesChantier.length === 0) return; // Nessuna fattura = nessun premio
+    const facturesChantier = factures.value.filter(f => f.chantier_id === chantier.id);
+    if (facturesChantier.length === 0) return;
     
-    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (f.montantTTC || 0), 0);
+    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
     
     // 2. Importo - % impresa (percentuale configurabile per cantiere)
-    const percentualeImpresa = chantier.percentualeImpresa || 30; // Default 30%
+    const percentualeImpresa = chantier.percentuale_impresa || 30; // Default 30%
     const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeImpresa / 100);
     
     // 3. Calcola ore impiegate reali (ESCLUSE le regie) e costo orario medio
-    const heuresChefChantier = heuresPropres.value
-      .filter(h => h.chantierId === chantier.id)
-      .reduce((sum, h) => sum + (h.heuresPropres || 0), 0);
+    if (chantier.nom === 'torre di pisa') {
+      console.log('🔍 DEBUG cantiere torre di pisa:');
+      console.log('Chantier ID:', chantier.id);
+      console.log('Heures propres totali:', heuresPropres.value.length);
+      console.log('Sample heures propres:', JSON.stringify(heuresPropres.value.slice(0, 2), null, 2));
+      console.log('Heures ouvriers totali:', heuresOuvriers.value.length);
+      console.log('Sample heures ouvriers:', JSON.stringify(heuresOuvriers.value.slice(0, 2), null, 2));
+    }
+    
+    const heuresChefFiltered = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id));
+    if (chantier.nom === 'torre di pisa') {
+      console.log('Heures chef filtrate:', heuresChefFiltered.length, heuresChefFiltered);
+    }
+    const heuresChefChantier = heuresChefFiltered.reduce((sum, h) => sum + (h.total_heures || h.heures_propres || 0), 0);
     
     const heuresInterimChantier = heuresInterim.value
-      .filter(h => h.chantierId === chantier.id)
-      .reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || h.heures_interim || 0), 0);
     
-    const heuresOuvriersChantier = heuresOuvriers.value
-      .filter(h => h.chantierId === chantier.id)
-      .reduce((sum, h) => sum + (h.heures || 0), 0);
+    const heuresOuvriersFiltered = heuresOuvriers.value.filter(h => String(h.chantier_id) === String(chantier.id));
+    if (chantier.nom === 'torre di pisa') {
+      console.log('Heures ouvriers filtrate:', heuresOuvriersFiltered.length, heuresOuvriersFiltered);
+    }
+    const heuresOuvriersChantier = heuresOuvriersFiltered.reduce((sum, h) => sum + (h.heures || 0), 0);
     
     // Calcola ore regie da métrages e resoconti (SEPARATE per premi)
     const heuresRegiesChantier = [...metrages.value]
-      .filter(m => m.chantierId === chantier.id && m.regies)
+      .filter(m => (m.chantier_id === chantier.id || m.chantierId === chantier.id) && m.regies)
       .reduce((sum, m) => {
-        return sum + (m.regies || []).reduce((regieSum, r) => regieSum + (r.heures || 0), 0);
+        const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
+        return sum + (regies || []).reduce((regieSum, r) => regieSum + (r.heures || 0), 0);
       }, 0);
     
     const heuresImployees = heuresChefChantier + heuresInterimChantier + heuresOuvriersChantier;
     
-    if (heuresImployees === 0) return; // Nessuna ora registrata
+    if (chantier.nom === 'torre di pisa') {
+      console.log('⏰ Ore trovate per torre di pisa:');
+      console.log('Chef:', heuresChefChantier, 'Interim:', heuresInterimChantier, 'Ouvriers:', heuresOuvriersChantier);
+      console.log('Total:', heuresImployees);
+    }
     
     // 4. Calcola costo orario medio ponderato dei dipendenti intervenuti
-    const tarifChef = 45; // CHF/h (da configurare in anagrafica)
-    const tarifOuvrier = 25; // CHF/h (da configurare in anagrafica)
-    const tarifInterim = 35; // CHF/h (da anagrafica interimaires)
+    const tarifChef = 45; // CHF/h
+    const tarifOuvrier = 41; // CHF/h (come da tabella bilans)
+    const tarifInterim = 47.5; // CHF/h (come da tabella bilans)
     
     const costoTotaleOre = (heuresChefChantier * tarifChef) + 
                           (heuresOuvriersChantier * tarifOuvrier) + 
@@ -321,24 +347,24 @@ const chantiersAvecMetrages = computed(() => {
     
     // Trova ultima attività
     const dernierMetrage = metrages.value
-      .filter(m => m.chantierId === chantier.id)
-      .sort((a, b) => new Date(b.createdAt?.toDate() || b.createdAt) - new Date(a.createdAt?.toDate() || a.createdAt))[0];
+      .filter(m => m.chantier_id === chantier.id || m.chantierId === chantier.id)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
     
     const derniereHeure = [...heuresPropres.value, ...heuresInterim.value, ...heuresOuvriers.value]
-      .filter(h => h.chantierId === chantier.id)
-      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      .filter(h => h.chantier_id === chantier.id || h.chantierId === chantier.id)
+      .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))[0];
     
-    const derniereMiseAJour = dernierMetrage?.createdAt?.toDate() || derniereHeure?.date || new Date();
+    const derniereMiseAJour = new Date(dernierMetrage?.created_at || derniereHeure?.date || derniereHeure?.created_at || new Date());
     
     // Determina mese e anno di fatturazione (dalla prima fattura)
-    const primaFactura = facturesChantier.sort((a, b) => new Date(a.dateFacture) - new Date(b.dateFacture))[0];
-    const dateFacturation = new Date(primaFactura.dateFacture);
+    const primaFactura = facturesChantier.sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
+    const dateFacturation = new Date(primaFactura.date_facture);
     const moisFacturation = dateFacturation.getMonth() + 1;
     const anneeFacturation = dateFacturation.getFullYear();
     
     chantiersData.push({
       id: chantier.id,
-      nom: chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ${chantier.nom}` : chantier.nom,
+      nom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
       adresse: chantier.adresse,
       heuresPrevues: Math.round(heuresPrevues * 10) / 10,
       heuresImployees,

@@ -105,6 +105,7 @@ const routes = [
   { path: '/admin/facture-manuelle', name: 'AdminFactureManuelle', component: AdminFactureManuelle },
   { path: '/admin/monitoring-heures', name: 'AdminMonitoringHeures', component: AdminMonitoringHeures },
   { path: '/admin/absences', name: 'AdminAbsences', component: AdminAbsences },
+  { path: '/admin/premi', name: 'AdminPremi', component: () => import('@/views/AdminPremi.vue') },
   { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },
   { path: '/admin/backup', name: 'AdminBackup', component: () => import('@/components/BackupSupabase.vue') },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },

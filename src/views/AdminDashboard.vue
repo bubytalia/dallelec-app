@@ -56,6 +56,9 @@
       <div class="col-md-3 m-2">
         <router-link to="/admin/absences" class="btn btn-outline-warning w-100">🏖️ Gestion Absences</router-link>
       </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/premi" class="btn btn-outline-warning w-100">🎯 Gestion Primes</router-link>
+      </div>
     </div>
 
     <!-- Section Administration -->
@@ -63,13 +66,7 @@
       <div class="col-12">
         <h5 class="text-danger mb-3">Administration</h5>
       </div>
-      <div class="col-md-3 m-2">
-        <router-link to="/admin/security" class="btn btn-outline-danger w-100">🛡️ Sécurité</router-link>
-      </div>
 
-      <div class="col-md-3 m-2">
-        <BackupOptions />
-      </div>
       <div class="col-md-3 m-2">
         <router-link to="/aide" class="btn btn-outline-danger w-100">❓ Aide</router-link>
       </div>
@@ -84,7 +81,7 @@ import { ref } from 'vue';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
 
-import BackupOptions from '@/components/BackupOptions.vue';
+
 
 const router = useRouter();
 
