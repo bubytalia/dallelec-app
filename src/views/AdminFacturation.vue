@@ -1006,12 +1006,12 @@ const genererPDF = async (facture) => {
       });
       
       const finalY = doc.lastAutoTable.finalY + 10;
-      const totalHT = facture.montant_ht || facture.montantHT;
-      const tva = totalHT * 0.077;
+      const totalHT = Number(facture.montant_ht || facture.montantHT || 0);
+      const tva = totalHT * 0.081; // TVA Suisse 8.1%
       const ttc = totalHT + tva;
       
       doc.text(`Total HT: ${totalHT.toFixed(2)} CHF`, 140, finalY);
-      doc.text(`TVA: ${tva.toFixed(2)} CHF`, 140, finalY + 7);
+      doc.text(`TVA (8.1%): ${tva.toFixed(2)} CHF`, 140, finalY + 7);
       doc.setFont('helvetica', 'bold');
       doc.text(`TOTAL TTC: ${ttc.toFixed(2)} CHF`, 140, finalY + 17);
       
@@ -1020,34 +1020,14 @@ const genererPDF = async (facture) => {
       return;
     }
 
-    // Dati base
+    // Fatture automatiche da métrages
     const chantierId = facture.chantier_id || facture.chantierId;
     const metrageId = facture.metrage_id || facture.metrageId;
     const chantier = chantiers.value.find(c => c.id === chantierId);
     const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
     const metrageDoc = metrages.value.find(m => m.id === metrageId);
-    // Dati cliente completi con mode de paiement
+    
     const nomeCliente = facture.client_nom || chantier?.client || 'Client';
-    let clienteCompleto = null;
-    let modePaiement = '30 jours net';
-    
-    try {
-      const { data: clients } = await supabase
-        .from('clients')
-        .select('*, paiements(nom)')
-        .eq('nom', nomeCliente)
-        .single();
-      
-      if (clients) {
-        clienteCompleto = clients;
-        if (clients.paiements?.nom) {
-          modePaiement = clients.paiements.nom;
-        }
-      }
-    } catch (error) {
-      console.log('Errore caricamento cliente:', error);
-    }
-    
     const numeroChantier = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
     const nomeChantier = chantier?.nom || 'N/A';
     
@@ -1061,7 +1041,7 @@ const genererPDF = async (facture) => {
       periodoRef = `Période: ${mese}`;
     }
 
-    // Funzioni helper
+    // Funzione helper per header
     const drawHeader = (doc, title) => {
       if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
       doc.setFontSize(8);
@@ -1084,29 +1064,25 @@ const genererPDF = async (facture) => {
     let yPos = periodoRef ? 85 : 80;
     
     if (metrageDoc?.items) {
-      // Raggruppa per zone
       const itemsByZone = {};
       metrageDoc.items.forEach(item => {
         if (!itemsByZone[item.zone]) itemsByZone[item.zone] = [];
         itemsByZone[item.zone].push(item);
       });
       
-      // Per ogni zona
       Object.entries(itemsByZone).forEach(([zoneName, items]) => {
         docMetrees.setFontSize(12);
         docMetrees.setFont('helvetica', 'bold');
         docMetrees.text(`Zone: ${zoneName}`, 10, yPos);
         
-        // Calcola totale supplementi per ogni item
         const tableData = items.map(item => {
-          const quantite = Number(item.mlPosee) || 0;
+          const quantite = Number(item.mlPosee || 0);
           let totalSuppl = 0;
           
-          // Calcola totale supplementi da supplements array
           if (item.supplements && Array.isArray(item.supplements)) {
             totalSuppl = item.supplements.reduce((sum, supp) => {
-              const qte = Number(supp.qte || supp.qtePosee) || 0;
-              const valeur = Number(supp.valeur) || 0;
+              const qte = Number(supp.qte || supp.qtePosee || 0);
+              const valeur = Number(supp.valeur || 0);
               return sum + (qte * valeur);
             }, 0);
           }
@@ -1133,79 +1109,7 @@ const genererPDF = async (facture) => {
           bodyStyles: { fontSize: 8 }
         });
         
-        yPos = docMetrees.lastAutoTable.finalY + 5;
-        
-        // Sous-total zone
-        const zoneTotal = tableData.reduce((sum, row) => sum + Number(row[6]), 0);
-        docMetrees.setFont('helvetica', 'bold');
-        docMetrees.text(`Sous-total: ${zoneTotal.toFixed(2)} ML`, 150, yPos);
-        yPos += 15;
-      });
-      
-      // Détail suppléments par zone
-      yPos += 10;
-      docMetrees.setFontSize(14);
-      docMetrees.setFont('helvetica', 'bold');
-      docMetrees.text('Détail des Suppléments par Zone', 10, yPos);
-      yPos += 10;
-      
-      Object.entries(itemsByZone).forEach(([zoneName, items]) => {
-        docMetrees.setFontSize(12);
-        docMetrees.setFont('helvetica', 'bold');
-        docMetrees.text(`Zone: ${zoneName}`, 10, yPos);
-        yPos += 5;
-        
-        // Raggruppa supplementi per prodotto
-        const suppByProduct = {};
-        items.forEach(item => {
-          if (item.supplements?.length > 0) {
-            const key = `${item.article}-${item.nom}-${item.taille}`;
-            if (!suppByProduct[key]) {
-              suppByProduct[key] = {
-                article: item.article,
-                nom: item.nom,
-                taille: item.taille,
-                supplements: []
-              };
-            }
-            suppByProduct[key].supplements.push(...item.supplements);
-          }
-        });
-        
-        Object.values(suppByProduct).forEach(product => {
-          const suppData = product.supplements.map(supp => [
-            product.article,
-            product.nom,
-            product.taille,
-            supp.supplement || supp.nom || '',
-            (Number(supp.qte || supp.qtePosee) || 0).toString(),
-            (Number(supp.valeur) || 0).toFixed(1),
-            ((Number(supp.qte || supp.qtePosee) || 0) * (Number(supp.valeur) || 0)).toFixed(2) + ' ML'
-          ]);
-          
-          const totalSupp = product.supplements.reduce((sum, s) => 
-            sum + ((Number(s.qte || s.qtePosee) || 0) * (Number(s.valeur) || 0)), 0
-          );
-          
-          suppData.push([
-            '', '', '', 
-            { content: `Total Suppléments (${product.nom}):`, colSpan: 3, styles: { fontStyle: 'bold' } },
-            { content: `${totalSupp.toFixed(2)} ML`, styles: { fontStyle: 'bold' } }
-          ]);
-          
-          autoTable(docMetrees, {
-            head: [['Code Article', 'Produit', 'Taille', 'Supplément', 'Qté', 'Valeur', 'Total ML']],
-            body: suppData,
-            startY: yPos,
-            theme: 'grid',
-            headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
-            bodyStyles: { fontSize: 8 }
-          });
-          
-          yPos = docMetrees.lastAutoTable.finalY + 5;
-        });
-        
-        yPos += 10;
+        yPos = docMetrees.lastAutoTable.finalY + 15;
       });
     }
     
@@ -1213,18 +1117,16 @@ const genererPDF = async (facture) => {
     const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
     drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
     
-    yPos = 80;
+    yPos = periodoRef ? 85 : 80;
     let totalFactureHT = 0;
     
     if (metrageDoc?.items) {
-      // Raggruppa per zone
       const itemsByZone = {};
       metrageDoc.items.forEach(item => {
         if (!itemsByZone[item.zone]) itemsByZone[item.zone] = [];
         itemsByZone[item.zone].push(item);
       });
       
-      // Per ogni zona con prezzi
       Object.entries(itemsByZone).forEach(([zoneName, items]) => {
         docFacture.setFontSize(12);
         docFacture.setFont('helvetica', 'bold');
@@ -1234,14 +1136,13 @@ const genererPDF = async (facture) => {
         const tableData = items.map(item => {
           const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
           const prezzoUnit = Number(prodottoDevis?.prix || 50);
-          const quantite = Number(item.mlPosee) || 0;
+          const quantite = Number(item.mlPosee || 0);
           
-          // Calcola totale supplementi
           let totalSuppl = 0;
           if (item.supplements && Array.isArray(item.supplements)) {
             totalSuppl = item.supplements.reduce((sum, supp) => {
-              const qte = Number(supp.qte || supp.qtePosee) || 0;
-              const valeur = Number(supp.valeur) || 0;
+              const qte = Number(supp.qte || supp.qtePosee || 0);
+              const valeur = Number(supp.valeur || 0);
               return sum + (qte * valeur);
             }, 0);
           }
@@ -1275,7 +1176,6 @@ const genererPDF = async (facture) => {
         
         yPos = docFacture.lastAutoTable.finalY + 5;
         
-        // Sous-total zone
         docFacture.setFont('helvetica', 'bold');
         docFacture.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 150, yPos);
         yPos += 15;
@@ -1289,13 +1189,15 @@ const genererPDF = async (facture) => {
       docFacture.text('RÉGIES', 10, yPos);
       
       const regieData = metrageDoc.regies.map(regie => {
-        const total = (Number(regie.heures) || 0) * (Number(regie.prixHeure) || 0);
+        const heures = Number(regie.heures || 0);
+        const prixHeure = Number(regie.prixHeure || 0);
+        const total = heures * prixHeure;
         totalFactureHT += total;
         return [
           regie.zone || '',
           regie.description || '',
-          `${regie.heures || 0}h`,
-          `${(Number(regie.prixHeure) || 0).toFixed(2)} CHF`,
+          `${heures}h`,
+          `${prixHeure.toFixed(2)} CHF`,
           `${total.toFixed(2)} CHF`
         ];
       });
@@ -1313,8 +1215,8 @@ const genererPDF = async (facture) => {
     }
     
     // Totali finali
-    const realMontantHT = totalFactureHT;
-    const realTauxTVA = 8.1; // TVA svizzera 8.1%
+    const realMontantHT = Number(facture.montant_ht || totalFactureHT);
+    const realTauxTVA = Number(facture.taux_tva || 8.1);
     const realMontantTVA = realMontantHT * (realTauxTVA / 100);
     const realMontantTTC = realMontantHT + realMontantTVA;
     
@@ -1324,368 +1226,15 @@ const genererPDF = async (facture) => {
     docFacture.setFont('helvetica', 'bold');
     docFacture.text(`TOTAL TTC: ${realMontantTTC.toFixed(2)} CHF`, 140, yPos + 17);
     
-    // Conditions de paiement et référence
+    // Conditions de paiement
     docFacture.setFont('helvetica', 'normal');
     docFacture.setFontSize(9);
-    
-    docFacture.text(`Conditions de paiement: ${modePaiement}`, 10, yPos + 35);
+    docFacture.text('Conditions de paiement: 30 jours net', 10, yPos + 35);
     if (periodoRef) {
       docFacture.text(`Facture établie sur la base des métrées ${periodoRef.toLowerCase()}`, 10, yPos + 42);
     }
     
     // Salva documenti
-    docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
-    docFacture.save(`Facture_${facture.numero}.pdf`);
-    
-    alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
-    
-  } catch (error) {
-    console.error('Erreur génération PDF:', error);
-    alert('Erreur génération PDF: ' + error.message);
-  }
-  try {
-    // Import logo
-    let logo;
-    try {
-      const logoModule = await import('@/assets/logo.jpg');
-      logo = logoModule.default;
-    } catch (e) {
-      console.warn('Logo non trovato');
-    }
-
-    // Fatture manuali: PDF semplice
-    if (facture.type === 'manuelle') {
-      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-      
-      // Header
-      if (logo) {
-        doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
-      }
-      
-      doc.setFontSize(8);
-      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
-      
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`FACTURE N. ${facture.numero}`, 10, 40);
-      
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
-      doc.text(`Client: ${facture.client_nom}`, 10, 60);
-      
-      // Tabella
-      const tableData = facture.lignes.map(ligne => [
-        ligne.description,
-        ligne.quantite.toString(),
-        `${ligne.prixUnitaire.toFixed(2)} CHF`,
-        `${(ligne.quantite * ligne.prixUnitaire).toFixed(2)} CHF`
-      ]);
-      
-      autoTable(doc, {
-        head: [['Description', 'Quantité', 'Prix unitaire', 'Total HT']],
-        body: tableData,
-        startY: 70,
-        theme: 'grid'
-      });
-      
-      // Totali
-      const finalY = doc.lastAutoTable.finalY + 10;
-      const totalHT = facture.montant_ht || facture.montantHT;
-      const tva = totalHT * 0.077;
-      const ttc = totalHT + tva;
-      
-      doc.text(`Total HT: ${totalHT.toFixed(2)} CHF`, 140, finalY);
-      doc.text(`TVA: ${tva.toFixed(2)} CHF`, 140, finalY + 7);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`TOTAL TTC: ${ttc.toFixed(2)} CHF`, 140, finalY + 17);
-      
-      doc.save(`Facture_${facture.numero}.pdf`);
-      alert('Facture générée avec succès!');
-      return;
-    }
-    
-    // Fatture automatiche da métrages
-    const chantierId = facture.chantier_id || facture.chantierId;
-    const metrageId = facture.metrage_id || facture.metrageId;
-    
-    const chantier = chantiers.value.find(c => c.id === chantierId);
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
-    const metrageDoc = metrages.value.find(m => m.id === metrageId);
-    
-    // Dati cliente
-    const nomeCliente = chantier?.client || 'Client';
-    let clienteCompleto = null;
-    try {
-      const { data: clients } = await supabase.from('clients').select('*');
-      if (clients) {
-        clienteCompleto = clients.find(c => c.nom === nomeCliente);
-      }
-    } catch (error) {
-      console.log('Errore caricamento clienti:', error);
-    }
-    
-    // Funzioni helper per PDF
-    const drawHeader = (doc, title) => {
-      if (logo) {
-        doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
-      }
-      doc.setFontSize(8);
-      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title, 10, 40);
-    };
-    
-    const drawFooter = (doc) => {
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text('DALLELEC Sarl - CHE-123.456.789 TVA - 1203 Genève', 105, 280, { align: 'center' });
-    };
-    
-    // 1. DOCUMENTO MÉTRÉES (resoconto tecnico senza prezzi)
-    const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
-    drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
-    
-    // Informazioni métrées
-    docMetrees.setFontSize(9);
-    docMetrees.setFont('helvetica', 'normal');
-    docMetrees.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
-    docMetrees.text(`Client: ${nomeCliente}`, 10, 57);
-    
-    const numeroChantier = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
-    docMetrees.text(`Chantier: ${numeroChantier}${chantier?.nom || 'N/A'}`, 10, 64);
-    
-    let tableStartY = 80;
-    
-    // Tabella métrées (senza prezzi)
-    if (metrageDoc && metrageDoc.items) {
-      const grouped = {};
-      metrageDoc.items.forEach(item => {
-        if (!grouped[item.zone]) grouped[item.zone] = [];
-        grouped[item.zone].push(item);
-      });
-      
-      Object.entries(grouped).forEach(([zoneName, items]) => {
-        docMetrees.setFontSize(12);
-        docMetrees.setFont('helvetica', 'bold');
-        docMetrees.text(`Zone: ${zoneName}`, 10, tableStartY);
-        
-        const tableData = items.map(item => [
-          item.article || '',
-          item.nom || '',
-          item.taille || '',
-          (Number(item.mlPosee) || 0).toFixed(2),
-          (Number(item.totalML) || 0).toFixed(2)
-        ]);
-        
-        autoTable(docMetrees, {
-          head: [['Code', 'Produit', 'Taille', 'ML Posé', 'ML Total']],
-          body: tableData,
-          startY: tableStartY + 4,
-          theme: 'grid',
-          headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
-          bodyStyles: { fontSize: 8 }
-        });
-        
-        tableStartY = docMetrees.lastAutoTable.finalY + 10;
-      });
-    }
-  
-  // Détail des suppléments (sezione analitica completa)
-  // Ricostruisco supplementParZone dai dati salvati
-  const supplementParZone = [];
-  if (metrageDoc && metrageDoc.items) {
-    const grouped = {};
-    metrageDoc.items.forEach(item => {
-      if (Array.isArray(item.supplements) && item.supplements.length > 0) {
-        if (!grouped[item.zone]) grouped[item.zone] = [];
-        item.supplements.forEach(supp => {
-          grouped[item.zone].push({
-            article: item.article,
-            nom: item.nom,
-            taille: item.taille,
-            supplement: supp.supplement || supp.nom || supp.type,
-            qte: parseFloat(supp.qte || supp.qtePosee) >= 0 ? parseFloat(supp.qte || supp.qtePosee) : 0,
-            valeur: parseFloat(supp.valeur) >= 0 ? parseFloat(supp.valeur) : 0
-          });
-        });
-      }
-    });
-    
-    Object.entries(grouped).forEach(([nom, details]) => {
-      supplementParZone.push({ nom, details });
-    });
-  }
-  
-  if (supplementParZone.length > 0) {
-    docMetrees.setFontSize(14);
-    docMetrees.setFont('Helvetica', 'bold');
-    docMetrees.text('DÉTAIL DES SUPPLÉMENTS PAR ZONE', 10, tableStartY);
-    tableStartY += 10;
-    
-    // Copio esattamente la logica del DevisPdf.vue
-    supplementParZone.forEach((suppZone, idx) => {
-      const suppZoneName = suppZone.nom || `Zone ${idx + 1}`;
-      docMetrees.setFontSize(11);
-      docMetrees.setFont('Helvetica', 'bold');
-      docMetrees.text(suppZoneName, 10, tableStartY);
-      
-      const head = [[
-        'Code',
-        'Produit',
-        'Taille',
-        'Supplement',
-        'Qté',
-        'Valeur',
-        'Total ML'
-      ]];
-      const body = [];
-      
-      // Raggruppiamo per prodotto/taglia come nel componente SupplementDetails
-      if (Array.isArray(suppZone.details)) {
-        const grouped = {};
-        suppZone.details.forEach((entry) => {
-          const key = `${entry.article}-${entry.nom}-${entry.taille}`;
-          if (!grouped[key]) {
-            grouped[key] = {
-              article: entry.article,
-              nom: entry.nom,
-              taille: entry.taille,
-              entries: []
-            };
-          }
-          grouped[key].entries.push(entry);
-        });
-        
-        // Per ogni gruppo di prodotto/taglia
-        Object.values(grouped).forEach((group) => {
-          // Aggiungiamo le righe del gruppo
-          group.entries.forEach((s) => {
-            const qteValue = Number(s.qte || 0);
-            const valeurValue = Number(s.valeur || 0);
-            const totalML = s.totalML || (qteValue && valeurValue ? qteValue * valeurValue : 0);
-            body.push([
-              s.article || '',
-              s.nom || '',
-              s.taille || '',
-              s.supplement || '',
-              s.qte != null ? String(qteValue) : '',
-              valeurValue.toFixed(2),
-              Number(totalML || 0).toFixed(2)
-            ]);
-          });
-          
-          // Aggiungiamo la riga totale per il gruppo
-          const groupTotal = group.entries.reduce((sum, e) => {
-            const qteValue = Number(e.qte || 0);
-            const valeurValue = Number(e.valeur || 0);
-            const totalML = e.totalML || (qteValue && valeurValue ? qteValue * valeurValue : 0);
-            return sum + Number(totalML || 0);
-          }, 0);
-          
-          body.push([
-            '',
-            '',
-            '',
-            `Total Suppléments:`,
-            '',
-            '',
-            `${Number(groupTotal || 0).toFixed(2)} ML`
-          ]);
-        });
-      }
-      
-
-      
-      autoTable(docMetrees, {
-        head: head,
-        body: body,
-        startY: tableStartY + 4,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [230, 230, 230],
-          fontSize: 8
-        },
-        bodyStyles: {
-          fontSize: 8
-        },
-        columnStyles: {
-          0: { cellWidth: 20 },
-          1: { cellWidth: 40 },
-          2: { cellWidth: 15 },
-          3: { cellWidth: 40 },
-          4: { cellWidth: 15 },
-          5: { cellWidth: 20 },
-          6: { cellWidth: 20 }
-        }
-      });
-      
-      // Aggiorniamo la posizione per la prossima zona
-      tableStartY = docMetrees.lastAutoTable.finalY + 10;
-    });
-  }
-    
-    // 2. DOCUMENTO FACTURE (con prezzi)
-    const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
-    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
-    
-    // Informazioni fattura
-    docFacture.setFontSize(9);
-    docFacture.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
-    docFacture.text(`Client: ${nomeCliente}`, 10, 57);
-    docFacture.text(`Chantier: ${numeroChantier}${chantier?.nom || 'N/A'}`, 10, 64);
-    
-    // Tabella con prezzi
-    let totalHT = 0;
-    const factureTableData = [];
-    
-    if (metrageDoc?.items) {
-      metrageDoc.items.forEach(item => {
-        const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
-        const prezzoML = Number(prodottoDevis?.prix || 50);
-        const mlPosato = Number(item.totalML || 0);
-        const totaleItem = mlPosato * prezzoML;
-        
-        totalHT += totaleItem;
-        
-        factureTableData.push([
-          item.article || '',
-          item.nom || '',
-          item.zone || '',
-          mlPosato.toFixed(2),
-          `${prezzoML.toFixed(2)} CHF`,
-          `${totaleItem.toFixed(2)} CHF`
-        ]);
-      });
-    }
-    
-    autoTable(docFacture, {
-      head: [['Code', 'Description', 'Zone', 'ML Posé', 'Prix/ML', 'Total HT']],
-      body: factureTableData,
-      startY: 75,
-      theme: 'grid',
-      headStyles: { fillColor: [230, 230, 230], fontSize: 9 },
-      bodyStyles: { fontSize: 8 }
-    });
-    
-    // Totali usando dati reali della fattura
-    const finalY = docFacture.lastAutoTable.finalY + 10;
-    const realMontantHT = Number(facture.montant_ht || totalHT);
-    const realTauxTVA = Number(facture.taux_tva || 7.7);
-    const realMontantTTC = Number(facture.montant_ttc || realMontantHT * (1 + realTauxTVA/100));
-    const realMontantTVA = realMontantTTC - realMontantHT;
-    
-    docFacture.setFontSize(10);
-    docFacture.text(`Total HT: ${realMontantHT.toFixed(2)} CHF`, 140, finalY);
-    docFacture.text(`TVA (${realTauxTVA}%): ${realMontantTVA.toFixed(2)} CHF`, 140, finalY + 7);
-    docFacture.setFont('helvetica', 'bold');
-    docFacture.text(`TOTAL TTC: ${realMontantTTC.toFixed(2)} CHF`, 140, finalY + 17);
-    
-    // Footer
-    drawFooter(docFacture);
-    
-    // Salva entrambi i documenti
     docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
     docFacture.save(`Facture_${facture.numero}.pdf`);
     
