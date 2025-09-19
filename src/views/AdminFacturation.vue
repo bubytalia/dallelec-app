@@ -437,9 +437,16 @@ const loadData = async () => {
       const { data: metragesData, error: metragesError } = await supabase
         .from('metrages')
         .select('*');
-      metrages.value = metragesData || [];
+      if (metragesError && metragesError.code === 'PGRST205') {
+        console.log('⚠️ Tabella metrages non esiste ancora');
+        metrages.value = [];
+      } else if (metragesError) {
+        throw metragesError;
+      } else {
+        metrages.value = metragesData || [];
+      }
     } catch (err) {
-      console.log('Tabella metrages non esiste ancora');
+      console.log('⚠️ Errore caricamento metrages:', err.message);
       metrages.value = [];
     }
 
@@ -448,18 +455,36 @@ const loadData = async () => {
       const { data: resocontiData, error: resocontiError } = await supabase
         .from('resoconti_percentuali')
         .select('*');
-      resocontiPercentuali.value = resocontiData || [];
+      if (resocontiError && resocontiError.code === 'PGRST205') {
+        console.log('⚠️ Tabella resoconti_percentuali non esiste ancora');
+        resocontiPercentuali.value = [];
+      } else if (resocontiError) {
+        throw resocontiError;
+      } else {
+        resocontiPercentuali.value = resocontiData || [];
+      }
     } catch (err) {
-      console.log('Tabella resoconti_percentuali non esiste ancora');
+      console.log('⚠️ Errore caricamento resoconti:', err.message);
       resocontiPercentuali.value = [];
     }
 
     // Factures
-    const { data: facturesData, error: facturesError } = await supabase
-      .from('factures')
-      .select('*');
-    if (facturesError) throw facturesError;
-    factures.value = facturesData || [];
+    try {
+      const { data: facturesData, error: facturesError } = await supabase
+        .from('factures')
+        .select('*');
+      if (facturesError && facturesError.code === 'PGRST205') {
+        console.log('⚠️ Tabella factures non esiste ancora');
+        factures.value = [];
+      } else if (facturesError) {
+        throw facturesError;
+      } else {
+        factures.value = facturesData || [];
+      }
+    } catch (err) {
+      console.log('⚠️ Errore caricamento factures:', err.message);
+      factures.value = [];
+    }
 
     // Chantiers
     const { data: chantiersData, error: chantiersError } = await supabase
