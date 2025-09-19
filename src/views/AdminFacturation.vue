@@ -1164,6 +1164,104 @@ const genererPDF = async (facture) => {
         
         yPos = docMetrees.lastAutoTable.finalY + 10;
       });
+      
+      // Détail des suppléments par zone
+      yPos += 10;
+      docMetrees.setFontSize(14);
+      docMetrees.setFont('helvetica', 'bold');
+      docMetrees.text('DÉTAIL DES SUPPLÉMENTS PAR ZONE', 10, yPos);
+      yPos += 10;
+      
+      Object.entries(itemsByZone).forEach(([zoneName, items]) => {
+        // Verifica spazio disponibile
+        if (yPos > 250) {
+          docMetrees.addPage();
+          yPos = 20;
+        }
+        
+        docMetrees.setFontSize(11);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.setFillColor(240, 240, 240);
+        docMetrees.rect(10, yPos - 3, 190, 8, 'F');
+        docMetrees.text(`Zone: ${zoneName}`, 12, yPos + 2);
+        yPos += 8;
+        
+        // Raggruppa supplementi per prodotto
+        const suppByProduct = {};
+        items.forEach(item => {
+          if (item.supplements?.length > 0) {
+            const key = `${item.article}-${item.nom}-${item.taille}`;
+            if (!suppByProduct[key]) {
+              suppByProduct[key] = {
+                article: item.article,
+                nom: item.nom,
+                taille: item.taille,
+                supplements: []
+              };
+            }
+            suppByProduct[key].supplements.push(...item.supplements);
+          }
+        });
+        
+        if (Object.keys(suppByProduct).length > 0) {
+          Object.values(suppByProduct).forEach(product => {
+            const suppData = product.supplements.map(supp => [
+              product.article,
+              product.nom,
+              product.taille,
+              supp.supplement || supp.nom || '',
+              (Number(supp.qte || supp.qtePosee) || 0).toString(),
+              (Number(supp.valeur) || 0).toFixed(1),
+              ((Number(supp.qte || supp.qtePosee) || 0) * (Number(supp.valeur) || 0)).toFixed(2) + ' ML'
+            ]);
+            
+            const totalSupp = product.supplements.reduce((sum, s) => 
+              sum + ((Number(s.qte || s.qtePosee) || 0) * (Number(s.valeur) || 0)), 0
+            );
+            
+            suppData.push([
+              '', '', '', 
+              { content: `Total Suppléments (${product.nom}):`, colSpan: 3, styles: { fontStyle: 'bold' } },
+              { content: `${totalSupp.toFixed(2)} ML`, styles: { fontStyle: 'bold' } }
+            ]);
+            
+            autoTable(docMetrees, {
+              head: [['Code Article', 'Produit', 'Taille', 'Supplément', 'Qté', 'Valeur', 'Total ML']],
+              body: suppData,
+              startY: yPos,
+              theme: 'striped',
+              headStyles: {
+                fillColor: [70, 130, 180],
+                textColor: 255,
+                fontSize: 8
+              },
+              bodyStyles: {
+                fontSize: 8,
+                cellPadding: 2
+              },
+              columnStyles: {
+                0: { cellWidth: 20 },
+                1: { cellWidth: 40 },
+                2: { cellWidth: 15 },
+                3: { cellWidth: 40 },
+                4: { cellWidth: 15 },
+                5: { cellWidth: 20 },
+                6: { cellWidth: 20 }
+              },
+              margin: { left: 10, right: 10 }
+            });
+            
+            yPos = docMetrees.lastAutoTable.finalY + 5;
+          });
+        } else {
+          docMetrees.setFontSize(9);
+          docMetrees.setFont('helvetica', 'italic');
+          docMetrees.text('Aucun supplément pour cette zone', 15, yPos + 5);
+          yPos += 10;
+        }
+        
+        yPos += 10;
+      });
     }
     
     // 2. PDF FACTURE (avec prix)
