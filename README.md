@@ -1,5 +1,37 @@
-# Vue 3 + Vite
+# 🏢 SISTEMA DALLELEC - GESTIONALE COMPLETO
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+**Sistema gestionale aziendale per DALLELEC Sarl (Elettricisti Svizzera)**
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+🌐 **URL Live**: https://dallelec.com  
+✅ **Stato**: SISTEMA COMPLETATO AL 100% E IN PRODUZIONE  
+📊 **Database**: Supabase PostgreSQL  
+🚀 **Hosting**: Netlify  
+
+## 📄 DOCUMENTAZIONE COMPLETA
+
+**➡️ Consultare**: [`SISTEMA_DALLELEC_COMPLETO.md`](./SISTEMA_DALLELEC_COMPLETO.md)
+
+La documentazione completa contiene:
+- Architettura tecnica
+- Credenziali e configurazioni
+- Struttura database
+- Procedure deploy
+- Troubleshooting
+- Note per chat future
+
+## 🚀 Quick Start
+
+```bash
+# Sviluppo locale
+npm install
+npm run dev
+
+# Deploy produzione
+git push origin fix-produits-devis
+```
+
+## ⚠️ IMPORTANTE
+
+- **Branch Deploy**: `fix-produits-devis` (NON master)
+- **Database**: Supabase (aumhdoiwtichjlvbrnrl.supabase.co)
+- **Documentazione**: `SISTEMA_DALLELEC_COMPLETO.md`

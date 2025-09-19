@@ -277,6 +277,17 @@
                 </div>
                 <div v-else class="text-muted">Aucun détail disponible</div>
               </div>
+              <div class="mb-3">
+                <label class="form-label">Acconti già fatturati (CHF TTC):</label>
+                <input 
+                  v-model.number="accontiPrecedenti" 
+                  type="number" 
+                  step="0.01" 
+                  class="form-control" 
+                  placeholder="0.00"
+                >
+                <small class="text-muted">Importo da sottrarre nel PDF (solo visualizzazione)</small>
+              </div>
               <button @click="autoriserFacturation(detailMetrage)" class="btn btn-success me-2">
                 ✅ Autoriser Facturation
               </button>
@@ -368,6 +379,7 @@ const devis = ref([]);
 
 const showDetailMetrage = ref(false);
 const detailMetrage = ref({});
+const accontiPrecedenti = ref(0);
 const showDetailResoconto = ref(false);
 const detailResoconto = ref({});
 const showChangeStatut = ref(false);
@@ -588,6 +600,7 @@ const autoriserFacturation = async (metrage) => {
 
 const voirDetailMetrage = (metrage) => {
   detailMetrage.value = metrage;
+  accontiPrecedenti.value = 0; // Reset acconti
   showDetailMetrage.value = true;
 };
 
@@ -1491,7 +1504,11 @@ const genererPDF = async (facture) => {
     const realMontantHT = Number(facture.montant_ht || totalFactureHT);
     const realTauxTVA = Number(facture.taux_tva || 8.1);
     const realMontantTVA = realMontantHT * (realTauxTVA / 100);
-    const realMontantTTC = realMontantHT + realMontantTVA;
+    const montantBrutTTC = realMontantHT + realMontantTVA;
+    
+    // Sottrai acconti già fatturati (solo per PDF)
+    const accontiPDF = Number(accontiPrecedenti.value || 0);
+    const realMontantTTC = montantBrutTTC - accontiPDF;
     
     console.log('Debug fattura PDF:', {
       montantHT: realMontantHT,
@@ -1503,11 +1520,12 @@ const genererPDF = async (facture) => {
     
     yPos += 10;
     
-    // Box per i totali
+    // Box per i totali (più alto per includere acconti)
+    const boxHeight = accontiPDF > 0 ? 35 : 25;
     docFacture.setFillColor(245, 245, 245);
-    docFacture.rect(120, yPos - 5, 80, 25, 'F');
+    docFacture.rect(120, yPos - 5, 80, boxHeight, 'F');
     docFacture.setDrawColor(200, 200, 200);
-    docFacture.rect(120, yPos - 5, 80, 25);
+    docFacture.rect(120, yPos - 5, 80, boxHeight);
     
     docFacture.setFontSize(10);
     docFacture.setFont('helvetica', 'normal');
@@ -1517,14 +1535,30 @@ const genererPDF = async (facture) => {
     docFacture.text(`TVA (${realTauxTVA}%):`, 125, yPos + 8);
     docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 190, yPos + 8, { align: 'right' });
     
+    let currentY = yPos + 14;
+    
+    // Se ci sono acconti precedenti, mostrali
+    if (accontiPDF > 0) {
+      docFacture.text('Sous-total TTC:', 125, currentY);
+      docFacture.text(`${montantBrutTTC.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+      currentY += 6;
+      
+      docFacture.setTextColor(200, 0, 0); // Rosso per sottrazione
+      docFacture.text('Déjà facturé:', 125, currentY);
+      docFacture.text(`-${accontiPDF.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+      docFacture.setTextColor(0, 0, 0); // Torna nero
+      currentY += 6;
+    }
+    
     // Linea separatrice
     docFacture.setLineWidth(0.5);
-    docFacture.line(125, yPos + 11, 195, yPos + 11);
+    docFacture.line(125, currentY - 2, 195, currentY - 2);
     
     docFacture.setFont('helvetica', 'bold');
     docFacture.setFontSize(12);
-    docFacture.text('TOTAL TTC:', 125, yPos + 17);
-    docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 190, yPos + 17, { align: 'right' });
+    const labelFinal = accontiPDF > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
+    docFacture.text(labelFinal, 125, currentY + 4);
+    docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 190, currentY + 4, { align: 'right' });
     
     // Conditions de paiement
     yPos += 35;

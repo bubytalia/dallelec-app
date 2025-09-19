@@ -275,7 +275,7 @@ const nouvelleRegie = ref({
   description: ''
 });
 const chantiersPercentuels = computed(() => 
-  chantiers.value.filter(c => c.modalitaResoconto === 'percentuale')
+  chantiers.value.filter(c => c.modalita_resoconto === 'percentuale')
 );
 
 const regieValide = computed(() => {
@@ -381,7 +381,9 @@ const loadChantierData = async () => {
   if (!selectedChantierId.value) return;
   
   console.log('🔍 Loading chantier data for:', selectedChantierId.value);
-  selectedChantier.value = chantiers.value.find(c => c.id === selectedChantierId.value);
+  // Fix: Converte selectedChantierId in numero per il confronto
+  const chantierId = parseInt(selectedChantierId.value);
+  selectedChantier.value = chantiers.value.find(c => c.id === chantierId);
   console.log('📋 Selected chantier:', selectedChantier.value);
   
   // Carica prezzo regie del cantiere

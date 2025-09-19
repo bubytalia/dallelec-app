@@ -1,5 +1,8 @@
-# DALLELEC - PROGRESS REPORT
-*Ultimo aggiornamento: 31 Gennaio 2025 - SISTEMA DEVIS COMPLETAMENTE FUNZIONANTE*
+# ⚠️ FILE OBSOLETO - VEDERE SISTEMA_DALLELEC_COMPLETO.md
+
+Questo file è stato sostituito dalla documentazione unificata.
+
+**Consultare**: `SISTEMA_DALLELEC_COMPLETO.md` per informazioni aggiornate.
 
 ## 🚀 SISTEMA IN PRODUZIONE
 **URL PUBBLICO**: https://dallelec.com  

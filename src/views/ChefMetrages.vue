@@ -22,9 +22,13 @@
             <select v-model="selectedChantierId" class="form-control" @change="loadChantierData">
               <option value="">Choisir un chantier</option>
               <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
-                {{ chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '' }}{{ chantier.nom }} - {{ chantier.adresse }}
+                {{ chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '' }}{{ chantier.nom }} - {{ chantier.adresse }}
               </option>
             </select>
+            <div class="mt-2">
+              <small class="text-muted">Debug: {{ chantiers.length }} cantieri caricati</small>
+              <button @click="fetchChantiers" class="btn btn-sm btn-warning ms-2">🔄 Test Carica Cantieri</button>
+            </div>
           </div>
         </div>
       </div>
@@ -283,22 +287,41 @@ const nouvelleRegie = ref({
 
 const fetchChantiers = async () => {
   const userEmail = localStorage.getItem('userEmail');
-  if (!userEmail) {
-    console.error('❌ UserEmail non trovato');
-    alert('Erreur: UserEmail non trovato. Rifare login.');
-    return;
-  }
+  console.log('🔍 UserEmail:', userEmail);
   
   try {
+    // Trova il chef dalla tabella chefdechantiers
+    const { data: chefData, error: chefError } = await supabase
+      .from('chefdechantiers')
+      .select('nom, prenom')
+      .eq('email', userEmail)
+      .single();
+    
+    if (chefError || !chefData) {
+      console.error('❌ Chef non trovato');
+      chantiers.value = [];
+      return;
+    }
+    
+    const nomeCompleto1 = `${chefData.nom} ${chefData.prenom}`; // Maggi Daniele
+    const nomeCompleto2 = `${chefData.prenom} ${chefData.nom}`; // Daniele Maggi
+    
+    console.log('🔍 Cercando cantieri per:', { userEmail, nomeCompleto1, nomeCompleto2 });
+    
+    // Cerca cantieri per email o entrambi i formati nome
     const { data, error } = await supabase
       .from('chantiers')
       .select('*')
-      .eq('capocantiere', userEmail);
+      .or(`capocantiere.eq.${userEmail},capocantiere.eq.${nomeCompleto1},capocantiere.eq.${nomeCompleto2}`);
     
     if (error) throw error;
+    
+    console.log('✅ Cantieri trovati:', data?.length || 0);
     chantiers.value = data || [];
+    
   } catch (error) {
-    console.error('Erreur chargement chantiers:', error);
+    console.error('❌ Errore:', error);
+    chantiers.value = [];
   }
 };
 
@@ -724,21 +747,29 @@ const supprimerRegie = (index) => {
 };
 
 onMounted(async () => {
-  await fetchChantiers();
+  console.log('🚀 ChefMetrages - onMounted chiamato');
   
-  const urlParams = new URLSearchParams(window.location.search);
-  const chantierId = urlParams.get('chantier');
-  
-  // Controlla se siamo in modalità conversione da resoconto percentuale
-  if (urlParams.get('conversion') === 'true') {
-    isConversionMode.value = true;
-    zoneInConversione.value = urlParams.get('zona') || '';
-  }
-  
-  // Preseleziona cantiere da URL
-  if (chantierId) {
-    selectedChantierId.value = chantierId;
-    await loadChantierData();
+  try {
+    console.log('📞 Chiamando fetchChantiers...');
+    await fetchChantiers();
+    console.log('✅ fetchChantiers completato');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const chantierId = urlParams.get('chantier');
+    
+    // Controlla se siamo in modalità conversione da resoconto percentuale
+    if (urlParams.get('conversion') === 'true') {
+      isConversionMode.value = true;
+      zoneInConversione.value = urlParams.get('zona') || '';
+    }
+    
+    // Preseleziona cantiere da URL
+    if (chantierId) {
+      selectedChantierId.value = chantierId;
+      await loadChantierData();
+    }
+  } catch (error) {
+    console.error('❌ Errore in onMounted:', error);
   }
 });
 </script>
