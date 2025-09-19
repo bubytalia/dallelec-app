@@ -1044,24 +1044,51 @@ const genererPDF = async (facture) => {
     // Funzione helper per header
     const drawHeader = (doc, title) => {
       if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
+      
+      // Dati azienda
       doc.setFontSize(8);
-      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title, 10, 40);
-      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
-      if (periodoRef) doc.text(periodoRef, 10, 57);
-      doc.text(`Client: ${nomeCliente}`, 10, periodoRef ? 64 : 57);
-      doc.text(`Chantier: ${numeroChantier}${nomeChantier}`, 10, periodoRef ? 71 : 64);
+      doc.text('DALLELEC Sarl', 200, 12, { align: 'right' });
+      doc.text('Rue de Bourgogne 25', 200, 17, { align: 'right' });
+      doc.text('1203 Genève', 200, 22, { align: 'right' });
+      
+      // Titolo
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 10, 35);
+      
+      // Linea separatrice
+      doc.setLineWidth(0.5);
+      doc.line(10, 40, 200, 40);
+      
+      // Informazioni documento
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      let yInfo = 50;
+      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, yInfo);
+      
+      if (periodoRef) {
+        yInfo += 6;
+        doc.text(periodoRef, 10, yInfo);
+      }
+      
+      yInfo += 8;
+      doc.setFont('helvetica', 'bold');
+      doc.text('FACTURÉ À:', 10, yInfo);
+      
+      yInfo += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.text(nomeCliente, 10, yInfo);
+      
+      yInfo += 6;
+      doc.text(`Chantier: ${numeroChantier}${nomeChantier}`, 10, yInfo);
+      
+      return yInfo + 10; // Ritorna la posizione Y per il contenuto
     };
 
     // 1. PDF MÉTRÉES (sans prix)
     const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
-    drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
-    
-    let yPos = periodoRef ? 85 : 80;
+    let yPos = drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
     
     if (metrageDoc?.items) {
       const itemsByZone = {};
@@ -1071,9 +1098,17 @@ const genererPDF = async (facture) => {
       });
       
       Object.entries(itemsByZone).forEach(([zoneName, items]) => {
-        docMetrees.setFontSize(12);
+        // Verifica spazio disponibile
+        if (yPos > 250) {
+          docMetrees.addPage();
+          yPos = 20;
+        }
+        
+        docMetrees.setFontSize(11);
         docMetrees.setFont('helvetica', 'bold');
-        docMetrees.text(`Zone: ${zoneName}`, 10, yPos);
+        docMetrees.setFillColor(240, 240, 240);
+        docMetrees.rect(10, yPos - 3, 190, 8, 'F');
+        docMetrees.text(`Zone: ${zoneName}`, 12, yPos + 2);
         
         const tableData = items.map(item => {
           const quantite = Number(item.mlPosee || 0);
@@ -1103,21 +1138,37 @@ const genererPDF = async (facture) => {
         autoTable(docMetrees, {
           head: [['Code Article', 'Produit', 'Taille', 'Unité', 'Quantité', 'Total Suppl.', 'Total']],
           body: tableData,
-          startY: yPos + 5,
-          theme: 'grid',
-          headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
-          bodyStyles: { fontSize: 8 }
+          startY: yPos + 8,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [70, 130, 180], 
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold'
+          },
+          bodyStyles: { 
+            fontSize: 8,
+            cellPadding: 2
+          },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 50 },
+            2: { cellWidth: 20 },
+            3: { cellWidth: 15 },
+            4: { cellWidth: 20 },
+            5: { cellWidth: 25 },
+            6: { cellWidth: 25 }
+          },
+          margin: { left: 10, right: 10 }
         });
         
-        yPos = docMetrees.lastAutoTable.finalY + 15;
+        yPos = docMetrees.lastAutoTable.finalY + 10;
       });
     }
     
     // 2. PDF FACTURE (avec prix)
     const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
-    drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
-    
-    yPos = periodoRef ? 85 : 80;
+    yPos = drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
     let totalFactureHT = 0;
     
     if (metrageDoc?.items) {
@@ -1128,9 +1179,17 @@ const genererPDF = async (facture) => {
       });
       
       Object.entries(itemsByZone).forEach(([zoneName, items]) => {
-        docFacture.setFontSize(12);
+        // Verifica spazio disponibile
+        if (yPos > 220) {
+          docFacture.addPage();
+          yPos = 20;
+        }
+        
+        docFacture.setFontSize(11);
         docFacture.setFont('helvetica', 'bold');
-        docFacture.text(`Zone: ${zoneName}`, 10, yPos);
+        docFacture.setFillColor(240, 240, 240);
+        docFacture.rect(10, yPos - 3, 190, 8, 'F');
+        docFacture.text(`Zone: ${zoneName}`, 12, yPos + 2);
         
         let zoneTotal = 0;
         const tableData = items.map(item => {
@@ -1160,25 +1219,49 @@ const genererPDF = async (facture) => {
             quantite.toFixed(2),
             totalSuppl.toFixed(2),
             total.toFixed(2),
-            `${prezzoUnit.toFixed(2)} CHF`,
-            `${totalItem.toFixed(2)} CHF`
+            `${prezzoUnit.toFixed(2)}`,
+            `${totalItem.toFixed(2)}`
           ];
         });
         
         autoTable(docFacture, {
-          head: [['Code Article', 'Produit', 'Taille', 'Unité', 'Quantité', 'Total Suppl.', 'Total', 'Prix Unit.', 'Total']],
+          head: [['Code', 'Produit', 'Taille', 'U', 'Qté', 'Suppl.', 'Total', 'Prix/U', 'Total CHF']],
           body: tableData,
-          startY: yPos + 5,
-          theme: 'grid',
-          headStyles: { fillColor: [230, 230, 230], fontSize: 8 },
-          bodyStyles: { fontSize: 8 }
+          startY: yPos + 8,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [70, 130, 180], 
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold'
+          },
+          bodyStyles: { 
+            fontSize: 8,
+            cellPadding: 2
+          },
+          columnStyles: {
+            0: { cellWidth: 20 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 15 },
+            3: { cellWidth: 10 },
+            4: { cellWidth: 15 },
+            5: { cellWidth: 18 },
+            6: { cellWidth: 18 },
+            7: { cellWidth: 20, halign: 'right' },
+            8: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }
+          },
+          margin: { left: 10, right: 10 }
         });
         
         yPos = docFacture.lastAutoTable.finalY + 5;
         
+        // Sous-total zona con sfondo
+        docFacture.setFillColor(250, 250, 250);
+        docFacture.rect(130, yPos - 2, 70, 6, 'F');
         docFacture.setFont('helvetica', 'bold');
-        docFacture.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 150, yPos);
-        yPos += 15;
+        docFacture.setFontSize(9);
+        docFacture.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 135, yPos + 2);
+        yPos += 12;
       });
     }
     
@@ -1214,25 +1297,51 @@ const genererPDF = async (facture) => {
       yPos = docFacture.lastAutoTable.finalY + 10;
     }
     
-    // Totali finali
+    // Totali finali con box
     const realMontantHT = Number(facture.montant_ht || totalFactureHT);
     const realTauxTVA = Number(facture.taux_tva || 8.1);
     const realMontantTVA = realMontantHT * (realTauxTVA / 100);
     const realMontantTTC = realMontantHT + realMontantTVA;
     
+    yPos += 10;
+    
+    // Box per i totali
+    docFacture.setFillColor(245, 245, 245);
+    docFacture.rect(120, yPos - 5, 80, 25, 'F');
+    docFacture.setDrawColor(200, 200, 200);
+    docFacture.rect(120, yPos - 5, 80, 25);
+    
     docFacture.setFontSize(10);
-    docFacture.text(`Total HT: ${realMontantHT.toFixed(2)} CHF`, 140, yPos);
-    docFacture.text(`TVA (${realTauxTVA}%): ${realMontantTVA.toFixed(2)} CHF`, 140, yPos + 7);
+    docFacture.setFont('helvetica', 'normal');
+    docFacture.text('Total HT:', 125, yPos + 2);
+    docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 190, yPos + 2, { align: 'right' });
+    
+    docFacture.text(`TVA (${realTauxTVA}%):`, 125, yPos + 8);
+    docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 190, yPos + 8, { align: 'right' });
+    
+    // Linea separatrice
+    docFacture.setLineWidth(0.5);
+    docFacture.line(125, yPos + 11, 195, yPos + 11);
+    
     docFacture.setFont('helvetica', 'bold');
-    docFacture.text(`TOTAL TTC: ${realMontantTTC.toFixed(2)} CHF`, 140, yPos + 17);
+    docFacture.setFontSize(12);
+    docFacture.text('TOTAL TTC:', 125, yPos + 17);
+    docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 190, yPos + 17, { align: 'right' });
     
     // Conditions de paiement
+    yPos += 35;
     docFacture.setFont('helvetica', 'normal');
     docFacture.setFontSize(9);
-    docFacture.text('Conditions de paiement: 30 jours net', 10, yPos + 35);
+    docFacture.setTextColor(100, 100, 100);
+    docFacture.text('Conditions de paiement: 30 jours net', 10, yPos);
     if (periodoRef) {
-      docFacture.text(`Facture établie sur la base des métrées ${periodoRef.toLowerCase()}`, 10, yPos + 42);
+      docFacture.text(`Facture établie sur la base des métrées ${periodoRef.toLowerCase()}`, 10, yPos + 6);
     }
+    
+    // Footer
+    docFacture.setFontSize(8);
+    docFacture.setTextColor(150, 150, 150);
+    docFacture.text('DALLELEC Sarl - CHE-123.456.789 TVA - Rue de Bourgogne 25, 1203 Genève', 105, 280, { align: 'center' });
     
     // Salva documenti
     docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
