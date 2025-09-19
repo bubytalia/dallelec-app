@@ -724,7 +724,7 @@ const generarFactureResoconto = async (resoconto) => {
       dateFacture: new Date().toISOString().split('T')[0],
       montantHT: montantHT,
       tauxTVA: 8.1,
-      montantTTC: montantHT * 1.2,
+      montantTTC: montantHT * 1.081,
       statut: 'emise',
       clientNom: chantierDevis?.nom || 'Client',
       dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
