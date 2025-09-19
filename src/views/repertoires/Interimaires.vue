@@ -83,7 +83,7 @@
               <td>{{ interimaire.specialite || '-' }}</td>
               <td>{{ interimaire.telephone || '-' }}</td>
               <td>{{ interimaire.email || '-' }}</td>
-              <td>{{ interimaire.tarifHoraire ? interimaire.tarifHoraire + '€' : '-' }}</td>
+              <td>{{ interimaire.tarif_horaire ? interimaire.tarif_horaire + '€' : '-' }}</td>
               <td>{{ interimaire.agence || '-' }}</td>
               <td>
                 <button @click="editInterimaire(interimaire)" class="btn btn-sm btn-warning me-2">✎</button>
@@ -143,7 +143,11 @@ const saveInterimaire = async () => {
       nom: newInterimaire.value.nom,
       prenom: newInterimaire.value.prenom,
       telephone: newInterimaire.value.telephone,
-      email: newInterimaire.value.email
+      email: newInterimaire.value.email,
+      specialite: newInterimaire.value.specialite,
+      tarif_horaire: newInterimaire.value.tarifHoraire,
+      agence: newInterimaire.value.agence,
+      notes: newInterimaire.value.notes
     };
 
     if (editingInterimaire.value) {
@@ -172,7 +176,7 @@ const editInterimaire = (interimaire) => {
     telephone: interimaire.telephone || '',
     email: interimaire.email || '',
     specialite: interimaire.specialite || '',
-    tarifHoraire: interimaire.tarifHoraire || 0,
+    tarifHoraire: interimaire.tarif_horaire || 0,
     agence: interimaire.agence || '',
     notes: interimaire.notes || ''
   };

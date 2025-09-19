@@ -228,6 +228,15 @@ const addHeurePropre = async () => {
   if (!newHeure.value.chantierId || !newHeure.value.date || !newHeure.value.heures || !userEmail) return;
   
   try {
+    // Récupérer la tariffa attuale del chef
+    const { data: chefData, error: chefError } = await supabase
+      .from('collaborateurs')
+      .select('cout_horaire')
+      .eq('email', userEmail)
+      .single();
+    
+    const tarifActuel = chefData?.cout_horaire || 45; // fallback
+    
     const { error } = await supabase
       .from('heures_chef_propres')
       .insert([{
@@ -235,7 +244,8 @@ const addHeurePropre = async () => {
         date: newHeure.value.date,
         heures_normales: newHeure.value.heures,
         total_heures: newHeure.value.heures,
-        chef_id: userEmail
+        chef_id: userEmail,
+        tarif_utilise: tarifActuel
       }]);
     
     if (error) throw error;
@@ -257,6 +267,15 @@ const addHeureInterim = async () => {
   if (!newHeureInterim.value.chantierId || !newHeureInterim.value.date || !newHeureInterim.value.interimaireId || !newHeureInterim.value.heures || !userEmail) return;
   
   try {
+    // Récupérer la tariffa attuale dell'intérimaire
+    const { data: interimData, error: interimError } = await supabase
+      .from('interimaires')
+      .select('tarif_horaire')
+      .eq('id', newHeureInterim.value.interimaireId)
+      .single();
+    
+    const tarifActuel = interimData?.tarif_horaire || 35; // fallback
+    
     const { error } = await supabase
       .from('heures_chef_interim')
       .insert([{
@@ -265,7 +284,8 @@ const addHeureInterim = async () => {
         interinaire_nom: getInterimaireName(newHeureInterim.value.interimaireId),
         heures_normales: newHeureInterim.value.heures,
         total_heures: newHeureInterim.value.heures,
-        chef_id: userEmail
+        chef_id: userEmail,
+        tarif_utilise: tarifActuel
       }]);
     
     if (error) throw error;

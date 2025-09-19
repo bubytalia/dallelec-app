@@ -210,6 +210,15 @@ const ajouterHeure = async () => {
   if (!formValide.value || !userEmail) return;
   
   try {
+    // Récupérer la tariffa attuale de l'ouvrier
+    const { data: ouvrierData, error: ouvrierError } = await supabase
+      .from('collaborateurs')
+      .select('cout_horaire')
+      .eq('email', userEmail)
+      .single();
+    
+    const tarifActuel = ouvrierData?.cout_horaire || 35; // fallback
+    
     const { error } = await supabase
       .from('heures_ouvriers')
       .insert([{
@@ -219,7 +228,8 @@ const ajouterHeure = async () => {
         type_travail: nouvelleHeure.value.typeTravail,
         notes: nouvelleHeure.value.notes,
         ouvrier_id: userEmail,
-        ouvrier_nom: userName || userEmail
+        ouvrier_nom: userName || userEmail,
+        tarif_utilise: tarifActuel
       }]);
     
     if (error) throw error;

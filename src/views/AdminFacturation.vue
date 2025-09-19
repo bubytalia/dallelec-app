@@ -123,7 +123,7 @@
                 <td>{{ getChantierName(facture.chantier_id || facture.chantierId) }}</td>
                 <td>{{ facture.client_nom || facture.clientNom || getClientName(facture.chantier_id || facture.chantierId) }}</td>
                 <td>{{ formatDate(facture.date_facture || facture.dateFacture) }}</td>
-                <td>{{ formatCurrency(facture.montant_ttc || facture.montantTTC) }}</td>
+                <td>{{ formatCurrency(facture.montant_ttc || facture.montantTTC || 0) }}</td>
                 <td>
                   <span :class="getStatutClass(facture.statut)">
                     {{ getStatutLabel(facture.statut) }}
@@ -138,6 +138,9 @@
                   </button>
                   <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-2">
                     📄 PDF
+                  </button>
+                  <button v-if="(facture.montant_ttc || facture.montantTTC || 0) === 0" @click="corrigerFacture(facture)" class="btn btn-sm btn-warning me-2" title="Corriger montant">
+                    🔧
                   </button>
                   <button @click="supprimerFacture(facture)" class="btn btn-sm btn-danger" title="Supprimer (test)">
                     🗑
@@ -395,7 +398,7 @@ const metragesEnAttente = computed(() => {
     !m.draft && // Métrage sauvegardé (non brouillon)
     (m.status === 'en_attente' || !m.status) && // En attente d'approbation ou ancien
     !m.facture && // Pas encore facturé
-    (m.total_ml || m.totalML) > 0 // A du contenu
+    ((m.total_ml || m.totalML) > 0 || (m.regies && m.regies.length > 0)) // A du contenu (ML ou regias)
   );
 });
 
@@ -857,6 +860,76 @@ const confirmerModificationFacture = async () => {
     showModifierFacture.value = false;
   } catch (error) {
     console.error('Erreur modification facture:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const corrigerFacture = async (facture) => {
+  if (!confirm(`Recalculer le montant de la facture ${facture.numero} ?`)) return;
+  
+  try {
+    // Trova il métrage associato
+    const metrage = metrages.value.find(m => m.id === (facture.metrage_id || facture.metrageId));
+    if (!metrage) {
+      alert('Métrage associé non trouvé');
+      return;
+    }
+    
+    console.log('Debug métrage pour correction:', metrage);
+    
+    // Recalcule le montant
+    let montantHT = 0;
+    
+    // Trova il devis associato per i prezzi prodotti
+    const chantier = chantiers.value.find(c => c.id === (facture.chantier_id || facture.chantierId));
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
+    
+    // Calcola montant produits
+    if (metrage.items && metrage.items.length > 0) {
+      metrage.items.forEach(item => {
+        const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+        const prezzoUnit = Number(prodottoDevis?.prix || 50);
+        const quantite = Number(item.mlPosee || 0);
+        
+        let totalSuppl = 0;
+        if (item.supplements && Array.isArray(item.supplements)) {
+          totalSuppl = item.supplements.reduce((sum, supp) => {
+            const qte = Number(supp.qte || supp.qtePosee || 0);
+            const valeur = Number(supp.valeur || 0);
+            return sum + (qte * valeur);
+          }, 0);
+        }
+        
+        const total = quantite + totalSuppl;
+        montantHT += total * prezzoUnit;
+      });
+    }
+    
+    // Calcola montant regie
+    if (metrage.regies && metrage.regies.length > 0) {
+      const montantRegies = metrage.regies.reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+      montantHT += montantRegies;
+    }
+    
+    console.log('Montant total calculé:', montantHT);
+    
+    const montantTTC = montantHT * 1.081; // TVA 8.1%
+    
+    // Met à jour la facture
+    const { error } = await supabase
+      .from('factures')
+      .update({
+        montant_ht: montantHT,
+        montant_ttc: montantTTC
+      })
+      .eq('id', facture.id);
+    
+    if (error) throw error;
+    
+    alert(`Facture corrigée: ${montantTTC.toFixed(2)} CHF`);
+    loadData();
+  } catch (error) {
+    console.error('Erreur correction facture:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -1388,8 +1461,8 @@ const genererPDF = async (facture) => {
         body: regieData,
         startY: yPos + 5,
         theme: 'grid',
-        headStyles: { fillColor: [230, 230, 230], fontSize: 9 },
-        bodyStyles: { fontSize: 8 }
+        headStyles: { fillColor: [70, 130, 180], textColor: 255, fontSize: 9 },
+        bodyStyles: { fontSize: 8, fillColor: [240, 248, 255] }
       });
       
       yPos = docFacture.lastAutoTable.finalY + 10;
@@ -1400,6 +1473,14 @@ const genererPDF = async (facture) => {
     const realTauxTVA = Number(facture.taux_tva || 8.1);
     const realMontantTVA = realMontantHT * (realTauxTVA / 100);
     const realMontantTTC = realMontantHT + realMontantTVA;
+    
+    console.log('Debug fattura PDF:', {
+      montantHT: realMontantHT,
+      tauxTVA: realTauxTVA,
+      montantTVA: realMontantTVA,
+      montantTTC: realMontantTTC,
+      factureOriginal: facture
+    });
     
     yPos += 10;
     

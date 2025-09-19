@@ -80,9 +80,9 @@
             <td>{{ chef.telephone }}</td>
             <td>{{ chef.email }}</td>
             <td>{{ chef.etat }}</td>
-            <td>{{ chef.coutHoraire }} €</td>
+            <td>{{ chef.cout_horaire || chef.coutHoraire }} €</td>
             <td>
-              <span v-if="chef.excludeFromReport" class="badge bg-warning">⚠️ Exclu</span>
+              <span v-if="chef.exclude_from_report || chef.excludeFromReport" class="badge bg-warning">⚠️ Exclu</span>
               <span v-else class="badge bg-success">✓ Inclus</span>
             </td>
             <td>
@@ -132,7 +132,10 @@ export default {
         nom: newChef.value.nom,
         prenom: newChef.value.prenom,
         telephone: newChef.value.telephone,
-        email: newChef.value.email
+        email: newChef.value.email,
+        etat: newChef.value.etat,
+        cout_horaire: newChef.value.coutHoraire,
+        exclude_from_report: newChef.value.excludeFromReport
       }]);
       if (!error) {
         newChef.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false };
@@ -155,7 +158,10 @@ export default {
         nom: editChef.value.nom,
         prenom: editChef.value.prenom,
         telephone: editChef.value.telephone,
-        email: editChef.value.email
+        email: editChef.value.email,
+        etat: editChef.value.etat,
+        cout_horaire: editChef.value.coutHoraire,
+        exclude_from_report: editChef.value.excludeFromReport
       }).eq('id', id);
       if (!error) {
         cancelEdit();
