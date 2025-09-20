@@ -15,8 +15,14 @@
           <router-link to="/admin/facture-manuelle" class="btn btn-sm btn-success me-2">
             📝 Facture Manuelle
           </router-link>
-          <button @click="pulirVecchiResoconti" class="btn btn-sm btn-warning">
+          <button @click="pulirVecchiResoconti" class="btn btn-sm btn-warning me-2">
             🧹 Nettoyer anciens tests
+          </button>
+          <button @click="loadData" class="btn btn-sm btn-info me-2">
+            🔄 Recharger données
+          </button>
+          <button @click="forceReload" class="btn btn-sm btn-warning">
+            ⚡ Force Reload
           </button>
         </div>
       </div>
@@ -41,10 +47,10 @@
               <!-- Resoconti percentuali -->
               <tr v-for="resoconto in resocontiEnAttente" :key="'r-' + resoconto.id">
                 <td><span class="badge bg-info">📊 Percentuel</span></td>
-                <td>{{ getChantierNameWithNumber(resoconto.chantier_id) }}</td>
-                <td>{{ getClientName(resoconto.chantier_id) }}</td>
+                <td>{{ getChantierNameWithNumber(resoconto.chantier_id || resoconto.chantierId) }}</td>
+                <td>{{ getClientName(resoconto.chantier_id || resoconto.chantierId) }}</td>
                 <td>{{ formatDate(resoconto.created_at) }}</td>
-                <td>{{ resoconto.periode_month }}</td>
+                <td>{{ resoconto.periode_month || resoconto.periodeMonth }}</td>
                 <td>{{ Object.keys(resoconto.avancementi || {}).join(', ') }}</td>
                 <td>
                   <button @click="voirDetailResoconto(resoconto)" class="btn btn-sm btn-info me-1">
@@ -123,7 +129,14 @@
                 <td>{{ getChantierName(facture.chantier_id || facture.chantierId) }}</td>
                 <td>{{ facture.client_nom || facture.clientNom || getClientName(facture.chantier_id || facture.chantierId) }}</td>
                 <td>{{ formatDate(facture.date_facture || facture.dateFacture) }}</td>
-                <td>{{ formatCurrency(facture.montant_ttc || facture.montantTTC || 0) }}</td>
+                <td>
+                  <span v-if="(facture.acconti_precedenti || 0) > 0" class="text-success">
+                    {{ formatCurrency(calculateSoldeFinale(facture)) }}
+                  </span>
+                  <span v-else>
+                    {{ formatCurrency(facture.montant_ttc || facture.montantTTC || 0) }}
+                  </span>
+                </td>
                 <td>
                   <span :class="getStatutClass(facture.statut)">
                     {{ getStatutLabel(facture.statut) }}
@@ -205,7 +218,7 @@
             <div class="row">
               <div class="col-md-6">
                 <h6>Informations Générales</h6>
-                <p><strong>Chantier:</strong> {{ getChantierName(detailResoconto.chantier_id) }}</p>
+                <p><strong>Chantier:</strong> {{ getChantierName(detailResoconto.chantier_id || detailResoconto.chantierId) }}</p>
                 <p><strong>Période:</strong> {{ detailResoconto.periode_month }}</p>
                 <p><strong>Description:</strong> {{ detailResoconto.descrizione || '-' }}</p>
                 <p><strong>Date soumission:</strong> {{ formatDate(detailResoconto.created_at) }}</p>
@@ -234,19 +247,129 @@
                     <tr v-for="regie in detailResoconto.regies" :key="regie.zone + regie.description">
                       <td>{{ regie.zone }}</td>
                       <td>{{ regie.heures }}h</td>
-                      <td>{{ regie.prixHeure }} CHF</td>
-                      <td><strong>{{ (regie.heures * regie.prixHeure).toFixed(2) }} CHF</strong></td>
+                      <td>{{ (regie.prixHeure || getPrixRegieChantier()).toFixed(2) }} CHF</td>
+                      <td><strong>{{ (regie.heures * (regie.prixHeure || getPrixRegieChantier())).toFixed(2) }} CHF</strong></td>
                       <td>{{ regie.description }}</td>
                     </tr>
                   </tbody>
                   <tfoot>
                     <tr class="table-warning">
                       <td colspan="3"><strong>Total Régies:</strong></td>
-                      <td><strong>{{ detailResoconto.regies.reduce((sum, r) => sum + (r.heures * r.prixHeure), 0).toFixed(2) }} CHF</strong></td>
+                      <td><strong>{{ detailResoconto.regies.reduce((sum, r) => sum + (r.heures * (r.prixHeure || getPrixRegieChantier())), 0).toFixed(2) }} CHF</strong></td>
                       <td></td>
                     </tr>
                   </tfoot>
                 </table>
+              </div>
+            </div>
+            
+            <!-- ANTEPRIMA FATTURA -->
+            <div class="row mt-4">
+              <div class="col-md-12">
+                <div class="card bg-light">
+                  <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">💰 ANTEPRIMA FATTURA</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-8">
+                        <h6>Travaux réalisés:</h6>
+                        <table class="table table-sm table-bordered">
+                          <thead class="table-secondary">
+                            <tr>
+                              <th>Zone</th>
+                              <th>Avancement</th>
+                              <th>Montant HT</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="(percentage, zone) in detailResoconto.avancementi" :key="zone">
+                              <td><strong>{{ zone }}</strong></td>
+                              <td>{{ percentage }}%</td>
+                              <td><strong>{{ calculateZoneMontant(zone, percentage).toFixed(2) }} CHF</strong></td>
+                            </tr>
+                          </tbody>
+                          <tfoot class="table-warning">
+                            <tr>
+                              <td colspan="2"><strong>Sous-total Travaux:</strong></td>
+                              <td><strong>{{ calculateTotalTravaux().toFixed(2) }} CHF</strong></td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                        
+                        <div v-if="detailResoconto.regies && detailResoconto.regies.length > 0">
+                          <h6>Régies:</h6>
+                          <table class="table table-sm table-bordered">
+                            <tbody>
+                              <tr v-for="regie in detailResoconto.regies" :key="regie.zone + regie.description">
+                                <td>{{ regie.zone }} - {{ regie.description }}</td>
+                                <td>{{ regie.heures }}h × {{ (regie.prixHeure || getPrixRegieChantier()).toFixed(2) }} CHF</td>
+                                <td><strong>{{ (regie.heures * (regie.prixHeure || getPrixRegieChantier())).toFixed(2) }} CHF</strong></td>
+                              </tr>
+                            </tbody>
+                            <tfoot class="table-warning">
+                              <tr>
+                                <td colspan="2"><strong>Sous-total Régies:</strong></td>
+                                <td><strong>{{ calculateTotalRegies().toFixed(2) }} CHF</strong></td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </div>
+                      
+                      <div class="col-md-4">
+                        <div class="card border-success">
+                          <div class="card-header bg-success text-white text-center">
+                            <h6 class="mb-0">TOTAUX FACTURE</h6>
+                          </div>
+                          <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                              <span>Total HT:</span>
+                              <strong>{{ calculateTotalHT().toFixed(2) }} CHF</strong>
+                            </div>
+                            <div v-if="accontiPrecedentiResoconto > 0" class="d-flex justify-content-between mb-2 text-danger">
+                              <span>Acconti HT:</span>
+                              <strong>-{{ accontiPrecedentiResoconto.toFixed(2) }} CHF</strong>
+                            </div>
+                            <div v-if="accontiPrecedentiResoconto > 0" class="d-flex justify-content-between mb-2">
+                              <span>Imponibile residuo:</span>
+                              <strong>{{ (calculateTotalHT() - accontiPrecedentiResoconto).toFixed(2) }} CHF</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                              <span>TVA (8.1%):</span>
+                              <strong>{{ calculateTVAWithAcconti().toFixed(2) }} CHF</strong>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                              <span class="h6">{{ accontiPrecedentiResoconto > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:' }}</span>
+                              <strong class="h5 text-success">{{ calculateTotalTTCWithAcconti().toFixed(2) }} CHF</strong>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                          <div class="mb-3">
+                            <label class="form-label"><strong>Acconti già fatturati (CHF HT):</strong></label>
+                            <input 
+                              v-model.number="accontiPrecedentiResoconto" 
+                              type="number" 
+                              step="0.01" 
+                              class="form-control" 
+                              placeholder="0.00"
+                            >
+                            <small class="text-muted">Importo HT da sottrarre (es: 9250 per 2 acconti da 4625 HT + TVA)</small>
+                          </div>
+                          
+                          <div class="text-center">
+                            <small class="text-muted">
+                              💡 Ceci est l'aperçu de la facture qui sera générée
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="mt-3">
@@ -308,6 +431,38 @@
                   </div>
                 </div>
                 <div v-else class="text-muted">Aucun détail disponible</div>
+              </div>
+              
+              <!-- Régies pour métrages -->
+              <div class="mb-3" v-if="detailMetrage.regies && detailMetrage.regies.length > 0">
+                <h6>Régies (Heures supplémentaires):</h6>
+                <table class="table table-sm table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Zone</th>
+                      <th>Heures</th>
+                      <th>Prix/h</th>
+                      <th>Total</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="regie in detailMetrage.regies" :key="regie.zone + regie.description">
+                      <td>{{ regie.zone }}</td>
+                      <td>{{ regie.heures }}h</td>
+                      <td>{{ (regie.prixHeure || getPrixRegieMetrage()).toFixed(2) }} CHF</td>
+                      <td><strong>{{ (regie.heures * (regie.prixHeure || getPrixRegieMetrage())).toFixed(2) }} CHF</strong></td>
+                      <td>{{ regie.description }}</td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="table-warning">
+                      <td colspan="3"><strong>Total Régies:</strong></td>
+                      <td><strong>{{ detailMetrage.regies.reduce((sum, r) => sum + (r.heures * (r.prixHeure || getPrixRegieMetrage())), 0).toFixed(2) }} CHF</strong></td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
               <div class="mb-3">
                 <label class="form-label">Acconti già fatturati (CHF TTC):</label>
@@ -412,6 +567,7 @@ const devis = ref([]);
 const showDetailMetrage = ref(false);
 const detailMetrage = ref({});
 const accontiPrecedenti = ref(0);
+const accontiPrecedentiResoconto = ref(0);
 const showDetailResoconto = ref(false);
 const detailResoconto = ref({});
 const showChangeStatut = ref(false);
@@ -433,7 +589,7 @@ const resocontiEnAttente = computed(() => {
 });
 
 const hasFacture = (resoconto) => {
-  return factures.value.some(f => f.resocontoId === resoconto.id);
+  return factures.value.some(f => (f.resocontoId || f.resoconto_id) === resoconto.id);
 };
 
 // Métrages complétés mais non encore facturés
@@ -476,6 +632,22 @@ const facturesEnRetard = computed(() => {
     .filter(f => f.statut === 'en_retard')
     .reduce((sum, f) => sum + (f.montant_ttc || f.montantTTC || 0), 0);
 });
+
+const forceReload = async () => {
+  // Svuota completamente gli array
+  devis.value = [];
+  chantiers.value = [];
+  factures.value = [];
+  metrages.value = [];
+  resocontiPercentuali.value = [];
+  
+  console.log('⚡ FORCE RELOAD - Svuotamento cache completato');
+  
+  // Ricarica tutto
+  await loadData();
+  
+  alert('Cache svuotata e dati ricaricati!');
+};
 
 const loadData = async () => {
   try {
@@ -540,12 +712,26 @@ const loadData = async () => {
     if (chantiersError) throw chantiersError;
     chantiers.value = chantiersData || [];
 
-    // Devis
+    // Devis - con timestamp per evitare cache
     const { data: devisData, error: devisError } = await supabase
       .from('devis')
-      .select('*');
+      .select('*')
+      .gte('id', 0); // Forza ricaricamento
     if (devisError) throw devisError;
     devis.value = devisData || [];
+    console.log('🔄 Devis ricaricati:', devis.value.length);
+    
+    // Debug devis ID 11
+    const devis11 = devis.value.find(d => d.id === 11);
+    if (devis11) {
+      console.log('🎯 Devis 11 trovato:', {
+        total: devis11.total,
+        prodotti: devis11.produits?.length || 0,
+        primiTreProdotti: devis11.produits?.slice(0, 3).map(p => ({ zone: p.zone, total: p.total }))
+      });
+    } else {
+      console.log('❌ Devis 11 NON trovato!');
+    }
   } catch (error) {
     console.error('Erreur chargement données:', error);
   }
@@ -638,7 +824,107 @@ const voirDetailMetrage = (metrage) => {
 
 const voirDetailResoconto = (resoconto) => {
   detailResoconto.value = resoconto;
+  accontiPrecedentiResoconto.value = 0; // Reset acconti
   showDetailResoconto.value = true;
+  
+  // Debug per verificare i dati
+  const chantier = chantiers.value.find(c => c.id == (resoconto.chantier_id || resoconto.chantierId));
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  console.log('🔍 RESOCONTO:', resoconto);
+  console.log('🏗️ CHANTIER:', chantier);
+  console.log('📋 DEVIS ID:', chantier?.devis_id);
+  console.log('📄 DEVIS TROVATO:', chantierDevis);
+  console.log('💰 TOTALE DEVIS:', chantierDevis?.total);
+  console.log('📦 PRODOTTI:', chantierDevis?.produits?.length || 0);
+  
+  // DEBUG DETTAGLIATO PRODOTTI
+  if (chantierDevis?.produits) {
+    console.log('🔍 PRIMI 3 PRODOTTI DAL DEVIS:');
+    chantierDevis.produits.slice(0, 3).forEach((p, i) => {
+      console.log(`  ${i+1}. ${p.zone}: ${p.total} CHF (${p.article})`);
+    });
+    
+    // Calcola totali per zona dal devis caricato
+    const totaliZone = {};
+    chantierDevis.produits.forEach(p => {
+      if (!totaliZone[p.zone]) totaliZone[p.zone] = 0;
+      totaliZone[p.zone] += Number(p.total || 0);
+    });
+    console.log('💰 TOTALI REALI PER ZONA:', totaliZone);
+  }
+  
+  // Rimosso debug duplicato
+};
+
+// Funzioni per calcolo anteprima fattura
+const calculateZoneMontant = (zone, percentage) => {
+  const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  if (!chantierDevis || !chantierDevis.produits) {
+    console.log(`❌ Devis non trovato per zona ${zone}`);
+    return 0;
+  }
+  
+  // USA I TOTALI GIÀ CALCOLATI NEL DEVIS
+  const totaleZona = chantierDevis.produits
+    .filter(p => p.zone === zone)
+    .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  const result = totaleZona * percentage / 100;
+  console.log(`🎯 ${zone}: ${totaleZona.toFixed(2)} CHF × ${percentage}% = ${result.toFixed(2)} CHF`);
+  return result;
+};
+
+const calculateTotalTravaux = () => {
+  if (!detailResoconto.value.avancementi) return 0;
+  return Object.entries(detailResoconto.value.avancementi).reduce((sum, [zone, percentage]) => {
+    return sum + calculateZoneMontant(zone, percentage);
+  }, 0);
+};
+
+const getPrixRegieChantier = () => {
+  const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
+  return chantier?.prix_regie || 75;
+};
+
+const getPrixRegieMetrage = () => {
+  const chantier = chantiers.value.find(c => c.id == detailMetrage.value.chantier_id);
+  return chantier?.prix_regie || 75;
+};
+
+const calculateTotalRegies = () => {
+  if (!detailResoconto.value.regies) return 0;
+  const prixRegie = getPrixRegieChantier();
+  return detailResoconto.value.regies.reduce((sum, r) => sum + (r.heures * (r.prixHeure || prixRegie)), 0);
+};
+
+const calculateTotalHT = () => {
+  return calculateTotalTravaux() + calculateTotalRegies();
+};
+
+const calculateTVA = () => {
+  return calculateTotalHT() * 0.081;
+};
+
+const calculateTotalTTC = () => {
+  return calculateTotalHT() + calculateTVA();
+};
+
+const calculateTVAWithAcconti = () => {
+  const totalHT = calculateTotalHT();
+  const acconti = Number(accontiPrecedentiResoconto.value || 0);
+  const imponibileResiduo = totalHT - acconti;
+  return imponibileResiduo * 0.081;
+};
+
+const calculateTotalTTCWithAcconti = () => {
+  const totalHT = calculateTotalHT();
+  const acconti = Number(accontiPrecedentiResoconto.value || 0);
+  const imponibileResiduo = totalHT - acconti;
+  const tva = imponibileResiduo * 0.081;
+  return imponibileResiduo + tva;
 };
 
 const approuverResoconto = async (resoconto) => {
@@ -662,33 +948,31 @@ const approuverResoconto = async (resoconto) => {
     }
     
     // Genera la fattura
-    const chantier = chantiers.value.find(c => c.id === resoconto.chantierId);
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+    const chantier = chantiers.value.find(c => c.id === (resoconto.chantier_id || resoconto.chantierId));
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
     
-    // Calcola importo basato sulle percentuali
-    const totalPercentuali = Object.values(resoconto.avancementi || {}).reduce((sum, pct) => sum + pct, 0);
-    const montantTravauxHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
-    
-    // Calcola montant regie
-    const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
-    const montantHT = montantTravauxHT + montantRegiesHT;
+    // USA LA STESSA LOGICA DEL PDF
+    detailResoconto.value = resoconto;
+    const montantHT = calculateTotalHT();
     
     const numeroFacture = await generateNumeroFacture();
+    const accontiInseriti = Number(accontiPrecedentiResoconto.value || 0);
     
     const { error } = await supabase
       .from('factures')
       .insert([{
         numero: numeroFacture,
-        chantier_id: resoconto.chantierId,
+        chantier_id: resoconto.chantier_id || resoconto.chantierId,
         resoconto_id: resoconto.id,
         date_facture: new Date().toISOString().split('T')[0],
         montant_ht: montantHT,
         taux_tva: 8.1,
         montant_ttc: montantHT * 1.081,
+        acconti_precedenti: accontiInseriti,
         statut: 'emise',
-        client_nom: chantierDevis?.nom || 'Client',
+        client_nom: chantier?.client || 'Client',
         date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: `Facture générée depuis resoconto percentuel ${resoconto.periodeMonth}`,
+        notes: `Facture générée depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
         created_at: new Date().toISOString()
       }]);
     
@@ -753,47 +1037,33 @@ const generarFactureResoconto = async (resoconto) => {
   if (!confirm('Générer la facture pour ce resoconto approuvé ?')) return;
   
   try {
-    const chantier = chantiers.value.find(c => c.id === resoconto.chantierId);
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+    const chantier = chantiers.value.find(c => c.id === (resoconto.chantier_id || resoconto.chantierId));
+    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
     
     const totalPercentuali = Object.values(resoconto.avancementi || {}).reduce((sum, pct) => sum + pct, 0);
     const montantTravauxHT = chantierDevis?.total ? (chantierDevis.total * totalPercentuali / 100) : 1000;
     
     // Calcola montant regie
-    const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+    const prixRegieChantier = chantier?.prix_regie || 75;
+    const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * (r.prixHeure || prixRegieChantier)), 0);
     const montantHT = montantTravauxHT + montantRegiesHT;
     
     const numeroFacture = await generateNumeroFacture();
-    
-    const factureData = {
-      numero: numeroFacture,
-      chantierId: resoconto.chantierId,
-      resocontoId: resoconto.id,
-      dateFacture: new Date().toISOString().split('T')[0],
-      montantHT: montantHT,
-      tauxTVA: 8.1,
-      montantTTC: montantHT * 1.081,
-      statut: 'emise',
-      clientNom: chantierDevis?.nom || 'Client',
-      dateEcheance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      notes: `Facture générée depuis resoconto percentuel ${resoconto.periodeMonth}`,
-      createdAt: new Date()
-    };
     
     const { error } = await supabase
       .from('factures')
       .insert([{
         numero: numeroFacture,
-        chantier_id: resoconto.chantierId,
+        chantier_id: resoconto.chantier_id || resoconto.chantierId,
         resoconto_id: resoconto.id,
         date_facture: new Date().toISOString().split('T')[0],
         montant_ht: montantHT,
         taux_tva: 8.1,
         montant_ttc: montantHT * 1.081,
         statut: 'emise',
-        client_nom: chantierDevis?.nom || 'Client',
+        client_nom: chantier?.client || 'Client',
         date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: `Facture générée depuis resoconto percentuel ${resoconto.periodeMonth}`,
+        notes: `Facture générée depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
         created_at: new Date().toISOString()
       }]);
     
@@ -980,7 +1250,7 @@ const corrigerFacture = async (facture) => {
 };
 
 const supprimerFacture = async (facture) => {
-  if (!confirm(`Supprimer la facture ${facture.numero} ?\n\nATTENTION: Le métrage associé sera remis en attente de facturation.`)) return;
+  if (!confirm(`Supprimer la facture ${facture.numero} ?\n\nATTENTION: L'élément associé sera remis en attente de facturation.`)) return;
   
   try {
     // Supprime la facture
@@ -991,7 +1261,7 @@ const supprimerFacture = async (facture) => {
     
     if (error) throw error;
     
-    // Remet le métrage en attente si il existe (solo se tabella esiste)
+    // Remet le métrage en attente si il existe
     if (facture.metrage_id || facture.metrageId) {
       try {
         await supabase
@@ -1004,6 +1274,20 @@ const supprimerFacture = async (facture) => {
           .eq('id', facture.metrage_id || facture.metrageId);
       } catch (err) {
         console.log('Tabella metrages non esiste, skip update');
+      }
+    }
+    
+    // Remet le resoconto en attente si il existe
+    if (facture.resoconto_id || facture.resocontoId) {
+      try {
+        await supabase
+          .from('resoconti_percentuali')
+          .update({
+            status: 'en_attente'
+          })
+          .eq('id', facture.resoconto_id || facture.resocontoId);
+      } catch (err) {
+        console.log('Tabella resoconti_percentuali non esiste, skip update');
       }
     }
     
@@ -1081,10 +1365,18 @@ const generateNumeroFacture = async () => {
 };
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat('fr-CH', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'CHF'
   }).format(amount);
+};
+
+const calculateSoldeFinale = (facture) => {
+  const montantHT = Number(facture.montant_ht || 0);
+  const acconti = Number(facture.acconti_precedenti || 0);
+  const montantNetHT = montantHT - acconti;
+  const tva = montantNetHT * 0.081;
+  return montantNetHT + tva;
 };
 
 const formatPeriodeMetrage = (metrage) => {
@@ -1157,12 +1449,20 @@ const genererPDF = async (facture) => {
       return;
     }
 
-    // Fatture automatiche da métrages
+    // Determina il tipo di fattura
     const chantierId = facture.chantier_id || facture.chantierId;
     const metrageId = facture.metrage_id || facture.metrageId;
+    const resocontoId = facture.resoconto_id || facture.resocontoId;
     const chantier = chantiers.value.find(c => c.id === chantierId);
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
-    const metrageDoc = metrages.value.find(m => m.id === metrageId);
+    console.log('🔍 PDF - Chantier devis_id:', chantier?.devis_id, typeof chantier?.devis_id);
+    console.log('🔍 PDF - Tutti i devis IDs:', devis.value.map(d => ({id: d.id, type: typeof d.id})));
+    const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id); // Usa == invece di ===
+    
+    // Fattura da métrage détaillé
+    const metrageDoc = metrageId ? metrages.value.find(m => m.id === metrageId) : null;
+    
+    // Fattura da resoconto percentuale
+    const resocontoDoc = resocontoId ? resocontiPercentuali.value.find(r => r.id === resocontoId) : null;
     
     const nomeCliente = facture.client_nom || chantier?.client || 'Client';
     const numeroChantier = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
@@ -1170,12 +1470,23 @@ const genererPDF = async (facture) => {
     
     // Periodo di riferimento
     let periodoRef = '';
-    if (metrageDoc?.periode_debut && metrageDoc?.periode_fin) {
-      periodoRef = `Période: ${metrageDoc.periode_debut} - ${metrageDoc.periode_fin}`;
-    } else if (metrageDoc?.created_at) {
-      const date = new Date(metrageDoc.created_at);
-      const mese = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-      periodoRef = `Période: ${mese}`;
+    if (metrageDoc) {
+      // Fattura da métrage
+      if (metrageDoc.periode_debut && metrageDoc.periode_fin) {
+        periodoRef = `Période: ${metrageDoc.periode_debut} - ${metrageDoc.periode_fin}`;
+      } else if (metrageDoc.created_at) {
+        const date = new Date(metrageDoc.created_at);
+        const mese = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        periodoRef = `Période: ${mese}`;
+      }
+    } else if (resocontoDoc) {
+      // Fattura da resoconto percentuale
+      if (resocontoDoc.periode_month) {
+        const [year, month] = resocontoDoc.periode_month.split('-');
+        const date = new Date(year, month - 1);
+        const mese = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        periodoRef = `Période: ${mese}`;
+      }
     }
 
     // Funzione helper per header
@@ -1185,7 +1496,7 @@ const genererPDF = async (facture) => {
       // Dati azienda
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text('DALLELEC Sarl', 200, 12, { align: 'right' });
+      doc.text('DALLELEC Sarl - CHE-280.028.822', 200, 12, { align: 'right' });
       doc.text('Rue de Bourgogne 25', 200, 17, { align: 'right' });
       doc.text('1203 Genève', 200, 22, { align: 'right' });
       
@@ -1218,11 +1529,267 @@ const genererPDF = async (facture) => {
       doc.text(nomeCliente, 10, yInfo);
       
       yInfo += 6;
-      doc.text(`Chantier: ${numeroChantier}${nomeChantier}`, 10, yInfo);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`CHANTIER N° ${chantier?.numero_cantiere || 'N/A'}`, 10, yInfo);
+      yInfo += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${nomeChantier}`, 10, yInfo);
       
-      return yInfo + 10; // Ritorna la posizione Y per il contenuto
+      return yInfo + 12; // Ritorna la posizione Y per il contenuto
     };
 
+    // FATTURA DA RESOCONTO PERCENTUALE
+    if (resocontoDoc) {
+      // Imposta detailResoconto per far funzionare calculateZoneMontant
+      detailResoconto.value = resocontoDoc;
+      
+      // USA L'ACCONTO SALVATO NELLA FATTURA O QUELLO DEL MODAL
+      const accontiModalValue = Number(facture.acconti_precedenti || accontiPrecedentiResoconto.value || 0);
+      console.log('🔍 PDF - Acconti (salvati/modal):', facture.acconti_precedenti, '/', accontiPrecedentiResoconto.value, '= finale:', accontiModalValue);
+      
+      // DEBUG DEVIS NEL PDF
+      console.log('🔍 PDF - Chantier:', chantier);
+      console.log('🔍 PDF - ChantierDevis:', chantierDevis);
+      console.log('🔍 PDF - Produits devis:', chantierDevis?.produits?.length || 0);
+      if (chantierDevis?.produits) {
+        console.log('🔍 PDF - Prime 3 prodotti:', chantierDevis.produits.slice(0, 3));
+      }
+      
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      let yPos = drawHeader(doc, `FACTURE N. ${facture.numero}`);
+      
+      // Descrizione lavori
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TRAVAUX RÉALISÉS', 10, yPos);
+      yPos += 10;
+      
+      if (resocontoDoc.descrizione) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(resocontoDoc.descrizione, 10, yPos);
+        yPos += 10;
+      }
+      
+      // USA LE STESSE FUNZIONI DELL'ANTEPRIMA CHE FUNZIONANO
+      const avancementData = Object.entries(resocontoDoc.avancementi || {}).map(([zona, percentuale]) => {
+        // CALCOLA IL TOTALE ZONA CORRETTAMENTE (come nell'anteprima)
+        let totaleZona = 0;
+        if (chantierDevis?.produits) {
+          totaleZona = chantierDevis.produits
+            .filter(p => p.zone === zona)
+            .reduce((sum, p) => sum + Number(p.total || 0), 0);
+        }
+        
+        const montantZona = totaleZona * percentuale / 100;
+        
+        console.log(`📊 PDF - ${zona}: devis=${totaleZona.toFixed(2)} CHF × ${percentuale}% = fattura=${montantZona.toFixed(2)} CHF`);
+        
+        return [
+          zona,
+          `${percentuale}%`,
+          totaleZona > 0 ? `${totaleZona.toFixed(2)} CHF` : 'N/A', // TOTALE DEVIS PER ZONA
+          `${montantZona.toFixed(2)} CHF`  // MONTANT DA FATTURARE
+        ];
+      });
+      
+      if (avancementData.length > 0) {
+        autoTable(doc, {
+          head: [['Zone', 'Avancement', 'Montant Devis', 'Montant HT']],
+          body: avancementData,
+          startY: yPos,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [70, 130, 180], 
+            textColor: 255,
+            fontSize: 10
+          },
+          bodyStyles: { 
+            fontSize: 9
+          }
+        });
+        yPos = doc.lastAutoTable.finalY + 3;
+        
+        // Sous-total travaux (usa calculateTotalTravaux)
+        const totalTravauxHT = calculateTotalTravaux();
+        doc.setFillColor(250, 250, 250);
+        doc.rect(120, yPos - 2, 80, 6, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`Sous-total Travaux: ${totalTravauxHT.toFixed(2)} CHF`, 125, yPos + 2);
+        doc.setFont('helvetica', 'normal');
+        yPos += 10;
+      }
+      
+      // Régies se presenti
+      let totalRegiesHT = 0;
+      if (resocontoDoc.regies?.length > 0) {
+        // Verifica spazio per sezione régies
+        if (yPos > 220) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RÉGIES', 10, yPos);
+        yPos += 5;
+        
+        const prixRegieChantier = getPrixRegieChantier();
+        const regieData = resocontoDoc.regies.map(regie => [
+          regie.zone || '',
+          regie.description || '',
+          `${regie.heures}h`,
+          `${(regie.prixHeure || prixRegieChantier).toFixed(2)} CHF`,
+          `${(regie.heures * (regie.prixHeure || prixRegieChantier)).toFixed(2)} CHF`
+        ]);
+        
+        autoTable(doc, {
+          head: [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']],
+          body: regieData,
+          startY: yPos,
+          theme: 'grid',
+          headStyles: { fillColor: [70, 130, 180], textColor: 255, fontSize: 9 },
+          bodyStyles: { fontSize: 8, fillColor: [240, 248, 255] }
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 3;
+        
+        // Sous-total régies (usa calculateTotalRegies)
+        totalRegiesHT = calculateTotalRegies();
+        doc.setFillColor(250, 250, 250);
+        doc.rect(120, yPos - 2, 80, 6, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`Sous-total Régies: ${totalRegiesHT.toFixed(2)} CHF`, 125, yPos + 2);
+        doc.setFont('helvetica', 'normal');
+        yPos += 10;
+      }
+      
+      // Sezione Acconti se presenti
+      if (accontiModalValue > 0) {
+        // Verifica spazio per sezione acconti
+        if (yPos > 240) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ACOMPTES PRÉCÉDENTS', 10, yPos);
+        yPos += 5;
+        
+        autoTable(doc, {
+          head: [['Description', 'Montant HT']],
+          body: [[
+            'Acomptes déjà facturés',
+            `-${accontiModalValue.toFixed(2)} CHF`
+          ]],
+          startY: yPos,
+          theme: 'grid',
+          headStyles: { fillColor: [70, 130, 180], textColor: 255, fontSize: 9 },
+          bodyStyles: { fontSize: 9, fillColor: [255, 240, 240] }
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 8;
+      }
+      
+      // TOTALI FINALI - USA LE STESSE FUNZIONI DELL'ANTEPRIMA
+      const totalHT = calculateTotalHT();
+      const tvaRate = 8.1;
+      
+      // Box per i totali (dimensione ottimale)
+      const boxHeight = accontiModalValue > 0 ? 42 : 26;
+      doc.setFillColor(245, 245, 245);
+      doc.rect(120, yPos - 3, 80, boxHeight, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(120, yPos - 3, 80, boxHeight);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      let currentY = yPos + 3;
+      doc.text('Total HT:', 125, currentY);
+      doc.text(`${totalHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+      currentY += 6;
+      
+      // Acconti se presenti - LOGICA CORRETTA
+      if (accontiModalValue > 0) {
+        doc.setTextColor(200, 0, 0);
+        doc.text('Acomptes HT:', 125, currentY);
+        doc.text(`-${accontiModalValue.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        currentY += 6;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('Montant net HT:', 125, currentY);
+        doc.text(`${(totalHT - accontiModalValue).toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        currentY += 6;
+        
+        const tvaResiduo = (totalHT - accontiModalValue) * (tvaRate / 100);
+        doc.text(`TVA (${tvaRate}%):`, 125, currentY);
+        doc.text(`${tvaResiduo.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+        currentY += 8;
+        
+        // Linea separatrice
+        doc.setLineWidth(0.5);
+        doc.line(125, currentY - 2, 195, currentY - 2);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text('SOLDE À PAYER:', 125, currentY + 4);
+        doc.text(`${((totalHT - accontiModalValue) + tvaResiduo).toFixed(2)} CHF`, 190, currentY + 4, { align: 'right' });
+      } else {
+        const tva = totalHT * (tvaRate / 100);
+        doc.text(`TVA (${tvaRate}%):`, 125, currentY);
+        doc.text(`${tva.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+        currentY += 8;
+        
+        // Linea separatrice
+        doc.setLineWidth(0.5);
+        doc.line(125, currentY - 2, 195, currentY - 2);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text('TOTAL TTC:', 125, currentY + 4);
+        doc.text(`${(totalHT + tva).toFixed(2)} CHF`, 190, currentY + 4, { align: 'right' });
+      }
+      
+      // Verifica spazio per footer
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      // Conditions de paiement
+      yPos += 35;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text('Conditions de paiement: 30 jours net', 10, yPos);
+      doc.text('Merci de votre confiance', 10, yPos + 6);
+      
+      // Numerazione pagine
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Page ${i} sur ${totalPages}`, 190, 290, { align: 'right' });
+      }
+      
+      doc.save(`Facture_Percentuelle_${facture.numero}.pdf`);
+      alert('Facture percentuelle générée avec succès!');
+      return;
+    }
+
+    // FATTURA DA MÉTRAGE DÉTAILLÉ
+    if (!metrageDoc) {
+      alert('Erreur: Données métrage non trouvées pour cette facture');
+      return;
+    }
+    
     // 1. PDF MÉTRÉES (sans prix)
     const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
     let yPos = drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
@@ -1501,14 +2068,15 @@ const genererPDF = async (facture) => {
     }
     
     // Régies se presenti
-    if (metrageDoc?.regies?.length > 0) {
+    if (metrageDoc.regies?.length > 0) {
       docFacture.setFontSize(12);
       docFacture.setFont('helvetica', 'bold');
       docFacture.text('RÉGIES', 10, yPos);
       
+      const prixRegieChantier = chantier?.prix_regie || 75;
       const regieData = metrageDoc.regies.map(regie => {
         const heures = Number(regie.heures || 0);
-        const prixHeure = Number(regie.prixHeure || 0);
+        const prixHeure = Number(regie.prixHeure || prixRegieChantier);
         const total = heures * prixHeure;
         totalFactureHT += total;
         return [
@@ -1538,22 +2106,25 @@ const genererPDF = async (facture) => {
     const realMontantTVA = realMontantHT * (realTauxTVA / 100);
     const montantBrutTTC = realMontantHT + realMontantTVA;
     
-    // Sottrai acconti già fatturati (solo per PDF)
-    const accontiPDF = Number(accontiPrecedenti.value || 0);
-    const realMontantTTC = montantBrutTTC - accontiPDF;
+    // Sottrai acconti dall'imponibile HT PRIMA del calcolo TVA
+    const accontiHT = resocontoDoc ? Number(accontiPrecedentiResoconto.value || 0) : Number(accontiPrecedenti.value || 0);
+    const imponibileResiduoHT = realMontantHT - accontiHT;
+    const tvaResiduoHT = imponibileResiduoHT * (realTauxTVA / 100);
+    const realMontantTTC = imponibileResiduoHT + tvaResiduoHT;
     
     console.log('Debug fattura PDF:', {
       montantHT: realMontantHT,
       tauxTVA: realTauxTVA,
       montantTVA: realMontantTVA,
       montantTTC: realMontantTTC,
+      accontiHT: accontiHT,
       factureOriginal: facture
     });
     
     yPos += 10;
     
     // Box per i totali (più alto per includere acconti)
-    const boxHeight = accontiPDF > 0 ? 35 : 25;
+    const boxHeight = accontiHT > 0 ? 45 : 25;
     docFacture.setFillColor(245, 245, 245);
     docFacture.rect(120, yPos - 5, 80, boxHeight, 'F');
     docFacture.setDrawColor(200, 200, 200);
@@ -1561,24 +2132,39 @@ const genererPDF = async (facture) => {
     
     docFacture.setFontSize(10);
     docFacture.setFont('helvetica', 'normal');
-    docFacture.text('Total HT:', 125, yPos + 2);
-    docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 190, yPos + 2, { align: 'right' });
-    
-    docFacture.text(`TVA (${realTauxTVA}%):`, 125, yPos + 8);
-    docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 190, yPos + 8, { align: 'right' });
+    // Se non ci sono acconti, mostra il calcolo normale
+    if (accontiHT === 0) {
+      docFacture.text('Total HT:', 125, yPos + 2);
+      docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 190, yPos + 2, { align: 'right' });
+      
+      docFacture.text(`TVA (${realTauxTVA}%):`, 125, yPos + 8);
+      docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 190, yPos + 8, { align: 'right' });
+      
+      currentY = yPos + 14;
+    }
     
     let currentY = yPos + 14;
     
     // Se ci sono acconti precedenti, mostrali
-    if (accontiPDF > 0) {
-      docFacture.text('Sous-total TTC:', 125, currentY);
-      docFacture.text(`${montantBrutTTC.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+    if (accontiHT > 0) {
+      docFacture.text('Total HT:', 125, currentY);
+      docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
       currentY += 6;
       
       docFacture.setTextColor(200, 0, 0); // Rosso per sottrazione
-      docFacture.text('Déjà facturé:', 125, currentY);
-      docFacture.text(`-${accontiPDF.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+      docFacture.text('Acconti HT:', 125, currentY);
+      docFacture.text(`-${accontiHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
       docFacture.setTextColor(0, 0, 0); // Torna nero
+      currentY += 6;
+      
+      docFacture.setFont('helvetica', 'bold');
+      docFacture.text('Imponibile residuo:', 125, currentY);
+      docFacture.text(`${imponibileResiduoHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+      docFacture.setFont('helvetica', 'normal');
+      currentY += 6;
+      
+      docFacture.text(`TVA (${realTauxTVA}%):`, 125, currentY);
+      docFacture.text(`${tvaResiduoHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
       currentY += 6;
     }
     
@@ -1588,7 +2174,7 @@ const genererPDF = async (facture) => {
     
     docFacture.setFont('helvetica', 'bold');
     docFacture.setFontSize(12);
-    const labelFinal = accontiPDF > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
+    const labelFinal = accontiHT > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
     docFacture.text(labelFinal, 125, currentY + 4);
     docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 190, currentY + 4, { align: 'right' });
     

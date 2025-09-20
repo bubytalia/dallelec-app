@@ -259,7 +259,7 @@ const showHistorique = ref(false);
 const historiqueResoconti = ref([]);
 const zoneConvertite = ref(new Set());
 const regies = ref([]);
-const prixRegieChantier = ref(65);
+const prixRegieChantier = ref(75);
 const regieEnModification = ref(null);
 const nouvelleRegie = ref({
   zone: '',
@@ -379,7 +379,8 @@ const loadChantierData = async () => {
   console.log('📋 Selected chantier:', selectedChantier.value);
   
   // Carica prezzo regie del cantiere
-  prixRegieChantier.value = selectedChantier.value?.prixRegie || 65;
+  prixRegieChantier.value = selectedChantier.value?.prix_regie || 75;
+  console.log('💰 Prezzo regie chantier:', prixRegieChantier.value);
   
   console.log('🔍 Selected chantier completo:', selectedChantier.value);
   const devisId = selectedChantier.value?.devis_id || selectedChantier.value?.devisId;

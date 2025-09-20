@@ -277,7 +277,7 @@ const periodeFin = ref('');
 const isConversionMode = ref(false);
 const zoneInConversione = ref('');
 const regies = ref([]);
-const prixRegieChantier = ref(65);
+const prixRegieChantier = ref(75);
 const regieEnModification = ref(null);
 const nouvelleRegie = ref({
   zone: '',
@@ -360,7 +360,7 @@ const loadChantierData = async () => {
     nomChantier.value = `${numeroDisplay}${chantier.nom} - ${chantier.adresse}`;
     
     // Carica prezzo regie del cantiere
-    prixRegieChantier.value = chantier.prixRegie || 65;
+    prixRegieChantier.value = chantier.prix_regie || 75;
     
     // Carica il devis associato
     const { data: devisDocData, error } = await supabase

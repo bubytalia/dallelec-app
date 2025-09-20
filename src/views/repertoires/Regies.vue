@@ -19,7 +19,7 @@
                 type="number" 
                 step="1" 
                 class="form-control form-control-lg text-center" 
-                placeholder="65"
+                placeholder="75"
               />
             </div>
             <div class="text-center">
@@ -58,7 +58,7 @@ export default {
     RetourButton
   },
   setup() {
-    const prixRegieDefault = ref(65);
+    const prixRegieDefault = ref(75);
 
     const fetchPrixDefault = async () => {
       try {
@@ -69,7 +69,7 @@ export default {
           .single();
         
         if (data && !error) {
-          prixRegieDefault.value = data.prix_default || 65;
+          prixRegieDefault.value = data.prix_default || 75;
         }
       } catch (error) {
         console.log('Aucune configuration trouvée, utilisation valeur par défaut');
@@ -78,19 +78,22 @@ export default {
 
     const savePrixDefault = async () => {
       try {
+        // Usa UPSERT per gestire sia INSERT che UPDATE
         const { error } = await supabase
           .from('configuration')
-          .update({
+          .upsert({
+            type: 'regies',
             prix_default: prixRegieDefault.value,
             updated_at: new Date().toISOString()
-          })
-          .eq('type', 'regies');
+          }, {
+            onConflict: 'type'
+          });
         
         if (error) throw error;
         alert('✅ Prix par défaut sauvegardé avec succès!');
       } catch (error) {
         console.error('Erreur sauvegarde:', error);
-        alert('❌ Erreur lors de la sauvegarde');
+        alert('❌ Erreur lors de la sauvegarde: ' + error.message);
       }
     };
 

@@ -80,7 +80,7 @@
               <input v-model.number="newChantier.prixRegie" class="form-control" type="number" step="1" />
               <span class="input-group-text">CHF</span>
             </div>
-            <small class="text-muted">Défaut: {{ newChantier.prixRegie || 65 }} CHF</small>
+            <small class="text-muted">Défaut: {{ newChantier.prixRegie || 75 }} CHF</small>
           </div>
           <div class="col-md-2">
             <label>% Impresa</label>
@@ -148,7 +148,7 @@
                   </select>
                 </td>
                 <td>
-                  <input v-model.number="editChantier.prixRegie" class="form-control" type="number" step="1" placeholder="65">
+                  <input v-model.number="editChantier.prixRegie" class="form-control" type="number" step="1" placeholder="75">
                 </td>
                 <td>
                   <input v-model.number="editChantier.percentualeImpresa" class="form-control" type="number" step="1" min="0" max="100" placeholder="30">
@@ -372,7 +372,7 @@ export default {
       devisId: '',
       modalitaResoconto: 'metrages',
       capocantiere: '',
-      prixRegie: 65,
+      prixRegie: 75,
       percentualeImpresa: 30
     });
 
@@ -434,10 +434,20 @@ export default {
 
     const fetchPrixRegieDefault = async () => {
       try {
-        // TODO: Implementare quando configuration sarà migrata
-        newChantier.value.prixRegie = 65;
+        const { data, error } = await supabase
+          .from('configuration')
+          .select('prix_default')
+          .eq('type', 'regies')
+          .single();
+        
+        if (data && !error) {
+          newChantier.value.prixRegie = data.prix_default || 75;
+        } else {
+          newChantier.value.prixRegie = 75;
+        }
       } catch (error) {
-        console.log('Utilisation prix par défaut: 65 CHF');
+        console.log('Utilisation prix par défaut: 75 CHF');
+        newChantier.value.prixRegie = 75;
       }
     };
 
@@ -504,7 +514,20 @@ export default {
         percentuale_impresa: newChantier.value.percentualeImpresa
       }]);
       if (!error) {
-        newChantier.value = { numeroCantiere: '', nom: '', adresse: '', ville: '', client: '', technicien: '', devisId: '', modalitaResoconto: 'metrages', capocantiere: '', prixRegie: 65, percentualeImpresa: 30 };
+        await fetchPrixRegieDefault();
+        newChantier.value = { 
+          numeroCantiere: '', 
+          nom: '', 
+          adresse: '', 
+          ville: '', 
+          client: '', 
+          technicien: '', 
+          devisId: '', 
+          modalitaResoconto: 'metrages', 
+          capocantiere: '', 
+          prixRegie: newChantier.value.prixRegie, 
+          percentualeImpresa: 30 
+        };
         fetchChantiers();
       }
     };
