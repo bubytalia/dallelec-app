@@ -42,7 +42,7 @@
             <div class="card-body text-center p-3">
               <i class="bi bi-box-seam-fill text-success mb-2" style="font-size: 1.5rem;"></i>
               <h6 class="card-title mb-2">Matériels</h6>
-              <a href="https://stellular-gingersnap-a36bb4.netlify.app" 
+              <a href="https://ordini.dallelec.com" 
                  class="btn btn-success btn-sm w-100" 
                  target="_blank">
                 Calcul Canaux
