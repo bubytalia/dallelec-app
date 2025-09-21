@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <Header />
+    <Header v-if="!isLoginPage" />
     <router-view />
   </div>
 </template>
@@ -12,6 +12,11 @@ export default {
   name: 'App',
   components: {
     Header
+  },
+  computed: {
+    isLoginPage() {
+      return this.$route.name === 'Login';
+    }
   }
 };
 </script>
