@@ -138,17 +138,23 @@
                   </span>
                 </td>
                 <td>
-                  <span :class="getStatutClass(facture.statut)">
-                    {{ getStatutLabel(facture.statut) }}
-                  </span>
+                  <select 
+                    :value="facture.statut" 
+                    @change="updateStatutDirect(facture, $event.target.value)"
+                    class="form-select form-select-sm"
+                    :class="getStatutSelectClass(facture.statut)"
+                  >
+                    <option value="emise">Émise</option>
+                    <option value="envoyee">Envoyée</option>
+                    <option value="payee">Payée</option>
+                    <option value="en_retard">En retard</option>
+                  </select>
                 </td>
                 <td>
                   <button @click="modifierFacture(facture)" class="btn btn-sm btn-primary me-2">
                     ✏️ Modifier
                   </button>
-                  <button @click="changerStatutFacture(facture)" class="btn btn-sm btn-warning me-2">
-                    📝 Changer Statut
-                  </button>
+
                   <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-2">
                     📄 PDF
                   </button>
@@ -1336,6 +1342,39 @@ const getStatutClass = (statut) => {
   return classes[statut] || 'badge bg-secondary';
 };
 
+const getStatutSelectClass = (statut) => {
+  const classes = {
+    emise: 'text-secondary',
+    envoyee: 'text-info',
+    payee: 'text-success',
+    en_retard: 'text-danger'
+  };
+  return classes[statut] || 'text-secondary';
+};
+
+const updateStatutDirect = async (facture, nouveauStatut) => {
+  try {
+    const { error } = await supabase
+      .from('factures')
+      .update({
+        statut: nouveauStatut,
+        statut_updated_at: new Date().toISOString()
+      })
+      .eq('id', facture.id);
+    
+    if (error) throw error;
+    
+    // Aggiorna localmente
+    facture.statut = nouveauStatut;
+    
+    // Ricarica i dati per aggiornare le statistiche
+    loadData();
+  } catch (error) {
+    console.error('Erreur mise à jour statut:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
 const formatDate = (date) => {
   if (!date) return 'N/A';
   return date.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
@@ -2218,5 +2257,36 @@ onMounted(() => {
 
 .card {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-select-sm {
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  min-width: 100px;
+}
+
+.text-secondary {
+  color: #6c757d !important;
+}
+
+.text-info {
+  color: #0dcaf0 !important;
+}
+
+.text-success {
+  color: #198754 !important;
+}
+
+.text-danger {
+  color: #dc3545 !important;
+}
+
+.form-select-sm:focus {
+  border-color: #86b7fe;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 </style>
