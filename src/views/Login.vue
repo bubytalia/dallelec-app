@@ -3,8 +3,8 @@
     <div class="card p-4 shadow-sm" style="max-width: 400px; width: 100%;">
       <div class="text-center mb-4">
         <img src="@/assets/logo.jpg" alt="DALLELEC" class="mb-3" style="height: 60px;">
-        <h2 class="text-primary">Système Gestionnaire</h2>
-        <p class="text-muted">Connexion au gestionnaire</p>
+        <h2 class="text-primary">DALLELEC</h2>
+        <p class="text-muted">Choisissez votre système</p>
       </div>
       
       <div v-if="error" class="alert alert-danger" role="alert">
@@ -22,38 +22,38 @@
         </div>
       </form>
       
-      <div class="text-center mt-3">
-        <router-link to="/" class="text-muted">
-          ← Retour à la sélection
-        </router-link>
-      </div>
-      
       <hr class="my-4">
       
-      <div class="row g-2">
+      <div class="row g-3">
         <div class="col-6">
-          <div class="text-center">
-            <p class="text-muted mb-2 small">Gestionnaire</p>
-            <button type="submit" class="btn btn-primary btn-sm w-100" :disabled="loading">
-              <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
-              <i class="bi bi-person-check"></i> {{ loading ? 'Connexion...' : 'Se connecter' }}
-            </button>
+          <div class="card h-100 border-primary">
+            <div class="card-body text-center p-3">
+              <i class="bi bi-gear-fill text-primary mb-2" style="font-size: 1.5rem;"></i>
+              <h6 class="card-title mb-2">Gestionnaire</h6>
+              <button type="submit" class="btn btn-primary btn-sm w-100" :disabled="loading">
+                <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+                {{ loading ? 'Connexion...' : 'Accéder' }}
+              </button>
+            </div>
           </div>
         </div>
         <div class="col-6">
-          <div class="text-center">
-            <p class="text-muted mb-2 small">Système Ordini</p>
-            <a href="https://stellular-gingersnap-a36bb4.netlify.app" 
-               class="btn btn-outline-primary btn-sm w-100" 
-               target="_blank">
-              <i class="bi bi-box-seam"></i> Matériels
-            </a>
+          <div class="card h-100 border-success">
+            <div class="card-body text-center p-3">
+              <i class="bi bi-box-seam-fill text-success mb-2" style="font-size: 1.5rem;"></i>
+              <h6 class="card-title mb-2">Matériels</h6>
+              <a href="https://stellular-gingersnap-a36bb4.netlify.app" 
+                 class="btn btn-success btn-sm w-100" 
+                 target="_blank">
+                Calcul Canaux
+              </a>
+            </div>
           </div>
         </div>
       </div>
       
-      <div class="text-center mt-2">
-        <small class="text-muted">Calcul automatique matériels pour canaux</small>
+      <div class="text-center mt-3">
+        <small class="text-muted">Système de gestion intégré DALLELEC</small>
       </div>
     </div>
   </div>
