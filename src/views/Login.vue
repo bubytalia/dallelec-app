@@ -1,7 +1,11 @@
 <template>
   <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="card p-4 shadow-sm" style="max-width: 400px; width: 100%;">
-      <h2 class="text-center mb-4">Connexion</h2>
+      <div class="text-center mb-4">
+        <img src="@/assets/logo.jpg" alt="DALLELEC" class="mb-3" style="height: 60px;">
+        <h2 class="text-primary">Système Gestionnaire</h2>
+        <p class="text-muted">Connexion au gestionnaire</p>
+      </div>
       
       <div v-if="error" class="alert alert-danger" role="alert">
         {{ error }}
@@ -16,16 +20,40 @@
           <label for="password" class="form-label">Mot de passe</label>
           <input type="password" v-model="password" class="form-control" id="password" required />
         </div>
-        <button type="submit" class="btn btn-primary w-100" :disabled="loading">
-          <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-          {{ loading ? 'Connexion...' : 'Se connecter' }}
-        </button>
       </form>
       
       <div class="text-center mt-3">
-        <router-link to="/register" class="text-decoration-none">
-          Pas encore de compte ? S'inscrire
+        <router-link to="/" class="text-muted">
+          ← Retour à la sélection
         </router-link>
+      </div>
+      
+      <hr class="my-4">
+      
+      <div class="row g-2">
+        <div class="col-6">
+          <div class="text-center">
+            <p class="text-muted mb-2 small">Gestionnaire</p>
+            <button type="submit" class="btn btn-primary btn-sm w-100" :disabled="loading">
+              <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+              <i class="bi bi-person-check"></i> {{ loading ? 'Connexion...' : 'Se connecter' }}
+            </button>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="text-center">
+            <p class="text-muted mb-2 small">Système Ordini</p>
+            <a href="https://stellular-gingersnap-a36bb4.netlify.app" 
+               class="btn btn-outline-primary btn-sm w-100" 
+               target="_blank">
+              <i class="bi bi-box-seam"></i> Matériels
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="text-center mt-2">
+        <small class="text-muted">Calcul automatique matériels pour canaux</small>
       </div>
     </div>
   </div>

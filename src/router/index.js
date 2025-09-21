@@ -2,8 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { requireAuth, requireRole } from './guards.js';
 
 // Auth
+import SystemSelector from '@/views/SystemSelector.vue';
 import Login from '@/views/Login.vue';
 import Register from '@/views/Register.vue';
+import OrdiniLogin from '@/views/ordini/OrdiniLogin.vue';
+import OrdiniDashboard from '@/views/ordini/OrdiniDashboard.vue';
 
 // Dashboard
 import AdminDashboard from '@/views/AdminDashboard.vue';
@@ -67,8 +70,16 @@ import DevisRepertoire from '@/views/repertoires/Devis.vue';
 // import Bilans from '@/views/Bilans.vue'; // Vecchio placeholder
 
 const routes = [
-  { path: '/', name: 'Login', component: Login },
-  { path: '/login', name: 'LoginPage', component: Login },
+  // Selezione sistema
+  { path: '/', name: 'SystemSelector', component: SystemSelector },
+  
+  // GESTIONALE (sistema esistente)
+  { path: '/gestionale/login', name: 'GestionaleLogin', component: Login },
+  { path: '/login', redirect: '/gestionale/login' }, // Redirect legacy
+  
+  // ORDINI (sistema nuovo)
+  { path: '/ordini/login', name: 'OrdiniLogin', component: OrdiniLogin },
+  { path: '/ordini/dashboard', name: 'OrdiniDashboard', component: OrdiniDashboard },
   { path: '/register', name: 'Register', component: Register },
   
   // Admin routes
