@@ -569,6 +569,7 @@ const resocontiPercentuali = ref([]);
 const factures = ref([]);
 const chantiers = ref([]);
 const devis = ref([]);
+const clients = ref([]);
 
 const showDetailMetrage = ref(false);
 const detailMetrage = ref({});
@@ -655,8 +656,21 @@ const forceReload = async () => {
   alert('Cache svuotata e dati ricaricati!');
 };
 
+const loadClients = async () => {
+  try {
+    const { data, error } = await supabase.from('clients').select('*');
+    if (error) throw error;
+    clients.value = data || [];
+  } catch (error) {
+    console.error('Erreur chargement clients:', error);
+  }
+};
+
 const loadData = async () => {
   try {
+    // Clients per PDF
+    await loadClients();
+    
     // Métrages (se esiste la tabella)
     try {
       const { data: metragesData, error: metragesError } = await supabase
@@ -1548,33 +1562,57 @@ const genererPDF = async (facture) => {
       doc.setLineWidth(0.5);
       doc.line(10, 40, 200, 40);
       
-      // Informazioni documento
-      doc.setFontSize(10);
+      // Informazioni documento - layout ottimizzato
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      let yInfo = 50;
-      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, yInfo);
+      let yInfo = 46;
       
+      // Prima colonna (sinistra)
+      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, yInfo);
       if (periodoRef) {
-        yInfo += 6;
+        yInfo += 5;
         doc.text(periodoRef, 10, yInfo);
       }
       
-      yInfo += 8;
+      yInfo += 6;
       doc.setFont('helvetica', 'bold');
       doc.text('FACTURÉ À:', 10, yInfo);
-      
-      yInfo += 6;
+      yInfo += 4;
       doc.setFont('helvetica', 'normal');
+      
+      // Trova i dati completi del cliente
+      const clientData = clients.value.find(c => c.nom === nomeCliente);
+      doc.setFontSize(9);
       doc.text(nomeCliente, 10, yInfo);
+      if (clientData?.adresse) {
+        yInfo += 3.5;
+        doc.setFontSize(8);
+        doc.text(clientData.adresse, 10, yInfo);
+      }
+      if (clientData?.ville) {
+        yInfo += 3.5;
+        doc.text(clientData.ville, 10, yInfo);
+      }
       
-      yInfo += 6;
+      // Seconda colonna (destra) - Informazioni cantiere
+      let yInfoRight = 48;
       doc.setFont('helvetica', 'bold');
-      doc.text(`CHANTIER N° ${chantier?.numero_cantiere || 'N/A'}`, 10, yInfo);
-      yInfo += 6;
+      doc.text(`CHANTIER N° ${chantier?.numero_cantiere || 'N/A'}`, 110, yInfoRight);
+      yInfoRight += 5;
       doc.setFont('helvetica', 'normal');
-      doc.text(`${nomeChantier}`, 10, yInfo);
+      doc.text(`${nomeChantier}`, 110, yInfoRight);
       
-      return yInfo + 12; // Ritorna la posizione Y per il contenuto
+      // Aggiunge nome technicien sotto il numero cantiere
+      if (chantier?.technicien) {
+        yInfoRight += 5;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.text(`Technicien: ${chantier.technicien}`, 110, yInfoRight);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+      }
+      
+      return Math.max(yInfo, yInfoRight) + 8; // Ritorna la posizione Y per il contenuto
     };
 
     // FATTURA DA RESOCONTO PERCENTUALE
@@ -1597,17 +1635,17 @@ const genererPDF = async (facture) => {
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
       let yPos = drawHeader(doc, `FACTURE N. ${facture.numero}`);
       
-      // Descrizione lavori
-      doc.setFontSize(12);
+      // Descrizione lavori - ottimizzata
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.text('TRAVAUX RÉALISÉS', 10, yPos);
-      yPos += 10;
+      yPos += 6;
       
       if (resocontoDoc.descrizione) {
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.text(resocontoDoc.descrizione, 10, yPos);
-        yPos += 10;
+        yPos += 6;
       }
       
       // USA LE STESSE FUNZIONI DELL'ANTEPRIMA CHE FUNZIONANO
@@ -2244,6 +2282,11 @@ const genererPDF = async (facture) => {
   }
 };
 
+
+const getTechnicienName = (chantierId) => {
+  const chantier = chantiers.value.find(c => c.id == chantierId);
+  return chantier?.technicien || 'N/A';
+};
 
 onMounted(() => {
   loadData();
