@@ -401,6 +401,11 @@ const sauvegarder = async (asDraft) => {
       .from('devis')
       .update({
         draft: asDraft,
+        paiement: selectedPaiement.value,
+        conditions_generales: selectedGeneralesIds.value,
+        conditions_comprend: selectedComprendIds.value,
+        conditions_ne_comprend_pas: selectedExcluIds.value,
+        notes: notes.value,
         updated_at: new Date().toISOString(),
       })
       .eq('id', devisId);

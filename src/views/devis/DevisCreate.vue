@@ -216,12 +216,31 @@
         </div>
         
         <button
+          v-if="!editingId || modalitaPrezzi !== 'aCorps'"
           class="btn btn-success"
           :disabled="!formReady"
           @click="continuerVersDevis"
         >
           Continuer vers le devis
         </button>
+        
+        <!-- Pulsanti specifici per modifica devis à corps -->
+        <div v-if="editingId && modalitaPrezzi === 'aCorps'" class="d-flex gap-2">
+          <button
+            class="btn btn-outline-primary"
+            :disabled="!formReady"
+            @click="sauvegarderModifiche"
+          >
+            💾 Sauvegarder les modifications
+          </button>
+          <button
+            class="btn btn-success"
+            :disabled="!formReady"
+            @click="continuerVersDevis"
+          >
+            Aller aux conditions/PDF
+          </button>
+        </div>
       </div>
   </div>
 </template>
@@ -433,6 +452,37 @@ const continuerVersDevis = async () => {
   }
 };
 
+// Salva solo le modifiche per devis à corps senza navigare
+const sauvegarderModifiche = async () => {
+  if (!editingId.value || modalitaPrezzi.value !== 'aCorps') return;
+  
+  try {
+    const updateData = {
+      nom: form.value.nom,
+      adresse: form.value.adresse,
+      client_id: form.value.client,
+      technicien: form.value.technicien,
+      zones: zones.value,
+      description_corps: form.value.description_corps || null,
+      montant_corps: form.value.montant_corps || null,
+      total: form.value.montant_corps || 0,
+      updated_at: new Date().toISOString()
+    };
+    
+    const { error } = await supabase
+      .from('devis')
+      .update(updateData)
+      .eq('id', editingId.value);
+    
+    if (error) throw error;
+    
+    alert('Modifications sauvegardées avec succès!');
+  } catch (error) {
+    console.error('Erreur sauvegarde:', error);
+    alert('Erreur lors de la sauvegarde: ' + error.message);
+  }
+};
+
 // Torna alla lista dei devis senza creare o modificare il documento.
 const retourListe = () => {
   // Semplicemente reindirizza alla pagina dei devis
@@ -500,6 +550,8 @@ onMounted(async () => {
           form.value.adresse = devisData.adresse || '';
           form.value.client = devisData.client_id || '';
           form.value.technicien = devisData.technicien || '';
+          form.value.description_corps = devisData.description_corps || '';
+          form.value.montant_corps = devisData.montant_corps || 0;
           zones.value = Array.isArray(devisData.zones) ? [...devisData.zones] : [];
           modalitaPrezzi.value = devisData.modalita_prezzi || 'scontistica';
           remiseSelection.value = devisData.remises || {};

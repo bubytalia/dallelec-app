@@ -203,14 +203,14 @@ const voirDevis = (id) => {
   const devisItem = devis.value.find(d => d.id == id);
   if (!devisItem) return;
   
-  // Se è un devis à corps, vai diretto alle condizioni
-  if (devisItem.modalita_prezzi === 'aCorps') {
-    router.push(`/admin/devis/conditions/${id}`);
-  } else if (devisItem.draft) {
+  if (devisItem.draft) {
     // Se è bozza, vai alla prima pagina per completarlo
     router.push(`/admin/devis/edit/${id}`);
+  } else if (devisItem.modalita_prezzi === 'aCorps') {
+    // Devis à corps completato → Prima pagina per vedere/modificare info
+    router.push(`/admin/devis/edit/${id}`);
   } else {
-    // Se è completato, vai ai prodotti
+    // Devis détaillé completato → Pagina prodotti
     router.push(`/devis/produits/${id}`);
   }
 };
