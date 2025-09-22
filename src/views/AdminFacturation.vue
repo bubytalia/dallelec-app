@@ -1117,18 +1117,33 @@ const calculateZoneMontant = (zone, percentage) => {
   const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
   const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
   
-  if (!chantierDevis || !chantierDevis.produits) {
+  if (!chantierDevis) {
     console.log(`❌ Devis non trovato per zona ${zone}`);
     return 0;
   }
   
-  // USA I TOTALI GIÀ CALCOLATI NEL DEVIS
+  // Per devis à corps, usa il montant forfaitaire diviso per le zone
+  if (chantierDevis.modalita_prezzi === 'aCorps') {
+    const montantCorps = Number(chantierDevis.montant_corps || 0);
+    const numeroZone = chantierDevis.zones?.length || 1;
+    const montantPerZona = montantCorps / numeroZone;
+    const result = montantPerZona * percentage / 100;
+    console.log(`🎯 DEVIS À CORPS - ${zone}: ${montantPerZona.toFixed(2)} CHF × ${percentage}% = ${result.toFixed(2)} CHF`);
+    return result;
+  }
+  
+  // Per devis détaillé, usa i prodotti
+  if (!chantierDevis.produits) {
+    console.log(`❌ Produits non trovati per zona ${zone}`);
+    return 0;
+  }
+  
   const totaleZona = chantierDevis.produits
     .filter(p => p.zone === zone)
     .reduce((sum, p) => sum + Number(p.total || 0), 0);
   
   const result = totaleZona * percentage / 100;
-  console.log(`🎯 ${zone}: ${totaleZona.toFixed(2)} CHF × ${percentage}% = ${result.toFixed(2)} CHF`);
+  console.log(`🎯 DEVIS DÉTAILLÉ - ${zone}: ${totaleZona.toFixed(2)} CHF × ${percentage}% = ${result.toFixed(2)} CHF`);
   return result;
 };
 
@@ -2575,7 +2590,18 @@ const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
   const chantier = chantiers.value.find(c => c.id == chantierId);
   const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
   
-  if (!chantierDevis || !chantierDevis.produits) return 0;
+  if (!chantierDevis) return 0;
+  
+  // Per devis à corps, usa il montant forfaitaire diviso per le zone
+  if (chantierDevis.modalita_prezzi === 'aCorps') {
+    const montantCorps = Number(chantierDevis.montant_corps || 0);
+    const numeroZone = chantierDevis.zones?.length || 1;
+    const montantPerZona = montantCorps / numeroZone;
+    return montantPerZona * percentage / 100;
+  }
+  
+  // Per devis détaillé, usa i prodotti
+  if (!chantierDevis.produits) return 0;
   
   const totaleZona = chantierDevis.produits
     .filter(p => p.zone === zone)

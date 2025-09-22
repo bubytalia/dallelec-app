@@ -161,6 +161,7 @@ const chantiers = ref([]);
 const devis = ref([]);
 const factures = ref([]);
 const metrages = ref([]);
+const resocontiPercentuali = ref([]);
 const heuresPropres = ref([]);
 const heuresInterim = ref([]);
 const heuresOuvriers = ref([]);
@@ -220,6 +221,16 @@ const fetchCollaborateurs = async () => {
 const fetchInterimaires = async () => {
   const { data } = await supabase.from('interimaires').select('*');
   interimaires.value = data || [];
+};
+
+const fetchResocontiPercentuali = async () => {
+  try {
+    const { data } = await supabase.from('resoconti_percentuali').select('*');
+    resocontiPercentuali.value = data || [];
+  } catch (error) {
+    console.log('Tabella resoconti_percentuali non disponibile');
+    resocontiPercentuali.value = [];
+  }
 };
 
 const formatDate = (date) => {
@@ -306,13 +317,22 @@ const chantiersAvecMetrages = computed(() => {
     }
     const heuresOuvriersChantier = heuresOuvriersFiltered.reduce((sum, h) => sum + (h.heures || 0), 0);
     
-    // Calcola ore regie da métrages e resoconti (SEPARATE per premi)
-    const heuresRegiesChantier = [...metrages.value]
+    // Calcola ore regie da métrages E resoconti percentuali
+    const heuresRegiesMetrages = [...metrages.value]
       .filter(m => (m.chantier_id === chantier.id || m.chantierId === chantier.id) && m.regies)
       .reduce((sum, m) => {
         const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
         return sum + (regies || []).reduce((regieSum, r) => regieSum + (r.heures || 0), 0);
       }, 0);
+    
+    const heuresRegiesResoconti = [...resocontiPercentuali.value]
+      .filter(r => (r.chantier_id === chantier.id || r.chantierId === chantier.id) && r.regies && r.status === 'approved')
+      .reduce((sum, r) => {
+        const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
+        return sum + (regies || []).reduce((regieSum, regie) => regieSum + (regie.heures || 0), 0);
+      }, 0);
+    
+    const heuresRegiesChantier = heuresRegiesMetrages + heuresRegiesResoconti;
     
     const heuresImployees = heuresChefChantier + heuresInterimChantier + heuresOuvriersChantier;
     
@@ -442,6 +462,7 @@ onMounted(async () => {
     fetchDevis(),
     fetchFactures(),
     fetchMetrages(),
+    fetchResocontiPercentuali(),
     fetchHeuresPropres(),
     fetchHeuresInterim(),
     fetchHeuresOuvriers(),

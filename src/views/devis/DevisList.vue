@@ -37,7 +37,7 @@
           <th>Client</th>
           <th>Technicien</th>
           <th>Chantier</th>
-          <th>Montant (\u20AC)</th>
+          <th>Montant HT (CHF)</th>
           <th>Remise Totale</th>
           <th>État</th>
           <th>Actions</th>
@@ -199,8 +199,20 @@ const formatMontant = (val) => {
 
 // Naviga alla pagina di visualizzazione/edizione del devis
 const voirDevis = (id) => {
-  // Quando si clicca su "Voir", apriamo la pagina di modifica del devis (prima pagina)
-  router.push(`/admin/devis/edit/${id}`);
+  // Trova il devis per determinare dove andare
+  const devisItem = devis.value.find(d => d.id == id);
+  if (!devisItem) return;
+  
+  // Se è un devis à corps, vai diretto alle condizioni
+  if (devisItem.modalita_prezzi === 'aCorps') {
+    router.push(`/admin/devis/conditions/${id}`);
+  } else if (devisItem.draft) {
+    // Se è bozza, vai alla prima pagina per completarlo
+    router.push(`/admin/devis/edit/${id}`);
+  } else {
+    // Se è completato, vai ai prodotti
+    router.push(`/devis/produits/${id}`);
+  }
 };
 
 // Aggiorna lo stato del devis su Supabase quando l'utente seleziona un nuovo stato.

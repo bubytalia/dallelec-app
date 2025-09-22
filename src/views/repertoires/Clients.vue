@@ -26,14 +26,7 @@
       <div class="col">
         <input v-model="newClient.email_compta" placeholder="Email de comptabilité" class="form-control" />
       </div>
-      <div class="col">
-        <select v-model="newClient.paiement_id" class="form-control">
-          <option value="">Conditions de paiement</option>
-          <option v-for="paiement in paiements" :key="paiement.id" :value="paiement.id">
-            {{ paiement.nom }}
-          </option>
-        </select>
-      </div>
+
     </div>
     <div class="text-center mb-4">
       <button @click="addClient" class="btn btn-primary">Ajouter</button>
@@ -48,7 +41,7 @@
           <th>Téléphone</th>
           <th>Email contact</th>
           <th>Email comptabilité</th>
-          <th>Conditions paiement</th>
+
           <th>Actions</th>
         </tr>
       </thead>
@@ -61,14 +54,7 @@
             <td><input v-model="editClient.telephone" class="form-control" /></td>
             <td><input v-model="editClient.email_contact" class="form-control" /></td>
             <td><input v-model="editClient.email_compta" class="form-control" /></td>
-            <td>
-              <select v-model="editClient.paiement_id" class="form-control">
-                <option value="">-</option>
-                <option v-for="paiement in paiements" :key="paiement.id" :value="paiement.id">
-                  {{ paiement.nom }}
-                </option>
-              </select>
-            </td>
+
             <td>
               <button @click="updateClient(client.id)" class="btn btn-success btn-sm">✔</button>
               <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
@@ -81,7 +67,7 @@
             <td>{{ client.telephone }}</td>
             <td>{{ client.email_contact }}</td>
             <td>{{ client.email_compta }}</td>
-            <td>{{ getPaiementNom(client.paiement_id) }}</td>
+
             <td>
               <button @click="startEdit(client)" class="btn btn-warning btn-sm">✎</button>
               <button @click="deleteClient(client.id)" class="btn btn-danger btn-sm">🗑</button>
@@ -112,8 +98,7 @@ export default {
       ville: '',
       telephone: '',
       email_contact: '',
-      email_compta: '',
-      paiement_id: ''
+      email_compta: ''
     });
 
     const editId = ref(null);
@@ -165,8 +150,7 @@ export default {
           ville: '',
           telephone: '',
           email_contact: '',
-          email_compta: '',
-          paiement_id: ''
+          email_compta: ''
         };
         fetchClients();
       } catch (error) {

@@ -235,6 +235,7 @@ const selectedStatus = ref('');
 const chantiers = ref([]);
 const factures = ref([]);
 const metrages = ref([]);
+const resocontiPercentuali = ref([]);
 const heuresPropres = ref([]);
 const heuresInterim = ref([]);
 const heuresOuvriers = ref([]);
@@ -250,6 +251,7 @@ const loadData = async () => {
     { data: chantiersData },
     { data: facturesData },
     { data: metragesData },
+    { data: resocontiData },
     { data: heuresProprData },
     { data: heuresIntData },
     { data: heuresOuvData },
@@ -258,6 +260,7 @@ const loadData = async () => {
     supabase.from('chantiers').select('*'),
     supabase.from('factures').select('*'),
     supabase.from('metrages').select('*'),
+    supabase.from('resoconti_percentuali').select('*').catch(() => ({ data: [] })),
     supabase.from('heures_chef_propres').select('*'),
     supabase.from('heures_chef_interim').select('*'),
     supabase.from('heures_ouvriers').select('*'),
@@ -267,6 +270,7 @@ const loadData = async () => {
   chantiers.value = chantiersData || [];
   factures.value = facturesData || [];
   metrages.value = metragesData || [];
+  resocontiPercentuali.value = resocontiData || [];
   heuresPropres.value = heuresProprData || [];
   heuresInterim.value = heuresIntData || [];
   heuresOuvriers.value = heuresOuvData || [];
@@ -297,12 +301,21 @@ const premesCalculated = computed(() => {
       .filter(h => String(h.chantier_id) === String(chantier.id))
       .reduce((sum, h) => sum + (h.heures || 0), 0);
 
-    const heuresRegiesChantier = metrages.value
+    const heuresRegiesMetrages = metrages.value
       .filter(m => String(m.chantier_id) === String(chantier.id) && m.regies)
       .reduce((sum, m) => {
         const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
         return sum + (regies || []).reduce((regieSum, r) => regieSum + (r.heures || 0), 0);
       }, 0);
+    
+    const heuresRegiesResoconti = resocontiPercentuali.value
+      .filter(r => String(r.chantier_id) === String(chantier.id) && r.regies && r.status === 'approved')
+      .reduce((sum, r) => {
+        const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
+        return sum + (regies || []).reduce((regieSum, regie) => regieSum + (regie.heures || 0), 0);
+      }, 0);
+    
+    const heuresRegiesChantier = heuresRegiesMetrages + heuresRegiesResoconti;
     
     const heuresImployees = heuresChefChantier + heuresInterimChantier + heuresOuvriersChantier;
     

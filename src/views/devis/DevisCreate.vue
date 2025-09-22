@@ -57,7 +57,7 @@
 
     <!-- Modalità Prezzi -->
     <div class="card p-4 mb-4">
-      <h5>Modalità Prezzi <small class="text-muted">(Attuale: {{ modalitaPrezzi }})</small></h5>
+      <h5>Type de Devis <small class="text-muted">(Actuel: {{ getTypeDevisLabel() }})</small></h5>
       <div class="form-check mb-3">
         <input 
           class="form-check-input" 
@@ -68,7 +68,8 @@
           @change="modalitaPrezzi = 'scontistica'"
         >
         <label class="form-check-label" for="scontistica">
-          <strong>Remise Standard</strong> - Applique des remises famille/sous-famille
+          <strong>Devis Détaillé - Remise Standard</strong><br>
+          <small class="text-muted">Applique des remises famille/sous-famille sur produits</small>
         </label>
       </div>
       <div class="form-check mb-3">
@@ -81,13 +82,58 @@
           @change="modalitaPrezzi = 'prezziFissi'"
         >
         <label class="form-check-label" for="prezziFissi">
-          <strong>Prix Fixes</strong> - Saisie manuelle des prix pour chaque produit
+          <strong>Devis Détaillé - Prix Fixes</strong><br>
+          <small class="text-muted">Saisie manuelle des prix pour chaque produit</small>
+        </label>
+      </div>
+      <div class="form-check mb-3">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          name="modalitaPrezzi" 
+          id="aCorps" 
+          :checked="modalitaPrezzi === 'aCorps'"
+          @change="modalitaPrezzi = 'aCorps'"
+        >
+        <label class="form-check-label" for="aCorps">
+          <strong>Devis à Corps</strong><br>
+          <small class="text-muted">Montant forfaitaire avec description libre</small>
         </label>
       </div>
     </div>
 
+    <!-- Devis à Corps -->
+    <div class="card p-4 mb-4" v-if="modalitaPrezzi === 'aCorps'">
+      <h5>Devis à Corps - Description et Montant</h5>
+      <div class="mb-3">
+        <label class="form-label"><strong>Description des travaux:</strong></label>
+        <textarea 
+          v-model="form.description_corps" 
+          class="form-control" 
+          rows="4" 
+          placeholder="Ex: Travaux électriques selon plans fournis&#10;- Installation complète selon plan joint&#10;- Fourniture et pose matériel&#10;- Mise en service et tests"
+        ></textarea>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <label class="form-label"><strong>Montant forfaitaire HT:</strong></label>
+          <div class="input-group">
+            <input 
+              v-model.number="form.montant_corps" 
+              type="number" 
+              step="0.01" 
+              class="form-control" 
+              placeholder="5500.00"
+            >
+            <span class="input-group-text">CHF</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Remise par famille / Type de pose -->
-    <div class="card p-4 mb-4">
+    <div class="card p-4 mb-4" v-if="modalitaPrezzi !== 'aCorps'">
       <h5 v-if="modalitaPrezzi === 'scontistica'">Remise par famille</h5>
       <h5 v-else>Type de pose <small class="text-muted">(informatif pour le PDF)</small></h5>
       <table class="table">
@@ -143,6 +189,17 @@
       </div>
     </div>
 
+    <!-- Informazione per devis à corps -->
+    <div class="card p-4 mb-4" v-if="modalitaPrezzi === 'aCorps'">
+      <div class="alert alert-success">
+        <h6>📝 Information Devis à Corps</h6>
+        <p class="mb-0">
+          Le <strong>Devis à Corps</strong> génère un PDF simplifié avec description libre et montant forfaitaire. 
+          Idéal pour les petits travaux avec plans détaillés.
+        </p>
+      </div>
+    </div>
+
     <!-- Continuer -->
       <div class="text-end">
         <!-- Indicatore stato validazione -->
@@ -190,7 +247,9 @@ const form = ref({
   nom: '',
   adresse: '',
   client: '',
-  technicien: ''
+  technicien: '',
+  description_corps: '',
+  montant_corps: 0
 });
 
 const newZone = ref('');
@@ -251,42 +310,74 @@ const formReady = computed(() => {
     zones.value.length > 0
   );
   
-  // Sempre richiesta la selezione famiglie (per scontistica o per info PDF)
+  // Per devis à corps, controlla descrizione e montant
+  if (modalitaPrezzi.value === 'aCorps') {
+    return baseReady && form.value.description_corps.trim() && form.value.montant_corps > 0;
+  }
+  
+  // Per altri tipi, richiesta la selezione famiglie
   const remiseReady = Object.keys(remiseSelection.value).length === familles.value.length;
   return baseReady && remiseReady;
 });
 
+const getTypeDevisLabel = () => {
+  switch(modalitaPrezzi.value) {
+    case 'scontistica': return 'Détaillé - Remise';
+    case 'prezziFissi': return 'Détaillé - Prix Fixes';
+    case 'aCorps': return 'À Corps';
+    default: return modalitaPrezzi.value;
+  }
+};
+
 const continuerVersDevis = async () => {
   try {
-    // Se stiamo modificando un devis esistente, aggiorniamolo e navighiamo alla pagina prodotti
+    // Se stiamo modificando un devis esistente, aggiorniamolo
     if (editingId.value) {
       const id = editingId.value;
+      const updateData = {
+        nom: form.value.nom,
+        adresse: form.value.adresse,
+        client_id: form.value.client,
+        technicien: form.value.technicien,
+        zones: zones.value,
+        modalita_prezzi: modalitaPrezzi.value,
+        remises: modalitaPrezzi.value === 'aCorps' ? {} : remiseSelection.value,
+        description_corps: form.value.description_corps || null,
+        montant_corps: form.value.montant_corps || null,
+        updated_at: new Date().toISOString()
+      };
+      
+      // Per devis à corps, imposta anche il totale e finalizza
+      if (modalitaPrezzi.value === 'aCorps') {
+        updateData.total = form.value.montant_corps; // HT
+        updateData.draft = false;
+        updateData.status = 'Terminé';
+      }
+      
       const { error } = await supabase
         .from('devis')
-        .update({
-          nom: form.value.nom,
-          adresse: form.value.adresse,
-          client_id: form.value.client,
-          technicien: form.value.technicien,
-          zones: zones.value,
-          modalita_prezzi: modalitaPrezzi.value,
-          remises: remiseSelection.value, // Salva sempre le remises per il PDF
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', id);
       
       if (error) throw error;
-      // Pulizia localStorage (solo i dati del form)
+      
+      // Pulizia localStorage
       try {
         localStorage.removeItem('devisForm');
         localStorage.removeItem('devisRemises');
         localStorage.removeItem('zonesCantiere');
-        localStorage.removeItem('devisItems'); // ✅ AGGIUNTO: pulizia dei prodotti
-        localStorage.removeItem('devisDiscount'); // ✅ AGGIUNTO: pulizia della remise supplémentaire
+        localStorage.removeItem('devisItems');
+        localStorage.removeItem('devisDiscount');
       } catch (e) {
         console.warn('Erreur lors du nettoyage du localStorage après la modification du devis', e);
       }
-      router.push(`/devis/produits/${id}`);
+      
+      // Per devis à corps, vai alle condizioni. Per altri, vai ai prodotti
+      if (modalitaPrezzi.value === 'aCorps') {
+        router.push(`/admin/devis/conditions/${id}`);
+      } else {
+        router.push(`/devis/produits/${id}`);
+      }
       return;
     }
 
@@ -302,12 +393,14 @@ const continuerVersDevis = async () => {
       technicien: form.value.technicien,
       zones: zones.value,
       modalita_prezzi: modalitaPrezzi.value,
-      remises: remiseSelection.value, // Salva sempre le remises per il PDF
+      remises: modalitaPrezzi.value === 'aCorps' ? {} : remiseSelection.value,
+      description_corps: form.value.description_corps || null,
+      montant_corps: form.value.montant_corps || null,
       created_at: new Date().toISOString(),
       produits: [],
-      total: 0,
-      draft: true,
-      status: 'En cours'
+      total: modalitaPrezzi.value === 'aCorps' ? form.value.montant_corps : 0,
+      draft: modalitaPrezzi.value === 'aCorps' ? false : true,
+      status: modalitaPrezzi.value === 'aCorps' ? 'Terminé' : 'En cours'
     };
     
     const { data: docRef, error } = await supabase
@@ -322,12 +415,18 @@ const continuerVersDevis = async () => {
       localStorage.removeItem('devisForm');
       localStorage.removeItem('devisRemises');
       localStorage.removeItem('zonesCantiere');
-      localStorage.removeItem('devisItems'); // ✅ AGGIUNTO: pulizia dei prodotti
-      localStorage.removeItem('devisDiscount'); // ✅ AGGIUNTO: pulizia della remise supplémentaire
+      localStorage.removeItem('devisItems');
+      localStorage.removeItem('devisDiscount');
     } catch (e) {
       console.warn('Erreur lors du nettoyage du localStorage après la création du devis', e);
     }
-    router.push(`/devis/produits/${docRef.id}`);
+    
+    // Per devis à corps, vai alle condizioni. Per altri, vai ai prodotti
+    if (modalitaPrezzi.value === 'aCorps') {
+      router.push(`/admin/devis/conditions/${docRef.id}`);
+    } else {
+      router.push(`/devis/produits/${docRef.id}`);
+    }
   } catch (error) {
     console.error("Errore durante la creazione del devis:", error);
     alert("C'è stato un errore durante il salvataggio.");

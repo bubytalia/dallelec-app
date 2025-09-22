@@ -297,10 +297,15 @@ const associerDevis = async () => {
   if (!selectedChantierId.value || !selectedDevisId.value) return
 
   try {
+    // Trova il devis per determinare la modalità
+    const devisSelezionato = devis.value.find(d => d.id == selectedDevisId.value)
+    const modalitaResoconto = devisSelezionato?.modalita_prezzi === 'aCorps' ? 'percentuale' : 'metrage'
+    
     const { error } = await supabase
       .from('chantiers')
       .update({
         devis_id: selectedDevisId.value,
+        modalita_resoconto: modalitaResoconto,
         updated_at: new Date().toISOString()
       })
       .eq('id', selectedChantierId.value)
@@ -314,7 +319,8 @@ const associerDevis = async () => {
     selectedChantier.value = chantiers.value.find(c => c.id === selectedChantierId.value)
     await loadDevisDetails(selectedDevisId.value)
 
-    alert('Devis associé avec succès!')
+    const tipoDevis = devisSelezionato?.modalita_prezzi === 'aCorps' ? 'à Corps (Resoconto Percentuale)' : 'Détaillé (Métrages)'
+    alert(`Devis ${tipoDevis} associé avec succès!`)
   } catch (error) {
     console.error('Erreur lors de l\'association:', error)
     alert('Erreur lors de l\'association: ' + error.message)
@@ -358,10 +364,15 @@ const associerDevisDirect = async (devisId) => {
   }
 
   try {
+    // Trova il devis per determinare la modalità
+    const devisSelezionato = devis.value.find(d => d.id == devisId)
+    const modalitaResoconto = devisSelezionato?.modalita_prezzi === 'aCorps' ? 'percentuale' : 'metrage'
+    
     const { error } = await supabase
       .from('chantiers')
       .update({
         devis_id: devisId,
+        modalita_resoconto: modalitaResoconto,
         updated_at: new Date().toISOString()
       })
       .eq('id', selectedChantierId.value)
@@ -375,7 +386,8 @@ const associerDevisDirect = async (devisId) => {
     selectedChantier.value = chantiers.value.find(c => c.id === selectedChantierId.value)
     await loadDevisDetails(devisId)
 
-    alert('Devis associé avec succès!')
+    const tipoDevis = devisSelezionato?.modalita_prezzi === 'aCorps' ? 'à Corps (Resoconto Percentuale)' : 'Détaillé (Métrages)'
+    alert(`Devis ${tipoDevis} associé avec succès!`)
   } catch (error) {
     console.error('Erreur lors de l\'association:', error)
     alert('Erreur lors de l\'association: ' + error.message)

@@ -55,8 +55,9 @@
       <button class="btn btn-success" @click="sauvegarder(false)">📥 Sauvegarder le devis</button>
     </div>
 
-    <!-- Composant PDF et bouton de génération -->
+    <!-- Composant PDF pour devis détaillé -->
     <DevisPdf
+      v-if="devisData?.modalita_prezzi !== 'aCorps'"
       ref="pdfRef"
       :devisParZone="devisParZone"
       :supplementParZone="supplementParZone"
@@ -72,6 +73,24 @@
       :famillesVisibles="famillesVisibles"
       style="display: none;"
     />
+    
+    <!-- Composant PDF pour devis à corps -->
+    <DevisCorpsPdf
+      v-if="devisData?.modalita_prezzi === 'aCorps'"
+      ref="pdfCorpsRef"
+      :nomClient="nomClient"
+      :nomChantier="nomChantier"
+      :numeroDevis="numeroDevis"
+      :dateDevis="dateDevis"
+      :descriptionCorps="devisData?.description_corps || ''"
+      :montantCorps="devisData?.montant_corps || 0"
+      :selectedPaiement="selectedPaiementObj"
+      :conditionsGenerales="selectedGeneralesDetails"
+      :conditionsComprend="selectedComprendDetails"
+      :conditionsNeComprendPas="selectedExcluDetails"
+      :notes="notes"
+      style="display: none;"
+    />
     <div class="text-end mt-3">
       <button class="btn btn-primary" @click="generatePdf">Télécharger le PDF</button>
     </div>
@@ -83,8 +102,9 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { supabase } from '../../supabase.js';
 
-// Composant PDF
+// Composants PDF
 import DevisPdf from '@/components/DevisPdf.vue';
+import DevisCorpsPdf from '@/components/DevisCorpsPdf.vue';
 import RetourButton from '@/components/RetourButton.vue';
 
 // Route and router
@@ -111,8 +131,9 @@ const sousfamilles = ref([]);
 // Notes liberi
 const notes = ref('');
 
-// Référence au composant DevisPdf
+// Références aux composants PDF
 const pdfRef = ref(null);
+const pdfCorpsRef = ref(null);
 
 // Données du devis pour le PDF
 const devisData = ref(null);
@@ -221,15 +242,25 @@ const famillesVisibles = computed(() => {
 
 // Fonction pour générer le PDF
 const generatePdf = () => {
-  if (pdfRef.value && typeof pdfRef.value.generatePdf === 'function') {
-    try {
-      pdfRef.value.generatePdf();
-    } catch (error) {
-      console.error('Errore in generatePdf():', error);
-      alert('Errore nella generazione PDF: ' + error.message);
+  try {
+    // Per devis à corps usa il componente specifico
+    if (devisData.value?.modalita_prezzi === 'aCorps') {
+      if (pdfCorpsRef.value && typeof pdfCorpsRef.value.generatePdf === 'function') {
+        pdfCorpsRef.value.generatePdf();
+      } else {
+        alert('PDF devis à corps non prêt.');
+      }
+    } else {
+      // Per devis dettagliati usa il componente normale
+      if (pdfRef.value && typeof pdfRef.value.generatePdf === 'function') {
+        pdfRef.value.generatePdf();
+      } else {
+        alert('PDF devis détaillé non prêt.');
+      }
     }
-  } else {
-    alert('PDF non prêt : les données sont encore en cours de chargement.');
+  } catch (error) {
+    console.error('Errore in generatePdf():', error);
+    alert('Errore nella generazione PDF: ' + error.message);
   }
 };
 
@@ -388,6 +419,11 @@ const sauvegarder = async (asDraft) => {
 
 // Retour à la page des produits sans sauvegarder l'état en brouillon si on modifie un devis existant
 const retourProduits = () => {
-  router.push(`/devis/produits/${devisId}`);
+  // Per devis à corps, torna alla lista. Per altri, vai ai prodotti
+  if (devisData.value?.modalita_prezzi === 'aCorps') {
+    router.push('/admin/devis');
+  } else {
+    router.push(`/devis/produits/${devisId}`);
+  }
 };
 </script>
