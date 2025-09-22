@@ -408,8 +408,18 @@ export default {
     };
 
     const fetchDevis = async () => {
-      // TODO: Implementare quando devis saranno migrati
-      devis.value = [];
+      try {
+        const { data, error } = await supabase
+          .from('devis')
+          .select('id, numero, nom, adresse, client_id')
+          .order('numero', { ascending: false });
+        
+        if (error) throw error;
+        devis.value = data || [];
+      } catch (error) {
+        console.error('Erreur chargement devis:', error);
+        devis.value = [];
+      }
     };
 
     const fetchCollaborateurs = async () => {
@@ -508,6 +518,7 @@ export default {
         ville: newChantier.value.ville,
         client: newChantier.value.client,
         technicien: newChantier.value.technicien,
+        devis_id: newChantier.value.devisId || null,
         modalita_resoconto: newChantier.value.modalitaResoconto,
         capocantiere: newChantier.value.capocantiere,
         prix_regie: newChantier.value.prixRegie,
@@ -589,6 +600,7 @@ export default {
         ville: editChantier.value.ville,
         client: editChantier.value.client,
         technicien: editChantier.value.technicien,
+        devis_id: editChantier.value.devisId || null,
         modalita_resoconto: editChantier.value.modalitaResoconto,
         capocantiere: editChantier.value.capocantiere,
         prix_regie: editChantier.value.prixRegie,
