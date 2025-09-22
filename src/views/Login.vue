@@ -30,7 +30,7 @@
             <div class="card-body text-center p-3">
               <i class="bi bi-gear-fill text-primary mb-2" style="font-size: 1.5rem;"></i>
               <h6 class="card-title mb-2">Gestionnaire</h6>
-              <button type="submit" class="btn btn-primary btn-sm w-100" :disabled="loading">
+              <button @click="handleLogin" class="btn btn-primary btn-sm w-100" :disabled="loading">
                 <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
                 {{ loading ? 'Connexion...' : 'Accéder' }}
               </button>
