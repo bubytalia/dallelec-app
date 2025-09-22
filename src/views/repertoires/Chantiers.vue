@@ -44,18 +44,18 @@
             </select>
           </div>
           <div class="col-md-4">
-            <select v-model="newChantier.technicien" class="form-select" required>
-              <option disabled value="">Sélectionner le technicien</option>
-              <option v-for="tech in techniciens" :key="tech.id" :value="tech.nom">
+            <select v-model="newChantier.technicien" class="form-select" required :disabled="!newChantier.client">
+              <option disabled value="">{{ !newChantier.client ? 'Sélectionner d\'abord un client' : 'Sélectionner le technicien' }}</option>
+              <option v-for="tech in filteredTechniciens" :key="tech.id" :value="tech.nom">
                 {{ tech.nom }}
               </option>
             </select>
           </div>
           <div class="col-md-3">
-            <select v-model="newChantier.devisId" class="form-select">
-              <option value="">Sélectionner un devis (optionnel)</option>
-              <option v-for="devis in devis" :key="devis.id" :value="devis.id">
-                {{ devis.numero }} - {{ devis.nom || devis.nomChantier }}
+            <select v-model="newChantier.devisId" class="form-select" :disabled="!newChantier.client">
+              <option value="">{{ !newChantier.client ? 'Sélectionner d\'abord un client' : 'Sélectionner un devis (optionnel)' }}</option>
+              <option v-for="devis in filteredDevis" :key="devis.id" :value="devis.id">
+                {{ devis.numero }} - {{ devis.nom || devis.adresse }}
               </option>
             </select>
           </div>
@@ -338,7 +338,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
@@ -670,6 +670,28 @@ export default {
     };
 
     // Computed properties
+    const filteredDevis = computed(() => {
+      if (!newChantier.value.client) return [];
+      
+      // Trova l'ID del cliente selezionato
+      const selectedClient = clients.value.find(c => c.nom === newChantier.value.client);
+      if (!selectedClient) return [];
+      
+      // Filtra devis per client_id
+      return devis.value.filter(d => d.client_id == selectedClient.id);
+    });
+
+    const filteredTechniciens = computed(() => {
+      if (!newChantier.value.client) return [];
+      
+      // Trova l'ID del cliente selezionato
+      const selectedClient = clients.value.find(c => c.nom === newChantier.value.client);
+      if (!selectedClient) return [];
+      
+      // Filtra techniciens per client_id
+      return techniciens.value.filter(t => t.client_id == selectedClient.id);
+    });
+
     const totalHeuresPropres = computed(() => {
       return heures.value.reduce((sum, h) => sum + (h.heuresPropres || 0), 0);
     });
@@ -701,6 +723,12 @@ export default {
       return Object.values(resume);
     });
 
+    // Watcher per resettare devis e technicien quando cambia cliente
+    watch(() => newChantier.value.client, () => {
+      newChantier.value.devisId = '';
+      newChantier.value.technicien = '';
+    });
+
     onMounted(() => {
       fetchChantiers();
       fetchClients();
@@ -723,7 +751,9 @@ export default {
       deleteChantier,
       clients,
       techniciens,
+      filteredTechniciens,
       devis,
+      filteredDevis,
       collaborateurs,
       chefDeChantiers,
       selectedChantierId,
