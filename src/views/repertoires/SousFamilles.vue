@@ -185,24 +185,34 @@ export default {
     };
 
     const getFamilleName = (id) => {
-      const fam = familles.value.find(f => f.id === id);
+      const fam = familles.value.find(f => f.id == id); // Usa == invece di === per confronto flessibile
       return fam ? fam.nom : '';
     };
 
     const sousFamillesTries = computed(() => {
-      const getFamille = (id) => familles.value.find(f => f.id === id);
+      const getFamille = (id) => familles.value.find(f => f.id == id);
       const copy = [...sousFamilles.value];
       return copy.sort((a, b) => {
         const famA = getFamille(a.familleId);
         const famB = getFamille(b.familleId);
-        const famOrderA = Number.isFinite(Number(famA?.ordrePDF)) ? Number(famA?.ordrePDF) : Number.POSITIVE_INFINITY;
-        const famOrderB = Number.isFinite(Number(famB?.ordrePDF)) ? Number(famB?.ordrePDF) : Number.POSITIVE_INFINITY;
-        if (famOrderA !== famOrderB) return famOrderA - famOrderB;
+        
+        // 1. Ordine delle famiglie (colonna ordre)
+        const famOrderA = Number.isFinite(Number(famA?.ordre_pdf)) ? Number(famA?.ordre_pdf) : Number.POSITIVE_INFINITY;
+        const famOrderB = Number.isFinite(Number(famB?.ordre_pdf)) ? Number(famB?.ordre_pdf) : Number.POSITIVE_INFINITY;
+        
+        if (famOrderA !== famOrderB) {
+          return famOrderA - famOrderB;
+        }
+        
+        // 2. Alfabetico delle famiglie (per famiglie con stesso ordre)
         const nomFamille = (famA?.nom || '').localeCompare(famB?.nom || '');
-        if (nomFamille !== 0) return nomFamille;
+        if (nomFamille !== 0) {
+          return nomFamille;
+        }
+        
+        // 3. Campo ordre delle sottofamiglie
         const ordreSous = (Number(a.ordre) || 0) - (Number(b.ordre) || 0);
-        if (ordreSous !== 0) return ordreSous;
-        return (a.nom || '').localeCompare(b.nom || '');
+        return ordreSous;
       });
     });
 
