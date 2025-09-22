@@ -226,7 +226,12 @@ const generatePdf = async () => {
   
   drawFooter(currentPage, plannedPages)
 
-  doc.save(`devis-corps-${props.numeroDevis || 'document'}.pdf`)
+  // Salva il documento con nome personalizzato: Cliente_Cantiere_NumeroDevis_Corps
+  const clientName = props.nomClient.replace(/[^a-zA-Z0-9]/g, '_') || 'Client'
+  const chantierName = props.nomChantier.split(' - ')[0].replace(/[^a-zA-Z0-9]/g, '_') || 'Chantier'
+  const numeroDevis = props.numeroDevis || 'DEV-000'
+  
+  doc.save(`${clientName}_${chantierName}_${numeroDevis}.pdf`)
 }
 
 defineExpose({

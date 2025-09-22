@@ -172,8 +172,12 @@ const generatePdf = () => {
   doc.setFontSize(8);
   doc.text('Pag. 1/1', 105, 292, { align: 'center' });
   
-  // Salva
-  const fileName = `conguaglio-${props.chantierInfo.numeroCantiere || 'cantiere'}-${props.resocontoFinale.zona}.pdf`;
+  // Salva con nome personalizzato: Cliente_Cantiere_Zona_Conguaglio
+  const clientName = props.clientInfo.nom.replace(/[^a-zA-Z0-9]/g, '_') || 'Client';
+  const chantierName = props.chantierInfo.nom.replace(/[^a-zA-Z0-9]/g, '_') || 'Chantier';
+  const zona = props.resocontoFinale.zona.replace(/[^a-zA-Z0-9]/g, '_') || 'Zone';
+  
+  const fileName = `${clientName}_${chantierName}_${zona}.pdf`;
   doc.save(fileName);
 };
 

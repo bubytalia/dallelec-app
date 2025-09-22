@@ -1766,7 +1766,12 @@ const genererPDF = async (facture) => {
       doc.setFont('helvetica', 'bold');
       doc.text(`TOTAL TTC: ${ttc.toFixed(2)} CHF`, 140, finalY + 17);
       
-      doc.save(`Facture_${facture.numero}.pdf`);
+      // Nome PDF personalizzato: Cliente_Cantiere_NumeroFacture
+      const clientName = facture.client_nom.replace(/[^a-zA-Z0-9]/g, '_') || 'Client';
+      const chantierName = (chantier?.nom || 'Chantier').replace(/[^a-zA-Z0-9]/g, '_');
+      const numeroFacture = facture.numero || 'F000';
+      
+      doc.save(`${clientName}_${chantierName}_${numeroFacture}.pdf`);
       alert('Facture générée avec succès!');
       return;
     }
@@ -2125,7 +2130,12 @@ const genererPDF = async (facture) => {
         doc.text(`Page ${i} sur ${totalPages}`, 190, 290, { align: 'right' });
       }
       
-      doc.save(`Facture_Percentuelle_${facture.numero}.pdf`);
+      // Nome PDF personalizzato: Cliente_Cantiere_NumeroFacture_Percentuelle
+      const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+      const chantierName = (chantier?.nom || 'Chantier').replace(/[^a-zA-Z0-9]/g, '_');
+      const numeroFacture = facture.numero || 'F000';
+      
+      doc.save(`${clientName}_${chantierName}_${numeroFacture}.pdf`);
       alert('Facture percentuelle générée avec succès!');
       return;
     }
@@ -2539,9 +2549,13 @@ const genererPDF = async (facture) => {
     docFacture.setTextColor(150, 150, 150);
     docFacture.text('DALLELEC Sarl - CHE-123.456.789 TVA - Rue de Bourgogne 25, 1203 Genève', 105, 280, { align: 'center' });
     
-    // Salva documenti
-    docMetrees.save(`Metrees_Detaillees_${facture.numero}.pdf`);
-    docFacture.save(`Facture_${facture.numero}.pdf`);
+    // Salva documenti con nomi personalizzati
+    const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+    const chantierName = (chantier?.nom || 'Chantier').replace(/[^a-zA-Z0-9]/g, '_');
+    const numeroFacture = facture.numero || 'F000';
+    
+    docMetrees.save(`${clientName}_${chantierName}_${numeroFacture}_Metrees.pdf`);
+    docFacture.save(`${clientName}_${chantierName}_${numeroFacture}.pdf`);
     
     alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
     
