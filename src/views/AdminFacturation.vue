@@ -104,11 +104,39 @@
     <!-- Factures récentes -->
     <div class="card mb-4">
       <div class="card-header">
-        <h5>Factures récentes</h5>
+        <div class="row align-items-center">
+          <div class="col-md-4">
+            <h5>Factures récentes</h5>
+          </div>
+          <div class="col-md-8">
+            <div class="row">
+              <div class="col-md-4">
+                <select v-model="filtreClient" class="form-select form-select-sm">
+                  <option value="">Tous les clients</option>
+                  <option v-for="client in clientsUniques" :key="client" :value="client">{{ client }}</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <select v-model="filtreStatut" class="form-select form-select-sm">
+                  <option value="">Tous les statuts</option>
+                  <option value="emise">Émise</option>
+                  <option value="envoyee">Envoyée</option>
+                  <option value="payee">Payée</option>
+                  <option value="en_retard">En retard</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <button @click="resetFiltres" class="btn btn-outline-secondary btn-sm">
+                  🔄 Reset
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="card-body">
-        <div v-if="facturesRecentes.length === 0" class="text-center text-muted py-4">
-          Aucune facture récente
+        <div v-if="facturesFiltrees.length === 0" class="text-center text-muted py-4">
+          {{ factures.length === 0 ? 'Aucune facture récente' : 'Aucune facture correspondant aux filtres' }}
         </div>
         <div v-else class="table-responsive">
           <table class="table">
@@ -124,7 +152,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="facture in facturesRecentes" :key="facture.id">
+              <tr v-for="facture in facturesFiltrees" :key="facture.id">
                 <td><strong>{{ facture.numero }}</strong></td>
                 <td>{{ getChantierName(facture.chantier_id || facture.chantierId) }}</td>
                 <td>{{ facture.client_nom || facture.clientNom || getClientName(facture.chantier_id || facture.chantierId) }}</td>
@@ -151,14 +179,19 @@
                   </select>
                 </td>
                 <td>
-                  <button @click="modifierFacture(facture)" class="btn btn-sm btn-primary me-2">
-                    ✏️ Modifier
+                  <button @click="voirAnteprimaFacture(facture)" class="btn btn-sm btn-success me-1" title="Anteprima rapida">
+                    👁️
                   </button>
-
-                  <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-2">
+                  <button @click="modifierFacture(facture)" class="btn btn-sm btn-primary me-1">
+                    ✏️
+                  </button>
+                  <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-1">
                     📄 PDF
                   </button>
-                  <button v-if="(facture.montant_ttc || facture.montantTTC || 0) === 0" @click="corrigerFacture(facture)" class="btn btn-sm btn-warning me-2" title="Corriger montant">
+                  <button v-if="facture.resoconto_id" @click="riaprireResoconto(facture)" class="btn btn-sm btn-warning me-1" title="Riapri per correzione">
+                    🔄
+                  </button>
+                  <button v-if="(facture.montant_ttc || facture.montantTTC || 0) === 0" @click="corrigerFacture(facture)" class="btn btn-sm btn-warning me-1" title="Corriger montant">
                     🔧
                   </button>
                   <button @click="supprimerFacture(facture)" class="btn btn-sm btn-danger" title="Supprimer (test)">
@@ -524,6 +557,173 @@
       </div>
     </div>
 
+    <!-- Modal Anteprima Facture -->
+    <div v-if="showAnteprimaFacture" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>📄 Aperçu Facture {{ factureAnteprima.numero }}</h5>
+            <button @click="showAnteprimaFacture = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Informations Générales</h6>
+                <p><strong>N° Facture:</strong> {{ factureAnteprima.numero }}</p>
+                <p><strong>Date:</strong> {{ formatDate(factureAnteprima.date_facture) }}</p>
+                <p><strong>Échéance:</strong> {{ formatDate(factureAnteprima.date_echeance) }}</p>
+                <p><strong>Chantier:</strong> {{ getChantierNameWithNumber(factureAnteprima.chantier_id) }}</p>
+                <p><strong>Client:</strong> {{ factureAnteprima.client_nom }}</p>
+                <p><strong>Statut:</strong> <span :class="getStatutClass(factureAnteprima.statut)">{{ getStatutLabel(factureAnteprima.statut) }}</span></p>
+              </div>
+              <div class="col-md-6">
+                <h6>Montants</h6>
+                <p><strong>Total HT:</strong> {{ formatCurrency(factureAnteprima.montant_ht || 0) }}</p>
+                <p v-if="(factureAnteprima.acconti_precedenti || 0) > 0" class="text-danger">
+                  <strong>Acomptes HT:</strong> -{{ formatCurrency(factureAnteprima.acconti_precedenti) }}
+                </p>
+                <p><strong>TVA ({{ factureAnteprima.taux_tva || 8.1 }}%):</strong> {{ formatCurrency(calculateTVAFacture(factureAnteprima)) }}</p>
+                <hr>
+                <p class="h5"><strong>{{ (factureAnteprima.acconti_precedenti || 0) > 0 ? 'Solde à payer:' : 'Total TTC:' }}</strong> 
+                  <span class="text-success">{{ formatCurrency(calculateTotalFacture(factureAnteprima)) }}</span>
+                </p>
+              </div>
+            </div>
+            
+            <!-- CONTENU DÉTAILLÉ FACTURE -->
+            <div class="mt-4">
+              <h6>📋 Contenu Facture</h6>
+              
+              <!-- Fattura da Resoconto Percentuale -->
+              <div v-if="factureAnteprima.resoconto_id" class="card bg-light">
+                <div class="card-header bg-info text-white">
+                  <strong>📊 Fattura Percentuale</strong>
+                </div>
+                <div class="card-body">
+                  <div v-if="getResocontoDetails(factureAnteprima.resoconto_id)">
+                    <p><strong>Periodo:</strong> {{ getResocontoDetails(factureAnteprima.resoconto_id).periode_month }}</p>
+                    <div class="row">
+                      <div class="col-md-8">
+                        <h6>Zones travaillées:</h6>
+                        <table class="table table-sm table-bordered">
+                          <thead>
+                            <tr><th>Zone</th><th>Avancement</th><th>Montant</th></tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="(percentage, zone) in getResocontoDetails(factureAnteprima.resoconto_id).avancementi" :key="zone">
+                              <td>{{ zone }}</td>
+                              <td>{{ percentage }}%</td>
+                              <td>{{ formatCurrency(calculateZoneMontantAnteprima(zone, percentage, factureAnteprima.chantier_id)) }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="col-md-4" v-if="getResocontoDetails(factureAnteprima.resoconto_id).regies?.length > 0">
+                        <h6>Régies:</h6>
+                        <div v-for="regie in getResocontoDetails(factureAnteprima.resoconto_id).regies" :key="regie.zone + regie.description" class="mb-2">
+                          <small><strong>{{ regie.zone }}:</strong> {{ regie.heures }}h × {{ regie.prixHeure || 75 }} CHF = {{ formatCurrency(regie.heures * (regie.prixHeure || 75)) }}</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Fattura da Métrage -->
+              <div v-else-if="factureAnteprima.metrage_id" class="card bg-light">
+                <div class="card-header bg-secondary text-white">
+                  <strong>📏 Fattura Métrage</strong>
+                </div>
+                <div class="card-body">
+                  <div v-if="getMetrageDetails(factureAnteprima.metrage_id)">
+                    <p><strong>Total ML:</strong> {{ (getMetrageDetails(factureAnteprima.metrage_id).total_ml || 0).toFixed(2) }} ML</p>
+                    <p><strong>Zone:</strong> {{ getMetrageDetails(factureAnteprima.metrage_id).zones?.join(', ') || 'N/A' }}</p>
+                    <div v-if="getMetrageDetails(factureAnteprima.metrage_id).regies?.length > 0">
+                      <h6>Régies incluse:</h6>
+                      <div v-for="regie in getMetrageDetails(factureAnteprima.metrage_id).regies" :key="regie.zone + regie.description" class="mb-1">
+                        <small>{{ regie.zone }}: {{ regie.heures }}h - {{ regie.description }}</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Fattura Manuale -->
+              <div v-else-if="factureAnteprima.type === 'manuelle'" class="card bg-light">
+                <div class="card-header bg-success text-white">
+                  <strong>📝 Fattura Manuale</strong>
+                </div>
+                <div class="card-body">
+                  <div v-if="factureAnteprima.lignes?.length > 0">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr><th>Descrizione</th><th>Qté</th><th>Prezzo</th><th>Total</th></tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="ligne in factureAnteprima.lignes" :key="ligne.description">
+                          <td>{{ ligne.description }}</td>
+                          <td>{{ ligne.quantite }}</td>
+                          <td>{{ formatCurrency(ligne.prixUnitaire) }}</td>
+                          <td>{{ formatCurrency(ligne.quantite * ligne.prixUnitaire) }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Fattura tipo sconosciuto -->
+              <div v-else class="alert alert-warning">
+                <strong>⚠️ Tipo fattura non riconosciuto</strong><br>
+                Questa fattura potrebbe essere stata creata con una versione precedente del sistema.
+              </div>
+            </div>
+            
+            <div v-if="factureAnteprima.notes" class="mt-3">
+              <h6>Notes</h6>
+              <p class="text-muted">{{ factureAnteprima.notes }}</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="genererPDF(factureAnteprima)" class="btn btn-info me-2">
+              📄 Générer PDF
+            </button>
+            <button @click="showAnteprimaFacture = false" class="btn btn-secondary">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Riapertura Resoconto -->
+    <div v-if="showRiaperturaResoconto" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>🔄 Rouvrir Rapport pour Correction</h5>
+            <button @click="showRiaperturaResoconto = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <strong>⚠️ Attenzione:</strong><br>
+              • La facture {{ factureRiapertura.numero }} sera supprimée<br>
+              • Le rapport redeviendra modifiable pour le chef<br>
+              • La nouvelle facture gardera le même numéro
+            </div>
+            <div class="mb-3">
+              <label><strong>Motif de la correction:</strong></label>
+              <textarea v-model="motivoCorrezione" class="form-control" rows="3" placeholder="Décrivez le problème trouvé par le client..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="confermaRiapertura" class="btn btn-warning">🔄 Rouvrir Rapport</button>
+            <button @click="showRiaperturaResoconto = false" class="btn btn-secondary">Annulla</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Changer Statut -->
     <div v-if="showChangeStatut" class="modal d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog">
@@ -579,12 +779,19 @@ const showDetailResoconto = ref(false);
 const detailResoconto = ref({});
 const showChangeStatut = ref(false);
 const showModifierFacture = ref(false);
+const showAnteprimaFacture = ref(false);
+const showRiaperturaResoconto = ref(false);
 const factureEnCours = ref({});
+const factureAnteprima = ref({});
+const factureRiapertura = ref({});
+const motivoCorrezione = ref('');
 const nouveauStatut = ref('');
 const notesStatut = ref('');
 const nouvelleDate = ref('');
 const nouvelleDateEcheance = ref('');
 const nouvellesNotes = ref('');
+const filtreClient = ref('');
+const filtreStatut = ref('');
 
 // Resoconti percentuali en attente d'approbation
 const resocontiEnAttente = computed(() => {
@@ -612,8 +819,36 @@ const metragesEnAttente = computed(() => {
 // Factures des 30 derniers jours
 const facturesRecentes = computed(() => {
   return factures.value
-    .sort((a, b) => new Date(b.dateFacture) - new Date(a.dateFacture))
-    .slice(0, 20); // Mostra tutte le fatture, ordinate per data
+    .sort((a, b) => new Date(b.date_facture || b.dateFacture) - new Date(a.date_facture || a.dateFacture))
+    .slice(0, 50); // Mostra più fatture per i filtri
+});
+
+// Clients uniques pour filtro
+const clientsUniques = computed(() => {
+  const clients = new Set();
+  factures.value.forEach(f => {
+    if (f.client_nom || f.clientNom) {
+      clients.add(f.client_nom || f.clientNom);
+    }
+  });
+  return Array.from(clients).sort();
+});
+
+// Factures filtrées
+const facturesFiltrees = computed(() => {
+  let filtered = facturesRecentes.value;
+  
+  if (filtreClient.value) {
+    filtered = filtered.filter(f => 
+      (f.client_nom || f.clientNom) === filtreClient.value
+    );
+  }
+  
+  if (filtreStatut.value) {
+    filtered = filtered.filter(f => f.statut === filtreStatut.value);
+  }
+  
+  return filtered;
 });
 
 // Statistiques
@@ -625,19 +860,19 @@ const facturationMois = computed(() => {
       return factureDate.getMonth() === thisMonth.getMonth() && 
              factureDate.getFullYear() === thisMonth.getFullYear();
     })
-    .reduce((sum, f) => sum + (f.montant_ttc || f.montantTTC || 0), 0);
+    .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
 });
 
 const facturesPayees = computed(() => {
   return factures.value
     .filter(f => f.statut === 'payee')
-    .reduce((sum, f) => sum + (f.montant_ttc || f.montantTTC || 0), 0);
+    .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
 });
 
 const facturesEnRetard = computed(() => {
   return factures.value
     .filter(f => f.statut === 'en_retard')
-    .reduce((sum, f) => sum + (f.montant_ttc || f.montantTTC || 0), 0);
+    .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
 });
 
 const forceReload = async () => {
@@ -975,7 +1210,8 @@ const approuverResoconto = async (resoconto) => {
     detailResoconto.value = resoconto;
     const montantHT = calculateTotalHT();
     
-    const numeroFacture = await generateNumeroFacture();
+    // USA NUMERO RISERVATO SE ESISTE (per correzioni)
+    const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture();
     const accontiInseriti = Number(accontiPrecedentiResoconto.value || 0);
     
     const { error } = await supabase
@@ -997,6 +1233,14 @@ const approuverResoconto = async (resoconto) => {
       }]);
     
     if (error) throw error;
+    
+    // Pulisci il numero riservato dopo l'uso
+    if (resoconto.numero_fattura_riservato) {
+      await supabase
+        .from('resoconti_percentuali')
+        .update({ numero_fattura_riservato: null })
+        .eq('id', resoconto.id);
+    }
     
     alert(`Resoconto approuvé et facture ${numeroFacture} créée!`);
     loadData();
@@ -1068,7 +1312,8 @@ const generarFactureResoconto = async (resoconto) => {
     const montantRegiesHT = (resoconto.regies || []).reduce((sum, r) => sum + (r.heures * (r.prixHeure || prixRegieChantier)), 0);
     const montantHT = montantTravauxHT + montantRegiesHT;
     
-    const numeroFacture = await generateNumeroFacture();
+    // USA NUMERO RISERVATO SE ESISTE (per correzioni)
+    const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture();
     
     const { error } = await supabase
       .from('factures')
@@ -1088,6 +1333,15 @@ const generarFactureResoconto = async (resoconto) => {
       }]);
     
     if (error) throw error;
+    
+    // Pulisci il numero riservato dopo l'uso
+    if (resoconto.numero_fattura_riservato) {
+      await supabase
+        .from('resoconti_percentuali')
+        .update({ numero_fattura_riservato: null })
+        .eq('id', resoconto.id);
+    }
+    
     alert(`Facture ${numeroFacture} créée avec succès!`);
     loadData();
   } catch (error) {
@@ -2286,6 +2540,95 @@ const genererPDF = async (facture) => {
 const getTechnicienName = (chantierId) => {
   const chantier = chantiers.value.find(c => c.id == chantierId);
   return chantier?.technicien || 'N/A';
+};
+
+const voirAnteprimaFacture = (facture) => {
+  factureAnteprima.value = facture;
+  showAnteprimaFacture.value = true;
+};
+
+const calculateTVAFacture = (facture) => {
+  const montantHT = Number(facture.montant_ht || 0);
+  const acconti = Number(facture.acconti_precedenti || 0);
+  const imponibileResiduo = montantHT - acconti;
+  const tauxTVA = Number(facture.taux_tva || 8.1) / 100;
+  return imponibileResiduo * tauxTVA;
+};
+
+const calculateTotalFacture = (facture) => {
+  const montantHT = Number(facture.montant_ht || 0);
+  const acconti = Number(facture.acconti_precedenti || 0);
+  const imponibileResiduo = montantHT - acconti;
+  const tva = calculateTVAFacture(facture);
+  return imponibileResiduo + tva;
+};
+
+const getResocontoDetails = (resocontoId) => {
+  return resocontiPercentuali.value.find(r => r.id === resocontoId);
+};
+
+const getMetrageDetails = (metrageId) => {
+  return metrages.value.find(m => m.id === metrageId);
+};
+
+const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
+  const chantier = chantiers.value.find(c => c.id == chantierId);
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  if (!chantierDevis || !chantierDevis.produits) return 0;
+  
+  const totaleZona = chantierDevis.produits
+    .filter(p => p.zone === zone)
+    .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  return totaleZona * percentage / 100;
+};
+
+const resetFiltres = () => {
+  filtreClient.value = '';
+  filtreStatut.value = '';
+};
+
+const riaprireResoconto = (facture) => {
+  factureRiapertura.value = facture;
+  motivoCorrezione.value = '';
+  showRiaperturaResoconto.value = true;
+};
+
+const confermaRiapertura = async () => {
+  if (!motivoCorrezione.value.trim()) {
+    alert('Veuillez insérer le motif de la correction');
+    return;
+  }
+  
+  try {
+    const facture = factureRiapertura.value;
+    const numeroFactureOriginale = facture.numero;
+    
+    // 1. Salva il numero fattura nel resoconto per mantenerlo
+    await supabase
+      .from('resoconti_percentuali')
+      .update({
+        status: 'correction_needed',
+        correction_reason: motivoCorrezione.value,
+        numero_fattura_riservato: numeroFactureOriginale
+      })
+      .eq('id', facture.resoconto_id);
+    
+    // 2. Elimina la fattura
+    await supabase
+      .from('factures')
+      .delete()
+      .eq('id', facture.id);
+    
+    alert(`Rapport rouvert pour correction.\nLe chef pourra le modifier et la nouvelle facture gardera le numéro ${numeroFactureOriginale}`);
+    
+    showRiaperturaResoconto.value = false;
+    loadData();
+  } catch (error) {
+    console.error('Errore riapertura:', error);
+    alert('Errore: ' + error.message);
+  }
 };
 
 onMounted(() => {

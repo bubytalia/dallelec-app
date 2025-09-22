@@ -177,6 +177,30 @@
       <button class="btn btn-info me-2" @click="voirHistorique">📊 Historique</button>
     </div>
 
+    <!-- Resoconti in correzione -->
+    <div v-if="resocontiInCorrezione.length > 0" class="alert alert-warning mb-4">
+      <h5>🔄 Rapports à corriger</h5>
+      <div v-for="resoconto in resocontiInCorrezione" :key="resoconto.id" class="card mb-3">
+        <div class="card-header bg-warning text-dark">
+          <strong>Période {{ resoconto.periode_month }} - Correction demandée</strong>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <p><strong>Motif de correction:</strong></p>
+              <p class="text-danger">{{ resoconto.correction_reason }}</p>
+              <p><strong>Zones originales:</strong> {{ Object.keys(resoconto.avancementi || {}).join(', ') }}</p>
+            </div>
+            <div class="col-md-4 text-end">
+              <button @click="chargerPerCorrezione(resoconto)" class="btn btn-warning">
+                🔄 Corriger Rapport
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Historique -->
     <div v-if="showHistorique" class="card p-4 mb-4">
       <h5>Historique des resoconti</h5>
@@ -210,11 +234,11 @@
             </td>
             <td>
               <button 
-                v-if="resoconto.draft" 
+                v-if="resoconto.draft || resoconto.status === 'correction_needed'" 
                 class="btn btn-sm btn-primary me-2" 
-                @click="chargerBrouillon(resoconto)"
+                @click="resoconto.status === 'correction_needed' ? chargerPerCorrezione(resoconto) : chargerBrouillon(resoconto)"
               >
-                ✏️ Modifier
+                {{ resoconto.status === 'correction_needed' ? '🔄 Corriger' : '✏️ Modifier' }}
               </button>
               <button class="btn btn-sm btn-danger" @click="supprimerResoconto(resoconto.id)">🗑</button>
             </td>
@@ -257,6 +281,8 @@ const avancementiMensili = ref({});
 const avancementiStorici = ref({});
 const showHistorique = ref(false);
 const historiqueResoconti = ref([]);
+const resocontiInCorrezione = ref([]);
+const resocontoInCorrezione = ref(null);
 const zoneConvertite = ref(new Set());
 const regies = ref([]);
 const prixRegieChantier = ref(75);
@@ -426,6 +452,7 @@ const loadChantierData = async () => {
   
   await loadAvancementiStorici();
   await loadZoneConvertite();
+  await loadResocontiInCorrezione();
 };
 
 const loadAvancementiStorici = async () => {
@@ -528,23 +555,41 @@ const sauvegarderResoconto = async () => {
   try {
     const userEmail = localStorage.getItem('userEmail');
     
-    const { error } = await supabase
-      .from('resoconti_percentuali')
-      .insert([{
-        chantier_id: selectedChantierId.value,
-        periode_month: periodeMonth.value,
-        descrizione: descrizione.value,
-        avancementi: { ...avancementiMensili.value },
-        regies: [...regies.value],
-        capocantiere: userEmail,
-        draft: false,
-        status: 'en_attente',
-        created_at: new Date().toISOString()
-      }]);
-    
-    if (error) throw error;
-    
-    alert('Resoconto sauvegardé avec succès.');
+    // Se è una correzione, aggiorna il resoconto esistente
+    if (resocontoInCorrezione.value) {
+      const { error } = await supabase
+        .from('resoconti_percentuali')
+        .update({
+          periode_month: periodeMonth.value,
+          descrizione: descrizione.value,
+          avancementi: { ...avancementiMensili.value },
+          regies: [...regies.value],
+          status: 'en_attente'
+        })
+        .eq('id', resocontoInCorrezione.value.id);
+      
+      if (error) throw error;
+      alert('Correction envoyée avec succès. L\'admin devra la ré-approuver.');
+      resocontoInCorrezione.value = null;
+    } else {
+      // Nuovo resoconto
+      const { error } = await supabase
+        .from('resoconti_percentuali')
+        .insert([{
+          chantier_id: selectedChantierId.value,
+          periode_month: periodeMonth.value,
+          descrizione: descrizione.value,
+          avancementi: { ...avancementiMensili.value },
+          regies: [...regies.value],
+          capocantiere: userEmail,
+          draft: false,
+          status: 'en_attente',
+          created_at: new Date().toISOString()
+        }]);
+      
+      if (error) throw error;
+      alert('Resoconto sauvegardé avec succès.');
+    }
     
     // Reset form
     zones.value.forEach(zona => {
@@ -554,6 +599,7 @@ const sauvegarderResoconto = async () => {
     regies.value = [];
     
     await loadAvancementiStorici();
+    await loadResocontiInCorrezione();
   } catch (error) {
     console.error('Erreur sauvegarde resoconto:', error);
     alert('Erreur: ' + error.message);
@@ -666,6 +712,7 @@ const getAdminStatusClass = (resoconto) => {
   if (resoconto.draft) return 'bg-secondary';
   if (resoconto.status === 'approved') return 'bg-success';
   if (resoconto.status === 'rejected') return 'bg-danger';
+  if (resoconto.status === 'correction_needed') return 'bg-warning text-dark';
   return 'bg-warning'; // en_attente
 };
 
@@ -673,7 +720,45 @@ const getAdminStatusText = (resoconto) => {
   if (resoconto.draft) return '-';
   if (resoconto.status === 'approved') return 'Approuvé';
   if (resoconto.status === 'rejected') return 'Refusé';
+  if (resoconto.status === 'correction_needed') return 'Correction demandée';
   return 'En attente';
+};
+
+const loadResocontiInCorrezione = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('resoconti_percentuali')
+      .select('*')
+      .eq('chantier_id', selectedChantierId.value)
+      .eq('status', 'correction_needed')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    resocontiInCorrezione.value = data || [];
+  } catch (error) {
+    console.log('Errore caricamento resoconti in correzione:', error);
+    resocontiInCorrezione.value = [];
+  }
+};
+
+const chargerPerCorrezione = (resoconto) => {
+  if (confirm('Charger ce rapport pour correction? Les données actuelles seront remplacées.')) {
+    resocontoInCorrezione.value = resoconto;
+    
+    // Carica i dati del resoconto
+    periodeMonth.value = resoconto.periode_month || new Date().toISOString().slice(0, 7);
+    descrizione.value = resoconto.descrizione || '';
+    
+    // Carica gli avancamenti
+    Object.keys(avancementiMensili.value).forEach(zona => {
+      avancementiMensili.value[zona] = resoconto.avancementi?.[zona] || 0;
+    });
+    
+    // Carica le regie
+    regies.value = resoconto.regies ? [...resoconto.regies] : [];
+    
+    alert(`Rapport chargé pour correction.\n\nMotif: ${resoconto.correction_reason}\n\nModifiez les données et sauvegardez pour envoyer la correction.`);
+  }
 };
 
 const formatDate = (date) => {
