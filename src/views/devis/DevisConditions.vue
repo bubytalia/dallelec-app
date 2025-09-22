@@ -401,6 +401,7 @@ const sauvegarder = async (asDraft) => {
       .from('devis')
       .update({
         draft: asDraft,
+        status: asDraft ? 'En cours' : 'Accepté',
         paiement: selectedPaiement.value,
         conditions_generales: selectedGeneralesIds.value,
         conditions_comprend: selectedComprendIds.value,
@@ -410,8 +411,12 @@ const sauvegarder = async (asDraft) => {
       })
       .eq('id', devisId);
     
-    if (error) throw error;
+    if (error) {
+      console.error('Errore salvataggio:', error);
+      throw error;
+    }
     
+    console.log('✅ Devis salvato con successo:', { draft: asDraft, status: asDraft ? 'En cours' : 'Accepté' });
     alert(asDraft ? 'Brouillon sauvegardé.' : 'Devis sauvegardé avec succès.');
     if (!asDraft) {
       router.push('/admin/devis');

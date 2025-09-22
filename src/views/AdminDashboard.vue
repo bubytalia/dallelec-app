@@ -79,10 +79,13 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import { ref } from 'vue';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
+
+export default {
+  setup() {
 
 
 
@@ -101,5 +104,10 @@ const handleLogout = async () => {
   }
 };
 
+return {
+  handleLogout
+};
 
+  }
+};
 </script>

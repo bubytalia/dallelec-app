@@ -143,9 +143,9 @@ export default {
     const startEdit = (cond) => {
       editId.value = cond.id;
       editCondition.value = {
-        texte: cond.texte,
+        texte: cond.nom || cond.texte,  // Usa nom (che viene mostrato) o texte come fallback
         type: cond.type,
-        default: cond.default || false
+        default: cond.active || cond.default || false  // Usa active (che viene mostrato) o default come fallback
       };
     };
 

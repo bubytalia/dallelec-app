@@ -8,27 +8,57 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Testa quali tabelle esistono
-async function getExistingTables() {
+// Scopre automaticamente TUTTE le tabelle del database
+async function discoverAllTables() {
+  console.log('🔍 Ricerca automatica tabelle nel database...')
+  
+  // Lista estesa di possibili tabelle (molto più ampia)
   const possibleTables = [
+    // Tabelle principali
     'clients', 'chantiers', 'devis', 'produits', 'supplements', 
-    'familles', 'sousfamilles', 'admins', 'chefdechantiers', 
-    'collaborateurs', 'techniciens', 'interimaires'
+    'familles', 'sousfamilles', 'techniciens', 'conditions', 'paiements',
+    
+    // Utenti e ruoli
+    'admins', 'chefdechantiers', 'collaborateurs', 'interimaires',
+    
+    // Gestione lavoro
+    'factures', 'metrages', 'heures', 'heures_chef', 'absences',
+    
+    // Sistema e configurazione
+    'configuration', 'resoconti_percentuali', 'zone_convertite',
+    'regies', 'audit_log',
+    
+    // Possibili tabelle aggiuntive
+    'users', 'profiles', 'settings', 'logs', 'notifications',
+    'backup_history', 'system_config', 'user_sessions'
   ]
   
   const existingTables = []
+  let totalTested = 0
+  
+  console.log(`📊 Testando ${possibleTables.length} possibili tabelle...`)
   
   for (const table of possibleTables) {
+    totalTested++
     try {
-      const { error } = await supabase.from(table).select('*').limit(1)
+      // Usa count per testare esistenza (funziona anche con tabelle vuote)
+      const { error } = await supabase.from(table).select('*', { count: 'exact', head: true })
+      
       if (!error) {
         existingTables.push(table)
-        console.log(`✅ Tabella trovata: ${table}`)
+        console.log(`✅ [${totalTested}/${possibleTables.length}] Trovata: ${table}`)
+      } else {
+        console.log(`⚪ [${totalTested}/${possibleTables.length}] Non esiste: ${table}`)
       }
-    } catch {
-      console.log(`❌ Tabella non esiste: ${table}`)
+    } catch (err) {
+      console.log(`❌ [${totalTested}/${possibleTables.length}] Errore ${table}: ${err.message}`)
     }
   }
+  
+  console.log(`\n📈 DISCOVERY COMPLETATO:`)
+  console.log(`   - Tabelle testate: ${totalTested}`)
+  console.log(`   - Tabelle trovate: ${existingTables.length}`)
+  console.log(`   - Tabelle: ${existingTables.join(', ')}`)
   
   return existingTables
 }
@@ -62,7 +92,7 @@ function cleanOldBackups() {
 async function backupSupabase() {
   console.log('🔍 Scoprendo tabelle esistenti...')
   
-  const tables = await getExistingTables()
+  const tables = await discoverAllTables()
   console.log(`📊 Trovate ${tables.length} tabelle`)
   
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')

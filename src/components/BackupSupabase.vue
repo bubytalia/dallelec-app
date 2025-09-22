@@ -65,7 +65,9 @@ export default {
       const possibleTables = [
         'clients', 'chantiers', 'devis', 'produits', 'supplements', 
         'familles', 'sousfamilles', 'admins', 'chefdechantiers', 
-        'collaborateurs', 'techniciens', 'interimaires'
+        'collaborateurs', 'techniciens', 'interimaires', 'conditions',
+        'paiements', 'factures', 'metrages', 'configuration',
+        'resoconti_percentuali', 'zone_convertite'
       ]
       
       const existingTables = []

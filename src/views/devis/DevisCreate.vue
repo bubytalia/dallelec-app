@@ -153,7 +153,7 @@
               <select v-model="remiseSelection[fam.id]" class="form-select">
                 <option disabled value="">Sélectionnez une sous-famille</option>
                 <option
-                  v-for="sous in sousfamilles.filter(s => s.famille_id == fam.id)"
+                  v-for="sous in getSousFamillesOrdered(fam.id)"
                   :key="sous.id"
                   :value="sous.id"
                 >
@@ -309,6 +309,20 @@ const getSousfamilleNom = (familleId) => {
   const id = remiseSelection.value[familleId];
   const sous = sousfamilles.value.find(s => s.id === id);
   return sous ? sous.nom : '-';
+};
+
+const getSousFamillesOrdered = (familleId) => {
+  return sousfamilles.value
+    .filter(s => s.famille_id == familleId)
+    .sort((a, b) => {
+      // Ordina per campo ordre delle sottofamiglie
+      const ordreA = Number(a.ordre) || 0;
+      const ordreB = Number(b.ordre) || 0;
+      if (ordreA !== ordreB) return ordreA - ordreB;
+      
+      // Se stesso ordre, ordina alfabeticamente
+      return (a.nom || '').localeCompare(b.nom || '');
+    });
 };
 
 const remiseTotale = computed(() => {

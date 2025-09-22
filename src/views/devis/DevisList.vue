@@ -188,7 +188,9 @@ const calculerRemise = (remises = {}, modalitaPrezzi = 'scontistica') => {
 
 // Ritorna lo stato del devis: "Brouillon" se draft=true, altrimenti il campo status
 const getStatus = (devisItem) => {
-  return devisItem.draft === true ? 'Brouillon' : (devisItem.status || 'En cours');
+  // Gestisce draft come boolean o stringa
+  const isDraft = devisItem.draft === true || devisItem.draft === 'true';
+  return isDraft ? 'Brouillon' : (devisItem.status || 'En cours');
 };
 
 // Format euro con due decimali
