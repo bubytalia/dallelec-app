@@ -54,11 +54,6 @@ const devisTotal = computed(() => {
 
 // Methods
 const generatePdf = async () => {
-  console.log('🔍 Debug PDF:');
-  console.log('devisParZone:', props.devisParZone);
-  console.log('supplementParZone:', props.supplementParZone);
-  console.log('famillesVisibles:', props.famillesVisibles);
-  
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
 
   /**
@@ -361,10 +356,6 @@ const generatePdf = async () => {
   doc.text('Modalité de paiement', 10, 50)
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  
-  // 🔍 Debug modalità pagamento
-  console.log('🔍 Debug Paiement PDF:', props.selectedPaiement);
-  console.log('selectedPaiement.nom:', props.selectedPaiement?.nom);
   
   const paiementText = props.selectedPaiement?.nom || 'Paiement à réception facture'
   doc.text(paiementText, 10, 58)

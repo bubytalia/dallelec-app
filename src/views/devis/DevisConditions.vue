@@ -107,7 +107,6 @@
     />
     <div class="text-end mt-3">
       <button class="btn btn-primary me-2" @click="generatePdf">Télécharger le PDF</button>
-      <button class="btn btn-warning me-2" @click="debugPaiementData">🔍 Debug Paiement</button>
     </div>
   </div>
 </template>
@@ -163,12 +162,7 @@ const nomPaiement = ref('Paiement selon modalité convenue');
 
 // Computed properties pour le PDF
 const devisParZone = computed(() => {
-  console.log('🔍 Debug devisParZone:');
-  console.log('devisData.value:', devisData.value);
-  console.log('devisData.value.produits:', devisData.value?.produits);
-  
   if (!devisData.value || !Array.isArray(devisData.value.produits)) {
-    console.log('Nessun prodotto trovato o non è array');
     return [];
   }
   
@@ -179,9 +173,7 @@ const devisParZone = computed(() => {
     grouped[zone].push(item);
   });
   
-  const result = Object.entries(grouped).map(([nom, produits]) => ({ nom, produits }));
-  console.log('devisParZone result:', result);
-  return result;
+  return Object.entries(grouped).map(([nom, produits]) => ({ nom, produits }));
 });
 
 const supplementParZone = computed(() => {
@@ -201,30 +193,14 @@ const supplementParZone = computed(() => {
   return Object.entries(grouped).map(([nom, supplements]) => ({ nom, supplements }));
 });
 
-// ✅ SOLUZIONE: Computed property che trova il paiement corretto
+// Computed property che trova il paiement corretto
 const selectedPaiementObj = computed(() => {
-  console.log('🔍 selectedPaiementObj computed chiamata:', {
-    selectedPaiement: selectedPaiement.value,
-    selectedPaiementType: typeof selectedPaiement.value,
-    paiementsLength: paiements.value.length,
-    paiements: paiements.value.map(p => ({ id: p.id, idType: typeof p.id, nom: p.nom }))
-  });
-  
   if (!selectedPaiement.value || paiements.value.length === 0) {
-    console.log('🚫 Uscita anticipata: selectedPaiement o paiements vuoti');
     return { nom: 'Paiement selon modalité convenue' };
   }
   
   // Confronto universale che funziona con stringhe e numeri
   const found = paiements.value.find(p => String(p.id) === String(selectedPaiement.value));
-  
-  console.log('🎯 Risultato ricerca:', {
-    found: found ? { id: found.id, nom: found.nom } : null,
-    confronto: paiements.value.map(p => ({
-      id: p.id,
-      match: String(p.id) === String(selectedPaiement.value)
-    }))
-  });
   
   return found || { nom: 'Paiement selon modalité convenue' };
 });
@@ -243,31 +219,21 @@ const selectedExcluDetails = computed(() => {
 
 // Computed per le famiglie visibili nel PDF
 const famillesVisibles = computed(() => {
-  console.log('🔍 Debug famillesVisibles:');
-  console.log('devisData.value?.remises:', devisData.value?.remises);
-  console.log('familles.value:', familles.value.length);
-  console.log('sousfamilles.value:', sousfamilles.value.length);
-  
   const remises = devisData.value?.remises || {};
   if (Object.keys(remises).length === 0) {
-    console.log('Nessuna remise trovata');
     return [];
   }
   
   // Ottieni le famiglie selezionate dal devis
   const selectedFamilies = Object.keys(devisData.value.remises || {});
-  console.log('Famiglie selezionate:', selectedFamilies);
   
   const result = selectedFamilies.map(familleId => {
     const famille = familles.value.find(f => f.id == familleId);
     const sousId = devisData.value.remises[familleId];
     const sous = sousfamilles.value.find(s => s.id === sousId);
     
-    console.log(`Famiglia ${familleId}:`, famille?.nom, 'visible_pdf:', famille?.visible_pdf, 'Sottofamiglia:', sous?.nom);
-    
     // Filtra solo le famiglie con visible_pdf = true
     if (famille && famille.visible_pdf !== true) {
-      console.log(`Famiglia ${famille.nom} esclusa dal PDF (visible_pdf = ${famille.visible_pdf})`);
       return null;
     }
     
@@ -279,7 +245,6 @@ const famillesVisibles = computed(() => {
     return famille?.description || famille?.nom || 'Famille inconnue';
   }).filter(Boolean);
   
-  console.log('Risultato famillesVisibles:', result);
   return result;
 });
 
@@ -336,7 +301,6 @@ onMounted(async () => {
     // Carica paiements PRIMA di impostare selectedPaiement
     if (paiementsRes.error) throw paiementsRes.error;
     paiements.value = paiementsRes.data || [];
-    console.log('🔄 Paiements caricati:', paiements.value.length);
     
     // Carica conditions
     if (conditionsRes.error) throw conditionsRes.error;
@@ -353,7 +317,6 @@ onMounted(async () => {
     if (devisRes.data) {
       const data = devisRes.data;
       devisData.value = data;
-      console.log('🔍 Dati devis caricati:', data);
       
       // Dati del devis per il PDF
       nomChantier.value = data.nom || '';
@@ -387,7 +350,6 @@ onMounted(async () => {
           
           if (paiementError) throw paiementError;
           nomPaiement.value = paiementData?.nom || 'Paiement selon modalité convenue';
-          console.log('🔍 Nome paiement caricato:', nomPaiement.value);
         } catch (e) {
           console.warn('Errore nel caricamento del paiement:', e);
           nomPaiement.value = 'Paiement selon modalité convenue';
@@ -418,13 +380,11 @@ onMounted(async () => {
         hideSupplementsList.value = data.hide_supplements_list;
       }
       
-      // ✅ IMPORTANTE: Imposta selectedPaiement DOPO aver caricato paiements
+      // Imposta selectedPaiement DOPO aver caricato paiements
       if (data.paiement) {
         selectedPaiement.value = data.paiement;
-        console.log('🔍 Paiement impostato:', data.paiement, 'Tipo:', typeof data.paiement);
       } else if (paiements.value.length > 0) {
         selectedPaiement.value = paiements.value[0].id;
-        console.log('🔍 Paiement default impostato:', paiements.value[0].id);
       }
     }
     
@@ -453,7 +413,6 @@ onMounted(async () => {
  * Si asDraft est true, marque le devis comme brouillon; sinon, resta dans son état actuel.
  */
 const sauvegarder = async (asDraft) => {
-  console.log('Salvando devis con draft:', asDraft);
   try {
     const { error } = await supabase
       .from('devis')
@@ -475,7 +434,7 @@ const sauvegarder = async (asDraft) => {
       throw error;
     }
     
-    console.log('✅ Devis salvato con successo:', { draft: asDraft, status: asDraft ? 'En cours' : 'Accepté' });
+
     
     // 🔄 RICARICA DATI dopo salvataggio per aggiornare selectedPaiementObj
     await ricaricaDatiDevis();
@@ -504,7 +463,6 @@ const ricaricaDatiDevis = async () => {
       devisData.value = devisDataFromDB;
       if (devisDataFromDB.paiement) {
         selectedPaiement.value = devisDataFromDB.paiement;
-        console.log('🔄 Paiement ricaricato:', devisDataFromDB.paiement);
       }
     }
   } catch (error) {
@@ -514,31 +472,7 @@ const ricaricaDatiDevis = async () => {
 
 
 
-// Funzione debug temporanea
-const debugPaiementData = () => {
-  console.log('=== DEBUG PAIEMENT DATA ===');
-  console.log('selectedPaiement.value:', selectedPaiement.value, '(tipo:', typeof selectedPaiement.value, ')');
-  console.log('paiements.value:', paiements.value);
-  console.log('selectedPaiementObj.value:', selectedPaiementObj.value);
-  console.log('devisData.value.paiement:', devisData.value?.paiement);
-  
-  // Test manuale del confronto
-  if (paiements.value.length > 0) {
-    console.log('\nTest confronti:');
-    paiements.value.forEach(p => {
-      const match1 = p.id === selectedPaiement.value;
-      const match2 = p.id == selectedPaiement.value;
-      const match3 = String(p.id) === String(selectedPaiement.value);
-      console.log(`ID ${p.id} (${typeof p.id}) vs ${selectedPaiement.value} (${typeof selectedPaiement.value}):`);
-      console.log(`  === : ${match1}`);
-      console.log(`  == : ${match2}`);
-      console.log(`  String(): ${match3}`);
-      console.log(`  Nome: ${p.nom}`);
-    });
-  }
-  
-  alert('Debug completato! Controlla la console.');
-};
+
 
 // Retour à la page des produits sans sauvegarder l'état en brouillon si on modifie un devis existant
 const retourProduits = () => {
