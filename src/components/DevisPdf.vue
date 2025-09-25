@@ -357,9 +357,12 @@ const generatePdf = async () => {
   doc.text('Modalité de paiement', 10, 50)
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  const paiementText = props.selectedPaiement && props.selectedPaiement.nom
-    ? props.selectedPaiement.nom
-    : 'Réception facture'
+  
+  // 🔍 Debug modalità pagamento
+  console.log('🔍 Debug Paiement PDF:', props.selectedPaiement);
+  console.log('selectedPaiement.nom:', props.selectedPaiement?.nom);
+  
+  const paiementText = props.selectedPaiement?.nom || 'Paiement à réception facture'
   doc.text(paiementText, 10, 58)
   
   // "Conditions générales" - NUOVA SEZIONE SOPRA LE ALTRE

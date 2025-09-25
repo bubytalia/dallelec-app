@@ -183,7 +183,13 @@ const supplementParZone = computed(() => {
 });
 
 const selectedPaiementObj = computed(() => {
-  return paiements.value.find((p) => p.id === selectedPaiement.value) || null;
+  const found = paiements.value.find((p) => p.id === selectedPaiement.value) || null;
+  console.log('🔍 Debug selectedPaiementObj:', {
+    selectedPaiement: selectedPaiement.value,
+    paiements: paiements.value.length,
+    found: found
+  });
+  return found;
 });
 
 const selectedGeneralesDetails = computed(() => {
