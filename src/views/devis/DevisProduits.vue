@@ -278,6 +278,15 @@ onBeforeRouteLeave(async (to, from, next) => {
 
 // Carica numero devis
 onMounted(async () => {
+  // 🚨 PULIZIA CRITICA: Rimuovi localStorage per evitare mix di dati tra devis diversi
+  try {
+    localStorage.removeItem('devisItems');
+    localStorage.removeItem('devisDiscount');
+    console.log('🧹 localStorage pulito per nuovo devis');
+  } catch (e) {
+    console.warn('Errore pulizia localStorage:', e);
+  }
+  
   try {
     const { data: devisData, error } = await supabase
       .from('devis')
@@ -332,21 +341,9 @@ onMounted(async () => {
     console.error('Errore caricamento devis:', error);
   }
 
-  // Dopo aver caricato eventuali dati dal documento, cerchiamo un backup locale degli items.
-  // CORREZIONE: Priorità ai dati del database, localStorage solo se non ci sono prodotti salvati
-  if (devisItems.value.length === 0) {
-    try {
-      const savedItems = localStorage.getItem('devisItems');
-      if (savedItems) {
-        const parsed = JSON.parse(savedItems);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          devisItems.value = parsed;
-        }
-      }
-    } catch (e) {
-      console.warn('Impossible caricare devisItems da localStorage', e);
-    }
-  }
+  // 🚨 RIMOSSO: Non caricare mai dal localStorage per evitare mix di dati
+  // I dati vengono caricati SOLO dal database per garantire integrità
+  console.log('📊 Prodotti caricati dal DB:', devisItems.value.length);
 
   // Carica prodotti da Supabase
   console.log('🔍 Debug caricamento prodotti...');
@@ -387,15 +384,9 @@ onMounted(async () => {
     console.error('Errore caricamento supplementi:', error);
   }
 
-  // Carica eventuale remiseSupplementaire dal localStorage
-  try {
-    const savedDiscount = localStorage.getItem('devisDiscount');
-    if (savedDiscount) {
-      remiseSupplementaire.value = Number(JSON.parse(savedDiscount)) || 0;
-    }
-  } catch (e) {
-    console.warn('Impossible caricare devisDiscount da localStorage', e);
-  }
+  // 🚨 RIMOSSO: Non caricare discount dal localStorage
+  // Il discount viene caricato SOLO dal database
+  console.log('💰 Discount caricato dal DB:', remiseSupplementaire.value);
 
 });
 

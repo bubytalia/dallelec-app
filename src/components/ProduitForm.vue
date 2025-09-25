@@ -87,7 +87,19 @@ const localEditingItem = ref(null);
 const prezzoManuale = ref(0);
 
 const formValide = computed(() => {
-  const baseValid = selectedProduitId.value && selectedZone.value && quantiteML.value > 0;
+  // Trova il prodotto selezionato per verificare se è un prodotto "ore"
+  const produit = produits.value.find(p => p.id === selectedProduitId.value);
+  const isHourProduct = produit && (
+    produit.description?.toLowerCase().includes('heure') ||
+    produit.description?.toLowerCase().includes('ora') ||
+    produit.nom?.toLowerCase().includes('heure') ||
+    produit.nom?.toLowerCase().includes('ora')
+  );
+  
+  // Per prodotti "ore", permetti quantità 0 (tariffa oraria)
+  const quantityValid = isHourProduct ? quantiteML.value >= 0 : quantiteML.value > 0;
+  const baseValid = selectedProduitId.value && selectedZone.value && quantityValid;
+  
   if (props.modalitaPrezzi === 'prezziFissi') {
     return baseValid && prezzoManuale.value > 0;
   }
@@ -157,6 +169,13 @@ const ajouterLigne = () => {
 
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
+  
+  // Verifica se è un prodotto "ore"
+  const isHourProduct = produit.description?.toLowerCase().includes('heure') ||
+                      produit.description?.toLowerCase().includes('ora') ||
+                      produit.nom?.toLowerCase().includes('heure') ||
+                      produit.nom?.toLowerCase().includes('ora');
+  
   // Calcola il prezzo da utilizzare per questa riga
   let prixFinal;
   if (props.modalitaPrezzi === 'prezziFissi') {
@@ -173,7 +192,9 @@ const ajouterLigne = () => {
       prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
     }
   }
-  const total = totalML * prixFinal;
+  
+  // Per prodotti "ore" con quantità 0, il totale è 0 (solo tariffa di riferimento)
+  const total = isHourProduct && quantiteML.value === 0 ? 0 : totalML * prixFinal;
 
   const newItem = {
     zone: selectedZone.value,
@@ -224,6 +245,12 @@ const modifierLigne = () => {
   const totalSuppML = supplementDetails.reduce((sum, s) => sum + s.qteTotale, 0);
   const totalML = quantiteML.value + totalSuppML;
   
+  // Verifica se è un prodotto "ore"
+  const isHourProduct = produit.description?.toLowerCase().includes('heure') ||
+                      produit.description?.toLowerCase().includes('ora') ||
+                      produit.nom?.toLowerCase().includes('heure') ||
+                      produit.nom?.toLowerCase().includes('ora');
+  
   // Calcola il prezzo per la modifica
   let prixFinal;
   if (props.modalitaPrezzi === 'prezziFissi') {
@@ -240,7 +267,9 @@ const modifierLigne = () => {
       prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
     }
   }
-  const total = totalML * prixFinal;
+  
+  // Per prodotti "ore" con quantità 0, il totale è 0 (solo tariffa di riferimento)
+  const total = isHourProduct && quantiteML.value === 0 ? 0 : totalML * prixFinal;
 
   const updatedItem = {
     zone: selectedZone.value,
