@@ -93,7 +93,8 @@
       style="display: none;"
     />
     <div class="text-end mt-3">
-      <button class="btn btn-primary" @click="generatePdf">Télécharger le PDF</button>
+      <button class="btn btn-primary me-2" @click="generatePdf">Télécharger le PDF</button>
+      <button class="btn btn-warning" @click="debugPaiements">🔍 Debug Paiements</button>
     </div>
   </div>
 </template>
@@ -462,6 +463,44 @@ const ricaricaDatiDevis = async () => {
     }
   } catch (error) {
     console.error('Errore ricaricamento dati:', error);
+  }
+};
+
+// Funzione debug per controllare paiements
+const debugPaiements = async () => {
+  try {
+    console.log('🔍 === DEBUG PAIEMENTS ===');
+    
+    // 1. Tutti i paiements
+    const { data: allPaiements, error: paiementsError } = await supabase
+      .from('paiements')
+      .select('*');
+    
+    if (paiementsError) throw paiementsError;
+    console.log('📋 Paiements disponibili:', allPaiements);
+    
+    // 2. Paiement del devis corrente
+    const { data: currentDevis, error: devisError } = await supabase
+      .from('devis')
+      .select('paiement')
+      .eq('id', devisId)
+      .single();
+    
+    if (devisError) throw devisError;
+    console.log('💰 Paiement salvato nel devis:', currentDevis.paiement);
+    
+    // 3. Trova corrispondenza
+    const found = allPaiements.find(p => p.id === currentDevis.paiement);
+    console.log('🎯 Match trovato:', found);
+    
+    // 4. Stato attuale delle variabili
+    console.log('🔄 selectedPaiement.value:', selectedPaiement.value);
+    console.log('🔄 selectedPaiementObj:', selectedPaiementObj.value);
+    
+    alert(`Debug completato! Controlla la console per i dettagli.`);
+  } catch (error) {
+    console.error('❌ Errore debug:', error);
+    alert('Errore debug: ' + error.message);
   }
 };
 
