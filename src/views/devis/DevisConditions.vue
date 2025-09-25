@@ -52,7 +52,8 @@
     <!-- Boutons de navigation -->
     <div class="mb-3 d-flex justify-content-center">
       <button class="btn btn-outline-primary me-2" @click="sauvegarder(true)">💾 Sauver comme brouillon</button>
-      <button class="btn btn-success" @click="sauvegarder(false)">📥 Sauvegarder le devis</button>
+      <button class="btn btn-success me-2" @click="sauvegarder(false)">📥 Sauvegarder le devis</button>
+      <button class="btn btn-outline-secondary" @click="router.push('/admin/devis')">← Retour liste</button>
     </div>
 
     <!-- Composant PDF pour devis détaillé -->
@@ -346,7 +347,12 @@ onMounted(async () => {
       selectedExcluIds.value = [...data.conditions_ne_comprend_pas];
     }
     if (data.notes) notes.value = data.notes;
-    if (data.paiement) selectedPaiement.value = data.paiement;
+    if (data.paiement) {
+      selectedPaiement.value = data.paiement;
+      console.log('🔍 Paiement caricato dal DB:', data.paiement);
+    } else {
+      console.log('⚠️ Nessun paiement nel DB');
+    }
   }
 
   // Charge la liste des paiements
@@ -423,13 +429,39 @@ const sauvegarder = async (asDraft) => {
     }
     
     console.log('✅ Devis salvato con successo:', { draft: asDraft, status: asDraft ? 'En cours' : 'Accepté' });
+    
+    // 🔄 RICARICA DATI dopo salvataggio per aggiornare selectedPaiementObj
+    await ricaricaDatiDevis();
+    
     alert(asDraft ? 'Brouillon sauvegardé.' : 'Devis sauvegardé avec succès.');
-    if (!asDraft) {
-      router.push('/admin/devis');
-    }
+    // ✅ RIMOSSO REDIRECT: Resta nella pagina per generare PDF
   } catch (error) {
     console.error('Erreur Supabase:', error);
     alert('Erreur Supabase: ' + error.message);
+  }
+};
+
+// Funzione per ricaricare i dati del devis dopo il salvataggio
+const ricaricaDatiDevis = async () => {
+  try {
+    const { data: devisDataFromDB, error } = await supabase
+      .from('devis')
+      .select('*')
+      .eq('id', devisId)
+      .single();
+    
+    if (error) throw error;
+    
+    if (devisDataFromDB) {
+      // Aggiorna solo i dati necessari per il PDF
+      devisData.value = devisDataFromDB;
+      if (devisDataFromDB.paiement) {
+        selectedPaiement.value = devisDataFromDB.paiement;
+        console.log('🔄 Paiement ricaricato:', devisDataFromDB.paiement);
+      }
+    }
+  } catch (error) {
+    console.error('Errore ricaricamento dati:', error);
   }
 };
 

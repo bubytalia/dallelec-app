@@ -362,7 +362,8 @@ const generatePdf = async () => {
   console.log('🔍 Debug Paiement PDF:', props.selectedPaiement);
   console.log('selectedPaiement.nom:', props.selectedPaiement?.nom);
   
-  const paiementText = props.selectedPaiement?.nom || 'Paiement à réception facture'
+  // ⚠️ FALLBACK MIGLIORATO: Se selectedPaiement è null, usa testo generico
+  const paiementText = props.selectedPaiement?.nom || props.selectedPaiement?.description || 'Paiement selon modalité convenue'
   doc.text(paiementText, 10, 58)
   
   // "Conditions générales" - NUOVA SEZIONE SOPRA LE ALTRE

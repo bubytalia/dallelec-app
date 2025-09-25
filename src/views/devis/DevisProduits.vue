@@ -191,12 +191,10 @@ const sauvegarderDevis = async (asDraft = false) => {
       }
     }
     alert(asDraft ? 'Brouillon sauvegardé.' : 'Devis sauvegardé avec succès.');
-    // Se non è più una bozza, torniamo alla pagina principale dei devis
-    // che include il pulsante "Nouveau Devis".  Usiamo /admin/devis invece
-    // di /admin/devis/list per evitare di trovarci in una pagina senza il pulsante.
-    if (!asDraft) {
-      router.push('/admin/devis');
-    }
+    // ✅ RIMOSSO REDIRECT: Resta nella pagina per continuare il lavoro
+    // if (!asDraft) {
+    //   router.push('/admin/devis');
+    // }
   } catch (error) {
     console.error('❌ ERRORE SALVATAGGIO:', error);
     alert('Erreur Supabase: ' + error.message);
