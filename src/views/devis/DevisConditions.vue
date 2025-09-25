@@ -49,6 +49,18 @@
       <textarea class="form-control" v-model="notes" rows="4" placeholder="Ajouter des remarques spécifiques au devis"></textarea>
     </div>
 
+    <!-- Opzioni PDF -->
+    <div class="card p-3 mb-4">
+      <h5>Options PDF</h5>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="hideSupplementsList" v-model="hideSupplementsList" />
+        <label class="form-check-label" for="hideSupplementsList">
+          Masquer la liste des suppléments dans le PDF
+        </label>
+        <div class="form-text">Cochez cette case si vous ne voulez pas afficher la page avec la liste des suppléments dans le PDF de ce devis.</div>
+      </div>
+    </div>
+
     <!-- Boutons de navigation -->
     <div class="mb-3 d-flex justify-content-center">
       <button class="btn btn-outline-primary me-2" @click="sauvegarder(true)">💾 Sauver comme brouillon</button>
@@ -72,6 +84,7 @@
       :conditionsNeComprendPas="selectedExcluDetails"
       :notes="notes"
       :famillesVisibles="famillesVisibles"
+      :hideSupplementsList="hideSupplementsList"
       style="display: none;"
     />
     
@@ -94,7 +107,7 @@
     />
     <div class="text-end mt-3">
       <button class="btn btn-primary me-2" @click="generatePdf">Télécharger le PDF</button>
-      <button class="btn btn-warning" @click="debugPaiements">🔍 Debug Paiements</button>
+      <button class="btn btn-warning me-2" @click="debugPaiementData">🔍 Debug Paiement</button>
     </div>
   </div>
 </template>
@@ -133,6 +146,9 @@ const sousfamilles = ref([]);
 // Notes liberi
 const notes = ref('');
 
+// Opzione per nascondere lista supplementi nel PDF
+const hideSupplementsList = ref(false);
+
 // Références aux composants PDF
 const pdfRef = ref(null);
 const pdfCorpsRef = ref(null);
@@ -143,6 +159,7 @@ const nomClient = ref('');
 const nomChantier = ref('');
 const numeroDevis = ref('');
 const dateDevis = ref('');
+const nomPaiement = ref('Paiement selon modalité convenue');
 
 // Computed properties pour le PDF
 const devisParZone = computed(() => {
@@ -184,14 +201,32 @@ const supplementParZone = computed(() => {
   return Object.entries(grouped).map(([nom, supplements]) => ({ nom, supplements }));
 });
 
+// ✅ SOLUZIONE: Computed property che trova il paiement corretto
 const selectedPaiementObj = computed(() => {
-  const found = paiements.value.find((p) => p.id === selectedPaiement.value) || null;
-  console.log('🔍 Debug selectedPaiementObj:', {
+  console.log('🔍 selectedPaiementObj computed chiamata:', {
     selectedPaiement: selectedPaiement.value,
-    paiements: paiements.value.length,
-    found: found
+    selectedPaiementType: typeof selectedPaiement.value,
+    paiementsLength: paiements.value.length,
+    paiements: paiements.value.map(p => ({ id: p.id, idType: typeof p.id, nom: p.nom }))
   });
-  return found;
+  
+  if (!selectedPaiement.value || paiements.value.length === 0) {
+    console.log('🚫 Uscita anticipata: selectedPaiement o paiements vuoti');
+    return { nom: 'Paiement selon modalité convenue' };
+  }
+  
+  // Confronto universale che funziona con stringhe e numeri
+  const found = paiements.value.find(p => String(p.id) === String(selectedPaiement.value));
+  
+  console.log('🎯 Risultato ricerca:', {
+    found: found ? { id: found.id, nom: found.nom } : null,
+    confronto: paiements.value.map(p => ({
+      id: p.id,
+      match: String(p.id) === String(selectedPaiement.value)
+    }))
+  });
+  
+  return found || { nom: 'Paiement selon modalité convenue' };
 });
 
 const selectedGeneralesDetails = computed(() => {
@@ -290,103 +325,110 @@ onMounted(async () => {
     console.warn('Impossible de charger les familles/sousfamilles', e);
   }
 
-  // POI: Chargement devis esistente
-  const { data: devisDataFromDB, error: devisError } = await supabase
-    .from('devis')
-    .select('*')
-    .eq('id', devisId)
-    .single();
-  
-  if (devisError) {
-    console.error('Errore caricamento devis:', devisError);
-  }
-  
-  if (devisDataFromDB) {
-    const data = devisDataFromDB;
-
-    // Sauvegarde des données complètes du devis pour la génération du PDF
-    devisData.value = data;
-    console.log('🔍 Dati devis caricati:', data);
-    console.log('Prodotti nel devis:', data.produits?.length || 0);
-    console.log('Remises nel devis:', data.remises);
-    // Dati del devis per il PDF - CORREZIONE MAPPATURA
-    nomChantier.value = data.nom || ''; // data.nom è il nome del cantiere
-    const adresseChantier = data.adresse || ''; // data.adresse è l'indirizzo del cantiere
-    
-    // Recupera il nome del cliente dall'ID
-    if (data.client_id) {
-      try {
-        const { data: clientData, error: clientError } = await supabase
-          .from('clients')
-          .select('nom')
-          .eq('id', data.client_id)
-          .single();
-        
-        if (clientError) throw clientError;
-        nomClient.value = clientData?.nom || 'Client inconnu';
-      } catch (e) {
-        console.warn('Errore nel caricamento del cliente:', e);
-        nomClient.value = 'Client inconnu';
-      }
-    }
-    
-    // Combina nome cantiere e indirizzo per il PDF
-    if (adresseChantier) {
-      nomChantier.value = nomChantier.value + ' - ' + adresseChantier;
-    }
-    numeroDevis.value = data.numero || '';
-    dateDevis.value = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('fr-CH') : new Date().toLocaleDateString('fr-CH');
-    
-    // Conditions sélectionnées préexistantes (identifiants)
-    if (Array.isArray(data.conditions_generales)) {
-      selectedGeneralesIds.value = [...data.conditions_generales];
-    }
-    if (Array.isArray(data.conditions_comprend)) {
-      selectedComprendIds.value = [...data.conditions_comprend];
-    }
-    if (Array.isArray(data.conditions_ne_comprend_pas)) {
-      selectedExcluIds.value = [...data.conditions_ne_comprend_pas];
-    }
-    if (data.notes) notes.value = data.notes;
-    if (data.paiement) {
-      selectedPaiement.value = data.paiement;
-      console.log('🔍 Paiement caricato dal DB:', data.paiement);
-    } else {
-      console.log('⚠️ Nessun paiement nel DB');
-    }
-  }
-
-  // Charge la liste des paiements
+  // PRIMA: Carica paiements, conditions e devis in parallelo
   try {
-    const { data: paiementsData, error: paiementsError } = await supabase
-      .from('paiements')
-      .select('*');
+    const [devisRes, paiementsRes, conditionsRes] = await Promise.all([
+      supabase.from('devis').select('*').eq('id', devisId).single(),
+      supabase.from('paiements').select('*'),
+      supabase.from('conditions').select('*')
+    ]);
     
-    if (paiementsError) throw paiementsError;
+    // Carica paiements PRIMA di impostare selectedPaiement
+    if (paiementsRes.error) throw paiementsRes.error;
+    paiements.value = paiementsRes.data || [];
+    console.log('🔄 Paiements caricati:', paiements.value.length);
     
-    paiements.value = paiementsData || [];
-    // Si aucun paiement sélectionné, prendi il primo come default
-    if (!selectedPaiement.value && paiements.value.length > 0) {
-      selectedPaiement.value = paiements.value[0].id;
-    }
-  } catch (e) {
-    console.warn('Impossible de charger les modalités de paiement', e);
-  }
-
-  // Charge la liste des conditions
-  try {
-    const { data: conditionsData, error: conditionsError } = await supabase
-      .from('conditions')
-      .select('*');
-    
-    if (conditionsError) throw conditionsError;
-    
-    const allConds = conditionsData || [];
+    // Carica conditions
+    if (conditionsRes.error) throw conditionsRes.error;
+    const allConds = conditionsRes.data || [];
     conditionsGenerales.value = allConds.filter(c => c.type === 'generales');
     conditionsComprend.value = allConds.filter(c => c.type === 'comprend');
     conditionsExclues.value = allConds.filter(c => c.type === 'ne_comprend_pas');
     
-    // Preselect default conditions (campo active) si aucune sélection
+    // POI: Processa devis data
+    if (devisRes.error) {
+      console.error('Errore caricamento devis:', devisRes.error);
+    }
+    
+    if (devisRes.data) {
+      const data = devisRes.data;
+      devisData.value = data;
+      console.log('🔍 Dati devis caricati:', data);
+      
+      // Dati del devis per il PDF
+      nomChantier.value = data.nom || '';
+      const adresseChantier = data.adresse || '';
+      
+      // Recupera il nome del cliente dall'ID
+      if (data.client_id) {
+        try {
+          const { data: clientData, error: clientError } = await supabase
+            .from('clients')
+            .select('nom')
+            .eq('id', data.client_id)
+            .single();
+          
+          if (clientError) throw clientError;
+          nomClient.value = clientData?.nom || 'Client inconnu';
+        } catch (e) {
+          console.warn('Errore nel caricamento del cliente:', e);
+          nomClient.value = 'Client inconnu';
+        }
+      }
+      
+      // Recupera il nome del paiement dall'ID (stesso pattern del cliente)
+      if (data.paiement) {
+        try {
+          const { data: paiementData, error: paiementError } = await supabase
+            .from('paiements')
+            .select('nom')
+            .eq('id', data.paiement)
+            .single();
+          
+          if (paiementError) throw paiementError;
+          nomPaiement.value = paiementData?.nom || 'Paiement selon modalité convenue';
+          console.log('🔍 Nome paiement caricato:', nomPaiement.value);
+        } catch (e) {
+          console.warn('Errore nel caricamento del paiement:', e);
+          nomPaiement.value = 'Paiement selon modalité convenue';
+        }
+      }
+      
+      // Combina nome cantiere e indirizzo per il PDF
+      if (adresseChantier) {
+        nomChantier.value = nomChantier.value + ' - ' + adresseChantier;
+      }
+      numeroDevis.value = data.numero || '';
+      dateDevis.value = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString('fr-CH') : new Date().toLocaleDateString('fr-CH');
+      
+      // Conditions sélectionnées préexistantes
+      if (Array.isArray(data.conditions_generales)) {
+        selectedGeneralesIds.value = [...data.conditions_generales];
+      }
+      if (Array.isArray(data.conditions_comprend)) {
+        selectedComprendIds.value = [...data.conditions_comprend];
+      }
+      if (Array.isArray(data.conditions_ne_comprend_pas)) {
+        selectedExcluIds.value = [...data.conditions_ne_comprend_pas];
+      }
+      if (data.notes) notes.value = data.notes;
+      
+      // Carica opzione nascondere supplementi
+      if (data.hide_supplements_list !== undefined) {
+        hideSupplementsList.value = data.hide_supplements_list;
+      }
+      
+      // ✅ IMPORTANTE: Imposta selectedPaiement DOPO aver caricato paiements
+      if (data.paiement) {
+        selectedPaiement.value = data.paiement;
+        console.log('🔍 Paiement impostato:', data.paiement, 'Tipo:', typeof data.paiement);
+      } else if (paiements.value.length > 0) {
+        selectedPaiement.value = paiements.value[0].id;
+        console.log('🔍 Paiement default impostato:', paiements.value[0].id);
+      }
+    }
+    
+    // Preselect default conditions se nessuna selezione
     if (selectedGeneralesIds.value.length === 0) {
       selectedGeneralesIds.value = conditionsGenerales.value.filter(c => c.active === true).map(c => c.id);
     }
@@ -396,9 +438,12 @@ onMounted(async () => {
     if (selectedExcluIds.value.length === 0) {
       selectedExcluIds.value = conditionsExclues.value.filter(c => c.active === true).map(c => c.id);
     }
+    
   } catch (e) {
-    console.warn('Impossible de charger les conditions', e);
+    console.error('Errore caricamento dati:', e);
   }
+
+  // Conditions già caricate sopra in parallelo
 
   // Familles e sottofamiglie già caricate sopra
 });
@@ -420,6 +465,7 @@ const sauvegarder = async (asDraft) => {
         conditions_comprend: selectedComprendIds.value,
         conditions_ne_comprend_pas: selectedExcluIds.value,
         notes: notes.value,
+        hide_supplements_list: hideSupplementsList.value,
         updated_at: new Date().toISOString(),
       })
       .eq('id', devisId);
@@ -466,42 +512,32 @@ const ricaricaDatiDevis = async () => {
   }
 };
 
-// Funzione debug per controllare paiements
-const debugPaiements = async () => {
-  try {
-    console.log('🔍 === DEBUG PAIEMENTS ===');
-    
-    // 1. Tutti i paiements
-    const { data: allPaiements, error: paiementsError } = await supabase
-      .from('paiements')
-      .select('*');
-    
-    if (paiementsError) throw paiementsError;
-    console.log('📋 Paiements disponibili:', allPaiements);
-    
-    // 2. Paiement del devis corrente
-    const { data: currentDevis, error: devisError } = await supabase
-      .from('devis')
-      .select('paiement')
-      .eq('id', devisId)
-      .single();
-    
-    if (devisError) throw devisError;
-    console.log('💰 Paiement salvato nel devis:', currentDevis.paiement);
-    
-    // 3. Trova corrispondenza
-    const found = allPaiements.find(p => p.id === currentDevis.paiement);
-    console.log('🎯 Match trovato:', found);
-    
-    // 4. Stato attuale delle variabili
-    console.log('🔄 selectedPaiement.value:', selectedPaiement.value);
-    console.log('🔄 selectedPaiementObj:', selectedPaiementObj.value);
-    
-    alert(`Debug completato! Controlla la console per i dettagli.`);
-  } catch (error) {
-    console.error('❌ Errore debug:', error);
-    alert('Errore debug: ' + error.message);
+
+
+// Funzione debug temporanea
+const debugPaiementData = () => {
+  console.log('=== DEBUG PAIEMENT DATA ===');
+  console.log('selectedPaiement.value:', selectedPaiement.value, '(tipo:', typeof selectedPaiement.value, ')');
+  console.log('paiements.value:', paiements.value);
+  console.log('selectedPaiementObj.value:', selectedPaiementObj.value);
+  console.log('devisData.value.paiement:', devisData.value?.paiement);
+  
+  // Test manuale del confronto
+  if (paiements.value.length > 0) {
+    console.log('\nTest confronti:');
+    paiements.value.forEach(p => {
+      const match1 = p.id === selectedPaiement.value;
+      const match2 = p.id == selectedPaiement.value;
+      const match3 = String(p.id) === String(selectedPaiement.value);
+      console.log(`ID ${p.id} (${typeof p.id}) vs ${selectedPaiement.value} (${typeof selectedPaiement.value}):`);
+      console.log(`  === : ${match1}`);
+      console.log(`  == : ${match2}`);
+      console.log(`  String(): ${match3}`);
+      console.log(`  Nome: ${p.nom}`);
+    });
   }
+  
+  alert('Debug completato! Controlla la console.');
 };
 
 // Retour à la page des produits sans sauvegarder l'état en brouillon si on modifie un devis existant

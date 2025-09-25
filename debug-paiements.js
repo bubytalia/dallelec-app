@@ -1,38 +1,38 @@
-// Debug script per controllare tabella paiements
+// Debug script per controllare i dati nella tabella paiements
 import { supabase } from './src/supabase.js';
 
 async function debugPaiements() {
-  console.log('🔍 Controllo tabella paiements...');
+  console.log('🔍 Debug tabella paiements...');
   
-  // 1. Controlla tutti i paiements
-  const { data: paiements, error: paiementsError } = await supabase
-    .from('paiements')
-    .select('*');
-  
-  if (paiementsError) {
-    console.error('❌ Errore paiements:', paiementsError);
-    return;
+  try {
+    // 1. Tutti i paiements
+    const { data: paiements, error } = await supabase
+      .from('paiements')
+      .select('*');
+    
+    if (error) throw error;
+    
+    console.log('📋 Paiements nella tabella:');
+    paiements.forEach((p, i) => {
+      console.log(`${i}: ID=${p.id} (tipo: ${typeof p.id}) - Nome: "${p.nom}"`);
+    });
+    
+    // 2. Controlla un devis specifico
+    const { data: devis, error: devisError } = await supabase
+      .from('devis')
+      .select('id, paiement')
+      .limit(5);
+    
+    if (devisError) throw devisError;
+    
+    console.log('\n💰 Paiements nei devis:');
+    devis.forEach(d => {
+      console.log(`Devis ${d.id}: paiement=${d.paiement} (tipo: ${typeof d.paiement})`);
+    });
+    
+  } catch (error) {
+    console.error('❌ Errore:', error);
   }
-  
-  console.log('📋 Paiements disponibili:', paiements);
-  
-  // 2. Controlla il devis specifico
-  const { data: devis, error: devisError } = await supabase
-    .from('devis')
-    .select('paiement')
-    .eq('id', 24)
-    .single();
-  
-  if (devisError) {
-    console.error('❌ Errore devis:', devisError);
-    return;
-  }
-  
-  console.log('💰 Paiement salvato nel devis 24:', devis.paiement);
-  
-  // 3. Trova corrispondenza
-  const found = paiements.find(p => p.id === devis.paiement);
-  console.log('🎯 Paiement trovato:', found);
 }
 
 debugPaiements();

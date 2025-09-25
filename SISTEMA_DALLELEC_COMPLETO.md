@@ -67,7 +67,7 @@ Sistema gestionale completo per azienda elettrica che gestisce:
 
 #### **Gestione Lavoro**
 ```sql
-- devis (preventivi con prodotti e zone)
+- devis (preventivi con prodotti e zone + hide_supplements_list)
 - metrages (misurazioni cantiere)
 - factures (fatture generate)
 - heures (ore lavorate dipendenti)
@@ -106,6 +106,8 @@ Sistema gestionale completo per azienda elettrica che gestisce:
 - Calcolo automatico supplementi
 - Generazione PDF professionale con logo Dallelec
 - Modalità prezzi: scontistica o prezzi fissi
+- ✅ **NUOVO**: Modalità pagamento dinamica nel PDF
+- ✅ **NUOVO**: Opzione nascondere lista supplementi nel PDF
 
 ### **🏗️ Gestione Cantieri**
 - Anagrafica completa con numero cantiere obbligatorio

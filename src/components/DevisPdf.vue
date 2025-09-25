@@ -36,7 +36,9 @@ const props = defineProps({
   // Condizioni non comprese nel devis
   conditionsNeComprendPas: { type: Array, default: () => [] },
   // Eventuali note inserite dall'utente
-  notes: { type: String, default: '' }
+  notes: { type: String, default: '' },
+  // Opzione per nascondere la lista supplementi
+  hideSupplementsList: { type: Boolean, default: false }
 });
 
 // Computed
@@ -102,7 +104,7 @@ const generatePdf = async () => {
 
   // Calcoliamo in anticipo il numero totale di pagine
   let currentPage = 1
-  const plannedPages = 4
+  const plannedPages = props.hideSupplementsList ? 3 : 4
 
   /* Pagina 1: intestazione generale */
   drawHeader(currentPage, plannedPages)
@@ -116,41 +118,43 @@ const generatePdf = async () => {
   doc.text(`Date: ${props.dateDevis}`, 10, 71)
   // drawFooter(currentPage, plannedPages) - Rimosso per evitare duplicazione
 
-  /* Pagina 2: tipo di posa e lista supplementi */
-  doc.addPage()
-  currentPage++
-  drawHeader(currentPage, plannedPages)
-  // Titolo "Type de pose"
-  doc.setFontSize(14)
-  doc.setFont('Helvetica', 'bold')
-  doc.text('Type de pose', 10, 50)
-  // Scriviamo le famiglie visibili come elenco con descrizioni
-  doc.setFontSize(10)
-  doc.setFont('Helvetica', 'normal')
-  let yPos = 56
-  if (Array.isArray(props.famillesVisibles) && props.famillesVisibles.length > 0) {
-    props.famillesVisibles.forEach((fam) => {
-      doc.text(`- ${fam}`, 12, yPos)
+  /* Pagina 2: tipo di posa e lista supplementi (solo se non nascosta) */
+  if (!props.hideSupplementsList) {
+    doc.addPage()
+    currentPage++
+    drawHeader(currentPage, plannedPages)
+    // Titolo "Type de pose"
+    doc.setFontSize(14)
+    doc.setFont('Helvetica', 'bold')
+    doc.text('Type de pose', 10, 50)
+    // Scriviamo le famiglie visibili come elenco con descrizioni
+    doc.setFontSize(10)
+    doc.setFont('Helvetica', 'normal')
+    let yPos = 56
+    if (Array.isArray(props.famillesVisibles) && props.famillesVisibles.length > 0) {
+      props.famillesVisibles.forEach((fam) => {
+        doc.text(`- ${fam}`, 12, yPos)
+        yPos += 5
+      })
+      yPos += 15
+    } else {
+      // Se non ci sono famiglie, aggiungiamo un testo di default
+      doc.text('- Installation de chemins de câbles', 12, yPos)
       yPos += 5
-    })
-    yPos += 15
-  } else {
-    // Se non ci sono famiglie, aggiungiamo un testo di default
-    doc.text('- Installation de chemins de câbles', 12, yPos)
-    yPos += 5
-    doc.text('- Pose standard selon normes en vigueur', 12, yPos)
-    yPos += 15
+      doc.text('- Pose standard selon normes en vigueur', 12, yPos)
+      yPos += 15
+    }
+    // Titolo per la lista dei supplementi
+    doc.setFontSize(14)
+    doc.setFont('Helvetica', 'bold')
+    doc.text('Liste suppléments', 10, yPos)
+    yPos += 12
+    // Aggiungiamo l'immagine dei supplementi - larghezza massima tra i margini
+    const imgWidthSupp = 190  // Da 10mm a 200mm (margini) = 190mm di larghezza
+    const imgHeightSupp = imgWidthSupp / 1.4142
+    doc.addImage(supplementsImage, 'PNG', 10, yPos + 5, imgWidthSupp, imgHeightSupp)
+    // drawFooter(currentPage, plannedPages) - Rimosso per evitare duplicazione
   }
-  // Titolo per la lista dei supplementi
-  doc.setFontSize(14)
-  doc.setFont('Helvetica', 'bold')
-  doc.text('Liste suppléments', 10, yPos)
-  yPos += 12
-  // Aggiungiamo l'immagine dei supplementi - larghezza massima tra i margini
-  const imgWidthSupp = 190  // Da 10mm a 200mm (margini) = 190mm di larghezza
-  const imgHeightSupp = imgWidthSupp / 1.4142
-  doc.addImage(supplementsImage, 'PNG', 10, yPos + 5, imgWidthSupp, imgHeightSupp)
-  // drawFooter(currentPage, plannedPages) - Rimosso per evitare duplicazione
 
   /* Pagina 3: dettagli del devis e supplementi per zona */
   doc.addPage()
@@ -362,8 +366,7 @@ const generatePdf = async () => {
   console.log('🔍 Debug Paiement PDF:', props.selectedPaiement);
   console.log('selectedPaiement.nom:', props.selectedPaiement?.nom);
   
-  // ⚠️ FALLBACK MIGLIORATO: Se selectedPaiement è null, usa testo generico
-  const paiementText = props.selectedPaiement?.nom || props.selectedPaiement?.description || 'Paiement selon modalité convenue'
+  const paiementText = props.selectedPaiement?.nom || 'Paiement à réception facture'
   doc.text(paiementText, 10, 58)
   
   // "Conditions générales" - NUOVA SEZIONE SOPRA LE ALTRE
