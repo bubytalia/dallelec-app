@@ -82,8 +82,8 @@
               <td>{{ item.ml }}</td>
               <td>{{ item.totalSuppML.toFixed(2) }}</td>
               <td>{{ item.totalML.toFixed(2) }}</td>
-              <td>{{ item.prix.toFixed(2) }}€</td>
-              <td>{{ item.total.toFixed(2) }}€</td>
+              <td>{{ item.prix.toFixed(2) }} CHF</td>
+              <td>{{ item.total.toFixed(2) }} CHF</td>
               <td>
                 <button class="btn btn-sm btn-warning me-2" @click="modifierItem(zone.nom, itemIndex)">✎</button>
                 <button class="btn btn-sm btn-danger" @click="supprimerItem(zone.nom, itemIndex)">🗑</button>
@@ -92,7 +92,7 @@
           </tbody>
         </table>
         <div class="text-end fw-bold">
-          Sous-total: {{ getSubtotal(zone.produits).toFixed(2) }}€
+          Sous-total: {{ getSubtotal(zone.produits).toFixed(2) }} CHF
         </div>
       </div>
       <div class="text-end fs-5 fw-bold mt-3">
@@ -101,7 +101,7 @@
           <label class="me-2 mb-0">Remise supplémentaire (%)</label>
           <input type="number" class="form-control w-auto" v-model.number="remiseSupplementaire" min="0" max="100" style="width: 100px;" />
         </div>
-        Total Devis: {{ devisTotal.toFixed(2) }}€
+        Total Devis: {{ devisTotal.toFixed(2) }} CHF
       </div>
     </div>
 

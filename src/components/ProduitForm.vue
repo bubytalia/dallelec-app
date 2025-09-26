@@ -16,7 +16,7 @@
         <input v-model.number="quantiteML" type="number" class="form-control" />
       </div>
       <div class="col-md-2" v-if="modalitaPrezzi === 'prezziFissi'">
-        <label>Prix Unitaire (€)</label>
+        <label>Prix Unitaire (CHF)</label>
         <input v-model.number="prezzoManuale" type="number" step="0.01" class="form-control" placeholder="0.00" />
       </div>
       <div class="col-md-4">

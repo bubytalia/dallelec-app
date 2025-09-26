@@ -192,8 +192,8 @@ const generatePdf = async () => {
           p.ml != null ? String(p.ml) : '',
           p.totalSuppML != null ? p.totalSuppML.toFixed(2) : '',
           p.totalML != null ? p.totalML.toFixed(2) : '',
-          p.prix != null ? p.prix.toFixed(2) + '€' : '',
-          p.total != null ? p.total.toFixed(2) + '€' : ''
+          p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
+          p.total != null ? p.total.toFixed(2) + ' CHF' : ''
         ])
       })
     }
@@ -240,14 +240,14 @@ const generatePdf = async () => {
     const finalY = doc.lastAutoTable.finalY || tableStartY + 10
     doc.setFontSize(9)
     doc.setFont('Helvetica', 'bold')
-    doc.text(`Sous-total: ${zoneSubtotal.toFixed(2)} €`, 170, finalY + 6, { align: 'right' })
+    doc.text(`Sous-total: ${zoneSubtotal.toFixed(2)} CHF`, 170, finalY + 6, { align: 'right' })
     tableStartY = finalY + 15
   })
 
   // Inseriamo il totale del devis
   doc.setFontSize(10)
   doc.setFont('Helvetica', 'bold')
-  doc.text(`Total Devis: ${devisTotal.value.toFixed(2)} €`, 170, tableStartY + 6, { align: 'right' })
+  doc.text(`Total Devis: ${devisTotal.value.toFixed(2)} CHF`, 170, tableStartY + 6, { align: 'right' })
   tableStartY += 20
 
   // Ora aggiungiamo la sezione "Détail des Suppléments par Zone" se esistono dati
