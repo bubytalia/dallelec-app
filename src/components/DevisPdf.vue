@@ -178,8 +178,8 @@ const generatePdf = async () => {
       'Taille',
       'Unité',
       'Quantité',
-      'Total Suppl.',
-      'Total',
+      'Total Suppl. m.',
+      'Total m.',
       'Prix U.',
       'Total'
     ]]
@@ -273,11 +273,27 @@ const generatePdf = async () => {
 
   // Ora aggiungiamo la sezione "Détail des Suppléments par Zone" se esistono dati
   if (Array.isArray(props.supplementParZone) && props.supplementParZone.length) {
+    // Controllo spazio per sezione supplementi - se meno di 100mm, nuova pagina
+    if (tableStartY > 200) {
+      doc.addPage()
+      currentPage++
+      drawHeader(currentPage, plannedPages)
+      tableStartY = 50
+    }
+    
     doc.setFontSize(14)
     doc.setFont('Helvetica', 'bold')
     doc.text('Détail des Suppléments par Zone', 10, tableStartY)
     tableStartY += 8
     ;(props.supplementParZone || []).forEach((suppZone, idx) => {
+      // Controllo spazio per zona - se meno di 80mm, nuova pagina
+      if (tableStartY > 220) {
+        doc.addPage()
+        currentPage++
+        drawHeader(currentPage, plannedPages)
+        tableStartY = 50
+      }
+      
       const suppZoneName = suppZone.nom || `Zone ${idx + 1}`
       doc.setFontSize(11)
       doc.setFont('Helvetica', 'bold')
@@ -306,6 +322,14 @@ const generatePdf = async () => {
       
       // Per ogni gruppo prodotto+taglia, creiamo una sezione
       Object.values(groupedSupplements).forEach((group) => {
+        // Controllo spazio pagina - se meno di 60mm dal fondo, nuova pagina
+        if (tableStartY > 240) {
+          doc.addPage()
+          currentPage++
+          drawHeader(currentPage, plannedPages)
+          tableStartY = 50
+        }
+        
         doc.setFontSize(10)
         doc.setFont('Helvetica', 'normal')
         doc.text(`${group.article} - ${group.nom} ${group.taille}`, 10, tableStartY + 2)
@@ -314,7 +338,7 @@ const generatePdf = async () => {
           'Supplement',
           'Qté',
           'Valeur',
-          'Total'
+          'Total m.'
         ]]
         const body = []
         group.supplements.forEach((s) => {
@@ -362,7 +386,7 @@ const generatePdf = async () => {
         const finalY3 = doc.lastAutoTable.finalY || (tableStartY + 15)
         doc.setFontSize(8)
         doc.setFont('Helvetica', 'bold')
-        doc.text(`Total Suppléments: ${group.total.toFixed(2)}`, 105, finalY3 + 4, { align: 'center' })
+        doc.text(`Total Suppléments: ${group.total.toFixed(2)} m.`, 105, finalY3 + 4, { align: 'center' })
         tableStartY = finalY3 + 10
       })
     })
