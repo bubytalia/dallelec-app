@@ -26,6 +26,12 @@
           <option value="Non accepté">Non accepté</option>
         </select>
       </div>
+      <div class="col-md-3">
+        <select v-model="sortBy" class="form-select">
+          <option value="numero">Trier par numéro (récent)</option>
+          <option value="date">Trier par date (récent)</option>
+        </select>
+      </div>
     </div>
 
     <!-- Tabella -->
@@ -95,6 +101,7 @@ const sousfamilles = ref([]);
 const filterClient = ref('');
 const filterTechnicien = ref('');
 const filterStatus = ref('');
+const sortBy = ref('numero');
 
 const router = useRouter();
 
@@ -143,12 +150,19 @@ const filteredDevis = computed(() => {
     const matchStatus = !filterStatus.value || state === filterStatus.value;
     return matchClient && matchTech && matchStatus;
   });
-  // Ordiniamo per numero devis (es. DEV-0001, DEV-0010) confrontando la parte numerica
+  // Ordiniamo in base alla selezione
   return list.slice().sort((a, b) => {
-    const numA = parseInt(String(a.numero).split('-')[1] || '0', 10);
-    const numB = parseInt(String(b.numero).split('-')[1] || '0', 10);
-    // Ordine decrescente: numeri più alti per primi
-    return numB - numA;
+    if (sortBy.value === 'date') {
+      // Ordinamento per data (più recenti per primi)
+      const dateA = new Date(a.created_at || a.createdAt || 0);
+      const dateB = new Date(b.created_at || b.createdAt || 0);
+      return dateB - dateA;
+    } else {
+      // Ordinamento per numero devis (più alti per primi)
+      const numA = parseInt(String(a.numero).split('-')[1] || '0', 10);
+      const numB = parseInt(String(b.numero).split('-')[1] || '0', 10);
+      return numB - numA;
+    }
   });
 });
 

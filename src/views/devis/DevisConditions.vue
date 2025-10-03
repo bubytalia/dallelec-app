@@ -85,6 +85,7 @@
       :notes="notes"
       :famillesVisibles="famillesVisibles"
       :hideSupplementsList="hideSupplementsList"
+      :remiseSupplementaire="devisData?.discount || 0"
       style="display: none;"
     />
     

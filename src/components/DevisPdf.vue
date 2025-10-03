@@ -38,7 +38,9 @@ const props = defineProps({
   // Eventuali note inserite dall'utente
   notes: { type: String, default: '' },
   // Opzione per nascondere la lista supplementi
-  hideSupplementsList: { type: Boolean, default: false }
+  hideSupplementsList: { type: Boolean, default: false },
+  // Remise supplémentaire in percentuale
+  remiseSupplementaire: { type: Number, default: 0 }
 });
 
 // Computed
@@ -201,7 +203,8 @@ const generatePdf = async () => {
       head: head,
       body: body,
       startY: tableStartY + 2,
-      theme: 'grid',
+      theme: 'plain',
+      pageBreak: 'avoid',
       margin: { top: 35 }, // Aggiungiamo margine superiore per evitare sovrapposizione con logo
       headStyles: {
         fillColor: [230, 230, 230],
@@ -213,7 +216,8 @@ const generatePdf = async () => {
       bodyStyles: {
         textColor: 20,
         fontSize: 8,
-        valign: 'middle'
+        valign: 'middle',
+        halign: 'center'
       },
       columnStyles: {
         0: { cellWidth: 20 }, // Code
@@ -244,11 +248,28 @@ const generatePdf = async () => {
     tableStartY = finalY + 15
   })
 
-  // Inseriamo il totale del devis
+  // Sezione totali con remise détaillée
+  const subtotalSansRemise = devisTotal.value
+  const remisePct = props.remiseSupplementaire || 0
+  const montantRemise = subtotalSansRemise * (remisePct / 100)
+  const totalAvecRemise = subtotalSansRemise - montantRemise
+  
+  doc.setFontSize(9)
+  doc.setFont('Helvetica', 'normal')
+  doc.text(`Sous-total:`, 80, tableStartY + 6)
+  doc.text(`${subtotalSansRemise.toFixed(2)} CHF`, 170, tableStartY + 6, { align: 'right' })
+  
+  if (remisePct > 0) {
+    doc.text(`Remise suppl. (${remisePct}%):`, 80, tableStartY + 12)
+    doc.text(`-${montantRemise.toFixed(2)} CHF`, 170, tableStartY + 12, { align: 'right' })
+    tableStartY += 6
+  }
+  
   doc.setFontSize(10)
   doc.setFont('Helvetica', 'bold')
-  doc.text(`Total Devis: ${devisTotal.value.toFixed(2)} CHF`, 170, tableStartY + 6, { align: 'right' })
-  tableStartY += 20
+  doc.text(`Total Devis:`, 80, tableStartY + 12)
+  doc.text(`${totalAvecRemise.toFixed(2)} CHF`, 170, tableStartY + 12, { align: 'right' })
+  tableStartY += 26
 
   // Ora aggiungiamo la sezione "Détail des Suppléments par Zone" se esistono dati
   if (Array.isArray(props.supplementParZone) && props.supplementParZone.length) {
@@ -310,19 +331,21 @@ const generatePdf = async () => {
           head: head,
           body: body,
           startY: tableStartY + 6,
-          theme: 'grid',
+          theme: 'plain',
+          pageBreak: 'avoid',
           margin: { top: 35 },
           headStyles: {
             fillColor: [240, 240, 240],
             textColor: 20,
             halign: 'center',
             valign: 'middle',
-            fontSize: 7
+            fontSize: 8
           },
           bodyStyles: {
             textColor: 20,
-            fontSize: 7,
-            valign: 'middle'
+            fontSize: 8,
+            valign: 'middle',
+            halign: 'center'
           },
           columnStyles: {
             0: { cellWidth: 60 },
