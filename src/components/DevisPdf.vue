@@ -45,7 +45,7 @@ const props = defineProps({
 const devisTotal = computed(() => {
   return (props.devisParZone || []).reduce((sumZones, zone) => {
     if (Array.isArray(zone.produits)) {
-      const sumZone = zone.produits.reduce((acc, p) => acc + (p.total || 0), 0)
+      const sumZone = zone.produits.reduce((acc, p) => acc + (p.informativo ? 0 : (p.total || 0)), 0)
       return sumZones + sumZone
     }
     return sumZones
@@ -185,7 +185,7 @@ const generatePdf = async () => {
     if (Array.isArray(zone.produits)) {
       zone.produits.forEach((p) => {
         body.push([
-          p.article || '',
+          (p.article || '') + (p.informativo ? ' (Info)' : ''),
           p.nom || '',
           p.taille || '',
           p.unite || '',
@@ -193,7 +193,7 @@ const generatePdf = async () => {
           p.totalSuppML != null ? p.totalSuppML.toFixed(2) : '',
           p.totalML != null ? p.totalML.toFixed(2) : '',
           p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
-          p.total != null ? p.total.toFixed(2) + ' CHF' : ''
+          p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
         ])
       })
     }
@@ -231,10 +231,10 @@ const generatePdf = async () => {
         // drawFooter(doc.internal.getCurrentPageInfo().pageNumber, plannedPages) - Rimosso per evitare duplicazione
       }
     })
-    // Calcola il sotto-totale della zona
+    // Calcola il sotto-totale della zona (escludendo articoli informativi)
     let zoneSubtotal = 0
     if (Array.isArray(zone.produits)) {
-      zoneSubtotal = zone.produits.reduce((acc, p) => acc + (p.total || 0), 0)
+      zoneSubtotal = zone.produits.reduce((acc, p) => acc + (p.informativo ? 0 : (p.total || 0)), 0)
     }
     // Posizione del sotto‑totale sotto la tabella
     const finalY = doc.lastAutoTable.finalY || tableStartY + 10

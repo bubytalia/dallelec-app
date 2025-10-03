@@ -42,6 +42,15 @@
         </select>
 
       </div>
+      <div class="col-md-1">
+        <label>&nbsp;</label>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="soloInformativo" v-model="soloInformativo" />
+          <label class="form-check-label" for="soloInformativo">
+            <small>Solo informativo</small>
+          </label>
+        </div>
+      </div>
       <div class="col-md-1 d-flex align-items-end">
         <button
           class="btn btn-primary w-100"
@@ -85,6 +94,7 @@ const selectedSupplements = ref([]);
 const suppQuantities = ref({});
 const localEditingItem = ref(null);
 const prezzoManuale = ref(0);
+const soloInformativo = ref(false);
 
 const formValide = computed(() => {
   // Trova il prodotto selezionato per verificare se è un prodotto "ore"
@@ -96,8 +106,8 @@ const formValide = computed(() => {
     produit.nom?.toLowerCase().includes('ora')
   );
   
-  // Per prodotti "ore", permetti quantità 0 (tariffa oraria)
-  const quantityValid = isHourProduct ? quantiteML.value >= 0 : quantiteML.value > 0;
+  // Per prodotti "ore" o "solo informativi", permetti quantità 0
+  const quantityValid = (isHourProduct || soloInformativo.value) ? quantiteML.value >= 0 : quantiteML.value > 0;
   const baseValid = selectedProduitId.value && selectedZone.value && quantityValid;
   
   if (props.modalitaPrezzi === 'prezziFissi') {
@@ -143,6 +153,7 @@ watch(
       suppQuantities.value[s.supplement] = s.qte;
     });
     prezzoManuale.value = item.prix || 0;
+    soloInformativo.value = item.informativo || false;
   },
   { immediate: true }
 );
@@ -183,7 +194,7 @@ const ajouterLigne = () => {
     prixFinal = prezzoManuale.value;
   } else {
     // Modalità remise: controlla se è prezzo netto
-    if (produit.prezzoNetto) {
+    if (produit.prezzo_netto) {
       // Prezzo netto: non applicare sconti
       prixFinal = produit.prix;
     } else {
@@ -193,8 +204,8 @@ const ajouterLigne = () => {
     }
   }
   
-  // Per prodotti "ore" con quantità 0, il totale è 0 (solo tariffa di riferimento)
-  const total = isHourProduct && quantiteML.value === 0 ? 0 : totalML * prixFinal;
+  // Per prodotti "ore" con quantità 0 o articoli "solo informativi", il totale è 0
+  const total = (isHourProduct && quantiteML.value === 0) || soloInformativo.value ? 0 : totalML * prixFinal;
 
   const newItem = {
     zone: selectedZone.value,
@@ -208,6 +219,7 @@ const ajouterLigne = () => {
     totalML,
     prix: prixFinal,
     total,
+    informativo: soloInformativo.value,
     // Dati congelati dal momento della creazione
     prixOriginal: produit.prix,
     descriptionOriginal: produit.description,
@@ -258,7 +270,7 @@ const modifierLigne = () => {
     prixFinal = prezzoManuale.value;
   } else {
     // Modalità remise: controlla se è prezzo netto
-    if (produit.prezzoNetto) {
+    if (produit.prezzo_netto) {
       // Prezzo netto: non applicare sconti
       prixFinal = produit.prix;
     } else {
@@ -268,14 +280,14 @@ const modifierLigne = () => {
     }
   }
   
-  // Per prodotti "ore" con quantità 0, il totale è 0 (solo tariffa di riferimento)
-  const total = isHourProduct && quantiteML.value === 0 ? 0 : totalML * prixFinal;
+  // Per prodotti "ore" con quantità 0 o articoli "solo informativi", il totale è 0
+  const total = (isHourProduct && quantiteML.value === 0) || soloInformativo.value ? 0 : totalML * prixFinal;
 
   const updatedItem = {
     zone: selectedZone.value,
     article: produit.article,
     nom: localEditingItem.value.nom || produit.description,
-    taille: localEditingItem.value.taille || produit.taille,
+    taille: localEditingItem.value.taille || produit.taglia,
     unite: localEditingItem.value.unite || produit.unite,
     ml: quantiteML.value,
     supplements: supplementDetails,
@@ -283,6 +295,7 @@ const modifierLigne = () => {
     totalML,
     prix: prixFinal,
     total,
+    informativo: soloInformativo.value,
     // Mantieni i dati originali congelati
     prixOriginal: localEditingItem.value.prixOriginal || produit.prix,
     descriptionOriginal: localEditingItem.value.descriptionOriginal || produit.description,
@@ -304,6 +317,7 @@ const resetForm = () => {
   suppQuantities.value = {};
   localEditingItem.value = null;
   prezzoManuale.value = 0;
+  soloInformativo.value = false;
 };
 </script>
 

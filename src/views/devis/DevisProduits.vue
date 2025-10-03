@@ -74,8 +74,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, itemIndex) in zone.produits" :key="itemIndex">
-              <td>{{ item.article }}</td>
+            <tr v-for="(item, itemIndex) in zone.produits" :key="itemIndex" :class="{ 'table-secondary': item.informativo }">
+              <td>{{ item.article }} <span v-if="item.informativo" class="badge bg-info">Info</span></td>
               <td>{{ item.nom }}</td>
               <td>{{ item.taille }}</td>
               <td>{{ item.unite }}</td>
@@ -83,7 +83,7 @@
               <td>{{ item.totalSuppML.toFixed(2) }}</td>
               <td>{{ item.totalML.toFixed(2) }}</td>
               <td>{{ item.prix.toFixed(2) }} CHF</td>
-              <td>{{ item.total.toFixed(2) }} CHF</td>
+              <td>{{ item.informativo ? 'Info' : item.total.toFixed(2) + ' CHF' }}</td>
               <td>
                 <button class="btn btn-sm btn-warning me-2" @click="modifierItem(zone.nom, itemIndex)">✎</button>
                 <button class="btn btn-sm btn-danger" @click="supprimerItem(zone.nom, itemIndex)">🗑</button>
@@ -493,10 +493,10 @@ const supplementParZone = computed(() => {
   return Object.entries(grouped).map(([nom, details]) => ({ nom, details }));
 });
 
-const getSubtotal = (items) => items.reduce((sum, i) => sum + i.total, 0);
+const getSubtotal = (items) => items.reduce((sum, i) => sum + (i.informativo ? 0 : i.total), 0);
 // Calcola il totale del devis applicando eventuale remise supplementaire.
 const devisTotal = computed(() => {
-  const subtotal = devisItems.value.reduce((sum, i) => sum + i.total, 0);
+  const subtotal = devisItems.value.reduce((sum, i) => sum + (i.informativo ? 0 : i.total), 0);
   const discount = Number(remiseSupplementaire.value) || 0;
   // Assicuriamoci che lo sconto sia compreso tra 0 e 100
   const pct = Math.min(Math.max(discount, 0), 100);
