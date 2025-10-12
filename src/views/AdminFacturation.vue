@@ -2770,75 +2770,70 @@ const genererPDF = async (facture) => {
     
     yPos += 10;
     
-    // Box per i totali (più alto per includere acconti)
-    const boxHeight = accontiHT > 0 ? 45 : 25;
+    // Box per i totali ottimizzato
+    const boxHeight = accontiHT > 0 ? 50 : 30;
     docFacture.setFillColor(245, 245, 245);
-    docFacture.rect(120, yPos - 5, 80, boxHeight, 'F');
+    docFacture.rect(115, yPos - 5, 85, boxHeight, 'F');
     docFacture.setDrawColor(200, 200, 200);
-    docFacture.rect(120, yPos - 5, 80, boxHeight);
+    docFacture.rect(115, yPos - 5, 85, boxHeight);
     
     docFacture.setFontSize(10);
     docFacture.setFont('helvetica', 'normal');
+    
+    let currentY = yPos + 2;
+    
     // Se non ci sono acconti, mostra il calcolo normale
     if (accontiHT === 0) {
-      docFacture.text('Total HT:', 125, yPos + 2);
-      docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 190, yPos + 2, { align: 'right' });
-      
-      docFacture.text(`TVA (${realTauxTVA}%):`, 125, yPos + 8);
-      docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 190, yPos + 8, { align: 'right' });
-      
-      currentY = yPos + 14;
-    }
-    
-    let currentY = yPos + 14;
-    
-    // Se ci sono acconti precedenti, mostrali
-    if (accontiHT > 0) {
       docFacture.text('Total HT:', 125, currentY);
       docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
       currentY += 6;
       
-      docFacture.setTextColor(200, 0, 0); // Rosso per sottrazione
-      docFacture.text('Acconti HT:', 125, currentY);
-      docFacture.text(`-${accontiHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
-      docFacture.setTextColor(0, 0, 0); // Torna nero
+      docFacture.text(`TVA (${realTauxTVA}%):`, 125, currentY);
+      docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+      currentY += 8;
+    }
+    
+    // Se ci sono acconti precedenti, mostrali
+    if (accontiHT > 0) {
+      docFacture.text('Total HT:', 120, currentY);
+      docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
+      currentY += 6;
+      
+      docFacture.setTextColor(200, 0, 0);
+      docFacture.text('Acomptes HT:', 120, currentY);
+      docFacture.text(`-${accontiHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
+      docFacture.setTextColor(0, 0, 0);
       currentY += 6;
       
       docFacture.setFont('helvetica', 'bold');
-      docFacture.text('Imponibile residuo:', 125, currentY);
-      docFacture.text(`${imponibileResiduoHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+      docFacture.text('Montant net HT:', 120, currentY);
+      docFacture.text(`${imponibileResiduoHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
       docFacture.setFont('helvetica', 'normal');
       currentY += 6;
       
-      docFacture.text(`TVA (${realTauxTVA}%):`, 125, currentY);
-      docFacture.text(`${tvaResiduoHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
-      currentY += 6;
+      docFacture.text(`TVA (${realTauxTVA}%):`, 120, currentY);
+      docFacture.text(`${tvaResiduoHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
+      currentY += 8;
     }
     
     // Linea separatrice
     docFacture.setLineWidth(0.5);
-    docFacture.line(125, currentY - 2, 195, currentY - 2);
+    docFacture.line(120, currentY - 2, 195, currentY - 2);
     
     docFacture.setFont('helvetica', 'bold');
     docFacture.setFontSize(12);
     const labelFinal = accontiHT > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
-    docFacture.text(labelFinal, 125, currentY + 4);
-    docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 190, currentY + 4, { align: 'right' });
+    docFacture.text(labelFinal, 120, currentY + 4);
+    docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 195, currentY + 4, { align: 'right' });
     
-    // Conditions de paiement
-    yPos += 35;
+    // Conditions de paiement in fondo alla pagina
     docFacture.setFont('helvetica', 'normal');
     docFacture.setFontSize(9);
     docFacture.setTextColor(100, 100, 100);
-    docFacture.text('Conditions de paiement: 30 jours net', 10, yPos);
-    if (periodoRef) {
-      docFacture.text(`Facture établie sur la base des métrées ${periodoRef.toLowerCase()}`, 10, yPos + 6);
-    }
+    docFacture.text('Conditions de paiement: 30 jours net', 10, 270);
+    docFacture.text('Merci de votre confiance', 10, 280);
     
-    // Footer
-    docFacture.setFontSize(8);
-    docFacture.setTextColor(150, 150, 150);
-    docFacture.text('DALLELEC Sarl - CHE-123.456.789 TVA - Rue de Bourgogne 25, 1203 Genève', 105, 280, { align: 'center' });
+    // Footer rimosso - dati già nell'header
     
     // Salva documenti con nomi personalizzati
     const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
