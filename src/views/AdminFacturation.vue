@@ -1887,6 +1887,10 @@ const formatPeriodeMetrage = (metrage) => {
 
 const genererPDF = async (facture) => {
   try {
+    // Definisci variabili comuni
+    const chantierId = facture.chantier_id || facture.chantierId;
+    const chantier = chantiers.value.find(c => c.id === chantierId);
+    
     // Import logo
     let logo;
     try {
@@ -1896,48 +1900,156 @@ const genererPDF = async (facture) => {
       console.warn('Logo non trovato');
     }
 
-    // Fatture manuali: PDF semplice
+    // Fatture manuali: PDF con layout professionale
     if (facture.type === 'manuelle') {
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
       
-      if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
-      doc.setFontSize(8);
-      doc.text('DALLELEC Sarl\nRue de Bourgogne 25\n1203 Genève', 200, 12, { align: 'right' });
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`FACTURE N. ${facture.numero}`, 10, 40);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, 50);
-      doc.text(`Client: ${facture.client_nom}`, 10, 60);
+      // Usa la stessa funzione drawHeader delle altre fatture
+      const drawHeader = (doc, title) => {
+        if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('DALLELEC Sarl - CHE-280.028.822', 200, 12, { align: 'right' });
+        doc.text('Rue de Bourgogne 25', 200, 17, { align: 'right' });
+        doc.text('1203 Genève', 200, 22, { align: 'right' });
+        
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 10, 35);
+        
+        doc.setLineWidth(0.5);
+        doc.line(10, 40, 200, 40);
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        let yInfo = 46;
+        
+        // Prima colonna (sinistra)
+        doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, yInfo);
+        
+        yInfo += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('FACTURÉ À:', 10, yInfo);
+        yInfo += 4;
+        doc.setFont('helvetica', 'normal');
+        
+        // Trova i dati completi del cliente
+        const clientData = clients.value.find(c => c.nom === facture.client_nom);
+        doc.setFontSize(9);
+        doc.text(facture.client_nom, 10, yInfo);
+        if (clientData?.adresse) {
+          yInfo += 3.5;
+          doc.setFontSize(8);
+          doc.text(clientData.adresse, 10, yInfo);
+        }
+        if (clientData?.ville) {
+          yInfo += 3.5;
+          doc.text(clientData.ville, 10, yInfo);
+        }
+        
+        // Seconda colonna (destra) - Informazioni cantiere
+        let yInfoRight = 48;
+        if (chantier) {
+          doc.setFont('helvetica', 'bold');
+          doc.text(`CHANTIER N° ${chantier.numero_cantiere || 'N/A'}`, 110, yInfoRight);
+          yInfoRight += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${chantier.nom}`, 110, yInfoRight);
+          
+          if (chantier.technicien) {
+            yInfoRight += 5;
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8);
+            doc.text(`Technicien: ${chantier.technicien}`, 110, yInfoRight);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+          }
+        }
+        
+        return Math.max(yInfo, yInfoRight) + 15; // Più spazio dopo l'header
+      };
+      
+      let startY = drawHeader(doc, `FACTURE N. ${facture.numero}`);
+      
+      // Aggiungi spazio dopo l'header
+      startY += 20;
       
       const tableData = facture.lignes.map(ligne => [
         ligne.description,
+        ligne.unite || 'pcs',
         ligne.quantite.toString(),
         `${ligne.prixUnitaire.toFixed(2)} CHF`,
         `${(ligne.quantite * ligne.prixUnitaire).toFixed(2)} CHF`
       ]);
       
       autoTable(doc, {
-        head: [['Description', 'Quantité', 'Prix unitaire', 'Total HT']],
+        head: [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']],
         body: tableData,
-        startY: 70,
-        theme: 'grid'
+        startY: startY,
+        theme: 'striped',
+        headStyles: { 
+          fillColor: [70, 130, 180], 
+          textColor: 255,
+          fontSize: 10
+        },
+        bodyStyles: { 
+          fontSize: 9,
+          cellPadding: 4
+        },
+        columnStyles: {
+          0: { cellWidth: 70 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 35 }
+        }
       });
       
-      const finalY = doc.lastAutoTable.finalY + 10;
+      const finalY = doc.lastAutoTable.finalY + 30; // Molto più spazio prima dei totali
       const totalHT = Number(facture.montant_ht || facture.montantHT || 0);
       const tva = totalHT * 0.081; // TVA Suisse 8.1%
       const ttc = totalHT + tva;
       
-      doc.text(`Total HT: ${totalHT.toFixed(2)} CHF`, 140, finalY);
-      doc.text(`TVA (8.1%): ${tva.toFixed(2)} CHF`, 140, finalY + 7);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`TOTAL TTC: ${ttc.toFixed(2)} CHF`, 140, finalY + 17);
+      // Box per i totali
+      doc.setFillColor(245, 245, 245);
+      doc.rect(120, finalY - 3, 80, 25, 'F');
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(120, finalY - 3, 80, 25);
       
-      // Nome PDF personalizzato: Cliente_Cantiere_NumeroFacture
-      const clientName = facture.client_nom.replace(/[^a-zA-Z0-9]/g, '_') || 'Client';
-      const chantierName = (chantier?.nom || 'Chantier').replace(/[^a-zA-Z0-9]/g, '_');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Total HT:', 125, finalY + 3);
+      doc.text(`${totalHT.toFixed(2)} CHF`, 190, finalY + 3, { align: 'right' });
+      doc.text(`TVA (8.1%):`, 125, finalY + 10);
+      doc.text(`${tva.toFixed(2)} CHF`, 190, finalY + 10, { align: 'right' });
+      
+      // Linea separatrice
+      doc.setLineWidth(0.5);
+      doc.line(125, finalY + 14, 195, finalY + 14);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text('TOTAL TTC:', 125, finalY + 20);
+      doc.text(`${ttc.toFixed(2)} CHF`, 190, finalY + 20, { align: 'right' });
+      
+      // Conditions de paiement dalle notes
+      const conditionsPaiement = facture.notes?.includes('Conditions:') ? 
+        facture.notes.split('Conditions: ')[1]?.split('\n')[0] || '30 jours net' : '30 jours net';
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      // Conditions de paiement in fondo alla pagina
+      doc.text(`Conditions de paiement: ${conditionsPaiement}`, 10, 270);
+      doc.text('Merci de votre confiance', 10, 280);
+      
+      // Nome PDF personalizzato
+      const clientName = (facture.client_nom || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+      let chantierName = 'Travaux';
+      if (chantier) {
+        const numero = chantier.numero_cantiere ? `N${chantier.numero_cantiere}_` : '';
+        chantierName = `${numero}${chantier.nom}`.replace(/[^a-zA-Z0-9]/g, '_');
+      }
       const numeroFacture = facture.numero || 'F000';
       
       doc.save(`${clientName}_${chantierName}_${numeroFacture}.pdf`);
@@ -1946,10 +2058,8 @@ const genererPDF = async (facture) => {
     }
 
     // Determina il tipo di fattura
-    const chantierId = facture.chantier_id || facture.chantierId;
     const metrageId = facture.metrage_id || facture.metrageId;
     const resocontoId = facture.resoconto_id || facture.resocontoId;
-    const chantier = chantiers.value.find(c => c.id === chantierId);
     console.log('🔍 PDF - Chantier devis_id:', chantier?.devis_id, typeof chantier?.devis_id);
     console.log('🔍 PDF - Tutti i devis IDs:', devis.value.map(d => ({id: d.id, type: typeof d.id})));
     const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id); // Usa == invece di ===

@@ -87,16 +87,27 @@
                   <td><strong>{{ totalHT.toFixed(2) }} CHF</strong></td>
                 </tr>
                 <tr>
-                  <td>TVA (7.7%):</td>
-                  <td>{{ (totalHT * 0.077).toFixed(2) }} CHF</td>
+                  <td>TVA (8.1%):</td>
+                  <td>{{ (totalHT * 0.081).toFixed(2) }} CHF</td>
                 </tr>
                 <tr class="table-primary">
                   <td><strong>Total TTC:</strong></td>
-                  <td><strong>{{ (totalHT * 1.077).toFixed(2) }} CHF</strong></td>
+                  <td><strong>{{ (totalHT * 1.081).toFixed(2) }} CHF</strong></td>
                 </tr>
               </tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Conditions de paiement -->
+        <div class="mb-3">
+          <label>Conditions de paiement:</label>
+          <select v-model="facture.conditionsPaiement" class="form-control">
+            <option value="30 jours net">30 jours net</option>
+            <option value="15 jours net">15 jours net</option>
+            <option value="Comptant">Comptant</option>
+            <option value="À réception">À réception</option>
+          </select>
         </div>
 
         <!-- Notes -->
@@ -202,23 +213,36 @@ const calculerTotal = (index) => {
   // Trigger reactive update
 };
 
+const generateNumeroFacture = async () => {
+  try {
+    const { data: config } = await supabase
+      .from('configurazione_fatture')
+      .select('*')
+      .single();
+    
+    const ultimoNumero = config?.ultimo_numero || 0;
+    const anno = config?.anno || new Date().getFullYear();
+    const prefisso = config?.prefisso || 'F';
+    
+    const { data: factures } = await supabase
+      .from('factures')
+      .select('numero')
+      .like('numero', `${prefisso}${anno}%`);
+    
+    const prossimoNumero = ultimoNumero + (factures?.length || 0) + 1;
+    return `${prefisso}${anno}-${String(prossimoNumero).padStart(3, '0')}`;
+  } catch (error) {
+    return `F${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
+  }
+};
+
 const sauvegarderFacture = async () => {
-  console.log('Début sauvegarde facture...');
-  console.log('Données facture:', facture.value);
-  console.log('Total HT:', totalHT.value);
-  console.log('Facture valide:', factureValide.value);
-  
   if (!factureValide.value) {
     alert('Veuillez remplir tous les champs obligatoires');
     return;
   }
   try {
-    // Genera numero fattura progressivo
-    const { data: existingFactures } = await supabase
-      .from('factures')
-      .select('id');
-    
-    const numeroFacture = `F${new Date().getFullYear()}-${String((existingFactures?.length || 0) + 1).padStart(3, '0')}`;
+    const numeroFacture = await generateNumeroFacture();
     
     const { error } = await supabase
       .from('factures')
@@ -230,16 +254,15 @@ const sauvegarderFacture = async () => {
         date_facture: facture.value.dateFacture,
         lignes: facture.value.lignes.filter(l => l.description && l.quantite > 0),
         montant_ht: totalHT.value,
-        taux_tva: 7.7,
-        montant_ttc: totalHT.value * 1.077,
+        taux_tva: 8.1,
+        montant_ttc: totalHT.value * 1.081,
         statut: 'emise',
-        notes: facture.value.notes,
+        notes: `${facture.value.notes}${facture.value.notes ? '\n' : ''}Conditions: ${facture.value.conditionsPaiement}`,
         date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         created_at: new Date().toISOString()
       }]);
     
     if (error) throw error;
-    console.log('Facture sauvegardée:', numeroFacture);
     
     alert(`Facture ${numeroFacture} créée avec succès!`);
     resetFacture();
@@ -256,6 +279,7 @@ const resetFacture = () => {
     clientNom: '',
     dateFacture: new Date().toISOString().split('T')[0],
     chantierId: '',
+    conditionsPaiement: '30 jours net',
     notes: '',
     lignes: [
       { description: '', unite: '', quantite: 1, prixUnitaire: 0 }
