@@ -511,6 +511,9 @@ export default {
     };
 
     const addChantier = async () => {
+      // Determina type_metrage basato su modalita_resoconto
+      const typeMetrage = newChantier.value.modalitaResoconto === 'percentuale' ? 'percentuel' : 'detaille';
+      
       const { error } = await supabase.from('chantiers').insert([{
         numero_cantiere: newChantier.value.numeroCantiere,
         nom: newChantier.value.nom,
@@ -520,6 +523,7 @@ export default {
         technicien: newChantier.value.technicien,
         devis_id: newChantier.value.devisId || null,
         modalita_resoconto: newChantier.value.modalitaResoconto,
+        type_metrage: typeMetrage,
         capocantiere: newChantier.value.capocantiere,
         prix_regie: newChantier.value.prixRegie,
         percentuale_impresa: newChantier.value.percentualeImpresa
@@ -593,6 +597,9 @@ export default {
     };
 
     const updateChantier = async (id) => {
+      // Determina type_metrage basato su modalita_resoconto
+      const typeMetrage = editChantier.value.modalitaResoconto === 'percentuale' ? 'percentuel' : 'detaille';
+      
       const { error } = await supabase.from('chantiers').update({
         numero_cantiere: editChantier.value.numeroCantiere,
         nom: editChantier.value.nom,
@@ -602,6 +609,7 @@ export default {
         technicien: editChantier.value.technicien,
         devis_id: editChantier.value.devisId || null,
         modalita_resoconto: editChantier.value.modalitaResoconto,
+        type_metrage: typeMetrage,
         capocantiere: editChantier.value.capocantiere,
         prix_regie: editChantier.value.prixRegie,
         percentuale_impresa: editChantier.value.percentualeImpresa

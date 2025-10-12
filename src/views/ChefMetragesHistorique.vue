@@ -30,7 +30,7 @@
         <h5>Métrages soumis</h5>
       </div>
       <div class="card-body">
-        <div v-if="metrages.length === 0" class="text-center text-muted py-4">
+        <div v-if="metragesFiltres.length === 0" class="text-center text-muted py-4">
           Aucun métrage trouvé
         </div>
         <div v-else class="table-responsive">
@@ -57,7 +57,7 @@
                 </td>
                 <td>
                   <span v-if="metrage.type === 'resoconto'">
-                    {{ Object.keys(metrage.avancementi || {}).join(', ') }}
+                    {{ Object.keys(metrage.avancementi || {}).length }} zones
                   </span>
                   <span v-else>
                     {{ (metrage.total_ml || 0).toFixed(2) }} ML
@@ -306,6 +306,12 @@ const loadMetrages = async () => {
     if (resocontiError) throw resocontiError;
     resocontiPercentuali.value = resocontiData || [];
     
+    console.log('📊 Métrages caricati:', metrages.value.length);
+    console.log('📈 Resoconti percentuali caricati:', resocontiPercentuali.value.length);
+    console.log('🔍 Resoconti data:', resocontiPercentuali.value);
+    console.log('📝 Chantier IDs:', chantierIds);
+    console.log('📝 Email utente:', userEmail);
+    
   } catch (error) {
     console.error('Erreur chargement données:', error);
     metrages.value = [];
@@ -319,20 +325,22 @@ const voirDetail = (metrage) => {
 };
 
 const eliminerMetrage = async (metrage) => {
-  if (!confirm(`Supprimer définitivement ce métrage du ${formatDate(metrage.created_at)} ?\n\nCette action est irréversible.`)) return;
+  const typeText = metrage.type === 'resoconto' ? 'resoconto percentuel' : 'métrage';
+  if (!confirm(`Supprimer définitivement ce ${typeText} du ${formatDate(metrage.created_at)} ?\n\nCette action est irréversible.`)) return;
   
   try {
+    const tableName = metrage.type === 'resoconto' ? 'resoconti_percentuali' : 'metrages';
     const { error } = await supabase
-      .from('metrages')
+      .from(tableName)
       .delete()
       .eq('id', metrage.id);
     
     if (error) throw error;
     
-    alert('Métrage supprimé avec succès');
+    alert(`${typeText.charAt(0).toUpperCase() + typeText.slice(1)} supprimé avec succès`);
     await loadMetrages();
   } catch (error) {
-    console.error('Erreur suppression métrage:', error);
+    console.error('Erreur suppression:', error);
     alert('Erreur: ' + error.message);
   }
 };

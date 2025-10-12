@@ -12,18 +12,9 @@
           <small class="text-muted">Resoconti percentuels à approuver et métrages prêts pour facturation</small>
         </div>
         <div>
-          <router-link to="/admin/facture-manuelle" class="btn btn-sm btn-success me-2">
+          <router-link to="/admin/facture-manuelle" class="btn btn-sm btn-success">
             📝 Facture Manuelle
           </router-link>
-          <button @click="pulirVecchiResoconti" class="btn btn-sm btn-warning me-2">
-            🧹 Nettoyer anciens tests
-          </button>
-          <button @click="loadData" class="btn btn-sm btn-info me-2">
-            🔄 Recharger données
-          </button>
-          <button @click="forceReload" class="btn btn-sm btn-warning">
-            ⚡ Force Reload
-          </button>
         </div>
       </div>
       <div class="card-body">
@@ -167,8 +158,8 @@
                 </td>
                 <td>
                   <select 
-                    :value="facture.statut" 
-                    @change="updateStatutDirect(facture, $event.target.value)"
+                    v-model="facture.statut" 
+                    @change="updateStatut(facture)"
                     class="form-select form-select-sm"
                     :class="getStatutSelectClass(facture.statut)"
                   >
@@ -206,40 +197,53 @@
     </div>
 
     <!-- Statistiques -->
-    <div class="row">
-      <div class="col-md-3">
-        <div class="card bg-warning text-white text-center">
-          <div class="card-body">
-            <h6>En Attente</h6>
-            <h4>{{ metragesEnAttente.length }}</h4>
-            <small>Métrages à facturer</small>
+    <div class="row justify-content-center">
+      <div class="col-md-9">
+        <div class="row">
+          <div class="col">
+            <div class="card bg-warning text-white text-center">
+              <div class="card-body py-2">
+                <h6 class="mb-1">En Attente</h6>
+                <h5 class="mb-1">{{ metragesEnAttente.length }}</h5>
+                <small>Métrages</small>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card bg-primary text-white text-center">
-          <div class="card-body">
-            <h6>Ce Mois</h6>
-            <h4>{{ formatCurrency(facturationMois) }}</h4>
-            <small>Facturé ce mois</small>
+          <div class="col">
+            <div class="card bg-info text-white text-center">
+              <div class="card-body py-2">
+                <h6 class="mb-1">Ce Mois</h6>
+                <h6 class="mb-1">{{ formatCurrency(facturationMois) }}</h6>
+                <small>Facturé</small>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card bg-success text-white text-center">
-          <div class="card-body">
-            <h6>Payées</h6>
-            <h4>{{ formatCurrency(facturesPayees) }}</h4>
-            <small>Factures payées</small>
+          <div class="col">
+            <div class="card bg-primary text-white text-center">
+              <div class="card-body py-2">
+                <h6 class="mb-1">Cette Année</h6>
+                <h6 class="mb-1">{{ formatCurrency(facturationAnnee) }}</h6>
+                <small>Total</small>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card bg-danger text-white text-center">
-          <div class="card-body">
-            <h6>En Retard</h6>
-            <h4>{{ formatCurrency(facturesEnRetard) }}</h4>
-            <small>Factures en retard</small>
+          <div class="col">
+            <div class="card bg-success text-white text-center">
+              <div class="card-body py-2">
+                <h6 class="mb-1">Payées</h6>
+                <h6 class="mb-1">{{ formatCurrency(facturesPayees) }}</h6>
+                <small>Encaissé</small>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card bg-danger text-white text-center">
+              <div class="card-body py-2">
+                <h6 class="mb-1">Impayées</h6>
+                <h6 class="mb-1">{{ formatCurrency(facturesImpayes) }}</h6>
+                <small>À encaisser</small>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -754,6 +758,40 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Date Personnalisée -->
+    <div v-if="showDatePersonnalisee" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>📅 Choisir Date Facture</h5>
+            <button @click="annullaDataPersonnalisee" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-info">
+              <strong>ℹ️ Information:</strong><br>
+              • La date par défaut est aujourd'hui<br>
+              • Vous pouvez choisir une date antérieure (ex: 30.09)<br>
+              • La date ne peut pas être antérieure à la dernière facture émise
+            </div>
+            <div class="mb-3">
+              <label class="form-label"><strong>Date de la facture:</strong></label>
+              <input 
+                v-model="dateFacturePersonnalisee" 
+                type="date" 
+                class="form-control"
+                :max="new Date().toISOString().split('T')[0]"
+              >
+              <small class="text-muted">La date d'échéance sera automatiquement calculée (+30 jours)</small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="confermaDataPersonnalisee" class="btn btn-primary">✅ Confirmer</button>
+            <button @click="annullaDataPersonnalisee" class="btn btn-secondary">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -792,6 +830,8 @@ const nouvelleDateEcheance = ref('');
 const nouvellesNotes = ref('');
 const filtreClient = ref('');
 const filtreStatut = ref('');
+const dateFacturePersonnalisee = ref('');
+const showDatePersonnalisee = ref(false);
 
 // Resoconti percentuali en attente d'approbation
 const resocontiEnAttente = computed(() => {
@@ -863,15 +903,25 @@ const facturationMois = computed(() => {
     .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
 });
 
+const facturationAnnee = computed(() => {
+  const thisYear = new Date().getFullYear();
+  return factures.value
+    .filter(f => {
+      const factureDate = new Date(f.date_facture || f.dateFacture);
+      return factureDate.getFullYear() === thisYear;
+    })
+    .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
+});
+
 const facturesPayees = computed(() => {
   return factures.value
     .filter(f => f.statut === 'payee')
     .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
 });
 
-const facturesEnRetard = computed(() => {
+const facturesImpayes = computed(() => {
   return factures.value
-    .filter(f => f.statut === 'en_retard')
+    .filter(f => f.statut === 'emise' || f.statut === 'envoyee' || f.statut === 'en_retard')
     .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
 });
 
@@ -1008,9 +1058,42 @@ const calculateMontantEstime = (metrage) => {
 };
 
 const autoriserFacturation = async (metrage) => {
-  if (!confirm('Approuver ce métrage et autoriser la facturation ?')) return;
+  // Mostra dialog per scegliere la data
+  showDatePersonnalisee.value = true;
+  dateFacturePersonnalisee.value = new Date().toISOString().split('T')[0];
+  
+  // Aspetta la conferma dell'utente
+  const confirmed = await new Promise((resolve) => {
+    const originalConfirm = window.confirm;
+    window.confirm = (message) => {
+      showDatePersonnalisee.value = false;
+      window.confirm = originalConfirm;
+      return resolve(true);
+    };
+    
+    // Simula dialog personalizzato
+    setTimeout(() => {
+      if (confirm('Approuver ce métrage et autoriser la facturation ?')) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+      showDatePersonnalisee.value = false;
+    }, 100);
+  });
+  
+  if (!confirmed) return;
   
   try {
+    // Valida la data
+    const dataScelta = dateFacturePersonnalisee.value;
+    const ultimaDataFactura = await getUltimaDataFactura();
+    
+    if (ultimaDataFactura && new Date(dataScelta) < new Date(ultimaDataFactura)) {
+      alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+      return;
+    }
+    
     // Approuve d'abord le métrage
     await supabase
       .from('metrages')
@@ -1032,21 +1115,25 @@ const autoriserFacturation = async (metrage) => {
     
     const numeroFacture = await generateNumeroFacture();
     
-    // Crée la facture
+    // Calcola data scadenza (30 giorni dalla data fattura)
+    const dataScadenza = new Date(dataScelta);
+    dataScadenza.setDate(dataScadenza.getDate() + 30);
+    
+    // Crée la facture con data personalizzata
     const { error } = await supabase
       .from('factures')
       .insert([{
         numero: numeroFacture,
         chantier_id: metrage.chantier_id,
         metrage_id: metrage.id,
-        date_facture: new Date().toISOString().split('T')[0],
+        date_facture: dataScelta,
         montant_ht: montantHT,
         taux_tva: 8.1,
         montant_ttc: montantHT * 1.081,
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
-        date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: `Facture générée automatiquement depuis métrage du ${formatDate(metrage.createdAt)}`,
+        date_echeance: dataScadenza.toISOString().split('T')[0],
+        notes: `Facture générée depuis métrage du ${formatDate(metrage.created_at)}`,
         created_at: new Date().toISOString()
       }]);
     
@@ -1058,7 +1145,7 @@ const autoriserFacturation = async (metrage) => {
       .update({
         facture: true,
         facture_numero: numeroFacture,
-        facture_date: new Date().toISOString()
+        facture_date: dataScelta
       })
       .eq('id', metrage.id);
     
@@ -1198,9 +1285,42 @@ const calculateTotalTTCWithAcconti = () => {
 };
 
 const approuverResoconto = async (resoconto) => {
-  if (!confirm('Approuver ce resoconto percentuel et générer la facture ?')) return;
+  // Mostra dialog per scegliere la data
+  showDatePersonnalisee.value = true;
+  dateFacturePersonnalisee.value = new Date().toISOString().split('T')[0];
+  
+  // Aspetta la conferma dell'utente
+  const confirmed = await new Promise((resolve) => {
+    const originalConfirm = window.confirm;
+    window.confirm = (message) => {
+      showDatePersonnalisee.value = false;
+      window.confirm = originalConfirm;
+      return resolve(true);
+    };
+    
+    // Simula dialog personalizzato
+    setTimeout(() => {
+      if (confirm('Approuver ce resoconto percentuel et générer la facture ?')) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+      showDatePersonnalisee.value = false;
+    }, 100);
+  });
+  
+  if (!confirmed) return;
   
   try {
+    // Valida la data
+    const dataScelta = dateFacturePersonnalisee.value;
+    const ultimaDataFactura = await getUltimaDataFactura();
+    
+    if (ultimaDataFactura && new Date(dataScelta) < new Date(ultimaDataFactura)) {
+      alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+      return;
+    }
+    
     // Approva il resoconto (solo se tabella esiste)
     try {
       const { error } = await supabase
@@ -1229,20 +1349,24 @@ const approuverResoconto = async (resoconto) => {
     const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture();
     const accontiInseriti = Number(accontiPrecedentiResoconto.value || 0);
     
+    // Calcola data scadenza (30 giorni dalla data fattura)
+    const dataScadenza = new Date(dataScelta);
+    dataScadenza.setDate(dataScadenza.getDate() + 30);
+    
     const { error } = await supabase
       .from('factures')
       .insert([{
         numero: numeroFacture,
         chantier_id: resoconto.chantier_id || resoconto.chantierId,
         resoconto_id: resoconto.id,
-        date_facture: new Date().toISOString().split('T')[0],
+        date_facture: dataScelta,
         montant_ht: montantHT,
         taux_tva: 8.1,
         montant_ttc: montantHT * 1.081,
         acconti_precedenti: accontiInseriti,
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
-        date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date_echeance: dataScadenza.toISOString().split('T')[0],
         notes: `Facture générée depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
         created_at: new Date().toISOString()
       }]);
@@ -1313,9 +1437,42 @@ const eliminarResoconto = async (resoconto) => {
 };
 
 const generarFactureResoconto = async (resoconto) => {
-  if (!confirm('Générer la facture pour ce resoconto approuvé ?')) return;
+  // Mostra dialog per scegliere la data
+  showDatePersonnalisee.value = true;
+  dateFacturePersonnalisee.value = new Date().toISOString().split('T')[0];
+  
+  // Aspetta la conferma dell'utente
+  const confirmed = await new Promise((resolve) => {
+    const originalConfirm = window.confirm;
+    window.confirm = (message) => {
+      showDatePersonnalisee.value = false;
+      window.confirm = originalConfirm;
+      return resolve(true);
+    };
+    
+    // Simula dialog personalizzato
+    setTimeout(() => {
+      if (confirm('Générer la facture pour ce resoconto approuvé ?')) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+      showDatePersonnalisee.value = false;
+    }, 100);
+  });
+  
+  if (!confirmed) return;
   
   try {
+    // Valida la data
+    const dataScelta = dateFacturePersonnalisee.value;
+    const ultimaDataFactura = await getUltimaDataFactura();
+    
+    if (ultimaDataFactura && new Date(dataScelta) < new Date(ultimaDataFactura)) {
+      alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+      return;
+    }
+    
     const chantier = chantiers.value.find(c => c.id === (resoconto.chantier_id || resoconto.chantierId));
     const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
     
@@ -1330,19 +1487,23 @@ const generarFactureResoconto = async (resoconto) => {
     // USA NUMERO RISERVATO SE ESISTE (per correzioni)
     const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture();
     
+    // Calcola data scadenza (30 giorni dalla data fattura)
+    const dataScadenza = new Date(dataScelta);
+    dataScadenza.setDate(dataScadenza.getDate() + 30);
+    
     const { error } = await supabase
       .from('factures')
       .insert([{
         numero: numeroFacture,
         chantier_id: resoconto.chantier_id || resoconto.chantierId,
         resoconto_id: resoconto.id,
-        date_facture: new Date().toISOString().split('T')[0],
+        date_facture: dataScelta,
         montant_ht: montantHT,
         taux_tva: 8.1,
         montant_ttc: montantHT * 1.081,
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
-        date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        date_echeance: dataScadenza.toISOString().split('T')[0],
         notes: `Facture générée depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
         created_at: new Date().toISOString()
       }]);
@@ -1422,9 +1583,7 @@ const confirmerChangeStatut = async () => {
     const { error } = await supabase
       .from('factures')
       .update({
-        statut: nouveauStatut.value,
-        statut_notes: notesStatut.value,
-        statut_updated_at: new Date().toISOString()
+        statut: nouveauStatut.value
       })
       .eq('id', factureEnCours.value.id);
     
@@ -1440,21 +1599,33 @@ const confirmerChangeStatut = async () => {
 
 const modifierFacture = (facture) => {
   factureEnCours.value = facture;
-  nouvelleDate.value = facture.dateFacture;
-  nouvelleDateEcheance.value = facture.dateEcheance || '';
+  nouvelleDate.value = facture.date_facture || facture.dateFacture;
+  nouvelleDateEcheance.value = facture.date_echeance || facture.dateEcheance || '';
   nouvellesNotes.value = facture.notes || '';
   showModifierFacture.value = true;
 };
 
 const confirmerModificationFacture = async () => {
   try {
+    // Valida la data - permetti modifica della stessa fattura
+    const ultimaDataFactura = await getUltimaDataFactura();
+    
+    // Controlla solo se non è la stessa fattura che stiamo modificando
+    if (ultimaDataFactura && new Date(nouvelleDate.value) < new Date(ultimaDataFactura)) {
+      // Verifica se la data dell'ultima fattura è diversa da quella attuale
+      const dataAttuale = factureEnCours.value.date_facture || factureEnCours.value.dateFacture;
+      if (ultimaDataFactura !== dataAttuale) {
+        alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+        return;
+      }
+    }
+    
     const { error } = await supabase
       .from('factures')
       .update({
         date_facture: nouvelleDate.value,
         date_echeance: nouvelleDateEcheance.value,
-        notes: nouvellesNotes.value,
-        updated_at: new Date().toISOString()
+        notes: nouvellesNotes.value
       })
       .eq('id', factureEnCours.value.id);
     
@@ -1635,25 +1806,16 @@ const getStatutSelectClass = (statut) => {
   return classes[statut] || 'text-secondary';
 };
 
-const updateStatutDirect = async (facture, nouveauStatut) => {
+const updateStatut = async (facture) => {
   try {
     const { error } = await supabase
       .from('factures')
-      .update({
-        statut: nouveauStatut,
-        statut_updated_at: new Date().toISOString()
-      })
+      .update({ statut: facture.statut })
       .eq('id', facture.id);
     
     if (error) throw error;
-    
-    // Aggiorna localmente
-    facture.statut = nouveauStatut;
-    
-    // Ricarica i dati per aggiornare le statistiche
-    loadData();
   } catch (error) {
-    console.error('Erreur mise à jour statut:', error);
+    console.error('Erreur:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -1694,8 +1856,15 @@ const formatCurrency = (amount) => {
 };
 
 const calculateSoldeFinale = (facture) => {
-  const montantHT = Number(facture.montant_ht || 0);
   const acconti = Number(facture.acconti_precedenti || 0);
+  
+  // Se non ci sono acconti, usa direttamente montant_ttc
+  if (acconti === 0) {
+    return Number(facture.montant_ttc || facture.montantTTC || 0);
+  }
+  
+  // Se ci sono acconti, calcola il solde
+  const montantHT = Number(facture.montant_ht || 0);
   const montantNetHT = montantHT - acconti;
   const tva = montantNetHT * 0.081;
   return montantNetHT + tva;
@@ -2627,6 +2796,31 @@ const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
 const resetFiltres = () => {
   filtreClient.value = '';
   filtreStatut.value = '';
+};
+
+const getUltimaDataFactura = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('factures')
+      .select('date_facture')
+      .order('date_facture', { ascending: false })
+      .limit(1);
+    
+    if (error) throw error;
+    return data?.[0]?.date_facture || null;
+  } catch (error) {
+    console.error('Erreur récupération dernière date facture:', error);
+    return null;
+  }
+};
+
+const confermaDataPersonnalisee = () => {
+  showDatePersonnalisee.value = false;
+};
+
+const annullaDataPersonnalisee = () => {
+  showDatePersonnalisee.value = false;
+  dateFacturePersonnalisee.value = '';
 };
 
 const riaprireResoconto = (facture) => {

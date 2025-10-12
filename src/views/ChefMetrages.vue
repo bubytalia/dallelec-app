@@ -25,10 +25,7 @@
                 {{ chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '' }}{{ chantier.nom }} - {{ chantier.adresse }}
               </option>
             </select>
-            <div class="mt-2">
-              <small class="text-muted">Debug: {{ chantiers.length }} cantieri caricati</small>
-              <button @click="fetchChantiers" class="btn btn-sm btn-warning ms-2">🔄 Test Carica Cantieri</button>
-            </div>
+
           </div>
         </div>
       </div>
@@ -144,15 +141,7 @@
       @update-item="handleUpdateItem"
     />
     
-    <!-- Debug info -->
-    <div v-if="selectedChantierId" class="alert alert-secondary mt-2">
-      <small>
-        <strong>Debug:</strong> 
-        Cantiere: {{ selectedChantierId }} | 
-        Zones: {{ zones.length }} | 
-        Produits devis: {{ devisData?.produits?.length || 0 }}
-      </small>
-    </div>
+
 
     <!-- Détails des Métrages (identico a DevisProduits ma senza prezzi) -->
     <div class="card p-4 mb-4" v-if="selectedChantierId && metrageItems.length > 0">
@@ -330,33 +319,36 @@ const loadChantierData = async () => {
   
   // Aspetta che i cantieri siano caricati
   if (chantiers.value.length === 0) {
-    console.log('🔄 Aspetto caricamento cantieri...');
     await fetchChantiers();
   }
-  
-  // Reset automatico per nuovo métrage
-  metrageItems.value = [];
-  regies.value = [];
-  currentMetrageId.value = null;
-  currentMetrageInfo.value = '';
-  periodeDebut.value = '';
-  periodeFin.value = '';
-  editingItem.value = null;
   
   try {
     // Trova il cantiere selezionato
     const chantier = chantiers.value.find(c => String(c.id) === String(selectedChantierId.value));
     const devisId = chantier?.devis_id || chantier?.devisId;
     
-    console.log('🔍 Chantier trovato:', chantier);
-    console.log('🔍 Devis ID:', devisId);
-    
     if (!chantier || !devisId) {
-      console.error('❌ Chantier o devis mancante:', { chantier, devisId });
+      alert('Chantier ou devis non trouvé.');
       return;
     }
     
-    const numeroDisplay = chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '';
+    // Controlla il tipo di métrage del cantiere
+    if (chantier.type_metrage === 'percentuel') {
+      // Reindirizza al resoconto percentuale
+      router.push(`/chef/chantiers/resoconto-percentuale?chantier=${selectedChantierId.value}`);
+      return;
+    }
+    
+    // Reset per métrage détaillé
+    metrageItems.value = [];
+    regies.value = [];
+    currentMetrageId.value = null;
+    currentMetrageInfo.value = '';
+    periodeDebut.value = '';
+    periodeFin.value = '';
+    editingItem.value = null;
+    
+    const numeroDisplay = chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
     nomChantier.value = `${numeroDisplay}${chantier.nom} - ${chantier.adresse}`;
     
     // Carica prezzo regie del cantiere
@@ -370,7 +362,6 @@ const loadChantierData = async () => {
       .single();
     
     if (error || !devisDocData) {
-      console.error('Erreur devis:', error);
       alert('Devis non trouvé.');
       return;
     }
@@ -378,21 +369,16 @@ const loadChantierData = async () => {
     numeroDevis.value = devisDocData.numero || '';
     nomClient.value = devisDocData.nom || '';
     
-    console.log('📋 Devis data completo:', devisDocData);
-    
     // Estrai le zone dai prodotti del devis
     if (devisDocData.produits && devisDocData.produits.length > 0) {
       const zoneSet = new Set();
       devisDocData.produits.forEach(produit => {
-        console.log('📋 Prodotto:', produit);
         if (produit.zone) {
           zoneSet.add(produit.zone);
         }
       });
       zones.value = Array.from(zoneSet).sort();
-      console.log('✅ Zones trovate:', zones.value);
     } else {
-      console.log('❌ Nessun prodotto trovato nel devis');
       zones.value = [];
     }
     

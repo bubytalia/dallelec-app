@@ -591,6 +591,16 @@ const sauvegarderResoconto = async () => {
       alert('Resoconto sauvegardé avec succès.');
     }
     
+    // Mostra feedback visivo
+    const zoneModificate = Object.entries(avancementiMensili.value)
+      .filter(([zona, perc]) => perc > 0)
+      .map(([zona, perc]) => `${zona}: +${perc}%`)
+      .join(', ');
+    
+    if (zoneModificate) {
+      alert(`✅ Resoconto sauvegardé avec succès!\n\nPériode: ${periodeMonth.value}\nZones modifiées: ${zoneModificate}\n\nStatut: En attente d'approbation admin`);
+    }
+    
     // Reset form
     zones.value.forEach(zona => {
       avancementiMensili.value[zona] = 0;
