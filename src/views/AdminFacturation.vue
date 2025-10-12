@@ -2214,6 +2214,12 @@ const genererPDF = async (facture) => {
         yPos = doc.lastAutoTable.finalY + 8;
       }
       
+      // Aggiungi spazio proporzionale prima dei totali
+      const spazioRimanente = 200 - yPos;
+      if (spazioRimanente > 60) {
+        yPos += Math.floor(spazioRimanente * 0.4); // Usa il 40% dello spazio rimanente
+      }
+      
       // TOTALI FINALI - USA LE STESSE FUNZIONI DELL'ANTEPRIMA
       const totalHT = calculateTotalHT();
       const tvaRate = 8.1;
@@ -2274,6 +2280,12 @@ const genererPDF = async (facture) => {
         doc.setFontSize(12);
         doc.text('TOTAL TTC:', 125, currentY + 4);
         doc.text(`${(totalHT + tva).toFixed(2)} CHF`, 190, currentY + 4, { align: 'right' });
+      }
+      
+      // Sposta i totali più in basso se c'è spazio
+      const spazioDisponibile = 250 - yPos;
+      if (spazioDisponibile > 80) {
+        yPos += Math.min(spazioDisponibile - 60, 50); // Aggiungi spazio ma non troppo
       }
       
       // Verifica spazio per footer
