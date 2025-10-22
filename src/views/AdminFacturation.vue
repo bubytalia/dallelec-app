@@ -2122,7 +2122,7 @@ const genererPDF = async (facture) => {
         });
       }
       
-      // Nome PDF personalizzato
+      // Nome PDF: NumeroFacture_DataFacture_Cliente_Cantiere
       const clientName = (facture.client_nom || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
       let chantierName = 'Travaux';
       if (chantier) {
@@ -2130,8 +2130,9 @@ const genererPDF = async (facture) => {
         chantierName = `${numero}${chantier.nom}`.replace(/[^a-zA-Z0-9]/g, '_');
       }
       const numeroFacture = facture.numero || 'F000';
+      const dataFacture = facture.date_facture?.replace(/-/g, '') || new Date().toISOString().split('T')[0].replace(/-/g, '');
       
-      doc.save(`${clientName}_${chantierName}_${numeroFacture}.pdf`);
+      doc.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}.pdf`);
       alert('Facture générée avec succès!');
       return;
     }
@@ -2613,12 +2614,13 @@ const genererPDF = async (facture) => {
         doc.text(`Page ${i} sur ${totalPages}`, 190, 290, { align: 'right' });
       }
       
-      // Nome PDF personalizzato: Cliente_Cantiere_NumeroFacture_Percentuelle
+      // Nome PDF: NumeroFacture_DataFacture_Cliente_Cantiere
       const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
       const chantierName = (chantier?.nom || 'Chantier').replace(/[^a-zA-Z0-9]/g, '_');
       const numeroFacture = facture.numero || 'F000';
+      const dataFacture = facture.date_facture?.replace(/-/g, '') || new Date().toISOString().split('T')[0].replace(/-/g, '');
       
-      doc.save(`${clientName}_${chantierName}_${numeroFacture}.pdf`);
+      doc.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}.pdf`);
       alert('Facture percentuelle générée avec succès!');
       return;
     }
@@ -3027,13 +3029,14 @@ const genererPDF = async (facture) => {
     
     // Footer rimosso - dati già nell'header
     
-    // Salva documenti con nomi personalizzati
+    // Salva documenti con nomi personalizzati: NumeroFacture_DataFacture_Cliente_Cantiere
     const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
     const chantierName = (chantier?.nom || 'Chantier').replace(/[^a-zA-Z0-9]/g, '_');
     const numeroFacture = facture.numero || 'F000';
+    const dataFacture = facture.date_facture?.replace(/-/g, '') || new Date().toISOString().split('T')[0].replace(/-/g, '');
     
-    docMetrees.save(`${clientName}_${chantierName}_${numeroFacture}_Metrees.pdf`);
-    docFacture.save(`${clientName}_${chantierName}_${numeroFacture}.pdf`);
+    docMetrees.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}_Metrees.pdf`);
+    docFacture.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}.pdf`);
     
     alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
     

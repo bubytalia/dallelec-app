@@ -51,7 +51,7 @@
       </thead>
       <tbody>
         <tr v-for="devis in filteredDevis" :key="devis.id">
-          <td>{{ formatDate(devis.createdAt) }}</td>
+          <td>{{ formatDate(devis.created_at) }}</td>
           <td>{{ devis.numero }}</td>
           <td>{{ getClientName(devis.client_id) }}</td>
           <td>{{ devis.technicien }}</td>

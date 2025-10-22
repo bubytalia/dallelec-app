@@ -2,7 +2,7 @@
   <div class="container py-4">
     <RetourButton to="/admin" />
     
-    <h2 class="text-center mb-4">Scadenziario Fatture</h2>
+    <h2 class="text-center mb-4">Échéancier Factures</h2>
 
     <!-- Filtri -->
     <div class="card mb-4">
