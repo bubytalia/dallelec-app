@@ -181,10 +181,25 @@ const loadMonitoringData = async () => {
       }))
     ];
     
-    // Carica ore
+    // Carica ore con debug
     const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*');
     const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*');
     const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*');
+    
+    console.log('Caricamento ore per', employes.length, 'dipendenti nel mese:', selectedMonth.value);
+    
+    // Verifica in che mesi ci sono ore per junior e tony
+    const juniorOre = (heuresChef || []).concat(heuresOuvriers || []).filter(h => 
+      h.chef_id === 'junior.repellin@dallelec.ch' || h.ouvrier_id === 'junior.repellin@dallelec.ch'
+    );
+    const tonyOre = (heuresOuvriers || []).filter(h => h.ouvrier_id === 'tony.maullier@dallelec.com');
+    
+    if (juniorOre.length > 0) {
+      console.log('Junior ha ore in questi mesi:', [...new Set(juniorOre.map(h => h.date.substring(0, 7)))]);
+    }
+    if (tonyOre.length > 0) {
+      console.log('Tony ha ore in questi mesi:', [...new Set(tonyOre.map(h => h.date.substring(0, 7)))]);
+    }
     
     // Carica assenze
     const { data: absences } = await supabase.from('absences').select('*');
@@ -220,12 +235,12 @@ const loadMonitoringData = async () => {
         
         // Controlla ore
         if (employe.type === 'chef') {
-          const heuresChefJour = (heuresChef || []).filter(h => h.date === dateStr && h.chefId === employe.email);
-          const heuresInterimJour = (heuresInterim || []).filter(h => h.date === dateStr && h.chefId === employe.email);
-          heuresJour = heuresChefJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
-                      heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+          const heuresChefJour = (heuresChef || []).filter(h => h.date === dateStr && h.chef_id === employe.email);
+          const heuresInterimJour = (heuresInterim || []).filter(h => h.date === dateStr && h.chef_id === employe.email);
+          heuresJour = heuresChefJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
+                      heuresInterimJour.reduce((sum, h) => sum + (h.total_heures || h.heures || 0), 0);
         } else {
-          const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr && h.ouvrierId === employe.email);
+          const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr && h.ouvrier_id === employe.email);
           heuresJour = heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
         }
         
@@ -271,6 +286,16 @@ const loadMonitoringData = async () => {
       
       monitoring.push(employeData);
     }
+    
+    // Log finale per verifica
+    console.log('📊 RIEPILOGO FINALE:');
+    monitoring.forEach(emp => {
+      if (emp.totalHeures > 0) {
+        console.log(`✅ ${emp.nom}: ${emp.totalHeures}h in ${emp.joursTravailles} giorni`);
+      } else {
+        console.log(`❌ ${emp.nom}: 0 ore`);
+      }
+    });
     
     monitoringData.value = monitoring;
     

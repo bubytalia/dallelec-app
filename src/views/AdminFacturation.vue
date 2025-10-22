@@ -797,11 +797,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { supabase } from '../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const router = useRouter();
 const metrages = ref([]);
 const resocontiPercentuali = ref([]);
 const factures = ref([]);
@@ -1598,6 +1600,14 @@ const confirmerChangeStatut = async () => {
 };
 
 const modifierFacture = (facture) => {
+  // Per fatture manuali, reindirizza alla pagina di modifica
+  if (facture.type === 'manuelle') {
+    // Naviga alla pagina di modifica con l'ID della fattura usando Vue Router
+    router.push(`/admin/facture-manuelle?edit=${facture.id}`);
+    return;
+  }
+  
+  // Per altre fatture, mostra il modal normale
   factureEnCours.value = facture;
   nouvelleDate.value = facture.date_facture || facture.dateFacture;
   nouvelleDateEcheance.value = facture.date_echeance || facture.dateEcheance || '';
@@ -1906,68 +1916,95 @@ const genererPDF = async (facture) => {
       
       // Usa la stessa funzione drawHeader delle altre fatture
       const drawHeader = (doc, title) => {
-        if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
+        // Logo più grande e più in basso
+        if (logo) doc.addImage(logo, 'JPEG', 15, 20, 70, 15);
         
-        doc.setFontSize(8);
+        // Dati azienda più grandi
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text('DALLELEC Sarl - CHE-280.028.822', 200, 12, { align: 'right' });
-        doc.text('Rue de Bourgogne 25', 200, 17, { align: 'right' });
-        doc.text('1203 Genève', 200, 22, { align: 'right' });
+        doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
+        doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
+        doc.text('1203 Genève', 195, 34, { align: 'right' });
         
-        doc.setFontSize(18);
+        // Titolo più in basso
+        doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text(title, 10, 35);
+        doc.text(title, 15, 50);
         
+        // Linea separatrice
         doc.setLineWidth(0.5);
-        doc.line(10, 40, 200, 40);
+        doc.line(15, 55, 195, 55);
         
-        doc.setFontSize(9);
+        // Informazioni documento con più spazio
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        let yInfo = 46;
+        let yInfo = 65;
         
-        // Prima colonna (sinistra)
-        doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, yInfo);
+        // Prima colonna (sinistra) - più spaziosa
+        doc.text(`Date: ${formatDate(facture.date_facture)}`, 15, yInfo);
         
-        yInfo += 6;
+        yInfo += 10;
         doc.setFont('helvetica', 'bold');
-        doc.text('FACTURÉ À:', 10, yInfo);
-        yInfo += 4;
+        doc.text('FACTURÉ À:', 15, yInfo);
+        yInfo += 6;
         doc.setFont('helvetica', 'normal');
         
-        // Trova i dati completi del cliente
+        // Dati cliente più grandi con text wrapping
         const clientData = clients.value.find(c => c.nom === facture.client_nom);
-        doc.setFontSize(9);
-        doc.text(facture.client_nom, 10, yInfo);
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        
+        // Gestisce il wrapping del nome cliente
+        const maxWidth = 90; // Larghezza massima per evitare sovrapposizione
+        const clientLines = doc.splitTextToSize(facture.client_nom, maxWidth);
+        clientLines.forEach((line, index) => {
+          doc.text(line, 15, yInfo + (index * 5));
+        });
+        yInfo += clientLines.length * 5;
+        
+        doc.setFont('helvetica', 'normal');
+        
         if (clientData?.adresse) {
-          yInfo += 3.5;
-          doc.setFontSize(8);
-          doc.text(clientData.adresse, 10, yInfo);
+          doc.setFontSize(10);
+          doc.text(clientData.adresse, 15, yInfo);
+          yInfo += 5;
         }
         if (clientData?.ville) {
-          yInfo += 3.5;
-          doc.text(clientData.ville, 10, yInfo);
+          doc.text(clientData.ville, 15, yInfo);
+          yInfo += 5;
         }
         
         // Seconda colonna (destra) - Informazioni cantiere
-        let yInfoRight = 48;
+        let yInfoRight = 67;
         if (chantier) {
           doc.setFont('helvetica', 'bold');
-          doc.text(`CHANTIER N° ${chantier.numero_cantiere || 'N/A'}`, 110, yInfoRight);
-          yInfoRight += 5;
+          doc.setFontSize(10);
+          doc.text(`CHANTIER N° ${chantier.numero_cantiere || 'N/A'}`, 115, yInfoRight);
+          yInfoRight += 6;
           doc.setFont('helvetica', 'normal');
-          doc.text(`${chantier.nom}`, 110, yInfoRight);
+          doc.text(`${chantier.nom}`, 115, yInfoRight);
+          
+          if (chantier.adresse) {
+            yInfoRight += 5;
+            doc.setFontSize(9);
+            doc.text(`${chantier.adresse}`, 115, yInfoRight);
+            if (chantier.ville) {
+              yInfoRight += 4;
+              doc.text(`${chantier.ville}`, 115, yInfoRight);
+            }
+            doc.setFontSize(10);
+          }
           
           if (chantier.technicien) {
-            yInfoRight += 5;
+            yInfoRight += 6;
             doc.setFont('helvetica', 'italic');
-            doc.setFontSize(8);
-            doc.text(`Technicien: ${chantier.technicien}`, 110, yInfoRight);
             doc.setFontSize(9);
+            doc.text(`Technicien: ${chantier.technicien}`, 115, yInfoRight);
             doc.setFont('helvetica', 'normal');
           }
         }
         
-        return Math.max(yInfo, yInfoRight) + 15; // Più spazio dopo l'header
+        return Math.max(yInfo, yInfoRight) + 20; // Ancora più spazio dopo l'header
       };
       
       let startY = drawHeader(doc, `FACTURE N. ${facture.numero}`);
@@ -1999,39 +2036,41 @@ const genererPDF = async (facture) => {
         },
         columnStyles: {
           0: { cellWidth: 70 },
-          1: { cellWidth: 20 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 30 },
-          4: { cellWidth: 35 }
+          1: { cellWidth: 20, halign: 'center' },
+          2: { cellWidth: 25, halign: 'right' },
+          3: { cellWidth: 30, halign: 'right' },
+          4: { cellWidth: 35, halign: 'right' }
         }
       });
       
-      const finalY = doc.lastAutoTable.finalY + 30; // Molto più spazio prima dei totali
+      const finalY = doc.lastAutoTable.finalY + 40;
       const totalHT = Number(facture.montant_ht || facture.montantHT || 0);
-      const tva = totalHT * 0.081; // TVA Suisse 8.1%
+      const tva = totalHT * 0.081;
       const ttc = totalHT + tva;
       
-      // Box per i totali
-      doc.setFillColor(245, 245, 245);
-      doc.rect(120, finalY - 3, 80, 25, 'F');
-      doc.setDrawColor(200, 200, 200);
-      doc.rect(120, finalY - 3, 80, 25);
+      // Box per i totali più elegante
+      doc.setFillColor(248, 249, 250);
+      doc.rect(115, finalY - 5, 85, 30, 'F');
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.3);
+      doc.rect(115, finalY - 5, 85, 30);
       
-      doc.setFontSize(10);
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
-      doc.text('Total HT:', 125, finalY + 3);
-      doc.text(`${totalHT.toFixed(2)} CHF`, 190, finalY + 3, { align: 'right' });
-      doc.text(`TVA (8.1%):`, 125, finalY + 10);
-      doc.text(`${tva.toFixed(2)} CHF`, 190, finalY + 10, { align: 'right' });
+      doc.text('Total HT:', 120, finalY + 2);
+      doc.text(`${totalHT.toFixed(2)} CHF`, 195, finalY + 2, { align: 'right' });
+      doc.text(`TVA (8.1%):`, 120, finalY + 9);
+      doc.text(`${tva.toFixed(2)} CHF`, 195, finalY + 9, { align: 'right' });
       
-      // Linea separatrice
+      // Linea separatrice più elegante
       doc.setLineWidth(0.5);
-      doc.line(125, finalY + 14, 195, finalY + 14);
+      doc.setDrawColor(100, 100, 100);
+      doc.line(120, finalY + 13, 195, finalY + 13);
       
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.text('TOTAL TTC:', 125, finalY + 20);
-      doc.text(`${ttc.toFixed(2)} CHF`, 190, finalY + 20, { align: 'right' });
+      doc.setFontSize(13);
+      doc.text('TOTAL TTC:', 120, finalY + 20);
+      doc.text(`${ttc.toFixed(2)} CHF`, 195, finalY + 20, { align: 'right' });
       
       // Conditions de paiement dalle notes
       const conditionsPaiement = facture.notes?.includes('Conditions:') ? 
@@ -2040,8 +2079,29 @@ const genererPDF = async (facture) => {
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
       // Conditions de paiement in fondo alla pagina
-      doc.text(`Conditions de paiement: ${conditionsPaiement}`, 10, 270);
-      doc.text('Merci de votre confiance', 10, 280);
+      let yFooter = finalY + 35;
+      
+      doc.text(`Conditions de paiement: ${conditionsPaiement}`, 15, yFooter);
+      doc.setFontSize(9);
+      doc.text('Merci de votre confiance', 15, yFooter + 10);
+      
+      // Note se presenti (coordinate bancarie)
+      const notes = facture.notes?.split('Conditions:')[0]?.trim();
+      if (notes) {
+        yFooter += 25;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Coordonnées bancaires:', 15, yFooter);
+        yFooter += 6;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        const noteLines = doc.splitTextToSize(notes, 180);
+        noteLines.forEach((line, index) => {
+          doc.text(line, 15, yFooter + (index * 4));
+        });
+      }
       
       // Nome PDF personalizzato
       const clientName = (facture.client_nom || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
@@ -2097,75 +2157,99 @@ const genererPDF = async (facture) => {
 
     // Funzione helper per header
     const drawHeader = (doc, title) => {
-      if (logo) doc.addImage(logo, 'JPEG', 10, 10, 55, 10);
+      // Logo più grande e più in basso
+      if (logo) doc.addImage(logo, 'JPEG', 15, 20, 70, 15);
       
-      // Dati azienda
-      doc.setFontSize(8);
+      // Dati azienda più grandi
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text('DALLELEC Sarl - CHE-280.028.822', 200, 12, { align: 'right' });
-      doc.text('Rue de Bourgogne 25', 200, 17, { align: 'right' });
-      doc.text('1203 Genève', 200, 22, { align: 'right' });
+      doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
+      doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
+      doc.text('1203 Genève', 195, 34, { align: 'right' });
       
-      // Titolo
-      doc.setFontSize(18);
+      // Titolo più in basso
+      doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
-      doc.text(title, 10, 35);
+      doc.text(title, 15, 50);
       
       // Linea separatrice
       doc.setLineWidth(0.5);
-      doc.line(10, 40, 200, 40);
+      doc.line(15, 55, 195, 55);
       
-      // Informazioni documento - layout ottimizzato
-      doc.setFontSize(9);
+      // Informazioni documento con più spazio
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      let yInfo = 46;
+      let yInfo = 65;
       
-      // Prima colonna (sinistra)
-      doc.text(`Date: ${formatDate(facture.date_facture)}`, 10, yInfo);
+      // Prima colonna (sinistra) - più spaziosa
+      doc.text(`Date: ${formatDate(facture.date_facture)}`, 15, yInfo);
       if (periodoRef) {
-        yInfo += 5;
-        doc.text(periodoRef, 10, yInfo);
+        yInfo += 6;
+        doc.text(periodoRef, 15, yInfo);
       }
       
-      yInfo += 6;
+      yInfo += 10;
       doc.setFont('helvetica', 'bold');
-      doc.text('FACTURÉ À:', 10, yInfo);
-      yInfo += 4;
+      doc.text('FACTURÉ À:', 15, yInfo);
+      yInfo += 6;
       doc.setFont('helvetica', 'normal');
       
-      // Trova i dati completi del cliente
+      // Dati cliente più grandi con text wrapping
       const clientData = clients.value.find(c => c.nom === nomeCliente);
-      doc.setFontSize(9);
-      doc.text(nomeCliente, 10, yInfo);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      
+      // Gestisce il wrapping del nome cliente
+      const maxWidth = 90;
+      const clientLines = doc.splitTextToSize(nomeCliente, maxWidth);
+      clientLines.forEach((line, index) => {
+        doc.text(line, 15, yInfo + (index * 5));
+      });
+      yInfo += clientLines.length * 5;
+      
+      doc.setFont('helvetica', 'normal');
+      
       if (clientData?.adresse) {
-        yInfo += 3.5;
-        doc.setFontSize(8);
-        doc.text(clientData.adresse, 10, yInfo);
+        doc.setFontSize(10);
+        doc.text(clientData.adresse, 15, yInfo);
+        yInfo += 5;
       }
       if (clientData?.ville) {
-        yInfo += 3.5;
-        doc.text(clientData.ville, 10, yInfo);
+        doc.text(clientData.ville, 15, yInfo);
+        yInfo += 5;
       }
       
       // Seconda colonna (destra) - Informazioni cantiere
-      let yInfoRight = 48;
+      let yInfoRight = 67;
       doc.setFont('helvetica', 'bold');
-      doc.text(`CHANTIER N° ${chantier?.numero_cantiere || 'N/A'}`, 110, yInfoRight);
-      yInfoRight += 5;
+      doc.setFontSize(10);
+      doc.text(`CHANTIER N° ${chantier?.numero_cantiere || 'N/A'}`, 115, yInfoRight);
+      yInfoRight += 6;
       doc.setFont('helvetica', 'normal');
-      doc.text(`${nomeChantier}`, 110, yInfoRight);
+      doc.text(`${nomeChantier}`, 115, yInfoRight);
       
-      // Aggiunge nome technicien sotto il numero cantiere
-      if (chantier?.technicien) {
+      // Aggiunge indirizzo cantiere
+      if (chantier?.adresse) {
         yInfoRight += 5;
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(8);
-        doc.text(`Technicien: ${chantier.technicien}`, 110, yInfoRight);
         doc.setFontSize(9);
+        doc.text(`${chantier.adresse}`, 115, yInfoRight);
+        if (chantier?.ville) {
+          yInfoRight += 4;
+          doc.text(`${chantier.ville}`, 115, yInfoRight);
+        }
+        doc.setFontSize(10);
+      }
+      
+      // Aggiunge nome technicien
+      if (chantier?.technicien) {
+        yInfoRight += 6;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.text(`Technicien: ${chantier.technicien}`, 115, yInfoRight);
         doc.setFont('helvetica', 'normal');
       }
       
-      return Math.max(yInfo, yInfoRight) + 8; // Ritorna la posizione Y per il contenuto
+      return Math.max(yInfo, yInfoRight) + 20;
     };
 
     // FATTURA DA RESOCONTO PERCENTUALE
@@ -2186,7 +2270,94 @@ const genererPDF = async (facture) => {
       }
       
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-      let yPos = drawHeader(doc, `FACTURE N. ${facture.numero}`);
+      
+      // Header migliorato per fatture percentuali
+      if (logo) doc.addImage(logo, 'JPEG', 15, 20, 70, 15);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
+      doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
+      doc.text('1203 Genève', 195, 34, { align: 'right' });
+      
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`FACTURE N. ${facture.numero}`, 15, 50);
+      
+      doc.setLineWidth(0.5);
+      doc.line(15, 55, 195, 55);
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      let yInfo = 65;
+      
+      doc.text(`Date: ${formatDate(facture.date_facture)}`, 15, yInfo);
+      if (periodoRef) {
+        yInfo += 6;
+        doc.text(periodoRef, 15, yInfo);
+      }
+      
+      yInfo += 10;
+      doc.setFont('helvetica', 'bold');
+      doc.text('FACTURÉ À:', 15, yInfo);
+      yInfo += 6;
+      doc.setFont('helvetica', 'normal');
+      
+      const clientData = clients.value.find(c => c.nom === nomeCliente);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      
+      const maxWidth = 90;
+      const clientLines = doc.splitTextToSize(nomeCliente, maxWidth);
+      clientLines.forEach((line, index) => {
+        doc.text(line, 15, yInfo + (index * 5));
+      });
+      yInfo += clientLines.length * 5;
+      
+      doc.setFont('helvetica', 'normal');
+      
+      if (clientData?.adresse) {
+        doc.setFontSize(10);
+        doc.text(clientData.adresse, 15, yInfo);
+        yInfo += 5;
+      }
+      if (clientData?.ville) {
+        doc.text(clientData.ville, 15, yInfo);
+        yInfo += 5;
+      }
+      
+      let yInfoRight = 67;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(`CHANTIER N° ${chantier?.numero_cantiere || 'N/A'}`, 115, yInfoRight);
+      yInfoRight += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${nomeChantier}`, 115, yInfoRight);
+      
+      // Indirizzo cantiere con tutti i possibili nomi campo
+      yInfoRight += 5;
+      doc.setFontSize(9);
+      const indirizzo = chantier?.adresse || chantier?.indirizzo || chantier?.address;
+      const citta = chantier?.ville || chantier?.citta || chantier?.city;
+      
+      if (indirizzo) {
+        doc.text(`${indirizzo}`, 115, yInfoRight);
+        if (citta) {
+          yInfoRight += 4;
+          doc.text(`${citta}`, 115, yInfoRight);
+        }
+      }
+      doc.setFontSize(10);
+      
+      if (chantier?.technicien) {
+        yInfoRight += 6;
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.text(`Technicien: ${chantier.technicien}`, 115, yInfoRight);
+        doc.setFont('helvetica', 'normal');
+      }
+      
+      let yPos = Math.max(yInfo, yInfoRight) + 20;
       
       // Descrizione lavori - ottimizzata
       doc.setFontSize(11);
@@ -2324,10 +2495,11 @@ const genererPDF = async (facture) => {
         yPos = doc.lastAutoTable.finalY + 8;
       }
       
-      // Aggiungi spazio proporzionale prima dei totali
+      // Aggiungi più spazio prima dei totali
+      yPos += 25;
       const spazioRimanente = 200 - yPos;
       if (spazioRimanente > 60) {
-        yPos += Math.floor(spazioRimanente * 0.4); // Usa il 40% dello spazio rimanente
+        yPos += Math.floor(spazioRimanente * 0.3);
       }
       
       // TOTALI FINALI - USA LE STESSE FUNZIONI DELL'ANTEPRIMA
@@ -2407,10 +2579,11 @@ const genererPDF = async (facture) => {
       // Conditions de paiement
       yPos += 35;
       doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      doc.text('Conditions de paiement: 30 jours net', 15, yPos);
       doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text('Conditions de paiement: 30 jours net', 10, yPos);
-      doc.text('Merci de votre confiance', 10, yPos + 6);
+      doc.text('Merci de votre confiance', 15, yPos + 10);
       
       // Numerazione pagine
       const totalPages = doc.internal.getNumberOfPages();

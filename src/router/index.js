@@ -15,6 +15,7 @@ import AdminAssocierDevis from '@/views/AdminAssocierDevis.vue';
 import AdminBilans from '@/views/AdminBilans.vue';
 import AdminFacturation from '@/views/AdminFacturation.vue';
 import AdminFactureManuelle from '@/views/AdminFactureManuelle.vue';
+import AdminScadenziario from '@/views/AdminScadenziario.vue';
 import AdminImportFatture from '@/views/AdminImportFatture.vue';
 import AdminMonitoringHeures from '@/views/AdminMonitoringHeures.vue';
 import AdminAbsences from '@/views/AdminAbsences.vue';
@@ -106,6 +107,7 @@ const routes = [
   { path: '/admin/associer-devis', name: 'AdminAssocierDevis', component: AdminAssocierDevis },
   { path: '/admin/facturation', name: 'AdminFacturation', component: AdminFacturation },
   { path: '/admin/facture-manuelle', name: 'AdminFactureManuelle', component: AdminFactureManuelle },
+  { path: '/admin/scadenziario', name: 'AdminScadenziario', component: AdminScadenziario },
   { path: '/admin/import-fatture', name: 'AdminImportFatture', component: AdminImportFatture },
   { path: '/admin/monitoring-heures', name: 'AdminMonitoringHeures', component: AdminMonitoringHeures },
   { path: '/admin/absences', name: 'AdminAbsences', component: AdminAbsences },

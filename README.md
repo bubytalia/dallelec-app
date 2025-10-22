@@ -28,6 +28,9 @@ npm run dev
 
 # Deploy produzione
 git push origin fix-produits-devis
+
+# Backup completo ottimizzato (NUOVO)
+BACKUP_COMPLETO_OTTIMIZZATO.bat
 ```
 
 ## ⚠️ IMPORTANTE

@@ -2,11 +2,12 @@
   <div class="container py-4">
     <RetourButton to="/admin/facturation" />
     
-    <h2 class="text-center mb-4">Facture Manuelle</h2>
+    <h2 class="text-center mb-4">{{ isEditing ? 'Modifier' : 'Créer' }} Facture Manuelle</h2>
 
     <div class="card">
       <div class="card-header">
-        <h5>Créer une facture libre</h5>
+        <h5>{{ isEditing ? 'Modifier la facture' : 'Créer une facture libre' }}</h5>
+        <small v-if="isEditing" class="text-muted">Modification de la facture existante</small>
       </div>
       <div class="card-body">
         <!-- Informations générales -->
@@ -104,9 +105,9 @@
           <label>Conditions de paiement:</label>
           <select v-model="facture.conditionsPaiement" class="form-control">
             <option value="30 jours net">30 jours net</option>
-            <option value="15 jours net">15 jours net</option>
-            <option value="Comptant">Comptant</option>
-            <option value="À réception">À réception</option>
+            <option v-for="modalita in modalitaPagamento" :key="modalita.id" :value="modalita.nom">
+              {{ modalita.nom }}
+            </option>
           </select>
         </div>
 
@@ -119,7 +120,7 @@
         <!-- Actions -->
         <div class="text-center">
           <button @click="sauvegarderFacture" class="btn btn-success me-2" :disabled="!factureValide">
-            💾 Sauvegarder facture
+            💾 {{ isEditing ? 'Mettre à jour' : 'Sauvegarder' }} facture
           </button>
           <button @click="resetFacture" class="btn btn-secondary">
             🔄 Reset
@@ -132,16 +133,23 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { supabase } from '../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
+const route = useRoute();
+const router = useRouter();
 const chantiers = ref([]);
 const clients = ref([]);
+const modalitaPagamento = ref([]);
+const isEditing = ref(false);
+const editingId = ref(null);
 const facture = ref({
   clientId: '',
   clientNom: '',
   dateFacture: new Date().toISOString().split('T')[0],
   chantierId: '',
+  conditionsPaiement: '30 jours net',
   notes: '',
   lignes: [
     { description: '', unite: '', quantite: 1, prixUnitaire: 0 }
@@ -194,6 +202,21 @@ const fetchClients = async () => {
   }
 };
 
+const fetchModalitaPagamento = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('paiements')
+      .select('*')
+      .order('nom', { ascending: true });
+    
+    if (error) throw error;
+    modalitaPagamento.value = data || [];
+    console.log('Modalità pagamento caricate:', modalitaPagamento.value);
+  } catch (error) {
+    console.error('Erreur chargement modalità pagamento:', error);
+  }
+};
+
 const ajouterLigne = () => {
   facture.value.lignes.push({
     description: '',
@@ -236,39 +259,97 @@ const generateNumeroFacture = async () => {
   }
 };
 
+const loadFactureForEdit = async (factureId) => {
+  try {
+    const { data, error } = await supabase
+      .from('factures')
+      .select('*')
+      .eq('id', factureId)
+      .single();
+    
+    if (error) throw error;
+    
+    // Popola il form con i dati esistenti
+    const clientData = clients.value.find(c => c.nom === data.client_nom);
+    facture.value = {
+      clientId: clientData?.id || '',
+      clientNom: data.client_nom,
+      dateFacture: data.date_facture,
+      chantierId: data.chantier_id || '',
+      conditionsPaiement: data.notes?.includes('Conditions:') ? 
+        data.notes.split('Conditions: ')[1]?.split('\n')[0] || '30 jours net' : '30 jours net',
+      notes: data.notes?.split('Conditions:')[0]?.trim() || '',
+      lignes: data.lignes || [{ description: '', unite: '', quantite: 1, prixUnitaire: 0 }]
+    };
+    
+    isEditing.value = true;
+    editingId.value = factureId;
+    
+  } catch (error) {
+    console.error('Erreur chargement facture:', error);
+    alert('Erreur chargement facture: ' + error.message);
+  }
+};
+
 const sauvegarderFacture = async () => {
   if (!factureValide.value) {
     alert('Veuillez remplir tous les champs obligatoires');
     return;
   }
+  
   try {
-    const numeroFacture = await generateNumeroFacture();
+    const lignesFiltered = facture.value.lignes.filter(l => l.description && l.quantite > 0);
+    const notesComplete = `${facture.value.notes}${facture.value.notes ? '\n' : ''}Conditions: ${facture.value.conditionsPaiement}`;
     
-    const { error } = await supabase
-      .from('factures')
-      .insert([{
-        numero: numeroFacture,
-        type: 'manuelle',
-        client_nom: facture.value.clientNom,
-        chantier_id: facture.value.chantierId || null,
-        date_facture: facture.value.dateFacture,
-        lignes: facture.value.lignes.filter(l => l.description && l.quantite > 0),
-        montant_ht: totalHT.value,
-        taux_tva: 8.1,
-        montant_ttc: totalHT.value * 1.081,
-        statut: 'emise',
-        notes: `${facture.value.notes}${facture.value.notes ? '\n' : ''}Conditions: ${facture.value.conditionsPaiement}`,
-        date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        created_at: new Date().toISOString()
-      }]);
+    if (isEditing.value) {
+      // Modifica fattura esistente
+      const { error } = await supabase
+        .from('factures')
+        .update({
+          client_nom: facture.value.clientNom,
+          chantier_id: facture.value.chantierId || null,
+          date_facture: facture.value.dateFacture,
+          lignes: lignesFiltered,
+          montant_ht: totalHT.value,
+          montant_ttc: totalHT.value * 1.081,
+          notes: notesComplete
+        })
+        .eq('id', editingId.value);
+      
+      if (error) throw error;
+      alert('Facture modifiée avec succès!');
+      
+    } else {
+      // Crea nuova fattura
+      const numeroFacture = await generateNumeroFacture();
+      
+      const { error } = await supabase
+        .from('factures')
+        .insert([{
+          numero: numeroFacture,
+          type: 'manuelle',
+          client_nom: facture.value.clientNom,
+          chantier_id: facture.value.chantierId || null,
+          date_facture: facture.value.dateFacture,
+          lignes: lignesFiltered,
+          montant_ht: totalHT.value,
+          taux_tva: 8.1,
+          montant_ttc: totalHT.value * 1.081,
+          statut: 'emise',
+          notes: notesComplete,
+          date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          created_at: new Date().toISOString()
+        }]);
+      
+      if (error) throw error;
+      alert(`Facture ${numeroFacture} créée avec succès!`);
+    }
     
-    if (error) throw error;
-    
-    alert(`Facture ${numeroFacture} créée avec succès!`);
-    resetFacture();
+    // Torna alla pagina fatturazione
+    router.push('/admin/facturation');
     
   } catch (error) {
-    console.error('Erreur création facture:', error);
+    console.error('Erreur sauvegarde facture:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -291,6 +372,15 @@ onMounted(async () => {
   console.log('Componente montato, caricamento dati...');
   await fetchChantiers();
   await fetchClients();
+  await fetchModalitaPagamento();
+  
+  // Controlla se c'è un parametro edit nell'URL
+  const editId = route.query.edit;
+  if (editId) {
+    console.log('Modalità modifica per fattura ID:', editId);
+    await loadFactureForEdit(editId);
+  }
+  
   console.log('Caricamento completato');
 });
 </script>
