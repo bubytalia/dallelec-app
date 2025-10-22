@@ -16,6 +16,12 @@
               <label>Mois:</label>
               <input v-model="selectedMonth" type="month" class="form-control" @change="loadMonitoringData" />
             </div>
+            <div v-if="availableMonths.length > 0" class="mb-3">
+              <small class="text-info">
+                📅 Mesi con ore disponibili: 
+                <span v-for="month in availableMonths" :key="month" class="badge bg-info me-1">{{ month }}</span>
+              </small>
+            </div>
             <button @click="loadMonitoringData" class="btn btn-primary">Actualiser</button>
           </div>
         </div>
@@ -87,6 +93,7 @@
               <thead>
                 <tr>
                   <th>Employé</th>
+                  <th>Rôle actuel</th>
                   <th>Jours travaillés</th>
                   <th>Total heures</th>
                   <th>Jours manquants</th>
@@ -96,7 +103,17 @@
               </thead>
               <tbody>
                 <tr v-for="employe in monitoringData" :key="employe.email">
-                  <td>{{ employe.nom }}</td>
+                  <td>
+                    {{ employe.nom }}
+                    <small v-if="employe.hasMultipleRoles" class="text-info d-block">
+                      🔄 Évolution de rôle détectée
+                    </small>
+                  </td>
+                  <td>
+                    <span class="badge" :class="employe.type === 'chef' ? 'bg-primary' : 'bg-secondary'">
+                      {{ employe.type === 'chef' ? '👨‍💼 Chef' : '👷 Ouvrier' }}
+                    </span>
+                  </td>
                   <td>{{ employe.joursTravailles }}</td>
                   <td>{{ employe.totalHeures }}h</td>
                   <td>
@@ -125,8 +142,9 @@ import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
-const selectedMonth = ref(new Date().toISOString().slice(0, 7));
+const selectedMonth = ref('2025-10'); // Cambiato per vedere le ore di Tony
 const monitoringData = ref(null);
+const availableMonths = ref([]);
 
 const alerts = computed(() => {
   if (!monitoringData.value) return [];
@@ -186,20 +204,43 @@ const loadMonitoringData = async () => {
     const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*');
     const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*');
     
+    // Calcola mesi disponibili
+    const allDates = [
+      ...(heuresChef || []).map(h => h.date),
+      ...(heuresInterim || []).map(h => h.date),
+      ...(heuresOuvriers || []).map(h => h.date)
+    ];
+    const months = [...new Set(allDates.map(date => date.substring(0, 7)))].sort().reverse();
+    availableMonths.value = months;
+    
     console.log('Caricamento ore per', employes.length, 'dipendenti nel mese:', selectedMonth.value);
+    console.log('Mesi disponibili:', months);
     
-    // Verifica in che mesi ci sono ore per junior e tony
-    const juniorOre = (heuresChef || []).concat(heuresOuvriers || []).filter(h => 
-      h.chef_id === 'junior.repellin@dallelec.ch' || h.ouvrier_id === 'junior.repellin@dallelec.ch'
-    );
-    const tonyOre = (heuresOuvriers || []).filter(h => h.ouvrier_id === 'tony.maullier@dallelec.com');
+    // Debug evoluzione ruoli
+    console.log('🔄 GESTIONE EVOLUZIONE RUOLI:');
     
-    if (juniorOre.length > 0) {
-      console.log('Junior ha ore in questi mesi:', [...new Set(juniorOre.map(h => h.date.substring(0, 7)))]);
-    }
-    if (tonyOre.length > 0) {
-      console.log('Tony ha ore in questi mesi:', [...new Set(tonyOre.map(h => h.date.substring(0, 7)))]);
-    }
+    // Verifica ore per ogni dipendente in tutte le tabelle
+    employes.forEach(emp => {
+      const oreChef = (heuresChef || []).filter(h => h.chef_id === emp.email);
+      const oreInterim = (heuresInterim || []).filter(h => h.chef_id === emp.email);
+      const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email);
+      
+      const totaleOre = oreChef.length + oreInterim.length + oreOuvrier.length;
+      
+      if (totaleOre > 0) {
+        console.log(`👤 ${emp.nom} (attuale: ${emp.type}):`);
+        if (oreChef.length > 0) console.log(`  📊 Chef: ${oreChef.length} record`);
+        if (oreInterim.length > 0) console.log(`  📊 Interim: ${oreInterim.length} record`);
+        if (oreOuvrier.length > 0) console.log(`  📊 Ouvrier: ${oreOuvrier.length} record`);
+        
+        const mesiTotali = [...new Set([
+          ...oreChef.map(h => h.date.substring(0, 7)),
+          ...oreInterim.map(h => h.date.substring(0, 7)),
+          ...oreOuvrier.map(h => h.date.substring(0, 7))
+        ])].sort();
+        console.log(`  📅 Mesi attivi: ${mesiTotali.join(', ')}`);
+      }
+    });
     
     // Carica assenze
     const { data: absences } = await supabase.from('absences').select('*');
@@ -208,10 +249,16 @@ const loadMonitoringData = async () => {
     const monitoring = [];
     
     for (const employe of employes) {
+      // Verifica evoluzione ruoli
+      const oreChefTotali = (heuresChef || []).filter(h => h.chef_id === employe.email);
+      const oreOuvrierTotali = (heuresOuvriers || []).filter(h => h.ouvrier_id === employe.email);
+      const hasMultipleRoles = oreChefTotali.length > 0 && oreOuvrierTotali.length > 0;
+      
       const employeData = {
         email: employe.email,
         nom: employe.nom,
         type: employe.type,
+        hasMultipleRoles,
         jours: [],
         joursTravailles: 0,
         totalHeures: 0,
@@ -230,19 +277,20 @@ const loadMonitoringData = async () => {
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         const isFuture = currentDate > today;
         
-        let heuresJour = 0;
         let hasAbsence = false;
         
-        // Controlla ore
-        if (employe.type === 'chef') {
-          const heuresChefJour = (heuresChef || []).filter(h => h.date === dateStr && h.chef_id === employe.email);
-          const heuresInterimJour = (heuresInterim || []).filter(h => h.date === dateStr && h.chef_id === employe.email);
-          heuresJour = heuresChefJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
-                      heuresInterimJour.reduce((sum, h) => sum + (h.total_heures || h.heures || 0), 0);
-        } else {
-          const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr && h.ouvrier_id === employe.email);
-          heuresJour = heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
-        }
+        // Controlla ore - CERCA SIA COME CHEF CHE COME OUVRIER per gestire evoluzioni ruolo
+        let heuresJour = 0;
+        
+        // Ore come chef
+        const heuresChefJour = (heuresChef || []).filter(h => h.date === dateStr && h.chef_id === employe.email);
+        const heuresInterimJour = (heuresInterim || []).filter(h => h.date === dateStr && h.chef_id === employe.email);
+        heuresJour += heuresChefJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
+        heuresJour += heuresInterimJour.reduce((sum, h) => sum + (h.total_heures || h.heures || 0), 0);
+        
+        // Ore come ouvrier (per gestire evoluzioni di ruolo)
+        const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr && h.ouvrier_id === employe.email);
+        heuresJour += heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
         
         // Controlla assenze
         const absenceJour = (absences || []).find(a => 
@@ -288,12 +336,12 @@ const loadMonitoringData = async () => {
     }
     
     // Log finale per verifica
-    console.log('📊 RIEPILOGO FINALE:');
+    console.log('\n📊 RIEPILOGO FINALE MESE', selectedMonth.value, ':');
     monitoring.forEach(emp => {
       if (emp.totalHeures > 0) {
         console.log(`✅ ${emp.nom}: ${emp.totalHeures}h in ${emp.joursTravailles} giorni`);
       } else {
-        console.log(`❌ ${emp.nom}: 0 ore`);
+        console.log(`⚪ ${emp.nom}: 0 ore questo mese`);
       }
     });
     

@@ -958,6 +958,9 @@ const loadData = async () => {
     // Clients per PDF
     await loadClients();
     
+    // Metodi di pagamento
+    await loadPaiements();
+    
     // Métrages (se esiste la tabella)
     try {
       const { data: metragesData, error: metragesError } = await supabase
@@ -1117,9 +1120,8 @@ const autoriserFacturation = async (metrage) => {
     
     const numeroFacture = await generateNumeroFacture();
     
-    // Calcola data scadenza (30 giorni dalla data fattura)
-    const dataScadenza = new Date(dataScelta);
-    dataScadenza.setDate(dataScadenza.getDate() + 30);
+    // Calcola data scadenza usando metodo di pagamento
+    const dataScadenza = calculateDateEcheance(dataScelta, '30 jours net');
     
     // Crée la facture con data personalizzata
     const { error } = await supabase
@@ -1134,7 +1136,7 @@ const autoriserFacturation = async (metrage) => {
         montant_ttc: montantHT * 1.081,
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
-        date_echeance: dataScadenza.toISOString().split('T')[0],
+        date_echeance: dataScadenza,
         notes: `Facture générée depuis métrage du ${formatDate(metrage.created_at)}`,
         created_at: new Date().toISOString()
       }]);
@@ -1833,6 +1835,23 @@ const updateStatut = async (facture) => {
 const formatDate = (date) => {
   if (!date) return 'N/A';
   return date.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
+};
+
+const paiements = ref([]);
+
+// Carica metodi di pagamento da database
+const loadPaiements = async () => {
+  const { data } = await supabase.from('paiements').select('*');
+  paiements.value = data || [];
+};
+
+// Calcola data scadenza da metodo di pagamento
+const calculateDateEcheance = (dateFacture, methodePaiement = '30 jours net') => {
+  const date = new Date(dateFacture);
+  const metodo = paiements.value.find(p => p.nom === methodePaiement);
+  const jours = metodo?.giorni_calcolo || 30;
+  date.setDate(date.getDate() + jours);
+  return date.toISOString().split('T')[0];
 };
 
 const generateNumeroFacture = async () => {
