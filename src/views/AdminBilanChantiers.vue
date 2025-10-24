@@ -367,14 +367,27 @@ const calculerBilans = async () => {
     const isChefPropre = heuresPropres.value.some(hp => hp.id === h.id)
     const isChefInterim = heuresInterim.value.some(hi => hi.id === h.id)
     const type = isChefPropre ? 'propre' : 'interim'
+    const userId = h.chef_id || h.ouvrier_id
+    
+    // Debug per identificare Chef inconnu
+    const userName = getUserName(userId)
+    if (userName.includes('Chef inconnu')) {
+      console.log('🔍 Chef inconnu trovato:', {
+        userId,
+        date: h.date,
+        heures: h.total_heures || h.heures_normales || h.heures || 0,
+        type,
+        chantier_id: h.chantier_id
+      })
+    }
     
     return {
       ...h,
       type,
       heures: h.total_heures || h.heures_normales || h.heures || 0,
-      userId: h.chef_id || h.ouvrier_id,
+      userId,
       chantierId: h.chantier_id,
-      coutHoraire: h.tarif_utilise || getCoutHoraire(h.chef_id || h.ouvrier_id, type)
+      coutHoraire: h.tarif_utilise || getCoutHoraire(userId, type)
     }
   })
 
