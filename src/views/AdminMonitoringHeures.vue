@@ -72,7 +72,8 @@
                   :title="getJourTooltip(jour)"
                   class="calendar-day"
                 >
-                  {{ jour.day }}
+                  <div class="day-number">{{ jour.day }}</div>
+                  <div v-if="jour.heures > 0" class="hours-number">{{ jour.heures }}h</div>
                 </div>
               </div>
             </div>
@@ -390,22 +391,35 @@ onMounted(() => {
 <style scoped>
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
   gap: 2px;
   margin-bottom: 15px;
 }
 
 .calendar-day {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: 5px;
   font-weight: bold;
   cursor: pointer;
   border: 1px solid #ddd;
+  padding: 2px;
+}
+
+.day-number {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.hours-number {
+  font-size: 9px;
+  line-height: 1;
+  margin-top: 1px;
+  opacity: 0.9;
 }
 
 .calendar-day:hover {

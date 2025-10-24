@@ -12,15 +12,15 @@
     <div class="row mb-4">
       <div class="col-md-3">
         <label class="form-label">Période de début</label>
-        <input type="date" v-model="dateDebut" class="form-control" @change="calculerBilans">
+        <input type="date" v-model="dateDebut" class="form-control" @change="() => calculerBilans()">
       </div>
       <div class="col-md-3">
         <label class="form-label">Période de fin</label>
-        <input type="date" v-model="dateFin" class="form-control" @change="calculerBilans">
+        <input type="date" v-model="dateFin" class="form-control" @change="() => calculerBilans()">
       </div>
       <div class="col-md-3">
         <label class="form-label">Chantier</label>
-        <select v-model="selectedChantierId" class="form-control" @change="calculerBilans">
+        <select v-model="selectedChantierId" class="form-control" @change="() => calculerBilans()">
           <option value="">Tous les chantiers</option>
           <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
             {{ chantier.nom }}
@@ -29,7 +29,7 @@
       </div>
       <div class="col-md-3">
         <label class="form-label">Année</label>
-        <select v-model="selectedYear" class="form-control" @change="calculerBilans">
+        <select v-model="selectedYear" class="form-control" @change="() => calculerBilans()">
           <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
       </div>
@@ -276,10 +276,10 @@ const getChantierName = (chantierId) => {
 const getCoutHoraire = (userId, type) => {
   if (type === 'propre') {
     const chef = chefs.value.find(c => c.email === userId)
-    return chef ? chef.coutHoraire || 25 : 25
+    return chef ? chef.cout_horaire || 45 : 45
   } else {
     const collaborateur = collaborateurs.value.find(c => c.email === userId)
-    return collaborateur ? collaborateur.coutHoraire || 20 : 20
+    return collaborateur ? collaborateur.cout_horaire || 35 : 35
   }
 }
 
@@ -334,14 +334,18 @@ const availableYears = computed(() => {
 })
 
 // Fonctions de calcul
-const calculerBilans = () => {
+const calculerBilans = async () => {
   if (!dateDebut.value || !dateFin.value) return
 
   const debut = new Date(dateDebut.value)
   const fin = new Date(dateFin.value)
 
+  // Charger aussi les heures ouvriers pour le calcul complet
+  const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*')
+  const heuresOuvriers = heuresOuvriersData || []
+  
   // Filtrer les heures par période
-  const heuresFiltrees = [...heuresPropres.value, ...heuresInterim.value]
+  const heuresFiltrees = [...heuresPropres.value, ...heuresInterim.value, ...heuresOuvriers]
     .filter(h => {
       const dateHeure = h.date.toDate ? h.date.toDate() : new Date(h.date)
       return dateHeure >= debut && dateHeure <= fin
@@ -349,15 +353,24 @@ const calculerBilans = () => {
 
   // Filtrer par chantier si sélectionné
   const heuresFinales = selectedChantierId.value 
-    ? heuresFiltrees.filter(h => h.chantierId === selectedChantierId.value)
+    ? heuresFiltrees.filter(h => h.chantier_id === selectedChantierId.value)
     : heuresFiltrees
 
   // Préparer les données détaillées
-  heuresDetaillees.value = heuresFinales.map(h => ({
-    ...h,
-    type: heuresPropres.value.some(hp => hp.id === h.id) ? 'propre' : 'interim',
-    coutHoraire: getCoutHoraire(h.userId, heuresPropres.value.some(hp => hp.id === h.id) ? 'propre' : 'interim')
-  }))
+  heuresDetaillees.value = heuresFinales.map(h => {
+    const isChefPropre = heuresPropres.value.some(hp => hp.id === h.id)
+    const isChefInterim = heuresInterim.value.some(hi => hi.id === h.id)
+    const type = isChefPropre ? 'propre' : 'interim'
+    
+    return {
+      ...h,
+      type,
+      heures: h.total_heures || h.heures_normales || h.heures || 0,
+      userId: h.chef_id || h.ouvrier_id,
+      chantierId: h.chantier_id,
+      coutHoraire: h.tarif_utilise || getCoutHoraire(h.chef_id || h.ouvrier_id, type)
+    }
+  })
 
   // Calculer les bilans par chantier
   const bilans = {}
@@ -414,7 +427,7 @@ const calculerRapportMensuel = (heures) => {
       }
     }
     
-    const coutHoraire = getCoutHoraire(h.userId, heuresPropres.value.some(hp => hp.id === h.id) ? 'propre' : 'interim')
+    const coutHoraire = h.coutHoraire || getCoutHoraire(h.userId, h.type)
     rapports[mois].heures += h.heures
     rapports[mois].cout += h.heures * coutHoraire
     rapports[mois].chantiers.add(h.chantierId)
@@ -496,14 +509,20 @@ const fetchData = async () => {
     const { data: chefsData } = await supabase.from('chefdechantiers').select('*')
     chefs.value = chefsData || []
 
-    // Charger les heures propres (TODO: implementare quando tabelle saranno create)
-    heuresPropres.value = []
+    // Charger les heures propres
+    const { data: heuresPropreData } = await supabase.from('heures_chef_propres').select('*')
+    heuresPropres.value = heuresPropreData || []
 
-    // Charger les heures intérimaires (TODO: implementare quando tabelle saranno create)
-    heuresInterim.value = []
+    // Charger les heures intérimaires  
+    const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*')
+    heuresInterim.value = heuresInterimData || []
+    
+    // Charger aussi les heures ouvriers
+    const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*')
+    const heuresOuvriers = heuresOuvriersData || []
 
     setDefaultDates()
-    calculerBilans()
+    await calculerBilans()
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error)
   }

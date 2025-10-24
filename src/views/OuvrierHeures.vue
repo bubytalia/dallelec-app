@@ -38,8 +38,13 @@
             <div class="row">
               <div class="col-md-6 mb-3">
                 <label>Heures travaillées:</label>
-                <input v-model.number="nouvelleHeure.heures" type="number" step="0.5" min="0" max="12" class="form-control" required />
-                <small class="text-muted">Maximum 12 heures par jour</small>
+                <select v-model="nouvelleHeure.heures" class="form-control" required>
+                  <option value="">Sélectionner les heures</option>
+                  <option v-for="option in heuresOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+                <small class="text-muted">Minimum 15 minutes, maximum 12 heures</small>
               </div>
               <div class="col-md-6 mb-3">
                 <label>Type de travail:</label>
@@ -141,10 +146,33 @@ const isDateBlocked = (date) => {
   // return selectedDate < twoDaysAgo && !adminOverride.value;
 };
 
+// Options heures avec format HH:MM (incrementi di 15 minuti)
+const heuresOptions = ref([]);
+
+// Genera opzioni da 0:15 a 12:00 con incrementi di 15 minuti
+const generateHeuresOptions = () => {
+  const options = [];
+  for (let h = 0; h <= 12; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 0 && m === 0) continue; // Skip 0:00
+      if (h === 12 && m > 0) break; // Stop at 12:00
+      
+      const heuresDecimal = h + (m / 60);
+      const heuresFormatted = `${h}:${m.toString().padStart(2, '0')}`;
+      
+      options.push({
+        value: heuresDecimal,
+        label: heuresFormatted
+      });
+    }
+  }
+  return options;
+};
+
 const nouvelleHeure = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
-  heures: 0,
+  heures: '',
   typeTravail: 'Normal',
   notes: ''
 });
@@ -238,7 +266,7 @@ const ajouterHeure = async () => {
     nouvelleHeure.value = {
       chantierId: '',
       date: new Date().toISOString().split('T')[0],
-      heures: 0,
+      heures: '',
       typeTravail: 'Normal',
       notes: ''
     };
@@ -297,6 +325,9 @@ const checkAdminOverride = async (email) => {
 };
 
 onMounted(async () => {
+  // Genera opzioni ore
+  heuresOptions.value = generateHeuresOptions();
+  
   // Controlla autenticazione da localStorage
   const userEmail = localStorage.getItem('userEmail');
   const userRole = localStorage.getItem('userRole');

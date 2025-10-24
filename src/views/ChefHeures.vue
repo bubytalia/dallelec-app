@@ -32,7 +32,12 @@
             </div>
             <div class="mb-3">
               <label>Heures propres:</label>
-              <input v-model.number="newHeure.heures" type="number" step="0.5" class="form-control" />
+              <select v-model="newHeure.heures" class="form-control">
+                <option value="">Sélectionner les heures</option>
+                <option v-for="option in heuresOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
             </div>
             <button @click="addHeurePropre" class="btn btn-primary" :disabled="!newHeure.chantierId">
               Ajouter mes heures
@@ -72,7 +77,12 @@
             </div>
             <div class="mb-3">
               <label>Heures intérimaires:</label>
-              <input v-model.number="newHeureInterim.heures" type="number" step="0.5" class="form-control" />
+              <select v-model="newHeureInterim.heures" class="form-control">
+                <option value="">Sélectionner les heures</option>
+                <option v-for="option in heuresOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
             </div>
             <button @click="addHeureInterim" class="btn btn-success" :disabled="!newHeureInterim.chantierId">
               Ajouter heures intérim
@@ -148,17 +158,40 @@ const chantiers = ref([]);
 const heuresPropres = ref([]);
 const heuresInterim = ref([]);
 
+// Options heures avec format HH:MM (incrementi di 15 minuti)
+const heuresOptions = ref([]);
+
+// Genera opzioni da 0:15 a 12:00 con incrementi di 15 minuti
+const generateHeuresOptions = () => {
+  const options = [];
+  for (let h = 0; h <= 12; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 0 && m === 0) continue; // Skip 0:00
+      if (h === 12 && m > 0) break; // Stop at 12:00
+      
+      const heuresDecimal = h + (m / 60);
+      const heuresFormatted = `${h}:${m.toString().padStart(2, '0')}`;
+      
+      options.push({
+        value: heuresDecimal,
+        label: heuresFormatted
+      });
+    }
+  }
+  return options;
+};
+
 const newHeure = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
-  heures: 0
+  heures: ''
 });
 
 const newHeureInterim = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
   interimaireId: '',
-  heures: 0
+  heures: ''
 });
 
 const logout = async () => {
@@ -253,7 +286,7 @@ const addHeurePropre = async () => {
     newHeure.value = {
       chantierId: '',
       date: new Date().toISOString().split('T')[0],
-      heures: 0
+      heures: ''
     };
     fetchHeuresPropres();
   } catch (error) {
@@ -294,7 +327,7 @@ const addHeureInterim = async () => {
       chantierId: '',
       date: new Date().toISOString().split('T')[0],
       interimaireId: '',
-      heures: 0
+      heures: ''
     };
     fetchHeuresInterim();
   } catch (error) {
@@ -338,6 +371,9 @@ const formatDate = (dateStr) => {
 };
 
 onMounted(() => {
+  // Genera opzioni ore
+  heuresOptions.value = generateHeuresOptions();
+  
   fetchInterimaires();
   fetchChantiers();
   fetchHeuresPropres();

@@ -145,9 +145,9 @@
                 <tbody>
                   <tr v-for="heure in bilanData.heuresChef" :key="heure.id">
                     <td>{{ formatDate(heure.date) }}</td>
-                    <td>{{ heure.heuresPropres }}h</td>
+                    <td>{{ heure.total_heures || heure.heures_normales || 0 }}h</td>
                     <td>{{ heure.coutHoraire }}€</td>
-                    <td>{{ (heure.heuresPropres * heure.coutHoraire).toFixed(2) }}€</td>
+                    <td>{{ ((heure.total_heures || heure.heures_normales || 0) * heure.coutHoraire).toFixed(2) }}€</td>
                   </tr>
                 </tbody>
                 <tfoot>
@@ -189,9 +189,9 @@
                   <tr v-for="heure in bilanData.heuresCollaborateurs" :key="heure.id">
                     <td>{{ formatDate(heure.date) }}</td>
                     <td>{{ heure.nomCollaborateur }}</td>
-                    <td>{{ heure.heuresInterim }}h</td>
+                    <td>{{ heure.total_heures || heure.heures_normales || 0 }}h</td>
                     <td>{{ heure.coutHoraire }}€</td>
-                    <td>{{ (heure.heuresInterim * heure.coutHoraire).toFixed(2) }}€</td>
+                    <td>{{ ((heure.total_heures || heure.heures_normales || 0) * heure.coutHoraire).toFixed(2) }}€</td>
                   </tr>
                 </tbody>
                 <tfoot>
@@ -289,12 +289,12 @@ const chantiersActifs = computed(() => {
   
   // Aggiungi cantieri dalle ore proprie del chef
   heuresPropres.value.forEach(heure => {
-    chantiersAvecHeures.add(heure.chantierId);
+    chantiersAvecHeures.add(heure.chantier_id);
   });
   
   // Aggiungi cantieri dalle ore interim (dove il chef ha registrato ore per collaboratori)
   heuresInterim.value.forEach(heure => {
-    chantiersAvecHeures.add(heure.chantierId);
+    chantiersAvecHeures.add(heure.chantier_id);
   });
   
   return chantiers.value.filter(chantier => chantiersAvecHeures.has(chantier.id));
@@ -357,8 +357,8 @@ const calculateBilan = () => {
   }
 
   // Filtra ore per cantiere selezionato
-  let heuresChefChantier = heuresPropres.value.filter(h => h.chantierId === selectedChantierId.value);
-  let heuresCollaborateursChantier = heuresInterim.value.filter(h => h.chantierId === selectedChantierId.value);
+  let heuresChefChantier = heuresPropres.value.filter(h => h.chantier_id === selectedChantierId.value);
+  let heuresCollaborateursChantier = heuresInterim.value.filter(h => h.chantier_id === selectedChantierId.value);
 
   // Applica filtri temporali se impostati
   if (dateDebut.value) {
@@ -389,11 +389,11 @@ const calculateBilan = () => {
   });
 
   // Calcola totali
-  const totalHeuresChef = heuresChef.reduce((sum, h) => sum + h.heuresPropres, 0);
-  const totalCoutChef = heuresChef.reduce((sum, h) => sum + (h.heuresPropres * h.coutHoraire), 0);
+  const totalHeuresChef = heuresChef.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
+  const totalCoutChef = heuresChef.reduce((sum, h) => sum + ((h.total_heures || h.heures_normales || 0) * h.coutHoraire), 0);
   
-  const totalHeuresCollaborateurs = heuresCollaborateurs.reduce((sum, h) => sum + h.heuresInterim, 0);
-  const totalCoutCollaborateurs = heuresCollaborateurs.reduce((sum, h) => sum + (h.heuresInterim * h.coutHoraire), 0);
+  const totalHeuresCollaborateurs = heuresCollaborateurs.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
+  const totalCoutCollaborateurs = heuresCollaborateurs.reduce((sum, h) => sum + ((h.total_heures || h.heures_normales || 0) * h.coutHoraire), 0);
 
   const totalHeures = totalHeuresChef + totalHeuresCollaborateurs;
   const totalCout = totalCoutChef + totalCoutCollaborateurs;
@@ -469,13 +469,13 @@ const exportBilan = () => {
 };
 
 const getHeuresChefByChantier = (chantierId) => {
-  const heures = heuresPropres.value.filter(h => h.chantierId === chantierId);
-  return heures.reduce((sum, h) => sum + h.heuresPropres, 0);
+  const heures = heuresPropres.value.filter(h => h.chantier_id === chantierId);
+  return heures.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
 };
 
 const getHeuresCollaborateursByChantier = (chantierId) => {
-  const heures = heuresInterim.value.filter(h => h.chantierId === chantierId);
-  return heures.reduce((sum, h) => sum + h.heuresInterim, 0);
+  const heures = heuresInterim.value.filter(h => h.chantier_id === chantierId);
+  return heures.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
 };
 
 const getTotalHeuresByChantier = (chantierId) => {

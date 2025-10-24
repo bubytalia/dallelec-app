@@ -210,20 +210,20 @@ const generateReport = async () => {
         heuresEmploye = (heuresChef || []).filter(h => 
           h.date >= startDate && 
           h.date <= endDate && 
-          h.chefId === employe.email
+          h.chef_id === employe.email
         );
         
         heuresInterimEmploye = (heuresInterim || []).filter(h => 
           h.date >= startDate && 
           h.date <= endDate && 
-          h.chefId === employe.email
+          h.chef_id === employe.email
         );
       } else {
         // Per gli ouvriers: solo ore ouvriers
         heuresEmploye = (heuresOuvriers || []).filter(h => 
           h.date >= startDate && 
           h.date <= endDate && 
-          h.ouvrierId === employe.email
+          h.ouvrier_id === employe.email
         );
       }
       
@@ -239,8 +239,8 @@ const generateReport = async () => {
       let totalHeures = 0;
       
       if (employe.type === 'chef') {
-        totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
-                     heuresInterimEmploye.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+        totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
+                     heuresInterimEmploye.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
       } else {
         totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.heures || 0), 0);
       }
@@ -263,8 +263,8 @@ const generateReport = async () => {
         
         let totalHeuresJour = 0;
         if (employe.type === 'chef') {
-          totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
-                           heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+          totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
+                           heuresInterimJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
         } else {
           totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.heures || 0), 0);
         }
@@ -319,8 +319,8 @@ const generateReport = async () => {
         a.startDate <= dateStr && a.endDate >= dateStr
       );
       
-      const totalHeuresJour = heuresChefJour.reduce((sum, h) => sum + (h.heuresPropres || 0), 0) +
-                             heuresInterimJour.reduce((sum, h) => sum + (h.heuresInterim || 0), 0) +
+      const totalHeuresJour = heuresChefJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
+                             heuresInterimJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
                              heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
       
       heuresSemaine += totalHeuresJour;
@@ -328,9 +328,9 @@ const generateReport = async () => {
       
       // Conta dipendenti attivi
       const employesActifsJour = new Set();
-      heuresChefJour.forEach(h => employesActifsJour.add(h.chefId));
-      heuresInterimJour.forEach(h => employesActifsJour.add(h.chefId));
-      heuresOuvriersJour.forEach(h => employesActifsJour.add(h.ouvrierId));
+      heuresChefJour.forEach(h => employesActifsJour.add(h.chef_id));
+      heuresInterimJour.forEach(h => employesActifsJour.add(h.chef_id));
+      heuresOuvriersJour.forEach(h => employesActifsJour.add(h.ouvrier_id));
       employesActifsJour.forEach(email => employesActifsSemaine.add(email));
       
       // Fine settimana (domenica) o fine mese
