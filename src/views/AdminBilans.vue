@@ -123,7 +123,7 @@
                     👁 Détail
                   </button>
                   <button @click="voirBilancioDettagliato(bilan.chantierId)" class="btn btn-sm btn-primary">
-                    📊 Bilancio
+                    📊 Bilan
                   </button>
                 </td>
               </tr>
@@ -765,11 +765,24 @@ const voirBilancioDettagliato = (chantierId) => {
       const mois = new Date(h.date).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
       if (!heuresParMois[mois]) heuresParMois[mois] = { factures: 0, heures: [] };
       
-      const chef = chefdechantiers.value.find(c => c.id === h.chef_id);
+      const chef = chefdechantiers.value.find(c => c.email === h.chef_id);
       const tarifChef = h.tarif_utilise || 45; // Usa tariffa salvata o fallback
+      
+      // Gestione nomi chef con fallback
+      let nomChef = 'Chef inconnu';
+      if (chef) {
+        nomChef = `${chef.nom} ${chef.prenom}`;
+      } else if (h.chef_id === 'junior.repellin@dallelec.ch') {
+        nomChef = 'Repellin Junior';
+      } else if (h.chef_id === 'dylan.laplane@dallelec.ch') {
+        nomChef = 'Laplane Dylan';
+      } else if (h.chef_id === 'tony.maullier@dallelec.com') {
+        nomChef = 'Maullier Tony';
+      }
+      
       heuresParMois[mois].heures.push({
         date: h.date,
-        nom: chef?.nom || 'Chef inconnu',
+        nom: nomChef,
         type: 'Chef',
         heures: h.total_heures || 0,
         tarif: tarifChef,
