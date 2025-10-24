@@ -100,7 +100,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="bilan in bilansParChantier" :key="bilan.chantierId">
+                  <tr v-for="(bilan, index) in bilansParChantier" :key="`bilan-${bilan.chantierId}-${index}`">
                     <td>{{ getChantierName(bilan.chantierId) }}</td>
                     <td>{{ bilan.heuresChef.toFixed(2) }}</td>
                     <td>{{ bilan.coutChef.toFixed(2) }} CHF</td>
@@ -140,7 +140,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="heure in heuresDetaillees" :key="heure.id">
+                  <tr v-for="(heure, index) in heuresDetaillees" :key="`heure-${heure.id}-${index}`">
                     <td>{{ getUserName(heure.userId) }}</td>
                     <td>{{ heure.type === 'propre' ? 'Chef' : 'Collaborateur' }}</td>
                     <td>{{ getChantierName(heure.chantierId) }}</td>
@@ -182,7 +182,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="rapport in rapportMensuel" :key="rapport.mois">
+                      <tr v-for="(rapport, index) in rapportMensuel" :key="`rapport-${rapport.mois}-${index}`">
                         <td>{{ rapport.mois }}</td>
                         <td>{{ rapport.heures.toFixed(2) }}</td>
                         <td>{{ rapport.cout.toFixed(2) }} CHF</td>
@@ -268,8 +268,10 @@ const getUserName = (userId) => {
   if (collaborateur) return `${collaborateur.nom} ${collaborateur.prenom}`
   
   // Fallback per email conosciute
-  if (userId === 'junior@dallelec.com') return 'Junior Dallelec'
+  if (userId === 'junior@dallelec.com') return 'Repellin Junior'
   if (userId === 'chef@dallelec.com') return 'Chef de Chantier'
+  if (userId === 'tony@dallelec.com') return 'Maullier Tony'
+  if (userId === 'dylan@dallelec.com') return 'Laplane Dylan'
   
   return `Chef inconnu (${userId})`
 }
