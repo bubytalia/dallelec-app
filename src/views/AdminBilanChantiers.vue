@@ -365,7 +365,7 @@ const calculerBilans = async () => {
 
   // Filtrer par chantier si sélectionné
   const heuresFinales = selectedChantierId.value 
-    ? heuresFiltrees.filter(h => h.chantier_id === selectedChantierId.value)
+    ? heuresFiltrees.filter(h => String(h.chantier_id) === String(selectedChantierId.value))
     : heuresFiltrees
     
   console.log('DEBUG - Heures finales après filtre cantiere:', heuresFinales.length)
