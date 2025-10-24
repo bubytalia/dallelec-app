@@ -259,13 +259,19 @@ const formatDate = (date) => {
 }
 
 const getUserName = (userId) => {
+  // Cerca prima nei chef
   const chef = chefs.value.find(c => c.email === userId)
-  if (chef) return `${chef.nom} ${chef.prenom} (Chef)`
+  if (chef) return `${chef.nom} ${chef.prenom}`
   
+  // Cerca nei collaboratori
   const collaborateur = collaborateurs.value.find(c => c.email === userId)
   if (collaborateur) return `${collaborateur.nom} ${collaborateur.prenom}`
   
-  return userId
+  // Fallback per email conosciute
+  if (userId === 'junior@dallelec.com') return 'Junior Dallelec'
+  if (userId === 'chef@dallelec.com') return 'Chef de Chantier'
+  
+  return `Chef inconnu (${userId})`
 }
 
 const getChantierName = (chantierId) => {
@@ -508,6 +514,10 @@ const fetchData = async () => {
     // Charger les chefs
     const { data: chefsData } = await supabase.from('chefdechantiers').select('*')
     chefs.value = chefsData || []
+    
+    // Debug: verifica dati caricati
+    console.log('DEBUG BILANCI - Chefs:', chefs.value.map(c => c.email + ' - ' + c.nom))
+    console.log('DEBUG BILANCI - Collaboratori:', collaborateurs.value.map(c => c.email + ' - ' + c.nom))
 
     // Charger les heures propres
     const { data: heuresPropreData } = await supabase.from('heures_chef_propres').select('*')
