@@ -851,22 +851,22 @@ const voirBilancioDettagliato = (chantierId) => {
 
 const voirDetailChantier = (chantierId) => {
   const chantier = chantiers.value.find(c => c.id === chantierId);
-  const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+  const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
   
   if (!chantier) return;
 
   // Calcola costi usando tarif_utilise (non retroattivo)
-  const heuresChefData = heuresChef.value.filter(h => h.chantierId === chantierId);
-  const heuresOuvriersData = heuresOuvriers.value.filter(h => h.chantierId === chantierId);
-  const heuresInterimData = heuresInterim.value.filter(h => h.chantierId === chantierId);
+  const heuresChefData = heuresChef.value.filter(h => String(h.chantier_id) === String(chantierId));
+  const heuresOuvriersData = heuresOuvriers.value.filter(h => String(h.chantier_id) === String(chantierId));
+  const heuresInterimData = heuresInterim.value.filter(h => String(h.chantier_id) === String(chantierId));
 
-  const heuresChefTotal = heuresChefData.reduce((sum, h) => sum + (h.heuresPropres || 0), 0);
+  const heuresChefTotal = heuresChefData.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
   const heuresOuvriersTotal = heuresOuvriersData.reduce((sum, h) => sum + (h.heures || 0), 0);
-  const heuresInterimTotal = heuresInterimData.reduce((sum, h) => sum + (h.heuresInterim || 0), 0);
+  const heuresInterimTotal = heuresInterimData.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
 
-  const coutsChef = heuresChefData.reduce((sum, h) => sum + (h.heuresPropres || 0) * (h.tarif_utilise || 45), 0);
-  const coutsOuvriers = heuresOuvriersData.reduce((sum, h) => sum + (h.heures || 0) * (h.tarif_utilise || 25), 0);
-  const coutsInterim = heuresInterimData.reduce((sum, h) => sum + (h.heuresInterim || 0) * (h.tarif_utilise || 35), 0);
+  const coutsChef = heuresChefData.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0) * (h.tarif_utilise || 45), 0);
+  const coutsOuvriers = heuresOuvriersData.reduce((sum, h) => sum + (h.heures || 0) * (h.tarif_utilise || 35), 0);
+  const coutsInterim = heuresInterimData.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0) * (h.tarif_utilise || 35), 0);
   const coutsTotaux = coutsChef + coutsOuvriers + coutsInterim;
 
   const devisTotal = chantierDevis?.total || 0;
