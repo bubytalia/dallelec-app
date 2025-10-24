@@ -69,7 +69,10 @@ async function backupData() {
   console.log('\n[1/3] Backup dati Supabase...')
   
   const tables = await scanAllTables()
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+  // Timestamp con ora locale italiana
+  const now = new Date()
+  const localTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+  const timestamp = localTime.toISOString().replace(/[:.]/g, '-').replace('Z', '')
   const backup = { timestamp, tables: {} }
   
   let totalRecords = 0
@@ -114,7 +117,10 @@ async function backupSystem() {
   console.log('\n[2/3] Backup sistema...')
   
   const sourceDir = 'C:\\Users\\bubyt\\Desktop\\gestionalequater\\Dallelec_app_new'
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 16)
+  // Timestamp con ora locale italiana
+  const now = new Date()
+  const localTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
+  const timestamp = localTime.toISOString().replace(/[:.]/g, '-').replace('Z', '').substring(0, 16)
   const backupDir = `D:\\backup\\backup_sistema\\dallelec-sistema-${timestamp}`
   
   if (!fs.existsSync('D:\\backup\\backup_sistema')) {
