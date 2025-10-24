@@ -369,6 +369,11 @@ const calculerBilans = async () => {
     : heuresFiltrees
     
   console.log('DEBUG - Heures finales après filtre cantiere:', heuresFinales.length)
+  
+  // Debug: mostra tutti i chantier_id presenti nelle ore
+  const chantiersIds = [...new Set(heuresFiltrees.map(h => h.chantier_id))]
+  console.log('DEBUG - Chantier IDs trovati nelle ore:', chantiersIds)
+  console.log('DEBUG - Cercando cantiere ID:', selectedChantierId.value)
 
   // Préparer les données détaillées
   heuresDetaillees.value = heuresFinales.map(h => {
