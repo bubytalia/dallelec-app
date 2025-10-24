@@ -36,7 +36,9 @@ async function scanRealTables() {
     'familles', 'sousfamilles', 'techniciens', 'conditions', 'paiements',
     'admins', 'chefdechantiers', 'collaborateurs', 'interimaires',
     'factures', 'metrages', 'absences', 'configuration', 
-    'resoconti_percentuali', 'zone_convertite'
+    'resoconti_percentuali', 'zone_convertite',
+    // TABELLE ORE CRITICHE
+    'heures_ouvriers', 'heures_chef_propres', 'heures_chef_interim'
   ]
   
   const existingTables = []

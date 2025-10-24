@@ -13,23 +13,45 @@ console.log('======================================')
 console.log('   BACKUP COMPLETO DALLELEC SU DISCO D:\\')
 console.log('========================================')
 
-// Scanner tabelle confermate
-async function scanConfirmedTables() {
-  console.log('🔍 Scanner tabelle confermate...')
+// Scanner automatico VERO - trova tutte le tabelle
+async function scanAllTables() {
+  console.log('🔍 Scanner automatico tabelle...')
   
-  const confirmedTables = [
+  try {
+    // Prova prima con query SQL diretta per ottenere tutte le tabelle
+    const { data: tables, error } = await supabase
+      .from('information_schema.tables')
+      .select('table_name')
+      .eq('table_schema', 'public')
+      .eq('table_type', 'BASE TABLE')
+    
+    if (!error && tables) {
+      const tableNames = tables.map(t => t.table_name)
+      console.log(`✅ Scanner SQL: ${tableNames.length} tabelle trovate`)
+      return tableNames
+    }
+  } catch (err) {
+    console.log('⚠️ Scanner SQL non disponibile, uso metodo alternativo...')
+  }
+  
+  // Fallback: testa tabelle conosciute + prova tabelle comuni
+  const knownTables = [
     'clients', 'chantiers', 'devis', 'produits', 'supplements', 
     'familles', 'sousfamilles', 'techniciens', 'conditions', 'paiements',
     'admins', 'chefdechantiers', 'collaborateurs', 'interimaires',
     'factures', 'metrages', 'absences', 'configuration', 
-    'resoconti_percentuali', 'zone_convertite'
+    'resoconti_percentuali', 'zone_convertite',
+    // Tabelle ore
+    'heures_ouvriers', 'heures_chef_propres', 'heures_chef_interim',
+    // Altre possibili tabelle
+    'users', 'profiles', 'settings', 'logs', 'audit_log'
   ]
   
   const existingTables = []
   
-  for (const table of confirmedTables) {
+  for (const table of knownTables) {
     try {
-      const { error } = await supabase.from(table).select('id', { count: 'exact', head: true })
+      const { error } = await supabase.from(table).select('*', { count: 'exact', head: true })
       if (!error) {
         existingTables.push(table)
       }
@@ -38,7 +60,7 @@ async function scanConfirmedTables() {
     }
   }
   
-  console.log(`✅ Trovate ${existingTables.length} tabelle`)
+  console.log(`✅ Scanner fallback: ${existingTables.length} tabelle trovate`)
   return existingTables
 }
 
@@ -46,7 +68,7 @@ async function scanConfirmedTables() {
 async function backupData() {
   console.log('\n[1/3] Backup dati Supabase...')
   
-  const tables = await scanConfirmedTables()
+  const tables = await scanAllTables()
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
   const backup = { timestamp, tables: {} }
   
