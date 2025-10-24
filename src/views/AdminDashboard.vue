@@ -43,6 +43,9 @@
       <div class="col-md-3 m-2">
         <router-link to="/admin/bilans" class="btn btn-outline-success w-100">📊 Bilans Financiers</router-link>
       </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/bilan-chantiers" class="btn btn-outline-success w-100">🏗️ Bilan Chantiers</router-link>
+      </div>
     </div>
 
     <!-- Section Personnel -->

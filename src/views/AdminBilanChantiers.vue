@@ -537,14 +537,17 @@ const fetchData = async () => {
     // Charger les heures propres
     const { data: heuresPropreData } = await supabase.from('heures_chef_propres').select('*')
     heuresPropres.value = heuresPropreData || []
+    console.log('DEBUG - Heures chef propres:', heuresPropres.value.length)
 
     // Charger les heures intérimaires  
     const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*')
     heuresInterim.value = heuresInterimData || []
+    console.log('DEBUG - Heures interim:', heuresInterim.value.length)
     
     // Charger aussi les heures ouvriers
     const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*')
     const heuresOuvriers = heuresOuvriersData || []
+    console.log('DEBUG - Heures ouvriers:', heuresOuvriers.length)
 
     setDefaultDates()
     await calculerBilans()
