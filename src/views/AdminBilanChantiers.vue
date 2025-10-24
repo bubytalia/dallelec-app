@@ -358,11 +358,17 @@ const calculerBilans = async () => {
       const dateHeure = h.date.toDate ? h.date.toDate() : new Date(h.date)
       return dateHeure >= debut && dateHeure <= fin
     })
+  
+  console.log('DEBUG - Heures après filtre période:', heuresFiltrees.length)
+  console.log('DEBUG - Période:', debut, 'à', fin)
+  console.log('DEBUG - Cantiere selezionato:', selectedChantierId.value)
 
   // Filtrer par chantier si sélectionné
   const heuresFinales = selectedChantierId.value 
     ? heuresFiltrees.filter(h => h.chantier_id === selectedChantierId.value)
     : heuresFiltrees
+    
+  console.log('DEBUG - Heures finales après filtre cantiere:', heuresFinales.length)
 
   // Préparer les données détaillées
   heuresDetaillees.value = heuresFinales.map(h => {
