@@ -156,11 +156,11 @@ export default {
 
     const edit = (item) => {
       form.value = {
-        nom: item.nom,
-        prenom: item.prenom,
-        telephone: item.telephone,
-        email: item.email,
-        clientId: item.client_id
+        nom: item.nom || '',
+        prenom: item.prenom || '',
+        telephone: item.telephone || '',
+        email: item.email || '',
+        clientId: item.client_id || ''
       };
       editId.value = item.id;
     };
