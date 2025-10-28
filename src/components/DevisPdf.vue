@@ -175,8 +175,16 @@ const generatePdf = async () => {
     doc.setFont('helvetica', 'bold')
     doc.text(zoneName, 10, tableStartY)
     tableStartY += 6
-    // Testata e corpo della tabella
-    const head = [[
+    // Testata e corpo della tabella (diversa per railEnergie)
+    const head = isRailEnergie ? [[
+      'Code',
+      'Produit',
+      'Taille',
+      'Unité',
+      'Quantité',
+      'Prix U.',
+      'Total'
+    ]] : [[
       'Code',
       'Produit',
       'Taille',
@@ -190,17 +198,29 @@ const generatePdf = async () => {
     const body = []
     if (Array.isArray(zone.produits)) {
       zone.produits.forEach((p) => {
-        body.push([
-          (p.article || '') + (p.informativo ? ' (Info)' : ''),
-          p.nom || '',
-          p.taille || '',
-          p.unite || '',
-          p.ml != null ? String(p.ml) : '',
-          p.totalSuppML != null ? p.totalSuppML.toFixed(2) : '',
-          p.totalML != null ? p.totalML.toFixed(2) : '',
-          p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
-          p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
-        ])
+        if (isRailEnergie) {
+          body.push([
+            (p.article || '') + (p.informativo ? ' (Info)' : ''),
+            p.nom || '',
+            p.taille || '',
+            p.unite || '',
+            p.ml != null ? String(p.ml) : '',
+            p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
+            p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
+          ])
+        } else {
+          body.push([
+            (p.article || '') + (p.informativo ? ' (Info)' : ''),
+            p.nom || '',
+            p.taille || '',
+            p.unite || '',
+            p.ml != null ? String(p.ml) : '',
+            p.totalSuppML != null ? p.totalSuppML.toFixed(2) : '',
+            p.totalML != null ? p.totalML.toFixed(2) : '',
+            p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
+            p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
+          ])
+        }
       })
     }
     autoTable(doc, {
@@ -223,7 +243,15 @@ const generatePdf = async () => {
         valign: 'middle',
         halign: 'center'
       },
-      columnStyles: {
+      columnStyles: isRailEnergie ? {
+        0: { cellWidth: 25 }, // Code
+        1: { cellWidth: 45 }, // Produit
+        2: { cellWidth: 20 }, // Taille
+        3: { cellWidth: 20 }, // Unité
+        4: { cellWidth: 25 }, // Quantité
+        5: { cellWidth: 25 }, // Prix U.
+        6: { cellWidth: 25 } // Total
+      } : {
         0: { cellWidth: 20 }, // Code
         1: { cellWidth: 35 }, // Produit
         2: { cellWidth: 15 }, // Taille
