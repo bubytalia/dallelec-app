@@ -303,8 +303,8 @@ const generatePdf = async () => {
   doc.text(`${totalAvecRemise.toFixed(2)} CHF`, 170, tableStartY + 12, { align: 'right' })
   tableStartY += 26
 
-  // Ora aggiungiamo la sezione "Détail des Suppléments par Zone" se esistono dati
-  if (Array.isArray(props.supplementParZone) && props.supplementParZone.length) {
+  // Ora aggiungiamo la sezione "Détail des Suppléments par Zone" se esistono dati (non per railEnergie)
+  if (!isRailEnergie && Array.isArray(props.supplementParZone) && props.supplementParZone.length) {
     // Controllo spazio per sezione supplementi - se meno di 100mm, nuova pagina
     if (tableStartY > 200) {
       doc.addPage()
