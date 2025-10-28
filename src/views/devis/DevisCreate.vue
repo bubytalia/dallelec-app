@@ -100,6 +100,20 @@
           <small class="text-muted">Montant forfaitaire avec description libre</small>
         </label>
       </div>
+      <div class="form-check mb-3">
+        <input 
+          class="form-check-input" 
+          type="radio" 
+          name="modalitaPrezzi" 
+          id="railEnergie" 
+          :checked="modalitaPrezzi === 'railEnergie'"
+          @change="modalitaPrezzi = 'railEnergie'"
+        >
+        <label class="form-check-label" for="railEnergie">
+          <strong>Devis Rail d'Énergie et Canaux au Sol</strong><br>
+          <small class="text-muted">Produits sans suppléments ni remises famille</small>
+        </label>
+      </div>
     </div>
 
     <!-- Devis à Corps -->
@@ -133,7 +147,7 @@
     </div>
 
     <!-- Remise par famille / Type de pose -->
-    <div class="card p-4 mb-4" v-if="modalitaPrezzi !== 'aCorps'">
+    <div class="card p-4 mb-4" v-if="modalitaPrezzi !== 'aCorps' && modalitaPrezzi !== 'railEnergie'">
       <h5 v-if="modalitaPrezzi === 'scontistica'">Remise par famille</h5>
       <h5 v-else>Type de pose <small class="text-muted">(informatif pour le PDF)</small></h5>
       <table class="table">
@@ -196,6 +210,17 @@
         <p class="mb-0">
           Le <strong>Devis à Corps</strong> génère un PDF simplifié avec description libre et montant forfaitaire. 
           Idéal pour les petits travaux avec plans détaillés.
+        </p>
+      </div>
+    </div>
+
+    <!-- Informazione per rail d'énergie -->
+    <div class="card p-4 mb-4" v-if="modalitaPrezzi === 'railEnergie'">
+      <div class="alert alert-primary">
+        <h6>⚡ Information Rail d'Énergie et Canaux au Sol</h6>
+        <p class="mb-0">
+          Mode simplifié pour <strong>Rail d'Énergie et Canaux au Sol</strong>. 
+          Aucun supplément ni remise famille appliqués. Seulement produits + quantités + prix.
         </p>
       </div>
     </div>
@@ -348,6 +373,11 @@ const formReady = computed(() => {
     return baseReady && form.value.description_corps.trim() && form.value.montant_corps > 0;
   }
   
+  // Per rail d'énergie, non serve selezione famiglie
+  if (modalitaPrezzi.value === 'railEnergie') {
+    return baseReady;
+  }
+  
   // Per altri tipi, richiesta la selezione famiglie
   const remiseReady = Object.keys(remiseSelection.value).length === familles.value.length;
   return baseReady && remiseReady;
@@ -358,6 +388,7 @@ const getTypeDevisLabel = () => {
     case 'scontistica': return 'Détaillé - Remise';
     case 'prezziFissi': return 'Détaillé - Prix Fixes';
     case 'aCorps': return 'À Corps';
+    case 'railEnergie': return 'Rail d\'Énergie';
     default: return modalitaPrezzi.value;
   }
 };
@@ -374,7 +405,7 @@ const continuerVersDevis = async () => {
         technicien: form.value.technicien,
         zones: zones.value,
         modalita_prezzi: modalitaPrezzi.value,
-        remises: modalitaPrezzi.value === 'aCorps' ? {} : remiseSelection.value,
+        remises: (modalitaPrezzi.value === 'aCorps' || modalitaPrezzi.value === 'railEnergie') ? {} : remiseSelection.value,
         description_corps: form.value.description_corps || null,
         montant_corps: form.value.montant_corps || null,
         updated_at: new Date().toISOString()
@@ -426,7 +457,7 @@ const continuerVersDevis = async () => {
       technicien: form.value.technicien,
       zones: zones.value,
       modalita_prezzi: modalitaPrezzi.value,
-      remises: modalitaPrezzi.value === 'aCorps' ? {} : remiseSelection.value,
+      remises: (modalitaPrezzi.value === 'aCorps' || modalitaPrezzi.value === 'railEnergie') ? {} : remiseSelection.value,
       description_corps: form.value.description_corps || null,
       montant_corps: form.value.montant_corps || null,
       created_at: new Date().toISOString(),

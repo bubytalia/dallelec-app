@@ -19,7 +19,7 @@
         <label>Prix Unitaire (CHF)</label>
         <input v-model.number="prezzoManuale" type="number" step="0.01" class="form-control" placeholder="0.00" />
       </div>
-      <div class="col-md-4">
+      <div class="col-md-4" v-if="modalitaPrezzi !== 'railEnergie'">
         <label>Suppléments</label>
         <div v-for="(sup, i) in supplements" :key="i" class="d-flex align-items-center mb-1">
           <input type="checkbox" :value="sup.nom" v-model="selectedSupplements" class="form-check-input me-2" />
@@ -163,7 +163,8 @@ const ajouterLigne = () => {
   const produit = produits.value.find(p => p.id === selectedProduitId.value);
   if (!produit) return;
 
-  const supplementDetails = selectedSupplements.value.map(nom => {
+  // Per modalità railEnergie, non usare supplementi
+  const supplementDetails = props.modalitaPrezzi === 'railEnergie' ? [] : selectedSupplements.value.map(nom => {
     const supp = supplements.value.find(s => s.nom === nom);
     const qte = suppQuantities.value[nom] || 0;
     return {
@@ -192,6 +193,9 @@ const ajouterLigne = () => {
   if (props.modalitaPrezzi === 'prezziFissi') {
     // Modalità prix fixes: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
+  } else if (props.modalitaPrezzi === 'railEnergie') {
+    // Modalità rail d'énergie: usa prezzo base senza sconti
+    prixFinal = produit.prix;
   } else {
     // Modalità remise: controlla se è prezzo netto
     if (produit.prezzo_netto) {
@@ -239,7 +243,8 @@ const modifierLigne = () => {
   const produit = produits.value.find(p => p.id === selectedProduitId.value);
   if (!produit) return;
 
-  const supplementDetails = selectedSupplements.value.map(nom => {
+  // Per modalità railEnergie, non usare supplementi
+  const supplementDetails = props.modalitaPrezzi === 'railEnergie' ? [] : selectedSupplements.value.map(nom => {
     const supp = supplements.value.find(s => s.nom === nom);
     const qte = suppQuantities.value[nom] || 0;
     return {
@@ -268,6 +273,9 @@ const modifierLigne = () => {
   if (props.modalitaPrezzi === 'prezziFissi') {
     // Modalità prix fixes: usa il prezzo inserito manualmente
     prixFinal = prezzoManuale.value;
+  } else if (props.modalitaPrezzi === 'railEnergie') {
+    // Modalità rail d'énergie: usa prezzo base senza sconti
+    prixFinal = produit.prix;
   } else {
     // Modalità remise: controlla se è prezzo netto
     if (produit.prezzo_netto) {

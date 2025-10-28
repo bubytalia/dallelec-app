@@ -13,11 +13,14 @@
 </div>
 
 <!-- Indicazione modalità prezzi -->
-<div class="alert mb-4" :class="modalitaPrezzi === 'prezziFissi' ? 'alert-warning' : 'alert-success'">
+<div class="alert mb-4" :class="getModalityAlertClass()">
   <div class="text-center">
     <strong>Modalità:</strong> 
     <span v-if="modalitaPrezzi === 'prezziFissi'">
       💰 <strong>Prix Fixes</strong> - Saisie manuelle des prix
+    </span>
+    <span v-else-if="modalitaPrezzi === 'railEnergie'">
+      ⚡ <strong>Rail d'Énergie</strong> - Produits sans suppléments ni remises
     </span>
     <span v-else>
       📊 <strong>Remise Standard</strong> - Remise familles: {{ remiseFamilles.toFixed(1) }}%
@@ -105,7 +108,7 @@
       </div>
     </div>
 
-    <SupplementDetails :supplementParZone="supplementParZone" />
+    <SupplementDetails v-if="modalitaPrezzi !== 'railEnergie'" :supplementParZone="supplementParZone" />
   </div>
 </template>
 
@@ -495,6 +498,14 @@ const supplementParZone = computed(() => {
 
 const getSubtotal = (items) => items.reduce((sum, i) => sum + (i.informativo ? 0 : i.total), 0);
 // Calcola il totale del devis applicando eventuale remise supplementaire.
+const getModalityAlertClass = () => {
+  switch(modalitaPrezzi.value) {
+    case 'prezziFissi': return 'alert-warning';
+    case 'railEnergie': return 'alert-primary';
+    default: return 'alert-success';
+  }
+};
+
 const devisTotal = computed(() => {
   const subtotal = devisItems.value.reduce((sum, i) => sum + (i.informativo ? 0 : i.total), 0);
   const discount = Number(remiseSupplementaire.value) || 0;
