@@ -40,7 +40,9 @@ const props = defineProps({
   // Opzione per nascondere la lista supplementi
   hideSupplementsList: { type: Boolean, default: false },
   // Remise supplémentaire in percentuale
-  remiseSupplementaire: { type: Number, default: 0 }
+  remiseSupplementaire: { type: Number, default: 0 },
+  // Modalità prezzi del devis
+  modalitaPrezzi: { type: String, default: 'scontistica' }
 });
 
 // Computed
@@ -101,7 +103,9 @@ const generatePdf = async () => {
 
   // Calcoliamo in anticipo il numero totale di pagine
   let currentPage = 1
-  const plannedPages = props.hideSupplementsList ? 3 : 4
+  // Per railEnergie, saltiamo sempre la pagina 2 (Type de pose + supplementi)
+  const isRailEnergie = props.modalitaPrezzi === 'railEnergie'
+  const plannedPages = (props.hideSupplementsList || isRailEnergie) ? 3 : 4
 
   /* Pagina 1: intestazione generale */
   drawHeader(currentPage, plannedPages)
@@ -115,8 +119,8 @@ const generatePdf = async () => {
   doc.text(`Date: ${props.dateDevis}`, 10, 71)
   // drawFooter(currentPage, plannedPages) - Rimosso per evitare duplicazione
 
-  /* Pagina 2: tipo di posa e lista supplementi (solo se non nascosta) */
-  if (!props.hideSupplementsList) {
+  /* Pagina 2: tipo di posa e lista supplementi (solo se non nascosta e non railEnergie) */
+  if (!props.hideSupplementsList && !isRailEnergie) {
     doc.addPage()
     currentPage++
     drawHeader(currentPage, plannedPages)

@@ -86,6 +86,7 @@
       :famillesVisibles="famillesVisibles"
       :hideSupplementsList="hideSupplementsList"
       :remiseSupplementaire="devisData?.discount || 0"
+      :modalitaPrezzi="devisData?.modalita_prezzi || 'scontistica'"
       style="display: none;"
     />
     
