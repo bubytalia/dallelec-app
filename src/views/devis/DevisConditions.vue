@@ -50,7 +50,7 @@
     </div>
 
     <!-- Opzioni PDF -->
-    <div class="card p-3 mb-4">
+    <div class="card p-3 mb-4" v-if="devisData?.modalita_prezzi !== 'railEnergie'">
       <h5>Options PDF</h5>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" id="hideSupplementsList" v-model="hideSupplementsList" />
