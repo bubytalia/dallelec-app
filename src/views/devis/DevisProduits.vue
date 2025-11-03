@@ -69,7 +69,6 @@
               <th>Taille</th>
               <th>Unité</th>
               <th>Quantité</th>
-              <th>Total Suppl.</th>
               <th>Total</th>
               <th>Prix Unit.</th>
               <th>Total</th>
@@ -83,7 +82,6 @@
               <td>{{ item.taille }}</td>
               <td>{{ item.unite }}</td>
               <td>{{ item.ml }}</td>
-              <td>{{ item.totalSuppML.toFixed(2) }}</td>
               <td>{{ item.totalML.toFixed(2) }}</td>
               <td>{{ item.prix.toFixed(2) }} CHF</td>
               <td>{{ item.informativo ? 'Info' : item.total.toFixed(2) + ' CHF' }}</td>
