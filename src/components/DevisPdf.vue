@@ -235,11 +235,11 @@ const generatePdf = async () => {
         textColor: 20,
         halign: 'center',
         valign: 'middle',
-        fontSize: 8
+        fontSize: 7
       },
       bodyStyles: {
         textColor: 20,
-        fontSize: 8,
+        fontSize: 7,
         valign: 'middle'
       },
       columnStyles: isRailEnergie ? {
