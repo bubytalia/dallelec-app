@@ -240,17 +240,16 @@ const generatePdf = async () => {
       bodyStyles: {
         textColor: 20,
         fontSize: 8,
-        valign: 'middle',
-        halign: 'center'
+        valign: 'middle'
       },
       columnStyles: isRailEnergie ? {
-        0: { cellWidth: 25 }, // Code
-        1: { cellWidth: 45 }, // Produit
-        2: { cellWidth: 20 }, // Taille
-        3: { cellWidth: 20 }, // Unité
-        4: { cellWidth: 25 }, // Quantité
-        5: { cellWidth: 25 }, // Prix U.
-        6: { cellWidth: 25 } // Total
+        0: { cellWidth: 30, halign: 'left' }, // Code - più largo, allineato a sinistra
+        1: { cellWidth: 45, halign: 'left' }, // Produit - allineato a sinistra
+        2: { cellWidth: 20, halign: 'center' }, // Taille
+        3: { cellWidth: 15, halign: 'center' }, // Unité - più stretto
+        4: { cellWidth: 15, halign: 'center' }, // Quantité - più stretto
+        5: { cellWidth: 25, halign: 'right' }, // Prix U. - allineato a destra
+        6: { cellWidth: 25, halign: 'right' } // Total - allineato a destra
       } : {
         0: { cellWidth: 20 }, // Code
         1: { cellWidth: 35 }, // Produit
