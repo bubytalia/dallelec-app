@@ -13,11 +13,14 @@
           </div>
           <div class="card-body">
             <select v-model="selectedChantierId" class="form-control" @change="loadChantierData">
-              <option value="">Choisir un chantier</option>
+              <option value="">Choisir un chantier ({{ chantiers.length }} disponibles)</option>
               <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
                 {{ chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '' }}{{ chantier.nom }}
               </option>
             </select>
+            <small class="text-muted mt-1 d-block" v-if="chantiers.length === 0">
+              Aucun chantier assigné à {{ user?.email }}
+            </small>
           </div>
         </div>
       </div>
@@ -297,10 +300,19 @@ const fetchChantiers = async () => {
     return;
   }
   
-  const { data: allChantiers } = await supabase
+  console.log('🔍 Caricamento cantieri per:', user.value.email);
+  
+  const { data: allChantiers, error } = await supabase
     .from('chantiers')
     .select('*')
     .eq('capocantiere', user.value.email);
+  
+  if (error) {
+    console.error('❌ Errore caricamento cantieri:', error);
+  } else {
+    console.log('✅ Cantieri caricati:', allChantiers?.length || 0);
+    console.log('📋 Lista cantieri:', allChantiers);
+  }
   
   chantiers.value = allChantiers || [];
 };
