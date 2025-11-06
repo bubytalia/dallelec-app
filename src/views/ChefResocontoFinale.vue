@@ -2,7 +2,7 @@
   <div class="container py-4">
     <RetourButton to="/chef" />
 
-    <h2 class="text-center mb-4">Resoconto Finale di Zona</h2>
+    <h2 class="text-center mb-4">Rapport Final de Zone</h2>
 
     <!-- Selezione cantiere e zona -->
     <div class="row mb-4">
@@ -306,37 +306,62 @@ const fetchChantiers = async () => {
 };
 
 const loadChantierData = async () => {
-  if (!selectedChantierId.value) return;
-  
-  const chantier = chantiers.value.find(c => c.id === selectedChantierId.value);
-  if (!chantier?.devisId) return;
-  
-  // Carica devis
-  const { data: devisDoc } = await supabase
-    .from('devis')
-    .select('*')
-    .eq('id', chantier.devisId)
-    .single();
-  
-  if (devisDoc) {
-    devisData.value = devisDoc;
-    
-    // Estrai zone
-    const zoneSet = new Set();
-    devisData.value.produits?.forEach(p => {
-      if (p.zone) zoneSet.add(p.zone);
-    });
-    zones.value = Array.from(zoneSet).sort();
+  if (!selectedChantierId.value) {
+    zones.value = [];
+    selectedZone.value = '';
+    return;
   }
   
-  // Carica resoconti percentuali
-  const { data: resocontiData } = await supabase
-    .from('resoconti_percentuali')
-    .select('*')
-    .eq('chantierId', selectedChantierId.value)
-    .eq('status', 'approved');
-  
-  resocontiPercentuali.value = resocontiData || [];
+  try {
+    const chantier = chantiers.value.find(c => c.id === selectedChantierId.value);
+    if (!chantier?.devisId) {
+      console.warn('Cantiere senza devisId:', chantier);
+      return;
+    }
+    
+    // Carica devis
+    const { data: devisDoc, error: devisError } = await supabase
+      .from('devis')
+      .select('*')
+      .eq('id', chantier.devisId)
+      .single();
+    
+    if (devisError) {
+      console.error('Errore caricamento devis:', devisError);
+      return;
+    }
+    
+    if (devisDoc) {
+      devisData.value = devisDoc;
+      
+      // Estrai zone dai prodotti del devis
+      const zoneSet = new Set();
+      if (devisData.value.produits && Array.isArray(devisData.value.produits)) {
+        devisData.value.produits.forEach(p => {
+          if (p.zone) zoneSet.add(p.zone);
+        });
+      }
+      zones.value = Array.from(zoneSet).sort();
+      console.log('Zone caricate:', zones.value);
+    }
+    
+    // Carica resoconti percentuali
+    const { data: resocontiData, error: resocontiError } = await supabase
+      .from('resoconti_percentuali')
+      .select('*')
+      .eq('chantierId', selectedChantierId.value)
+      .eq('status', 'approved');
+    
+    if (resocontiError) {
+      console.error('Errore caricamento resoconti:', resocontiError);
+    } else {
+      resocontiPercentuali.value = resocontiData || [];
+      console.log('Resoconti percentuali caricati:', resocontiPercentuali.value.length);
+    }
+  } catch (error) {
+    console.error('Errore generale loadChantierData:', error);
+    alert('Errore nel caricamento dei dati del cantiere');
+  }
 };
 
 const loadZoneData = () => {
