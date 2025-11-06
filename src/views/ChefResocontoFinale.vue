@@ -295,26 +295,48 @@ const congualioClass = computed(() => {
 
 // Methods
 const fetchChantiers = async () => {
-  if (!user.value?.email) {
+  const userEmail = localStorage.getItem('userEmail');
+  console.log('🔍 UserEmail:', userEmail);
+  
+  if (!userEmail) {
     console.warn('Utente non autenticato');
     return;
   }
   
-  console.log('🔍 Caricamento cantieri per:', user.value.email);
-  
-  const { data: allChantiers, error } = await supabase
-    .from('chantiers')
-    .select('*')
-    .eq('capocantiere', user.value.email);
-  
-  if (error) {
-    console.error('❌ Errore caricamento cantieri:', error);
-  } else {
-    console.log('✅ Cantieri caricati:', allChantiers?.length || 0);
-    console.log('📋 Lista cantieri:', allChantiers);
+  try {
+    // Trova il chef dalla tabella chefdechantiers
+    const { data: chefData, error: chefError } = await supabase
+      .from('chefdechantiers')
+      .select('nom, prenom')
+      .eq('email', userEmail)
+      .single();
+    
+    if (chefError || !chefData) {
+      console.error('❌ Chef non trovato');
+      chantiers.value = [];
+      return;
+    }
+    
+    const nomeCompleto1 = `${chefData.nom} ${chefData.prenom}`; // Maggi Daniele
+    const nomeCompleto2 = `${chefData.prenom} ${chefData.nom}`; // Daniele Maggi
+    
+    console.log('🔍 Cercando cantieri per:', { userEmail, nomeCompleto1, nomeCompleto2 });
+    
+    // Cerca cantieri per email o entrambi i formati nome
+    const { data, error } = await supabase
+      .from('chantiers')
+      .select('*')
+      .or(`capocantiere.eq.${userEmail},capocantiere.eq.${nomeCompleto1},capocantiere.eq.${nomeCompleto2}`);
+    
+    if (error) throw error;
+    
+    console.log('✅ Cantieri trovati:', data?.length || 0);
+    chantiers.value = data || [];
+    
+  } catch (error) {
+    console.error('❌ Errore:', error);
+    chantiers.value = [];
   }
-  
-  chantiers.value = allChantiers || [];
 };
 
 const loadChantierData = async () => {
