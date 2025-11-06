@@ -32,8 +32,8 @@
           <div class="card-body">
             <select v-model="selectedZone" class="form-control" @change="loadZoneData">
               <option value="">Choisir une zone</option>
-              <option v-for="zone in zonesCompletees" :key="zone" :value="zone">
-                {{ zone }} ({{ getPercentualeFatturata(zone) }}% facturé)
+              <option v-for="zone in zones" :key="zone" :value="zone">
+                {{ zone }}
               </option>
             </select>
           </div>
@@ -44,29 +44,20 @@
     <!-- Riepilogo situazione zona -->
     <div v-if="selectedZone" class="card mb-4">
       <div class="card-header bg-info text-white">
-        <h5>📊 Situation Zone: {{ selectedZone }}</h5>
+        <h5>📊 Zone: {{ selectedZone }}</h5>
       </div>
       <div class="card-body">
         <div class="row">
-          <div class="col-md-4">
-            <h6>💰 Déjà facturé (pourcentage)</h6>
-            <div class="alert alert-success">
-              <strong>{{ percentualeFatturata }}%</strong><br>
-              <small>{{ importoFatturato.toFixed(2) }} CHF</small>
-            </div>
-          </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <h6>📋 Quantités prévues (devis)</h6>
             <div class="alert alert-primary">
-              <strong>{{ totalMLPreviste.toFixed(2) }} ML</strong><br>
-              <small>{{ importoPrevisto.toFixed(2) }} CHF</small>
+              <strong>{{ totalMLPreviste.toFixed(2) }} ML</strong>
             </div>
           </div>
-          <div class="col-md-4">
-            <h6>⚖️ Différence à régulariser</h6>
-            <div class="alert" :class="differenzaClass">
-              <strong>{{ differenzaImporto.toFixed(2) }} CHF</strong><br>
-              <small>{{ differenzaImporto >= 0 ? 'Supplément à facturer' : 'Crédit client' }}</small>
+          <div class="col-md-6">
+            <h6>📏 Quantités réelles posées</h6>
+            <div class="alert alert-success">
+              <strong>{{ totalMLReelles.toFixed(2) }} ML</strong>
             </div>
           </div>
         </div>
@@ -87,8 +78,6 @@
               <th>ML Prévues</th>
               <th>ML Réelles</th>
               <th>Différence</th>
-              <th>Prix Unit.</th>
-              <th>Impact €</th>
             </tr>
           </thead>
           <tbody>
@@ -110,12 +99,6 @@
                   {{ ((prodotto.mlReali || 0) - (prodotto.ml || 0)).toFixed(1) }}
                 </span>
               </td>
-              <td>{{ prodotto.prix?.toFixed(2) || '0.00' }} CHF</td>
-              <td>
-                <span :class="getImpactClass(prodotto)">
-                  {{ calcolaImpattoProdotto(prodotto).toFixed(2) }} CHF
-                </span>
-              </td>
             </tr>
           </tbody>
         </table>
@@ -135,9 +118,7 @@
           <div class="col-md-2">
             <input v-model.number="nuovoSupplemento.quantita" type="number" class="form-control" placeholder="Qté">
           </div>
-          <div class="col-md-2">
-            <input v-model.number="nuovoSupplemento.prezzo" type="number" class="form-control" placeholder="Prix">
-          </div>
+
           <div class="col-md-2">
             <button @click="aggiungiSupplemento" class="btn btn-success">➕ Ajouter</button>
           </div>
@@ -148,8 +129,6 @@
             <tr>
               <th>Description</th>
               <th>Quantité</th>
-              <th>Prix Unit.</th>
-              <th>Total</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -157,8 +136,6 @@
             <tr v-for="(supp, index) in supplementiAggiuntivi" :key="index">
               <td>{{ supp.descrizione }}</td>
               <td>{{ supp.quantita }}</td>
-              <td>{{ supp.prezzo.toFixed(2) }}</td>
-              <td>{{ (supp.quantita * supp.prezzo).toFixed(2) }} CHF</td>
               <td>
                 <button @click="rimuoviSupplemento(index)" class="btn btn-sm btn-danger">🗑</button>
               </td>
@@ -168,32 +145,26 @@
       </div>
     </div>
 
-    <!-- Riepilogo finale -->
+    <!-- Riepilogo finale quantità -->
     <div v-if="selectedZone" class="card mb-4">
-      <div class="card-header bg-warning">
-        <h5>📋 Riepilogo Finale</h5>
+      <div class="card-header bg-success text-white">
+        <h5>📋 Résumé des Quantités</h5>
       </div>
       <div class="card-body">
         <table class="table">
           <tbody>
             <tr>
-              <td><strong>Importo già fatturato ({{ percentualeFatturata }}%)</strong></td>
-              <td class="text-end">{{ importoFatturato.toFixed(2) }} CHF</td>
+              <td><strong>Total ML prévues</strong></td>
+              <td class="text-end"><strong>{{ totalMLPreviste.toFixed(2) }} ML</strong></td>
             </tr>
             <tr>
-              <td>Variazioni quantità reali</td>
-              <td class="text-end" :class="variazioniQuantitaClass">
-                {{ variazioniQuantita.toFixed(2) }} CHF
-              </td>
-            </tr>
-            <tr>
-              <td>Supplementi aggiuntivi</td>
-              <td class="text-end text-success">{{ totalSupplementi.toFixed(2) }} CHF</td>
+              <td><strong>Total ML réelles posées</strong></td>
+              <td class="text-end"><strong>{{ totalMLReelles.toFixed(2) }} ML</strong></td>
             </tr>
             <tr class="table-active">
-              <td><strong>CONGUAGLIO DA FATTURARE</strong></td>
-              <td class="text-end" :class="congualioClass">
-                <strong>{{ conguaglioFinale.toFixed(2) }} CHF</strong>
+              <td><strong>DIFFÉRENCE</strong></td>
+              <td class="text-end" :class="differenceMLClass">
+                <strong>{{ (totalMLReelles - totalMLPreviste).toFixed(2) }} ML</strong>
               </td>
             </tr>
           </tbody>
@@ -235,9 +206,11 @@ const devisData = ref(null);
 const supplementiAggiuntivi = ref([]);
 const nuovoSupplemento = ref({
   descrizione: '',
-  quantita: 0,
-  prezzo: 0
+  quantita: 0
 });
+const numeroDevis = ref('');
+const nomClient = ref('');
+const nomChantier = ref('');
 
 // Computed per calcoli
 const zonesCompletees = computed(() => {
@@ -250,6 +223,15 @@ const percentualeFatturata = computed(() => {
 
 const totalMLPreviste = computed(() => {
   return prodottiZona.value.reduce((sum, p) => sum + (p.ml || 0), 0);
+});
+
+const totalMLReelles = computed(() => {
+  return prodottiZona.value.reduce((sum, p) => sum + (p.mlReali || 0), 0);
+});
+
+const differenceMLClass = computed(() => {
+  const diff = totalMLReelles.value - totalMLPreviste.value;
+  return diff >= 0 ? 'text-success' : 'text-danger';
 });
 
 const importoPrevisto = computed(() => {
@@ -347,64 +329,153 @@ const loadChantierData = async () => {
   }
   
   try {
-    const chantier = chantiers.value.find(c => c.id === selectedChantierId.value);
-    if (!chantier?.devisId) {
-      console.warn('Cantiere senza devisId:', chantier);
-      return;
-    }
+    // Trova il cantiere selezionato
+    const chantier = chantiers.value.find(c => String(c.id) === String(selectedChantierId.value));
     
-    // Carica devis
-    const { data: devisDoc, error: devisError } = await supabase
-      .from('devis')
-      .select('*')
-      .eq('id', chantier.devisId)
-      .single();
+    // Usa gruppo_devis_id se disponibile, altrimenti fallback a devis_id singolo
+    const gruppoDevisId = chantier?.gruppo_devis_id;
+    const devisId = chantier?.devis_id || chantier?.devisId;
     
-    if (devisError) {
-      console.error('Errore caricamento devis:', devisError);
-      return;
-    }
+    console.log('🔍 Cantiere e gruppo devis:', {
+      cantiere: chantier.nom,
+      gruppoDevisId: gruppoDevisId,
+      devisId: devisId
+    });
     
-    if (devisDoc) {
-      devisData.value = devisDoc;
+    let allDevisStessoCantiere = [];
+    let devisError = null;
+    
+    if (gruppoDevisId) {
+      // Nuova logica: cerca tutti i devis del gruppo
+      console.log('🆕 Usando gruppo_devis_id:', gruppoDevisId);
+      const result = await supabase
+        .from('devis')
+        .select('*')
+        .eq('gruppo_devis_id', gruppoDevisId);
       
-      // Estrai zone dai prodotti del devis
-      const zoneSet = new Set();
-      if (devisData.value.produits && Array.isArray(devisData.value.produits)) {
-        devisData.value.produits.forEach(p => {
-          if (p.zone) zoneSet.add(p.zone);
+      allDevisStessoCantiere = result.data || [];
+      devisError = result.error;
+    } else if (devisId) {
+      // Logica vecchia: carica singolo devis
+      console.log('🔄 Fallback a devis_id:', devisId);
+      const result = await supabase
+        .from('devis')
+        .select('*')
+        .eq('id', devisId)
+        .single();
+      
+      allDevisStessoCantiere = result.data ? [result.data] : [];
+      devisError = result.error;
+    }
+    
+    if (devisError || !allDevisStessoCantiere || allDevisStessoCantiere.length === 0) {
+      console.error('Errore caricamento devis:', devisError);
+      alert('Aucun devis trouvé pour ce chantier');
+      return;
+    }
+    
+    console.log(`📋 Trovati ${allDevisStessoCantiere.length} devis per il cantiere`);
+    allDevisStessoCantiere.forEach((d, i) => {
+      console.log(`Devis ${i+1}: ${d.numero} - Prodotti: ${d.produits?.length || 0}`);
+    });
+    
+    console.log('🏗️ Cantiere selezionato:', chantier);
+    
+    // Combina tutti i devis in uno unico
+    const devisCombinato = {
+      numero: allDevisStessoCantiere.map(d => d.numero).join(', '),
+      nom: allDevisStessoCantiere[0].nom,
+      produits: []
+    };
+    
+    // Mappa per sommare prodotti uguali
+    const prodottiMap = new Map();
+    
+    allDevisStessoCantiere.forEach(devis => {
+      if (devis.produits && Array.isArray(devis.produits)) {
+        devis.produits.forEach(prodotto => {
+          const key = `${prodotto.zone}-${prodotto.article}-${prodotto.nom}-${prodotto.taille}`;
+          
+          if (prodottiMap.has(key)) {
+            // Somma le quantità
+            const existing = prodottiMap.get(key);
+            existing.ml = (existing.ml || 0) + (prodotto.ml || 0);
+            existing.mlReali = existing.ml;
+          } else {
+            // Nuovo prodotto
+            prodottiMap.set(key, {
+              ...prodotto,
+              mlReali: prodotto.ml
+            });
+          }
         });
       }
+    });
+    
+    devisCombinato.produits = Array.from(prodottiMap.values());
+    
+    // Usa il devis combinato
+    devisData.value = devisCombinato;
+    numeroDevis.value = devisCombinato.numero;
+    nomClient.value = devisCombinato.nom || '';
+    
+    const numeroDisplay = chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
+    nomChantier.value = `${numeroDisplay}${chantier.nom} - ${chantier.adresse}`;
+    
+    // Estrai le zone dai prodotti combinati
+    if (devisCombinato.produits && devisCombinato.produits.length > 0) {
+      const zoneSet = new Set();
+      devisCombinato.produits.forEach(produit => {
+        if (produit.zone) {
+          zoneSet.add(produit.zone);
+        }
+      });
       zones.value = Array.from(zoneSet).sort();
-      console.log('Zone caricate:', zones.value);
+      console.log('✅ Zone caricate da multipli devis:', zones.value);
+      console.log('📦 Prodotti combinati:', devisCombinato.produits.length);
+    } else {
+      zones.value = [];
+      console.log('⚠️ Nessuna zona trovata nei devis');
     }
     
-    // Carica resoconti percentuali
+    // Carica resoconti percentuali per tutti i devis
     const { data: resocontiData, error: resocontiError } = await supabase
       .from('resoconti_percentuali')
       .select('*')
-      .eq('chantierId', selectedChantierId.value)
+      .eq('chantier_id', selectedChantierId.value)
       .eq('status', 'approved');
     
     if (resocontiError) {
       console.error('Errore caricamento resoconti:', resocontiError);
     } else {
       resocontiPercentuali.value = resocontiData || [];
-      console.log('Resoconti percentuali caricati:', resocontiPercentuali.value.length);
+      console.log('📊 Resoconti percentuali caricati:', resocontiPercentuali.value.length);
     }
+    
   } catch (error) {
-    console.error('Errore generale loadChantierData:', error);
-    alert('Errore nel caricamento dei dati del cantiere');
+    console.error('❌ Errore generale loadChantierData:', error);
+    alert('Erreur lors du chargement: ' + error.message);
   }
 };
 
 const loadZoneData = () => {
-  if (!selectedZone.value || !devisData.value) return;
+  if (!selectedZone.value || !devisData.value) {
+    console.warn('⚠️ Zona o devis mancanti:', { zona: selectedZone.value, devis: !!devisData.value });
+    return;
+  }
+  
+  console.log('🔍 Caricamento dati zona:', selectedZone.value);
+  console.log('📦 Prodotti totali nel devis:', devisData.value.produits?.length || 0);
   
   // Filtra prodotti della zona selezionata
-  prodottiZona.value = devisData.value.produits
-    ?.filter(p => p.zone === selectedZone.value)
-    ?.map(p => ({ ...p, mlReali: p.ml })) || [];
+  const prodottiFiltrati = devisData.value.produits?.filter(p => {
+    console.log(`Prodotto: ${p.nom} - Zona: "${p.zone}" vs "${selectedZone.value}"`);
+    return p.zone === selectedZone.value;
+  }) || [];
+  
+  console.log('✅ Prodotti trovati per la zona:', prodottiFiltrati.length);
+  
+  prodottiZona.value = prodottiFiltrati.map(p => ({ ...p, mlReali: p.ml }));
   
   supplementiAggiuntivi.value = [];
   calcolaImpatti();
@@ -439,7 +510,7 @@ const getImpactClass = (prodotto) => {
 const aggiungiSupplemento = () => {
   if (nuovoSupplemento.value.descrizione && nuovoSupplemento.value.quantita > 0) {
     supplementiAggiuntivi.value.push({ ...nuovoSupplemento.value });
-    nuovoSupplemento.value = { descrizione: '', quantita: 0, prezzo: 0 };
+    nuovoSupplemento.value = { descrizione: '', quantita: 0 };
   }
 };
 

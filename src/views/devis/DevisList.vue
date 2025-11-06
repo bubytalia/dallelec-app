@@ -34,47 +34,65 @@
       </div>
     </div>
 
-    <!-- Tabella -->
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Numéro</th>
-          <th>Client</th>
-          <th>Technicien</th>
-          <th>Chantier</th>
-          <th>Montant HT (CHF)</th>
-          <th>Remise Totale</th>
-          <th>État</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="devis in filteredDevis" :key="devis.id">
-          <td>{{ formatDate(devis.created_at) }}</td>
-          <td>{{ devis.numero }}</td>
-          <td>{{ getClientName(devis.client_id) }}</td>
-          <td>{{ devis.technicien }}</td>
-          <td>{{ devis.nom || devis.adresse }}</td>
-          <td>{{ formatMontant(devis.total) }}</td>
-          <td>{{ calculerRemise(devis.remises, devis.modalita_prezzi) }}%</td>
-          <td>
-            <!-- Se il devis è in bozza, mostriamo lo stato senza possibilità di modifica -->
-            <span v-if="devis.draft === true">Brouillon</span>
-            <select v-else v-model="devis.status" @change="updateDevisStatus(devis.id, devis.status)" class="form-select form-select-sm">
-              <option v-for="opt in statusOptions" :key="opt" :value="opt">{{ opt }}</option>
-            </select>
-          </td>
-          <td>
-            <button class="btn btn-sm btn-outline-secondary me-2" @click="voirDevis(devis.id)">Voir</button>
-            <button class="btn btn-sm btn-danger" @click="effacerDevis(devis.id)" title="Effacer le devis">🗑️</button>
-          </td>
-        </tr>
-        <tr v-if="filteredDevis.length === 0">
-          <td colspan="9" class="text-center">Aucun devis trouvé.</td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Tabella raggruppata per cantiere -->
+    <div v-for="group in groupedDevis" :key="group.chantier" class="mb-4">
+      <!-- Header gruppo cantiere -->
+      <div class="card">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">
+            <strong>🏗️ {{ group.chantier }}</strong>
+            <span class="badge bg-secondary ms-2">{{ group.devis.length }} devis</span>
+          </h6>
+          <button 
+            class="btn btn-sm btn-success" 
+            @click="creerDevisSupplementaire(group.devis[0])"
+            title="Créer un devis supplémentaire pour ce chantier"
+          >
+            ➕ Devis supplémentaire
+          </button>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Numéro</th>
+                <th>Client</th>
+                <th>Technicien</th>
+                <th>Montant HT (CHF)</th>
+                <th>Remise</th>
+                <th>État</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="devis in group.devis" :key="devis.id">
+                <td>{{ formatDate(devis.created_at) }}</td>
+                <td>{{ devis.numero }}</td>
+                <td>{{ getClientName(devis.client_id) }}</td>
+                <td>{{ devis.technicien }}</td>
+                <td>{{ formatMontant(devis.total) }}</td>
+                <td>{{ calculerRemise(devis.remises, devis.modalita_prezzi) }}%</td>
+                <td>
+                  <span v-if="devis.draft === true" class="badge bg-warning">Brouillon</span>
+                  <select v-else v-model="devis.status" @change="updateDevisStatus(devis.id, devis.status)" class="form-select form-select-sm">
+                    <option v-for="opt in statusOptions" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline-secondary me-1" @click="voirDevis(devis.id)">Voir</button>
+                  <button class="btn btn-sm btn-danger" @click="effacerDevis(devis.id)" title="Effacer le devis">🗑️</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <div v-if="groupedDevis.length === 0" class="text-center py-4">
+      <p class="text-muted">Aucun devis trouvé.</p>
+    </div>
   </div>
 </template>
 
@@ -104,6 +122,7 @@ const filterStatus = ref('');
 const sortBy = ref('numero');
 
 const router = useRouter();
+const cantieri = ref([]);
 
 // Opzioni di stato disponibili per i devis (escludiamo "Brouillon" in quanto gestito dal flag draft)
 const statusOptions = ['En cours', 'Accepté', 'Non accepté'];
@@ -164,6 +183,25 @@ const filteredDevis = computed(() => {
       return numB - numA;
     }
   });
+});
+
+// Computed per raggruppare devis per cantiere
+const groupedDevis = computed(() => {
+  const groups = {};
+  
+  filteredDevis.value.forEach(d => {
+    const chantier = d.nom || d.adresse || 'Chantier inconnu';
+    if (!groups[chantier]) {
+      groups[chantier] = {
+        chantier,
+        devis: []
+      };
+    }
+    groups[chantier].devis.push(d);
+  });
+  
+  // Ordina i gruppi per nome cantiere
+  return Object.values(groups).sort((a, b) => a.chantier.localeCompare(b.chantier));
 });
 
 // Helpers
@@ -257,5 +295,19 @@ const effacerDevis = async (id) => {
     console.error('Erreur lors de la suppression du devis:', error);
     alert('Erreur lors de la suppression du devis: ' + error.message);
   }
+};
+
+// ✅ NUOVO: Funzione per creare devis supplementare
+const creerDevisSupplementaire = (devisBase) => {
+  // Naviga alla creazione devis con parametri del devis base
+  const params = new URLSearchParams({
+    duplicate: 'true',
+    baseDevisId: devisBase.id,
+    client: devisBase.client_id,
+    chantier: devisBase.nom || devisBase.adresse,
+    technicien: devisBase.technicien
+  });
+  
+  router.push(`/admin/devis/create?${params.toString()}`);
 };
 </script>

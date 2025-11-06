@@ -325,12 +325,20 @@ const loadChantierData = async () => {
   try {
     // Trova il cantiere selezionato
     const chantier = chantiers.value.find(c => String(c.id) === String(selectedChantierId.value));
-    const devisId = chantier?.devis_id || chantier?.devisId;
     
-    if (!chantier || !devisId) {
+    // Cerca tutti i devis dello stesso cantiere per nome e indirizzo
+    const { data: allDevisStessoCantiere, error: devisError } = await supabase
+      .from('devis')
+      .select('*')
+      .or(`nom.eq."${chantier.nom}",adresse.eq."${chantier.adresse}"`);
+    
+    if (devisError || !allDevisStessoCantiere || allDevisStessoCantiere.length === 0) {
+      console.error('Errore caricamento devis cantiere:', devisError);
       alert('Chantier ou devis non trouvé.');
       return;
     }
+    
+    console.log(`📋 Trovati ${allDevisStessoCantiere.length} devis per il cantiere`);
     
     // Controlla il tipo di métrage del cantiere
     if (chantier.type_metrage === 'percentuel') {
@@ -354,30 +362,55 @@ const loadChantierData = async () => {
     // Carica prezzo regie del cantiere
     prixRegieChantier.value = chantier.prix_regie || 75;
     
-    // Carica il devis associato
-    const { data: devisDocData, error } = await supabase
-      .from('devis')
-      .select('*')
-      .eq('id', devisId)
-      .single();
+    // Usa direttamente i devis già caricati
+    const allDevisData = allDevisStessoCantiere;
     
-    if (error || !devisDocData) {
-      alert('Devis non trouvé.');
-      return;
-    }
-    devisData.value = devisDocData;
-    numeroDevis.value = devisDocData.numero || '';
-    nomClient.value = devisDocData.nom || '';
+    // Combina tutti i devis in uno unico
+    const devisCombinato = {
+      numero: allDevisData.map(d => d.numero).join(', '),
+      nom: allDevisData[0].nom,
+      produits: []
+    };
     
-    // Estrai le zone dai prodotti del devis
-    if (devisDocData.produits && devisDocData.produits.length > 0) {
+    // Mappa per sommare prodotti uguali
+    const prodottiMap = new Map();
+    
+    allDevisData.forEach(devis => {
+      if (devis.produits && Array.isArray(devis.produits)) {
+        devis.produits.forEach(prodotto => {
+          const key = `${prodotto.zone}-${prodotto.article}-${prodotto.nom}-${prodotto.taille}`;
+          
+          if (prodottiMap.has(key)) {
+            const existing = prodottiMap.get(key);
+            existing.ml = (existing.ml || 0) + (prodotto.ml || 0);
+            existing.mlPrevue = existing.ml;
+          } else {
+            prodottiMap.set(key, {
+              ...prodotto,
+              mlPrevue: prodotto.ml,
+              mlPosee: 0
+            });
+          }
+        });
+      }
+    });
+    
+    devisCombinato.produits = Array.from(prodottiMap.values());
+    
+    devisData.value = devisCombinato;
+    numeroDevis.value = devisCombinato.numero;
+    nomClient.value = devisCombinato.nom || '';
+    
+    // Estrai le zone dai prodotti combinati
+    if (devisCombinato.produits && devisCombinato.produits.length > 0) {
       const zoneSet = new Set();
-      devisDocData.produits.forEach(produit => {
+      devisCombinato.produits.forEach(produit => {
         if (produit.zone) {
           zoneSet.add(produit.zone);
         }
       });
       zones.value = Array.from(zoneSet).sort();
+      console.log(`✅ Zone caricate da ${allDevisData.length} devis:`, zones.value);
     } else {
       zones.value = [];
     }

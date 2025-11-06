@@ -5,6 +5,9 @@
 
     <h2 class="text-center mb-4">
       {{ editingId ? 'Modifier le Devis' : 'Nouveau Devis' }}
+      <small v-if="isDuplicateMode" class="d-block text-success mt-2">
+        🔄 Devis supplémentaire pour le même chantier
+      </small>
     </h2>
 
     <!-- Informations du chantier -->
@@ -304,6 +307,7 @@ const familles = ref([]);
 const sousfamilles = ref([]);
 const remiseSelection = ref({});
 const modalitaPrezzi = ref('scontistica'); // Ripristinato valore corretto
+const isDuplicateMode = ref(false);
 
 const addZone = () => {
   if (newZone.value.trim()) {
@@ -474,6 +478,90 @@ const continuerVersDevis = async () => {
       .single();
     
     if (error) throw error;
+    
+    // Se è un devis supplementare, gestisci il raggruppamento
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDuplicate = urlParams.get('duplicate') === 'true';
+    const baseDevisId = urlParams.get('baseDevisId');
+    
+    if (isDuplicate && docRef && baseDevisId) {
+      // Trova il devis base per ottenere il gruppo
+      const { data: baseDevis } = await supabase
+        .from('devis')
+        .select('gruppo_devis_id')
+        .eq('id', baseDevisId)
+        .single();
+      
+      let gruppoId = baseDevis?.gruppo_devis_id;
+      
+      // Se il devis base non ha gruppo, crealo
+      if (!gruppoId) {
+        gruppoId = `GRUPPO_${Date.now()}`;
+        
+        // Assegna gruppo al devis base
+        await supabase
+          .from('devis')
+          .update({ gruppo_devis_id: gruppoId })
+          .eq('id', baseDevisId);
+        
+        console.log(`📝 Creato gruppo ${gruppoId} per devis base ${baseDevisId}`);
+      }
+      
+      // Assegna stesso gruppo al nuovo devis
+      await supabase
+        .from('devis')
+        .update({ gruppo_devis_id: gruppoId })
+        .eq('id', docRef.id);
+      
+      // Trova il cantiere che ha il devis base
+      let cantiere = null;
+      
+      // Prima prova: cerca cantiere che ha il devis base nel gruppo
+      const { data: cantiereConGruppo } = await supabase
+        .from('chantieri')
+        .select('*')
+        .eq('gruppo_devis_id', gruppoId)
+        .single();
+      
+      if (cantiereConGruppo) {
+        cantiere = cantiereConGruppo;
+        console.log(`🏗️ Trovato cantiere tramite gruppo: ${cantiere.nom}`);
+      } else {
+        // Seconda prova: cerca cantiere che ha il devis base come devis_id
+        const { data: cantiereConDevis } = await supabase
+          .from('chantieri')
+          .select('*')
+          .eq('devis_id', baseDevisId)
+          .single();
+        
+        if (cantiereConDevis) {
+          cantiere = cantiereConDevis;
+          console.log(`🏗️ Trovato cantiere tramite devis_id: ${cantiere.nom}`);
+        } else {
+          // Terza prova: cerca per nome/indirizzo
+          const { data: cantiereConNome } = await supabase
+            .from('chantieri')
+            .select('*')
+            .eq('nom', newDevis.nom)
+            .eq('adresse', newDevis.adresse)
+            .single();
+          
+          cantiere = cantiereConNome;
+          if (cantiere) {
+            console.log(`🏗️ Trovato cantiere tramite nome/indirizzo: ${cantiere.nom}`);
+          }
+        }
+      }
+      
+      if (cantiere) {
+        await supabase
+          .from('chantieri')
+          .update({ gruppo_devis_id: gruppoId })
+          .eq('id', cantiere.id);
+        
+        console.log(`✅ Cantiere ${cantiere.id} aggiornato con gruppo ${gruppoId}`);
+      }
+    }
     // Pulizia localStorage
     try {
       localStorage.removeItem('devisForm');
@@ -548,6 +636,18 @@ onMounted(async () => {
     techniciens.value = techRes.data || [];
     familles.value = famRes.data || [];
     sousfamilles.value = sousRes.data || [];
+    
+    // ✅ NUOVO: Gestione duplicazione devis
+    const urlParams = new URLSearchParams(window.location.search);
+    const isDuplicate = urlParams.get('duplicate') === 'true';
+    const baseDevisId = urlParams.get('baseDevisId');
+    
+    if (isDuplicate && baseDevisId) {
+      console.log('🔄 Modalità duplicazione devis da:', baseDevisId);
+      isDuplicateMode.value = true;
+      await loadBaseDevisData(baseDevisId);
+      return; // Esce qui per evitare caricamento localStorage
+    }
 
   // Carica dati dal localStorage solo se NON siamo in modalità modifica
   if (!editingId.value) {
@@ -622,6 +722,89 @@ onMounted(async () => {
     console.error('Errore caricamento dati:', error);
   }
 });
+
+// ✅ NUOVO: Funzione per caricare dati dal devis base
+const loadBaseDevisData = async (baseDevisId) => {
+  try {
+    const { data: baseDevis, error } = await supabase
+      .from('devis')
+      .select('*')
+      .eq('id', baseDevisId)
+      .single();
+    
+    if (error || !baseDevis) {
+      console.error('Errore caricamento devis base:', error);
+      alert('Erreur lors du chargement du devis de base');
+      return;
+    }
+    
+    console.log('✅ Devis base caricato:', baseDevis);
+    
+    // Carica tutte le zone esistenti dal gruppo devis
+    let zoneEsistenti = new Set();
+    
+    if (baseDevis.gruppo_devis_id) {
+      // Nuova logica: carica zone da tutto il gruppo
+      const { data: allDevisGruppo } = await supabase
+        .from('devis')
+        .select('zones, produits')
+        .eq('gruppo_devis_id', baseDevis.gruppo_devis_id);
+      
+      // Combina zone da tutti i devis del gruppo
+      allDevisGruppo?.forEach(d => {
+        // Zone dal campo zones
+        if (d.zones && Array.isArray(d.zones)) {
+          d.zones.forEach(z => zoneEsistenti.add(z));
+        }
+        // Zone dai prodotti
+        if (d.produits && Array.isArray(d.produits)) {
+          d.produits.forEach(p => {
+            if (p.zone) zoneEsistenti.add(p.zone);
+          });
+        }
+      });
+    } else {
+      // Fallback: usa solo le zone del devis base
+      if (baseDevis.zones && Array.isArray(baseDevis.zones)) {
+        baseDevis.zones.forEach(z => zoneEsistenti.add(z));
+      }
+      if (baseDevis.produits && Array.isArray(baseDevis.produits)) {
+        baseDevis.produits.forEach(p => {
+          if (p.zone) zoneEsistenti.add(p.zone);
+        });
+      }
+    }
+    
+    // Popola il form con i dati del devis base
+    form.value.nom = baseDevis.nom || '';
+    form.value.adresse = baseDevis.adresse || '';
+    form.value.client = baseDevis.client_id || '';
+    form.value.technicien = baseDevis.technicien || '';
+    
+    // Carica le zone esistenti
+    zones.value = Array.from(zoneEsistenti).sort();
+    
+    // Mantieni la stessa modalità prezzi
+    modalitaPrezzi.value = baseDevis.modalita_prezzi || 'scontistica';
+    
+    // Carica le remise se esistenti
+    if (baseDevis.remises) {
+      remiseSelection.value = { ...baseDevis.remises };
+    }
+    
+    console.log('✅ Form precompilato con:', {
+      cantiere: form.value.nom,
+      client: form.value.client,
+      zoneEsistenti: zones.value.length,
+      modalita: modalitaPrezzi.value,
+      gruppoDevis: baseDevis.gruppo_devis_id || 'nessuno'
+    });
+    
+  } catch (error) {
+    console.error('Errore loadBaseDevisData:', error);
+    alert('Erreur lors du chargement des données de base');
+  }
+};
 
 
 // Salva automaticamente le zone cantiere ogni volta che cambiano
