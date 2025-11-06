@@ -76,8 +76,11 @@
               <th>Produit</th>
               <th>Taille</th>
               <th>ML Prévues</th>
-              <th>ML Réelles</th>
+              <th>ML Posées</th>
+              <th>Suppléments</th>
+              <th>Total ML</th>
               <th>Différence</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -88,20 +91,143 @@
               <td>
                 <input 
                   type="number" 
-                  v-model.number="prodotto.mlReali" 
+                  :value="prodotto.mlReali"
                   class="form-control" 
                   step="0.1"
-                  @input="calcolaImpatti"
+                  @input="(e) => { prodotto.mlReali = Number(e.target.value); prodotto.totalML = prodotto.mlReali; }"
                 />
               </td>
               <td>
+                <div v-for="supp in supplementsDisponibili" :key="supp.id" class="d-flex align-items-center mb-1">
+                  <input 
+                    type="checkbox" 
+                    :value="supp.nom" 
+                    v-model="prodotto.supplementiSelezionati" 
+                    class="form-check-input me-1"
+                    @change="updateSupplementi(index)"
+                  >
+                  <span class="me-1 small">{{ supp.nom }}</span>
+                  <input
+                    v-if="prodotto.supplementiSelezionati && prodotto.supplementiSelezionati.includes(supp.nom)"
+                    type="number"
+                    class="form-control form-control-sm"
+                    style="width: 60px;"
+                    v-model.number="prodotto.quantitaSupplementi[supp.nom]"
+                    min="0"
+                    placeholder="Qté"
+                    @input="updateSupplementi(index)"
+                    @change="updateSupplementi(index)"
+                    @keyup="updateSupplementi(index)"
+                  >
+                </div>
+              </td>
+              <td><strong>{{ ((prodotto.totalML || 0) > 0 ? prodotto.totalML : (prodotto.mlReali || 0)).toFixed(2) }}</strong></td>
+              <td>
                 <span :class="getDifferenzaClass(prodotto)">
-                  {{ ((prodotto.mlReali || 0) - (prodotto.ml || 0)).toFixed(1) }}
+                  {{ ((prodotto.totalML || prodotto.mlReali || 0) - (prodotto.ml || 0)).toFixed(1) }}
                 </span>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Form modifica supplementi -->
+    <div v-if="prodottoInModifica" class="card mb-4 border-warning">
+      <div class="card-header bg-warning">
+        <h5>✎️ Modifier Suppléments: {{ prodottoInModifica.nom }} {{ prodottoInModifica.taille }}</h5>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-3">
+            <label>ML Posées:</label>
+            <input v-model.number="prodottoInModifica.mlReali" type="number" step="0.1" class="form-control">
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-12">
+            <label>Suppléments:</label>
+            <div class="alert alert-light mb-2">
+              <small><strong>Debug:</strong> Supplementi disponibili: {{ supplementsDisponibili.length }} | Selezionati: {{ supplementiSelezionati.length }} | Quantità: {{ Object.keys(quantitaSupplementi).length }}</small>
+            </div>
+            <div v-for="supp in supplementsDisponibili" :key="supp.id" class="d-flex align-items-center mb-1">
+              <input 
+                type="checkbox" 
+                :value="supp.nom" 
+                v-model="supplementiSelezionati" 
+                class="form-check-input me-2"
+                @change="forceUpdate"
+              >
+              <span class="me-2">{{ supp.nom }} ({{ supp.valeur }}m)</span>
+              <input
+                v-show="supplementiSelezionati.includes(supp.nom)"
+                type="number"
+                class="form-control form-control-sm w-25"
+                v-model.number="quantitaSupplementi[supp.nom]"
+                min="0"
+                placeholder="Qté"
+                style="display: inline-block !important;"
+              >
+              <span v-if="supplementiSelezionati.includes(supp.nom) && quantitaSupplementi[supp.nom]" class="ms-1 text-muted small">
+                = {{ (quantitaSupplementi[supp.nom] * supp.valeur).toFixed(2) }}m
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-end">
+          <button @click="annullaModifica" class="btn btn-secondary me-2">❌ Annuler</button>
+          <button @click="salvaModificaSupplementi" class="btn btn-success">✅ Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sezione Regie -->
+    <div v-if="selectedZone" class="card mb-4">
+      <div class="card-header">
+        <h5>⏰ Régies (Heures supplémentaires)</h5>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-2">
+            <label>Heures:</label>
+            <input v-model.number="nouvelleRegie.heures" type="number" step="0.5" class="form-control" placeholder="2.0">
+          </div>
+          <div class="col-md-4">
+            <label>Description travail:</label>
+            <input v-model="nouvelleRegie.description" type="text" class="form-control" placeholder="Modification installation...">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button @click="ajouterRegie" class="btn btn-success w-100" :disabled="!regieValide">
+              ➕ Ajouter
+            </button>
+          </div>
+        </div>
+        
+        <table v-if="regies.length > 0" class="table table-sm">
+          <thead>
+            <tr>
+              <th>Heures</th>
+              <th>Description</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(regie, index) in regies" :key="index">
+              <td>{{ regie.heures }}h</td>
+              <td>{{ regie.description }}</td>
+              <td>
+                <button @click="supprimerRegie(index)" class="btn btn-sm btn-danger">🗑</button>
               </td>
             </tr>
           </tbody>
         </table>
+        <div v-if="regies.length > 0" class="text-end">
+          <strong>Total Heures Régies: {{ totalHeuresRegies }}h</strong>
+        </div>
       </div>
     </div>
 
@@ -118,7 +244,9 @@
           <div class="col-md-2">
             <input v-model.number="nuovoSupplemento.quantita" type="number" class="form-control" placeholder="Qté">
           </div>
-
+          <div class="col-md-2">
+            <input v-model.number="nuovoSupplemento.prezzo" type="number" class="form-control" placeholder="Prix">
+          </div>
           <div class="col-md-2">
             <button @click="aggiungiSupplemento" class="btn btn-success">➕ Ajouter</button>
           </div>
@@ -129,6 +257,8 @@
             <tr>
               <th>Description</th>
               <th>Quantité</th>
+              <th>Prix Unit.</th>
+              <th>Total</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -136,6 +266,8 @@
             <tr v-for="(supp, index) in supplementiAggiuntivi" :key="index">
               <td>{{ supp.descrizione }}</td>
               <td>{{ supp.quantita }}</td>
+              <td>{{ supp.prezzo.toFixed(2) }}</td>
+              <td>{{ (supp.quantita * supp.prezzo).toFixed(2) }} CHF</td>
               <td>
                 <button @click="rimuoviSupplemento(index)" class="btn btn-sm btn-danger">🗑</button>
               </td>
@@ -172,13 +304,12 @@
       </div>
     </div>
 
+
+
     <!-- Azioni -->
     <div v-if="selectedZone" class="text-center">
-      <button @click="salvaResocontoFinale" class="btn btn-success me-2">
-        💾 Sauvegarder resoconto final
-      </button>
-      <button @click="generaPdfConguaglio" class="btn btn-primary">
-        📄 Générer PDF conguaglio
+      <button @click="salvaResocontoFinale" class="btn btn-success">
+        💾 Sauvegarder et envoyer pour approbation
       </button>
     </div>
   </div>
@@ -206,11 +337,23 @@ const devisData = ref(null);
 const supplementiAggiuntivi = ref([]);
 const nuovoSupplemento = ref({
   descrizione: '',
-  quantita: 0
+  quantita: 0,
+  prezzo: 0
 });
+const accontiPrecedenti = ref(0);
 const numeroDevis = ref('');
 const nomClient = ref('');
 const nomChantier = ref('');
+const regies = ref([]);
+const prixRegieChantier = ref(75);
+const nouvelleRegie = ref({
+  heures: 0,
+  description: ''
+});
+const supplementsDisponibili = ref([]);
+const prodottoInModifica = ref(null);
+const supplementiSelezionati = ref([]);
+const quantitaSupplementi = ref({});
 
 // Computed per calcoli
 const zonesCompletees = computed(() => {
@@ -234,12 +377,39 @@ const differenceMLClass = computed(() => {
   return diff >= 0 ? 'text-success' : 'text-danger';
 });
 
+const regieValide = computed(() => {
+  return nouvelleRegie.value.heures > 0 && nouvelleRegie.value.description.trim();
+});
+
+const totalHeuresRegies = computed(() => {
+  return regies.value.reduce((sum, r) => sum + r.heures, 0);
+});
+
+const totalMontantRegies = computed(() => {
+  return regies.value.reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
+});
+
 const importoPrevisto = computed(() => {
   return prodottiZona.value.reduce((sum, p) => sum + ((p.ml || 0) * (p.prix || 0)), 0);
 });
 
 const importoFatturato = computed(() => {
+  // SOLO percentuale prodotti, ESCLUSE le regie
   return (importoPrevisto.value * percentualeFatturata.value) / 100;
+});
+
+const importoRegieFatturate = computed(() => {
+  // Calcola regie già fatturate per questa zona
+  if (!selectedZone.value) return 0;
+  
+  return resocontiPercentuali.value
+    .filter(r => r.status === 'approved')
+    .reduce((sum, r) => {
+      if (!r.regies) return sum;
+      return sum + r.regies
+        .filter(regie => regie.zone === selectedZone.value)
+        .reduce((regieSum, regie) => regieSum + (regie.heures * (regie.prixHeure || 75)), 0);
+    }, 0);
 });
 
 const variazioniQuantita = computed(() => {
@@ -250,11 +420,11 @@ const variazioniQuantita = computed(() => {
 });
 
 const totalSupplementi = computed(() => {
-  return supplementiAggiuntivi.value.reduce((sum, s) => sum + (s.quantita * s.prezzo), 0);
+  return supplementiAggiuntivi.value.reduce((sum, s) => sum + (s.quantita * (s.prezzo || 0)), 0);
 });
 
 const conguaglioFinale = computed(() => {
-  return variazioniQuantita.value + totalSupplementi.value;
+  return variazioniQuantita.value + totalSupplementi.value + totalMontantRegies.value;
 });
 
 const differenzaImporto = computed(() => {
@@ -475,21 +645,42 @@ const loadZoneData = () => {
   
   console.log('✅ Prodotti trovati per la zona:', prodottiFiltrati.length);
   
-  prodottiZona.value = prodottiFiltrati.map(p => ({ ...p, mlReali: p.ml }));
+  prodottiZona.value = prodottiFiltrati.map(p => ({
+    ...p, 
+    mlReali: p.ml,
+    supplementiSelezionati: [],
+    quantitaSupplementi: {},
+    totalML: p.ml
+  }));
   
   supplementiAggiuntivi.value = [];
+  regies.value = [];
   calcolaImpatti();
 };
 
 const getPercentualeFatturata = (zona) => {
   if (!zona) return 0;
-  return resocontiPercentuali.value.reduce((sum, r) => {
-    return sum + (r.avancementi?.[zona] || 0);
-  }, 0);
+  return resocontiPercentuali.value
+    .filter(r => r.status === 'approved')
+    .reduce((sum, r) => {
+      return sum + (r.avancementi?.[zona] || 0);
+    }, 0);
 };
 
 const calcolaImpatti = () => {
-  // Trigger reattività computed
+  // Ricalcola totalML per ogni prodotto
+  prodottiZona.value.forEach(prodotto => {
+    let totalSuppML = 0;
+    if (prodotto.supplementiSelezionati && prodotto.quantitaSupplementi) {
+      prodotto.supplementiSelezionati.forEach(suppNom => {
+        const qte = prodotto.quantitaSupplementi[suppNom] || 0;
+        const supp = supplementsDisponibili.value.find(s => s.nom === suppNom);
+        const valeur = supp?.valeur || 1;
+        totalSuppML += qte * valeur;
+      });
+    }
+    prodotto.totalML = (prodotto.mlReali || 0) + totalSuppML;
+  });
 };
 
 const calcolaImpattoProdotto = (prodotto) => {
@@ -508,9 +699,9 @@ const getImpactClass = (prodotto) => {
 };
 
 const aggiungiSupplemento = () => {
-  if (nuovoSupplemento.value.descrizione && nuovoSupplemento.value.quantita > 0) {
+  if (nuovoSupplemento.value.descrizione && nuovoSupplemento.value.quantita > 0 && nuovoSupplemento.value.prezzo > 0) {
     supplementiAggiuntivi.value.push({ ...nuovoSupplemento.value });
-    nuovoSupplemento.value = { descrizione: '', quantita: 0 };
+    nuovoSupplemento.value = { descrizione: '', quantita: 0, prezzo: 0 };
   }
 };
 
@@ -518,94 +709,183 @@ const rimuoviSupplemento = (index) => {
   supplementiAggiuntivi.value.splice(index, 1);
 };
 
-const salvaResocontoFinale = async () => {
-  const resocontoFinale = {
-    chantierId: selectedChantierId.value,
-    zona: selectedZone.value,
-    percentualeFatturata: percentualeFatturata.value,
-    importoFatturato: importoFatturato.value,
-    prodottiReali: prodottiZona.value,
-    supplementiAggiuntivi: supplementiAggiuntivi.value,
-    variazioniQuantita: variazioniQuantita.value,
-    totalSupplementi: totalSupplementi.value,
-    conguaglioFinale: conguaglioFinale.value,
-    capocantiere: user.value?.email || 'unknown',
-    createdAt: new Date().toISOString(),
-    status: 'completato'
+const ajouterRegie = () => {
+  if (!regieValide.value) return;
+  
+  const nouvelleRegieItem = {
+    heures: nouvelleRegie.value.heures,
+    prixHeure: prixRegieChantier.value,
+    description: nouvelleRegie.value.description
   };
   
-  const { error } = await supabase
-    .from('resoconti_finali')
-    .insert([resocontoFinale]);
+  regies.value.push(nouvelleRegieItem);
   
-  if (error) {
-    alert('Errore nel salvataggio: ' + error.message);
-  } else {
-    alert('Resoconto finale salvato con successo!');
+  // Reset form
+  nouvelleRegie.value = {
+    heures: 0,
+    description: ''
+  };
+};
+
+const supprimerRegie = (index) => {
+  regies.value.splice(index, 1);
+};
+
+const modificaProdotto = (index) => {
+  const prodotto = prodottiZona.value[index];
+  console.log('🔧 Modificando prodotto:', prodotto);
+  console.log('📋 Supplementi disponibili totali:', supplementsDisponibili.value.length);
+  
+  prodottoInModifica.value = { ...prodotto, index };
+  
+  // Reset e carica supplementi esistenti
+  supplementiSelezionati.value = [];
+  quantitaSupplementi.value = {};
+  
+  // Inizializza quantità per tutti i supplementi disponibili
+  supplementsDisponibili.value.forEach(supp => {
+    quantitaSupplementi.value[supp.nom] = 0;
+  });
+  
+  // Carica supplementi esistenti del prodotto
+  if (prodotto.supplements && Array.isArray(prodotto.supplements)) {
+    console.log('📦 Supplementi esistenti prodotto:', prodotto.supplements);
+    prodotto.supplements.forEach(s => {
+      supplementiSelezionati.value.push(s.supplement);
+      quantitaSupplementi.value[s.supplement] = s.qtePosee || 0;
+    });
+  }
+  
+  console.log('✅ Supplementi selezionati:', supplementiSelezionati.value);
+  console.log('🔢 Quantità inizializzate:', quantitaSupplementi.value);
+};
+
+
+
+const updateSupplementi = (index) => {
+  const prodotto = prodottiZona.value[index];
+  
+  // Calcola total ML supplementi
+  let totalSuppML = 0;
+  if (prodotto.supplementiSelezionati) {
+    prodotto.supplementiSelezionati.forEach(suppNom => {
+      const qte = prodotto.quantitaSupplementi[suppNom] || 0;
+      const supp = supplementsDisponibili.value.find(s => s.nom === suppNom);
+      const valeur = supp?.valeur || 1;
+      totalSuppML += qte * valeur;
+    });
+  }
+  
+  // Aggiorna total ML
+  prodotto.totalML = (prodotto.mlReali || 0) + totalSuppML;
+};
+
+const annullaModifica = () => {
+  prodottoInModifica.value = null;
+  supplementiSelezionati.value = [];
+  quantitaSupplementi.value = {};
+};
+
+const salvaModificaSupplementi = () => {
+  if (!prodottoInModifica.value) return;
+  
+  const index = prodottoInModifica.value.index;
+  const prodotto = prodottiZona.value[index];
+  
+  // Crea array supplementi
+  const supplementDetails = supplementiSelezionati.value.map(nom => {
+    const supp = supplementsDisponibili.value.find(s => s.nom === nom);
+    const qtePosee = quantitaSupplementi.value[nom] || 0;
+    return {
+      supplement: nom,
+      valeur: supp?.valeur || 1,
+      qtePosee,
+      totalML: qtePosee * (supp?.valeur || 1)
+    };
+  });
+  
+  const totalSuppML = supplementDetails.reduce((sum, s) => sum + (s.totalML || 0), 0);
+  
+  // Aggiorna prodotto
+  prodotto.mlReali = prodottoInModifica.value.mlReali;
+  prodotto.supplements = supplementDetails;
+  prodotto.totalSuppML = totalSuppML;
+  prodotto.totalML = (prodotto.mlReali || 0) + totalSuppML;
+  
+  annullaModifica();
+  calcolaImpatti();
+};
+
+const fetchSupplements = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('supplements')
+      .select('*')
+      .order('ordre');
+    
+    if (error) throw error;
+    
+    supplementsDisponibili.value = (data || []).map(item => ({
+      id: item.id,
+      nom: item.nom,
+      valeur: item.valeur || 1,
+      ordre: item.ordre || 0
+    }));
+    
+    console.log('📋 Supplementi caricati dal DB:', supplementsDisponibili.value);
+  } catch (error) {
+    console.log('❌ Errore caricamento supplementi:', error);
+    supplementsDisponibili.value = [];
   }
 };
 
-const generaPdfConguaglio = () => {
-  if (!selectedChantierId.value || !selectedZone.value) return;
+const salvaResocontoFinale = async () => {
+  if (!selectedChantierId.value || !selectedZone.value) {
+    alert('Sélectionner chantier et zone');
+    return;
+  }
   
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  
-  // Header
-  const logoW = 55;
-  const logoH = logoW / 5.32;
-  doc.addImage(logo, 'JPEG', 10, 10, logoW, logoH);
-  
-  doc.setFontSize(8);
-  const companyInfo = ['DALLELEC Sarl', 'Rue de Bourgogne 25', '1203 Genève', 'contact@dallelec.ch'];
-  let y = 12;
-  companyInfo.forEach(line => {
-    doc.text(line, 200, y, { align: 'right' });
-    y += 4;
-  });
-  
-  // Titolo
-  doc.setFontSize(18);
-  doc.setFont('Helvetica', 'bold');
-  doc.text('CONGUAGLIO FINALE ZONA', 105, 40, { align: 'center' });
-  
-  // Info cantiere
-  const chantierInfo = chantiers.value.find(c => c.id === selectedChantierId.value);
-  doc.setFontSize(11);
-  doc.setFont('Helvetica', 'normal');
-  let yPos = 55;
-  doc.text(`Chantier: ${chantierInfo?.nom || ''}`, 10, yPos);
-  yPos += 6;
-  doc.text(`Client: ${devisData.value?.nom || ''}`, 10, yPos);
-  yPos += 6;
-  doc.text(`Zone: ${selectedZone.value}`, 10, yPos);
-  yPos += 6;
-  doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 10, yPos);
-  yPos += 15;
-  
-  // Riepilogo
-  const riepHead = [['Description', 'Montant']];
-  const riepBody = [
-    [`Déjà facturé (${percentualeFatturata.value}%)`, `${importoFatturato.value.toFixed(2)} CHF`],
-    ['Variations quantités', `${variazioniQuantita.value.toFixed(2)} CHF`],
-    ['Suppléments', `${totalSupplementi.value.toFixed(2)} CHF`],
-    ['CONGUAGLIO FINAL', `${conguaglioFinale.value.toFixed(2)} CHF`]
-  ];
-  
-  autoTable(doc, {
-    head: riepHead,
-    body: riepBody,
-    startY: yPos,
-    theme: 'grid',
-    headStyles: { fillColor: [200, 200, 200] },
-    columnStyles: { 1: { halign: 'right' } }
-  });
-  
-  const fileName = `conguaglio-${chantierInfo?.numeroCantiere || 'cantiere'}-${selectedZone.value}.pdf`;
-  doc.save(fileName);
+  try {
+    const resocontoData = {
+      chantier_id: selectedChantierId.value,
+      periode_month: new Date().toISOString().slice(0, 7),
+      avancementi: { [selectedZone.value]: 100 },
+      prodotti_reali: prodottiZona.value,
+      regies: regies.value,
+      supplementi_aggiuntivi: supplementiAggiuntivi.value,
+      total_ml_previste: totalMLPreviste.value,
+      total_ml_reali: totalMLReelles.value,
+      importo_fatturato_prodotti: importoFatturato.value,
+      importo_regie_fatturate: importoRegieFatturate.value,
+      variazioni_quantita: variazioniQuantita.value,
+      conguaglio_finale: conguaglioFinale.value,
+      acconti_precedenti: accontiPrecedenti.value || 0,
+      descrizione: `Resoconto finale zona ${selectedZone.value} - ${prodottiZona.value.length} prodotti`,
+      capocantiere: user.value?.email || localStorage.getItem('userEmail'),
+      status: 'pending_approval',
+      type: 'resoconto_finale',
+      created_at: new Date().toISOString()
+    };
+    
+    const { error } = await supabase
+      .from('resoconti_percentuali')
+      .insert([resocontoData]);
+    
+    if (error) throw error;
+    
+    alert('Resoconto finale inviato per approbazione admin!\nPuoi continuare a modificare se necessario.');
+    
+  } catch (error) {
+    console.error('Errore salvataggio:', error);
+    alert('Errore nel salvataggio: ' + error.message);
+  }
 };
+
+
 
 onMounted(async () => {
   await fetchChantiers();
+  await fetchSupplements();
   
   // Gestisci parametri URL
   const urlParams = new URLSearchParams(window.location.search);

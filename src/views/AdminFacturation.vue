@@ -317,7 +317,47 @@
                     <div class="row">
                       <div class="col-md-8">
                         <h6>Travaux réalisés:</h6>
-                        <table class="table table-sm table-bordered">
+                        <!-- RESOCONTO FINALE: Mostra calcolo dettagliato -->
+                        <div v-if="detailResoconto.type === 'resoconto_finale'">
+                          <table class="table table-sm table-bordered">
+                            <thead class="table-info">
+                              <tr>
+                                <th colspan="3" class="text-center">
+                                  <strong>📊 RESOCONTO FINALE - CALCOLO AUTOMATICO</strong>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr v-for="(percentage, zone) in detailResoconto.avancementi" :key="zone">
+                                <td colspan="3">
+                                  <div class="mb-2"><strong>Zone: {{ zone }}</strong></div>
+                                  <div class="row">
+                                    <div class="col-md-8">
+                                      <small class="text-muted">1. Valore reale dalle quantità posate:</small><br>
+                                      <strong class="text-success">{{ getValoreRealeZona(zone).toFixed(2) }} CHF</strong>
+                                    </div>
+                                  </div>
+                                  <div class="row mt-2">
+                                    <div class="col-md-8">
+                                      <small class="text-muted">2. Già fatturato (precedenti acconti):</small><br>
+                                      <strong class="text-danger">-{{ getGiaFatturatoZona(zone).toFixed(2) }} CHF</strong>
+                                    </div>
+                                  </div>
+                                  <hr>
+                                  <div class="row">
+                                    <div class="col-md-8">
+                                      <strong>3. DA FATTURARE:</strong><br>
+                                      <h5 class="text-primary">{{ calculateZoneMontant(zone, percentage).toFixed(2) }} CHF</h5>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        
+                        <!-- RESOCONTO PERCENTUALE: Layout originale -->
+                        <table v-else class="table table-sm table-bordered">
                           <thead class="table-secondary">
                             <tr>
                               <th>Zone</th>
@@ -453,23 +493,55 @@
                 <p><strong>Total ML:</strong> {{ (detailMetrage.total_ml || 0).toFixed(2) }} ML</p>
                 <p><strong>Produits:</strong> {{ detailMetrage.total_produits || 0 }}</p>
                 <p><strong>Zones:</strong> {{ detailMetrage.zones?.join(', ') || 'N/A' }}</p>
-                <p><strong>Montant Estimé:</strong> {{ formatCurrency(calculateMontantEstime(detailMetrage)) }}</p>
+                <p><strong>Montant Estimé:</strong> {{ formatCurrency(calculateMontantEstimeDettagliato()) }}</p>
               </div>
             </div>
             <div class="mt-3">
               <div class="mb-3">
                 <h6>Détail des items:</h6>
                 <div v-if="detailMetrage.items && detailMetrage.items.length > 0">
-                  <div v-for="item in detailMetrage.items" :key="item.article" class="border p-2 mb-2">
-                    <strong>{{ item.article }} - {{ item.nom }}</strong><br>
-                    Zone: {{ item.zone }} | Taille: {{ item.taille }}<br>
-                    ML Posé: {{ item.mlPosee }} | Total ML: {{ item.totalML }}<br>
-                    <div v-if="item.supplements && item.supplements.length > 0">
-                      <small>Suppléments: 
-                        <span v-for="supp in item.supplements" :key="supp.supplement">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Article</th>
+                        <th>Zone</th>
+                        <th>ML Posé</th>
+                        <th>Total ML</th>
+                        <th>Prix/ML</th>
+                        <th>Total CHF</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="item in detailMetrage.items" :key="item.article">
+                        <td>
+                          <strong>{{ item.article }}</strong><br>
+                          <small>{{ item.nom }} - {{ item.taille }}</small>
+                        </td>
+                        <td>{{ item.zone }}</td>
+                        <td>{{ item.mlPosee }}</td>
+                        <td>{{ calculateTotalMLItem(item) }}</td>
+                        <td>{{ getPrixUnitaireItem(item).toFixed(2) }} CHF</td>
+                        <td><strong>{{ calculateTotalItemCHF(item).toFixed(2) }} CHF</strong></td>
+                      </tr>
+                    </tbody>
+                    <tfoot class="table-warning">
+                      <tr>
+                        <td colspan="5"><strong>Sous-total Produits:</strong></td>
+                        <td><strong>{{ calculateTotalProduitsCHF().toFixed(2) }} CHF</strong></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                  
+                  <!-- Détail suppléments -->
+                  <div class="mt-3">
+                    <h6>Détail suppléments:</h6>
+                    <div v-for="item in detailMetrage.items" :key="'supp-' + item.article">
+                      <div v-if="item.supplements && item.supplements.length > 0" class="mb-2">
+                        <strong>{{ item.article }}:</strong>
+                        <span v-for="supp in item.supplements" :key="supp.supplement" class="badge bg-secondary me-1">
                           {{ supp.supplement }} ({{ supp.qtePosee }})
                         </span>
-                      </small>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -547,6 +619,17 @@
             <div class="mb-3">
               <label>Date Échéance:</label>
               <input v-model="nouvelleDateEcheance" type="date" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label>Modalité de paiement:</label>
+              <select v-model="nouvelleModalitePaiement" class="form-control">
+                <option value="">Sélectionner...</option>
+                <option v-for="paiement in paiements" :key="paiement.id" :value="paiement.nom">
+                  {{ paiement.nom }}
+                </option>
+              </select>
+              <small class="text-info">Debug: {{ paiements.length }} modalités chargées</small>
+              <small class="text-muted">La date d'échéance sera recalculée automatiquement</small>
             </div>
             <div class="mb-3">
               <label>Notes:</label>
@@ -829,6 +912,7 @@ const nouveauStatut = ref('');
 const notesStatut = ref('');
 const nouvelleDate = ref('');
 const nouvelleDateEcheance = ref('');
+const nouvelleModalitePaiement = ref('');
 const nouvellesNotes = ref('');
 const filtreClient = ref('');
 const filtreStatut = ref('');
@@ -837,9 +921,12 @@ const showDatePersonnalisee = ref(false);
 
 // Resoconti percentuali en attente d'approbation
 const resocontiEnAttente = computed(() => {
+  console.log('🔍 Tutti i resoconti:', resocontiPercentuali.value.length);
+  console.log('🔍 Resoconti finali:', resocontiPercentuali.value.filter(r => r.type === 'resoconto_finale'));
+  
   return resocontiPercentuali.value.filter(r => 
     !r.draft && // Resoconto sauvegardé (non brouillon)
-    ((r.status === 'en_attente' || !r.status) || // En attente o senza status
+    ((r.status === 'en_attente' || r.status === 'pending_approval' || !r.status) || // En attente, pending o senza status
      (r.status === 'approved' && !hasFacture(r))) // Approvati senza fattura
   );
 });
@@ -1062,6 +1149,46 @@ const calculateMontantEstime = (metrage) => {
   return chantierDevis.total * percentageComplete;
 };
 
+// Funzioni per calcolo prezzi nel modal métrage
+const getPrixUnitaireItem = (item) => {
+  const chantier = chantiers.value.find(c => c.id === detailMetrage.value.chantier_id);
+  const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
+  const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+  return Number(prodottoDevis?.prix || 50);
+};
+
+const calculateTotalMLItem = (item) => {
+  const quantite = Number(item.mlPosee || 0);
+  let totalSuppl = 0;
+  
+  if (item.supplements && Array.isArray(item.supplements)) {
+    totalSuppl = item.supplements.reduce((sum, supp) => {
+      const qte = Number(supp.qte || supp.qtePosee || 0);
+      const valeur = Number(supp.valeur || 0);
+      return sum + (qte * valeur);
+    }, 0);
+  }
+  
+  return quantite + totalSuppl;
+};
+
+const calculateTotalItemCHF = (item) => {
+  const totalML = calculateTotalMLItem(item);
+  const prezzoUnit = getPrixUnitaireItem(item);
+  return totalML * prezzoUnit;
+};
+
+const calculateTotalProduitsCHF = () => {
+  if (!detailMetrage.value.items) return 0;
+  return detailMetrage.value.items.reduce((sum, item) => sum + calculateTotalItemCHF(item), 0);
+};
+
+const calculateMontantEstimeDettagliato = () => {
+  const totalProduits = calculateTotalProduitsCHF();
+  const totalRegies = (detailMetrage.value.regies || []).reduce((sum, r) => sum + (r.heures * (r.prixHeure || 75)), 0);
+  return totalProduits + totalRegies;
+};
+
 const autoriserFacturation = async (metrage) => {
   // Mostra dialog per scegliere la data
   showDatePersonnalisee.value = true;
@@ -1205,41 +1332,140 @@ const voirDetailResoconto = (resoconto) => {
 
 // Funzioni per calcolo anteprima fattura
 const calculateZoneMontant = (zone, percentage) => {
+  // Se è un resoconto finale, calcola il valore delle quantità reali
+  if (detailResoconto.value.type === 'resoconto_finale') {
+    return calculateResocontoFinaleValue(zone);
+  }
+  
+  // Logica originale per resoconti percentuali
   const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
   const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
   
-  if (!chantierDevis) {
-    console.log(`❌ Devis non trovato per zona ${zone}`);
-    return 0;
-  }
+  if (!chantierDevis) return 0;
   
-  // Per devis à corps, usa il montant forfaitaire diviso per le zone
   if (chantierDevis.modalita_prezzi === 'aCorps') {
     const montantCorps = Number(chantierDevis.montant_corps || 0);
     const numeroZone = chantierDevis.zones?.length || 1;
     const montantPerZona = montantCorps / numeroZone;
-    const result = montantPerZona * percentage / 100;
-    console.log(`🎯 DEVIS À CORPS - ${zone}: ${montantPerZona.toFixed(2)} CHF × ${percentage}% = ${result.toFixed(2)} CHF`);
-    return result;
+    return montantPerZona * percentage / 100;
   }
   
-  // Per devis détaillé, usa i prodotti
-  if (!chantierDevis.produits) {
-    console.log(`❌ Produits non trovati per zona ${zone}`);
-    return 0;
-  }
+  if (!chantierDevis.produits) return 0;
   
   const totaleZona = chantierDevis.produits
     .filter(p => p.zone === zone)
     .reduce((sum, p) => sum + Number(p.total || 0), 0);
   
-  const result = totaleZona * percentage / 100;
-  console.log(`🎯 DEVIS DÉTAILLÉ - ${zone}: ${totaleZona.toFixed(2)} CHF × ${percentage}% = ${result.toFixed(2)} CHF`);
-  return result;
+  return totaleZona * percentage / 100;
+};
+
+const getValoreRealeZona = (zone) => {
+  const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  if (!chantierDevis?.produits || !detailResoconto.value.prodotti_reali) return 0;
+  
+  return detailResoconto.value.prodotti_reali
+    .filter(prodottoReale => prodottoReale.zone === zone)
+    .reduce((sum, prodottoReale) => {
+      const prodottoDevis = chantierDevis.produits.find(p => 
+        p.article === prodottoReale.article && p.zone === zone
+      );
+      
+      if (prodottoDevis) {
+        const prezzoUnitario = Number(prodottoDevis.prix || 0);
+        const quantitaReale = Number(prodottoReale.totalML || prodottoReale.mlReali || 0);
+        return sum + (quantitaReale * prezzoUnitario);
+      }
+      return sum;
+    }, 0);
+};
+
+const getGiaFatturatoZona = (zone) => {
+  const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  if (!chantierDevis?.produits) return 0;
+  
+  const totaleDevisZona = chantierDevis.produits
+    .filter(p => p.zone === zone)
+    .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  const percentualeGiaFatturata = resocontiPercentuali.value
+    .filter(r => 
+      r.status === 'approved' && 
+      (r.chantier_id || r.chantierId) === (detailResoconto.value.chantier_id || detailResoconto.value.chantierId) &&
+      r.id !== detailResoconto.value.id
+    )
+    .reduce((sum, r) => sum + (r.avancementi?.[zone] || 0), 0);
+  
+  return totaleDevisZona * percentualeGiaFatturata / 100;
+};
+
+const calculateResocontoFinaleValue = (zone) => {
+  const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  if (!chantierDevis?.produits || !detailResoconto.value.prodotti_reali) return 0;
+  
+  let totaleReale = 0;
+  
+  // 1. MONETIZZA il resoconto: calcola valore delle quantità reali posate
+  detailResoconto.value.prodotti_reali
+    .filter(prodottoReale => prodottoReale.zone === zone)
+    .forEach(prodottoReale => {
+      const prodottoDevis = chantierDevis.produits.find(p => 
+        p.article === prodottoReale.article && p.zone === zone
+      );
+      
+      if (prodottoDevis) {
+        const prezzoUnitario = Number(prodottoDevis.prix || 0);
+        const quantitaReale = Number(prodottoReale.totalML || prodottoReale.mlReali || 0);
+        const valoreItem = quantitaReale * prezzoUnitario;
+        totaleReale += valoreItem;
+        
+        console.log(`  ${prodottoReale.article}: ${quantitaReale} ML × ${prezzoUnitario} CHF = ${valoreItem.toFixed(2)} CHF`);
+      }
+    });
+  
+  // 2. CALCOLA il totale del devis per QUESTA ZONA
+  const totaleDevisZona = chantierDevis.produits
+    .filter(p => p.zone === zone)
+    .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  // 3. TROVA il 40% già fatturato per QUESTA ZONA
+  const percentualeGiaFatturata = resocontiPercentuali.value
+    .filter(r => 
+      r.status === 'approved' && 
+      (r.chantier_id || r.chantierId) === (detailResoconto.value.chantier_id || detailResoconto.value.chantierId) &&
+      r.id !== detailResoconto.value.id
+    )
+    .reduce((sum, r) => sum + (r.avancementi?.[zone] || 0), 0);
+  
+  // 4. CALCOLA l'importo già fatturato (40% di QUESTA ZONA)
+  const importoGiaFatturato = totaleDevisZona * percentualeGiaFatturata / 100;
+  
+  // 5. CALCOLA la differenza da fatturare
+  const differenza = totaleReale - importoGiaFatturato;
+  
+  console.log(`💰 RESOCONTO FINALE - ${zone}:`);
+  console.log(`  Valore reale totale: ${totaleReale.toFixed(2)} CHF`);
+  console.log(`  Già fatturato: ${importoGiaFatturato.toFixed(2)} CHF`);
+  console.log(`  Da fatturare: ${differenza.toFixed(2)} CHF`);
+  
+  return differenza;
 };
 
 const calculateTotalTravaux = () => {
   if (!detailResoconto.value.avancementi) return 0;
+  
+  // Per resoconto finale, calcola solo la zona del resoconto
+  if (detailResoconto.value.type === 'resoconto_finale') {
+    const zona = Object.keys(detailResoconto.value.avancementi)[0];
+    return calculateResocontoFinaleValue(zona);
+  }
+  
+  // Logica originale per resoconti percentuali
   return Object.entries(detailResoconto.value.avancementi).reduce((sum, [zone, percentage]) => {
     return sum + calculateZoneMontant(zone, percentage);
   }, 0);
@@ -1609,10 +1835,17 @@ const modifierFacture = (facture) => {
     return;
   }
   
+  // Debug: verifica paiements caricati
+  console.log('🔍 Paiements disponibili:', paiements.value);
+  
   // Per altre fatture, mostra il modal normale
   factureEnCours.value = facture;
   nouvelleDate.value = facture.date_facture || facture.dateFacture;
   nouvelleDateEcheance.value = facture.date_echeance || facture.dateEcheance || '';
+  // Estrai modalità pagamento dalle notes
+  const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+  nouvelleModalitePaiement.value = modalitaMatch ? modalitaMatch[1].trim() : '';
+  console.log('🔍 Modalità estratta:', nouvelleModalitePaiement.value);
   nouvellesNotes.value = facture.notes || '';
   showModifierFacture.value = true;
 };
@@ -1632,12 +1865,27 @@ const confirmerModificationFacture = async () => {
       }
     }
     
+    // Recalcola data scadenza se modalità pagamento è cambiata
+    let dataEcheanceFinale = nouvelleDateEcheance.value;
+    if (nouvelleModalitePaiement.value) {
+      dataEcheanceFinale = calculateDateEcheance(nouvelleDate.value, nouvelleModalitePaiement.value);
+    }
+    
+    // Aggiorna notes con modalità di pagamento
+    let notesAggiornate = nouvellesNotes.value || '';
+    if (nouvelleModalitePaiement.value) {
+      // Rimuovi vecchia modalità se presente
+      notesAggiornate = notesAggiornate.replace(/Modalité:\s*[^\n]+\n?/g, '');
+      // Aggiungi nuova modalità
+      notesAggiornate = (notesAggiornate.trim() + '\nModalité: ' + nouvelleModalitePaiement.value).trim();
+    }
+    
     const { error } = await supabase
       .from('factures')
       .update({
         date_facture: nouvelleDate.value,
-        date_echeance: nouvelleDateEcheance.value,
-        notes: nouvellesNotes.value
+        date_echeance: dataEcheanceFinale,
+        notes: notesAggiornate
       })
       .eq('id', factureEnCours.value.id);
     
@@ -1920,6 +2168,9 @@ const genererPDF = async (facture) => {
     const chantierId = facture.chantier_id || facture.chantierId;
     const chantier = chantiers.value.find(c => c.id === chantierId);
     
+    // DICHIARATA GLOBALMENTE PER EVITARE ERRORI DI SCOPE
+    let totalImporto = 0;
+    
     // Import logo
     let logo;
     try {
@@ -2092,15 +2343,16 @@ const genererPDF = async (facture) => {
       doc.text(`${ttc.toFixed(2)} CHF`, 195, finalY + 20, { align: 'right' });
       
       // Conditions de paiement dalle notes
-      const conditionsPaiement = facture.notes?.includes('Conditions:') ? 
-        facture.notes.split('Conditions: ')[1]?.split('\n')[0] || '30 jours net' : '30 jours net';
+      const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+      const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
+      
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
       // Conditions de paiement in fondo alla pagina
       let yFooter = finalY + 35;
       
-      doc.text(`Conditions de paiement: ${conditionsPaiement}`, 15, yFooter);
+      doc.text(`Conditions de paiement: ${modalitaPagamento}`, 15, yFooter);
       doc.setFontSize(9);
       doc.text('Merci de votre confiance', 15, yFooter + 10);
       
@@ -2272,14 +2524,638 @@ const genererPDF = async (facture) => {
       return Math.max(yInfo, yInfoRight) + 20;
     };
 
+    // FATTURA DA RESOCONTO FINALE - COPIA ESATTA LOGICA MÉTRAGES
+    if (resocontoDoc && resocontoDoc.type === 'resoconto_finale') {
+      // 1. PDF MÉTRÉES (senza prezzi) - COPIA ESATTA
+      const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
+      let yPos = drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
+      
+      let totalMetreesHT = 0;
+      
+      if (resocontoDoc?.prodotti_reali) {
+        const itemsByZone = {};
+        resocontoDoc.prodotti_reali.forEach(item => {
+          if (!itemsByZone[item.zone]) itemsByZone[item.zone] = [];
+          itemsByZone[item.zone].push(item);
+        });
+        
+        Object.entries(itemsByZone).forEach(([zoneName, items]) => {
+          // Verifica spazio disponibile
+          if (yPos > 250) {
+            docMetrees.addPage();
+            yPos = 20;
+          }
+          
+          docMetrees.setFontSize(11);
+          docMetrees.setFont('helvetica', 'bold');
+          docMetrees.setFillColor(240, 240, 240);
+          docMetrees.rect(10, yPos - 3, 190, 8, 'F');
+          docMetrees.text(`Zone: ${zoneName}`, 12, yPos + 2);
+          
+          let zoneTotal = 0;
+          const tableData = items.map(item => {
+            const quantite = Number(item.mlReali || item.totalML || 0);
+            let totalSuppl = 0;
+            
+            if (item.supplements && Array.isArray(item.supplements)) {
+              totalSuppl = item.supplements.reduce((sum, supp) => {
+                const qte = Number(supp.qte || supp.qtePosee || 0);
+                const valeur = Number(supp.valeur || 0);
+                return sum + (qte * valeur);
+              }, 0);
+            }
+            
+            const total = quantite + totalSuppl;
+            
+            // Aggiungi prezzi anche nel PDF métrées
+            const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+            const prezzoUnit = Number(prodottoDevis?.prix || 50);
+            const totalItem = total * prezzoUnit;
+            zoneTotal += totalItem;
+            totalMetreesHT += totalItem;
+            
+            return [
+              item.article || '',
+              item.nom || '',
+              item.taille || '',
+              'm',
+              quantite.toFixed(2),
+              totalSuppl.toFixed(2),
+              total.toFixed(2),
+              `${prezzoUnit.toFixed(2)}`,
+              `${totalItem.toFixed(2)}`
+            ];
+          });
+          
+          autoTable(docMetrees, {
+            head: [['Code', 'Produit', 'Taille', 'U', 'Qté', 'Suppl.', 'Total', 'Prix/U', 'Total CHF']],
+            body: tableData,
+            startY: yPos + 8,
+            theme: 'striped',
+            headStyles: { 
+              fillColor: [70, 130, 180], 
+              textColor: 255,
+              fontSize: 9,
+              fontStyle: 'bold'
+            },
+            bodyStyles: { 
+              fontSize: 8,
+              cellPadding: 2
+            },
+            columnStyles: {
+              0: { cellWidth: 20 },
+              1: { cellWidth: 40 },
+              2: { cellWidth: 15 },
+              3: { cellWidth: 10 },
+              4: { cellWidth: 15 },
+              5: { cellWidth: 18 },
+              6: { cellWidth: 18 },
+              7: { cellWidth: 20, halign: 'right' },
+              8: { cellWidth: 24, halign: 'right' }
+            },
+            margin: { left: 10, right: 10 }
+          });
+          
+          yPos = docMetrees.lastAutoTable.finalY + 5;
+          
+          // Sous-total zona nel PDF métrées
+          docMetrees.setFillColor(250, 250, 250);
+          docMetrees.rect(130, yPos - 2, 70, 6, 'F');
+          docMetrees.setFont('helvetica', 'bold');
+          docMetrees.setFontSize(9);
+          docMetrees.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 135, yPos + 2);
+          yPos += 12;
+        });
+        
+        // Détail des suppléments par zone - COPIA ESATTA
+        yPos += 10;
+        docMetrees.setFontSize(14);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.text('DÉTAIL DES SUPPLÉMENTS PAR ZONE', 10, yPos);
+        yPos += 10;
+        
+        Object.entries(itemsByZone).forEach(([zoneName, items]) => {
+          // Verifica spazio disponibile
+          if (yPos > 250) {
+            docMetrees.addPage();
+            yPos = 20;
+          }
+          
+          docMetrees.setFontSize(11);
+          docMetrees.setFont('helvetica', 'bold');
+          docMetrees.setFillColor(240, 240, 240);
+          docMetrees.rect(10, yPos - 3, 190, 8, 'F');
+          docMetrees.text(`Zone: ${zoneName}`, 12, yPos + 2);
+          yPos += 8;
+          
+          // Raggruppa supplementi per prodotto
+          const suppByProduct = {};
+          items.forEach(item => {
+            if (item.supplements?.length > 0) {
+              const key = `${item.article}-${item.nom}-${item.taille}`;
+              if (!suppByProduct[key]) {
+                suppByProduct[key] = {
+                  article: item.article,
+                  nom: item.nom,
+                  taille: item.taille,
+                  supplements: []
+                };
+              }
+              suppByProduct[key].supplements.push(...item.supplements);
+            }
+          });
+          
+          if (Object.keys(suppByProduct).length > 0) {
+            Object.values(suppByProduct).forEach(product => {
+              const suppData = product.supplements.map(supp => [
+                product.article,
+                product.nom,
+                product.taille,
+                supp.supplement || supp.nom || '',
+                (Number(supp.qte || supp.qtePosee) || 0).toString(),
+                (Number(supp.valeur) || 0).toFixed(1),
+                ((Number(supp.qte || supp.qtePosee) || 0) * (Number(supp.valeur) || 0)).toFixed(2) + ' ML'
+              ]);
+              
+              const totalSupp = product.supplements.reduce((sum, s) => 
+                sum + ((Number(s.qte || s.qtePosee) || 0) * (Number(s.valeur) || 0)), 0
+              );
+              
+              suppData.push([
+                '', '', '', 
+                { content: `Total Suppléments (${product.nom}):`, colSpan: 3, styles: { fontStyle: 'bold' } },
+                { content: `${totalSupp.toFixed(2)} ML`, styles: { fontStyle: 'bold' } }
+              ]);
+              
+              autoTable(docMetrees, {
+                head: [['Code Article', 'Produit', 'Taille', 'Supplément', 'Qté', 'Valeur', 'Total ML']],
+                body: suppData,
+                startY: yPos,
+                theme: 'striped',
+                headStyles: {
+                  fillColor: [70, 130, 180],
+                  textColor: 255,
+                  fontSize: 8
+                },
+                bodyStyles: {
+                  fontSize: 8,
+                  cellPadding: 2
+                },
+                columnStyles: {
+                  0: { cellWidth: 20 },
+                  1: { cellWidth: 40 },
+                  2: { cellWidth: 15 },
+                  3: { cellWidth: 40 },
+                  4: { cellWidth: 15 },
+                  5: { cellWidth: 20 },
+                  6: { cellWidth: 20 }
+                },
+                margin: { left: 10, right: 10 }
+              });
+              
+              yPos = docMetrees.lastAutoTable.finalY + 5;
+            });
+          } else {
+            docMetrees.setFontSize(9);
+            docMetrees.setFont('helvetica', 'italic');
+            docMetrees.text('Aucun supplément pour cette zone', 15, yPos + 5);
+            yPos += 10;
+          }
+          
+          yPos += 10;
+        });
+      }
+      
+      // Régies nel PDF métrées (per technicien)
+      if (resocontoDoc.regies?.length > 0) {
+        // Verifica spazio per sezione régies
+        if (yPos > 220) {
+          docMetrees.addPage();
+          yPos = 20;
+        }
+        
+        docMetrees.setFontSize(14);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.text('RÉGIES (HEURES SUPPLÉMENTAIRES)', 10, yPos);
+        yPos += 10;
+        
+        const prixRegieChantier = chantier?.prix_regie || 75;
+        const regieData = resocontoDoc.regies.map(regie => {
+          const heures = Number(regie.heures || 0);
+          const prixHeure = Number(regie.prixHeure || prixRegieChantier);
+          const total = heures * prixHeure;
+          return [
+            regie.zone || '',
+            regie.description || '',
+            `${heures}h`,
+            `${prixHeure.toFixed(2)} CHF`,
+            `${total.toFixed(2)} CHF`
+          ];
+        });
+        
+        const totalRegiesMetrees = resocontoDoc.regies.reduce((sum, r) => sum + (r.heures * (r.prixHeure || prixRegieChantier)), 0);
+        totalMetreesHT += totalRegiesMetrees;
+        
+        autoTable(docMetrees, {
+          head: [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']],
+          body: regieData,
+          startY: yPos,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [70, 130, 180], 
+            textColor: 255, 
+            fontSize: 9,
+            fontStyle: 'bold'
+          },
+          bodyStyles: { 
+            fontSize: 8,
+            cellPadding: 2
+          },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 25, halign: 'right' },
+            4: { cellWidth: 30, halign: 'right' }
+          }
+        });
+        
+        yPos = docMetrees.lastAutoTable.finalY + 5;
+        
+        // Sous-total régies nel PDF métrées
+        docMetrees.setFillColor(250, 250, 250);
+        docMetrees.rect(130, yPos - 2, 70, 6, 'F');
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.setFontSize(9);
+        docMetrees.text(`Sous-total Régies: ${totalRegiesMetrees.toFixed(2)} CHF`, 135, yPos + 2);
+        yPos += 15;
+        
+        // Total général nel PDF métrées
+        docMetrees.setFillColor(245, 245, 245);
+        docMetrees.rect(115, yPos - 5, 85, 15, 'F');
+        docMetrees.setDrawColor(200, 200, 200);
+        docMetrees.rect(115, yPos - 5, 85, 15);
+        docMetrees.setFont('helvetica', 'bold');
+        docMetrees.setFontSize(12);
+        docMetrees.text('TOTAL HT:', 120, yPos + 2);
+        docMetrees.text(`${totalMetreesHT.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
+        yPos += 20;
+      }
+      
+      // 2. PDF FACTURE (avec prix) - COPIA ESATTA
+      const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
+      yPos = drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+      let totalFactureHT = 0;
+      
+      if (resocontoDoc?.prodotti_reali) {
+        const itemsByZone = {};
+        resocontoDoc.prodotti_reali.forEach(item => {
+          if (!itemsByZone[item.zone]) itemsByZone[item.zone] = [];
+          itemsByZone[item.zone].push(item);
+        });
+        
+        Object.entries(itemsByZone).forEach(([zoneName, items]) => {
+          // Verifica spazio disponibile per zona
+          if (yPos > 180) {
+            docFacture.addPage();
+            yPos = 20;
+          }
+          
+          docFacture.setFontSize(11);
+          docFacture.setFont('helvetica', 'bold');
+          docFacture.setFillColor(240, 240, 240);
+          docFacture.rect(10, yPos - 3, 190, 8, 'F');
+          docFacture.text(`Zone: ${zoneName}`, 12, yPos + 2);
+          
+          let zoneTotal = 0;
+          const tableData = items.map(item => {
+            const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+            const prezzoUnit = Number(prodottoDevis?.prix || 50);
+            const quantite = Number(item.mlReali || item.totalML || 0);
+            
+            let totalSuppl = 0;
+            if (item.supplements && Array.isArray(item.supplements)) {
+              totalSuppl = item.supplements.reduce((sum, supp) => {
+                const qte = Number(supp.qte || supp.qtePosee || 0);
+                const valeur = Number(supp.valeur || 0);
+                return sum + (qte * valeur);
+              }, 0);
+            }
+            
+            const total = quantite + totalSuppl;
+            const totalItem = total * prezzoUnit;
+            zoneTotal += totalItem;
+            totalFactureHT += totalItem;
+            
+            return [
+              item.article || '',
+              item.nom || '',
+              item.taille || '',
+              'm',
+              quantite.toFixed(2),
+              totalSuppl.toFixed(2),
+              total.toFixed(2),
+              `${prezzoUnit.toFixed(2)}`,
+              `${totalItem.toFixed(2)}`
+            ];
+          });
+          
+          autoTable(docFacture, {
+            head: [['Code', 'Produit', 'Taille', 'U', 'Qté', 'Suppl.', 'Total', 'Prix/U', 'Total CHF']],
+            body: tableData,
+            startY: yPos + 8,
+            theme: 'striped',
+            headStyles: { 
+              fillColor: [70, 130, 180], 
+              textColor: 255,
+              fontSize: 9,
+              fontStyle: 'bold'
+            },
+            bodyStyles: { 
+              fontSize: 8,
+              cellPadding: 2
+            },
+            columnStyles: {
+              0: { cellWidth: 20 },
+              1: { cellWidth: 40 },
+              2: { cellWidth: 15 },
+              3: { cellWidth: 10 },
+              4: { cellWidth: 15 },
+              5: { cellWidth: 18 },
+              6: { cellWidth: 18 },
+              7: { cellWidth: 20, halign: 'right' },
+              8: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }
+            },
+            margin: { left: 10, right: 10 }
+          });
+          
+          yPos = docFacture.lastAutoTable.finalY + 5;
+          
+          // Sous-total zona con sfondo
+          docFacture.setFillColor(250, 250, 250);
+          docFacture.rect(130, yPos - 2, 70, 6, 'F');
+          docFacture.setFont('helvetica', 'bold');
+          docFacture.setFontSize(9);
+          docFacture.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 135, yPos + 2);
+          yPos += 12;
+        });
+      }
+      
+      // Régies se presenti
+      if (resocontoDoc.regies?.length > 0) {
+        // Verifica spazio per régies
+        if (yPos > 200) {
+          docFacture.addPage();
+          yPos = 20;
+        }
+        
+        docFacture.setFontSize(12);
+        docFacture.setFont('helvetica', 'bold');
+        docFacture.text('RÉGIES', 10, yPos);
+        
+        const prixRegieChantier = chantier?.prix_regie || 75;
+        const regieData = resocontoDoc.regies.map(regie => {
+          const heures = Number(regie.heures || 0);
+          const prixHeure = Number(regie.prixHeure || prixRegieChantier);
+          const total = heures * prixHeure;
+          totalFactureHT += total;
+          return [
+            regie.zone || '',
+            regie.description || '',
+            `${heures}h`,
+            `${prixHeure.toFixed(2)} CHF`,
+            `${total.toFixed(2)} CHF`
+          ];
+        });
+        
+        autoTable(docFacture, {
+          head: [['Zone', 'Description', 'Heures', 'Prix/h', 'Total']],
+          body: regieData,
+          startY: yPos + 5,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [70, 130, 180], 
+            textColor: 255, 
+            fontSize: 9,
+            fontStyle: 'bold'
+          },
+          bodyStyles: { 
+            fontSize: 8,
+            cellPadding: 2
+          },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 25, halign: 'right' },
+            4: { cellWidth: 30, halign: 'right' }
+          }
+        });
+        
+        yPos = docFacture.lastAutoTable.finalY + 10;
+      }
+      
+      // Calcola acconti per resoconti finali
+      const accontiHT = Object.keys(resocontoDoc.avancementi || {}).reduce((sum, zone) => {
+        return sum + getGiaFatturatoZona(zone);
+      }, 0);
+      
+      console.log('🔍 PDF - Acconti calcolati:', accontiHT);
+      console.log('🔍 PDF - Zone resoconto:', Object.keys(resocontoDoc.avancementi || {}));
+      
+      // FORZA visualizzazione acconti per resoconti finali
+      if (resocontoDoc.type === 'resoconto_finale') {
+        if (yPos > 220) {
+          docFacture.addPage();
+          yPos = 20;
+        }
+        
+        docFacture.setFontSize(12);
+        docFacture.setFont('helvetica', 'bold');
+        docFacture.text('ACOMPTES PRÉCÉDENTS', 10, yPos);
+        yPos += 5;
+        
+        // Calcola dinamicamente gli acconti per zona
+        const nomeZona = Object.keys(resocontoDoc.avancementi || {})[0] || 'Zone inconnue';
+        
+        // RESET DELLA VARIABILE GLOBALE
+        totalImporto = 0;
+        
+        // Trova tutti i resoconti percentuali già approvati per questa zona
+        const resocontiPrecedenti = resocontiPercentuali.value.filter(r => 
+          r.status === 'approved' && 
+          (r.chantier_id || r.chantierId) === (resocontoDoc.chantier_id || resocontoDoc.chantierId) &&
+          r.id !== resocontoDoc.id &&
+          r.avancementi?.[nomeZona] > 0
+        );
+        
+        // Crea righe dettagliate per ogni acconto
+        const accontiRows = [];
+        let totalPercentuale = 0;
+        
+        // Calcola il totale devis per questa zona UNA VOLTA
+        const chantier = chantiers.value.find(c => c.id == (resocontoDoc.chantier_id || resocontoDoc.chantierId));
+        const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+        const totaleDevisZona = chantierDevis?.produits?.filter(p => p.zone === nomeZona).reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
+        
+        resocontiPrecedenti.forEach(r => {
+          const percentuale = r.avancementi[nomeZona];
+          const importoAcconto = totaleDevisZona * percentuale / 100;
+          
+          totalPercentuale += percentuale;
+          totalImporto += importoAcconto;
+          
+          const dataResoconto = new Date(r.created_at).toLocaleDateString('fr-FR');
+          accontiRows.push([
+            `Acompte ${dataResoconto} - Zone: ${nomeZona} (${percentuale}%)`,
+            `-${importoAcconto.toFixed(2)} CHF`
+          ]);
+        });
+        
+        // Se non ci sono resoconti precedenti ma c'è un importo, usa fallback
+        if (accontiRows.length === 0 && accontiHT > 0) {
+          // Usa il 40% del totale devis zona come fallback
+          const importoFallback = Math.max(accontiHT, totaleDevisZona * 0.40);
+          totalImporto = importoFallback;
+          accontiRows.push([
+            `Acomptes précédents Zone: ${nomeZona} (40%)`,
+            `-${importoFallback.toFixed(2)} CHF`
+          ]);
+        }
+        
+        autoTable(docFacture, {
+          head: [['Description', 'Montant HT']],
+          body: accontiRows,
+          startY: yPos,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: [70, 130, 180], 
+            textColor: 255, 
+            fontSize: 10 
+          },
+          bodyStyles: { 
+            fontSize: 10, 
+            fontStyle: 'bold'
+          }
+        });
+        
+        yPos = docFacture.lastAutoTable.finalY + 10;
+      }
+      
+      // Verifica spazio per totali finali
+      if (yPos > 200) {
+        docFacture.addPage();
+        yPos = 20;
+      }
+      
+      // Totali finali con acconti - USA TOTALE CORRETTO
+      const realMontantHT = totalFactureHT; // USA IL TOTALE CALCOLATO
+      const realTauxTVA = Number(facture.taux_tva || 8.1);
+      const realMontantTVA = realMontantHT * (realTauxTVA / 100);
+      
+      // UNIFICA IL CALCOLO: usa sempre totalImporto dalla tabella acconti
+      const accontiFinali = Math.max(totalImporto || 0, accontiHT); // USA IL VALORE PIÙ ALTO TRA CALCOLATO E FALLBACK
+      const imponibileResiduoHT = realMontantHT - accontiFinali;
+      const tvaResiduoHT = imponibileResiduoHT * (realTauxTVA / 100);
+      const realMontantTTC = imponibileResiduoHT + tvaResiduoHT;
+      
+      yPos += 10;
+      
+      // Box per i totali ottimizzato
+      const boxHeight = accontiHT > 0 ? 50 : 30;
+      docFacture.setFillColor(245, 245, 245);
+      docFacture.rect(115, yPos - 5, 85, boxHeight, 'F');
+      docFacture.setDrawColor(200, 200, 200);
+      docFacture.rect(115, yPos - 5, 85, boxHeight);
+      
+      docFacture.setFontSize(10);
+      docFacture.setFont('helvetica', 'normal');
+      
+      let currentY = yPos + 2;
+      
+      // SEMPRE mostra acconti per resoconti finali
+      if (resocontoDoc.type === 'resoconto_finale') {
+        docFacture.text('Total HT:', 120, currentY);
+        docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
+        currentY += 6;
+        
+        docFacture.setFont('helvetica', 'bold');
+        docFacture.text('Acomptes HT:', 120, currentY);
+        docFacture.text(`-${accontiFinali.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
+        docFacture.setFont('helvetica', 'normal');
+        currentY += 6;
+        
+        docFacture.setFont('helvetica', 'bold');
+        docFacture.text('Montant net HT:', 120, currentY);
+        docFacture.text(`${imponibileResiduoHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
+        docFacture.setFont('helvetica', 'normal');
+        currentY += 6;
+        
+        docFacture.text(`TVA (${realTauxTVA}%):`, 120, currentY);
+        docFacture.text(`${tvaResiduoHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
+        currentY += 8;
+      } else {
+        docFacture.text('Total HT:', 125, currentY);
+        docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+        currentY += 6;
+        
+        docFacture.text(`TVA (${realTauxTVA}%):`, 125, currentY);
+        docFacture.text(`${realMontantTVA.toFixed(2)} CHF`, 190, currentY, { align: 'right' });
+        currentY += 8;
+      }
+      
+      // Linea separatrice
+      docFacture.setLineWidth(0.5);
+      docFacture.line(120, currentY - 2, 195, currentY - 2);
+      
+      docFacture.setFont('helvetica', 'bold');
+      docFacture.setFontSize(12);
+      const labelFinal = resocontoDoc.type === 'resoconto_finale' ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
+      docFacture.text(labelFinal, 120, currentY + 4);
+      docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 195, currentY + 4, { align: 'right' });
+      
+      // Conditions de paiement in fondo alla pagina
+      docFacture.setFont('helvetica', 'normal');
+      docFacture.setFontSize(9);
+      docFacture.setTextColor(100, 100, 100);
+      
+      // Estrai modalità di pagamento dalle notes
+      const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+      const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
+      
+      docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, 270);
+      docFacture.text('Merci de votre confiance', 10, 280);
+      
+      // Salva documenti con nomi personalizzati
+      const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+      const chantierName = (chantier?.nom || 'Chantier').replace(/[^a-zA-Z0-9]/g, '_');
+      const numeroFacture = facture.numero || 'F000';
+      const dataFacture = facture.date_facture?.replace(/-/g, '') || new Date().toISOString().split('T')[0].replace(/-/g, '');
+      
+      docMetrees.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}_Metrees.pdf`);
+      docFacture.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}.pdf`);
+      
+      alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture avec acomptes visibles (pour comptabilité)');
+      return;
+    }
+    
     // FATTURA DA RESOCONTO PERCENTUALE
     if (resocontoDoc) {
       // Imposta detailResoconto per far funzionare calculateZoneMontant
       detailResoconto.value = resocontoDoc;
       
-      // USA L'ACCONTO SALVATO NELLA FATTURA O QUELLO DEL MODAL
-      const accontiModalValue = Number(facture.acconti_precedenti || accontiPrecedentiResoconto.value || 0);
-      console.log('🔍 PDF - Acconti (salvati/modal):', facture.acconti_precedenti, '/', accontiPrecedentiResoconto.value, '= finale:', accontiModalValue);
+      // Per resoconti finali, calcola automaticamente gli acconti
+      let accontiModalValue;
+      if (resocontoDoc.type === 'resoconto_finale') {
+        // Calcola automaticamente gli acconti per ogni zona
+        accontiModalValue = Object.keys(resocontoDoc.avancementi || {}).reduce((sum, zone) => {
+          return sum + getGiaFatturatoZona(zone);
+        }, 0);
+      } else {
+        // Per resoconti percentuali usa il valore salvato
+        accontiModalValue = Number(facture.acconti_precedenti || accontiPrecedentiResoconto.value || 0);
+      }
+      console.log('🔍 PDF - Acconti calcolati:', accontiModalValue);
       
       // DEBUG DEVIS NEL PDF
       console.log('🔍 PDF - Chantier:', chantier);
@@ -2487,7 +3363,7 @@ const genererPDF = async (facture) => {
         yPos += 10;
       }
       
-      // Sezione Acconti se presenti
+      // Sezione Acconti se presenti - MOLTO VISIBILE per resoconti finali
       if (accontiModalValue > 0) {
         // Verifica spazio per sezione acconti
         if (yPos > 240) {
@@ -2495,21 +3371,43 @@ const genererPDF = async (facture) => {
           yPos = 20;
         }
         
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ACOMPTES PRÉCÉDENTS', 10, yPos);
-        yPos += 5;
+        // Titolo più grande e visibile per resoconti finali
+        if (resocontoDoc.type === 'resoconto_finale') {
+          doc.setFontSize(14);
+          doc.setFont('helvetica', 'bold');
+          doc.setFillColor(255, 255, 0); // Sfondo giallo
+          doc.rect(10, yPos - 3, 190, 10, 'F');
+          doc.setTextColor(200, 0, 0); // Testo rosso
+          doc.text('⚠️ SOTTRAZIONE ACOMPTES GIÀ FATTURATI', 15, yPos + 3);
+          doc.setTextColor(0, 0, 0);
+          yPos += 12;
+        } else {
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text('ACOMPTES PRÉCÉDENTS', 10, yPos);
+          yPos += 5;
+        }
         
         autoTable(doc, {
           head: [['Description', 'Montant HT']],
           body: [[
-            'Acomptes déjà facturés',
+            resocontoDoc.type === 'resoconto_finale' ? 
+              'Acomptes précédents (40% du devis)' : 
+              'Acomptes déjà facturés',
             `-${accontiModalValue.toFixed(2)} CHF`
           ]],
           startY: yPos,
           theme: 'grid',
-          headStyles: { fillColor: [70, 130, 180], textColor: 255, fontSize: 9 },
-          bodyStyles: { fontSize: 9, fillColor: [255, 240, 240] }
+          headStyles: { 
+            fillColor: resocontoDoc.type === 'resoconto_finale' ? [220, 53, 69] : [70, 130, 180], 
+            textColor: 255, 
+            fontSize: 10 
+          },
+          bodyStyles: { 
+            fontSize: 10, 
+            fillColor: resocontoDoc.type === 'resoconto_finale' ? [255, 230, 230] : [255, 240, 240],
+            fontStyle: 'bold'
+          }
         });
         
         yPos = doc.lastAutoTable.finalY + 8;
@@ -2601,7 +3499,12 @@ const genererPDF = async (facture) => {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(80, 80, 80);
-      doc.text('Conditions de paiement: 30 jours net', 15, yPos);
+      
+      // Estrai modalità di pagamento dalle notes
+      const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+      const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
+      
+      doc.text(`Conditions de paiement: ${modalitaPagamento}`, 15, yPos);
       doc.setFontSize(9);
       doc.text('Merci de votre confiance', 15, yPos + 10);
       
@@ -2941,8 +3844,8 @@ const genererPDF = async (facture) => {
       yPos = docFacture.lastAutoTable.finalY + 10;
     }
     
-    // Totali finali con box
-    const realMontantHT = Number(facture.montant_ht || totalFactureHT);
+    // Totali finali con box - CORRETTO
+    const realMontantHT = totalFactureHT; // USA SEMPRE IL TOTALE CALCOLATO (produits + régies)
     const realTauxTVA = Number(facture.taux_tva || 8.1);
     const realMontantTVA = realMontantHT * (realTauxTVA / 100);
     const montantBrutTTC = realMontantHT + realMontantTVA;
@@ -3024,7 +3927,12 @@ const genererPDF = async (facture) => {
     docFacture.setFont('helvetica', 'normal');
     docFacture.setFontSize(9);
     docFacture.setTextColor(100, 100, 100);
-    docFacture.text('Conditions de paiement: 30 jours net', 10, 270);
+    
+    // Estrai modalità di pagamento dalle notes
+    const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+    const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
+    
+    docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, 270);
     docFacture.text('Merci de votre confiance', 10, 280);
     
     // Footer rimosso - dati già nell'header
