@@ -60,10 +60,7 @@
         <router-link to="/admin/report-mensuel" class="btn btn-outline-warning w-100">Rapports Heures</router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/admin/gestion-feries" class="btn btn-outline-warning w-100">Gestion Congés</router-link>
-      </div>
-      <div class="col-md-3 m-2">
-        <router-link to="/admin/absences" class="btn btn-outline-warning w-100">🏖️ Gestion Absences</router-link>
+        <router-link to="/admin/absences" class="btn btn-outline-warning w-100">🏖️ Gestion Absences & Congés</router-link>
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/premi" class="btn btn-outline-warning w-100">🎯 Gestion Primes</router-link>

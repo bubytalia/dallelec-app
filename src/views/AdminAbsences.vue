@@ -6,7 +6,7 @@
 
     <!-- Statistiques -->
     <div class="row mb-4">
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="card bg-warning text-white text-center">
           <div class="card-body">
             <h6>En Attente</h6>
@@ -14,7 +14,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="card bg-success text-white text-center">
           <div class="card-body">
             <h6>Approuvées</h6>
@@ -22,7 +22,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="card bg-danger text-white text-center">
           <div class="card-body">
             <h6>Refusées</h6>
@@ -30,7 +30,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="card bg-info text-white text-center">
           <div class="card-body">
             <h6>Annulations</h6>
@@ -38,12 +38,57 @@
           </div>
         </div>
       </div>
+      <div class="col-md-2">
+        <div class="card bg-primary text-white text-center">
+          <div class="card-body">
+            <h6>Vacances</h6>
+            <h4>{{ vacancesApprouvees.length }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card bg-dark text-white text-center">
+          <div class="card-body">
+            <h6>Maladies</h6>
+            <h4>{{ maladiesApprouvees.length }}</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <label>Filtrer par statut:</label>
+        <select v-model="filtreStatut" class="form-control">
+          <option value="">Tous les statuts</option>
+          <option value="pending">En attente</option>
+          <option value="approved">Approuvées</option>
+          <option value="rejected">Refusées</option>
+          <option value="cancellation_requested">Annulations demandées</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label>Filtrer par type:</label>
+        <select v-model="filtreType" class="form-control">
+          <option value="">Tous les types</option>
+          <option value="vacances">Vacances</option>
+          <option value="maladie">Maladie</option>
+          <option value="accident">Accident</option>
+          <option value="vacances_sans_solde">Vacances sans solde</option>
+          <option value="cours">Cours</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label>Mois:</label>
+        <input v-model="filtreMois" type="month" class="form-control" />
+      </div>
     </div>
 
     <!-- Liste des demandes -->
     <div class="card">
       <div class="card-header">
-        <h5>Demandes d'absences</h5>
+        <h5>Demandes d'absences ({{ absencesFiltrees.length }})</h5>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -60,8 +105,8 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="absence in absences" :key="absence.id">
-                <td><strong>{{ absence.user_id || absence.userId }}</strong></td>
+              <tr v-for="absence in absencesFiltrees" :key="absence.id">
+                <td><strong>{{ getUserName(absence.user_id || absence.userId) }}</strong></td>
                 <td>
                   <span :class="getTypeClass(absence.type)">
                     {{ getTypeLabel(absence.type) }}
@@ -93,8 +138,8 @@
             </tbody>
           </table>
           
-          <div v-if="absences.length === 0" class="text-center text-muted py-4">
-            Aucune demande d'absence
+          <div v-if="absencesFiltrees.length === 0" class="text-center text-muted py-4">
+            Aucune demande d'absence correspondant aux filtres
           </div>
         </div>
       </div>
@@ -108,6 +153,10 @@ import { supabase } from '../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
 const absences = ref([]);
+const collaborateurs = ref([]);
+const filtreStatut = ref('');
+const filtreType = ref('');
+const filtreMois = ref('');
 
 const absencesEnAttente = computed(() => 
   absences.value.filter(a => a.status === 'pending')
@@ -125,6 +174,36 @@ const absencesAnnulation = computed(() =>
   absences.value.filter(a => a.status === 'cancellation_requested')
 );
 
+const vacancesApprouvees = computed(() => 
+  absences.value.filter(a => a.status === 'approved' && a.type === 'vacances')
+);
+
+const maladiesApprouvees = computed(() => 
+  absences.value.filter(a => a.status === 'approved' && a.type === 'maladie')
+);
+
+const absencesFiltrees = computed(() => {
+  let filtered = absences.value;
+  
+  if (filtreStatut.value) {
+    filtered = filtered.filter(a => a.status === filtreStatut.value);
+  }
+  
+  if (filtreType.value) {
+    filtered = filtered.filter(a => a.type === filtreType.value);
+  }
+  
+  if (filtreMois.value) {
+    filtered = filtered.filter(a => {
+      const startDate = a.start_date || a.startDate;
+      const endDate = a.end_date || a.endDate;
+      return startDate.startsWith(filtreMois.value) || endDate.startsWith(filtreMois.value);
+    });
+  }
+  
+  return filtered.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
+});
+
 const fetchAbsences = async () => {
   try {
     const { data, error } = await supabase
@@ -137,6 +216,25 @@ const fetchAbsences = async () => {
   } catch (error) {
     console.error('Erreur chargement absences:', error);
   }
+};
+
+const fetchCollaborateurs = async () => {
+  try {
+    const { data: collabs } = await supabase.from('collaborateurs').select('*');
+    const { data: chefs } = await supabase.from('chefdechantiers').select('*');
+    
+    collaborateurs.value = [
+      ...(chefs || []).map(c => ({ email: c.email, nom: `${c.nom} ${c.prenom}`, type: 'chef' })),
+      ...(collabs || []).map(c => ({ email: c.email, nom: `${c.nom} ${c.prenom}`, type: 'ouvrier' }))
+    ];
+  } catch (error) {
+    console.error('Erreur chargement collaborateurs:', error);
+  }
+};
+
+const getUserName = (userId) => {
+  const user = collaborateurs.value.find(c => c.email === userId);
+  return user ? user.nom : userId;
 };
 
 const approuverAbsence = async (absence) => {
@@ -274,7 +372,10 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString('fr-FR');
 };
 
-onMounted(fetchAbsences);
+onMounted(() => {
+  fetchAbsences();
+  fetchCollaborateurs();
+});
 </script>
 
 <style scoped>

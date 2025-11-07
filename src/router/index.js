@@ -9,7 +9,7 @@ import Register from '@/views/Register.vue';
 import AdminDashboard from '@/views/AdminDashboard.vue';
 import ChefDashboard from '@/views/ChefDashboard.vue';
 import AdminReportMensuel from '@/views/AdminReportMensuel.vue';
-import AdminGestionFeries from '@/views/AdminGestionFeries.vue';
+
 import AdminBilanChantiers from '@/views/AdminBilanChantiers.vue';
 import AdminAssocierDevis from '@/views/AdminAssocierDevis.vue';
 import AdminBilans from '@/views/AdminBilans.vue';
@@ -102,7 +102,7 @@ const routes = [
 
   { path: '/admin/bilans', name: 'AdminBilans', component: AdminBilans },
   { path: '/admin/report-mensuel', name: 'AdminReportMensuel', component: AdminReportMensuel },
-  { path: '/admin/gestion-feries', name: 'AdminGestionFeries', component: AdminGestionFeries },
+  { path: '/admin/gestion-feries', redirect: '/admin/absences' },
   { path: '/admin/bilan-chantiers', name: 'AdminBilanChantiers', component: AdminBilanChantiers },
   { path: '/admin/associer-devis', name: 'AdminAssocierDevis', component: AdminAssocierDevis },
   { path: '/admin/facturation', name: 'AdminFacturation', component: AdminFacturation },

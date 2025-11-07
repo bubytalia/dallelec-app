@@ -50,7 +50,7 @@
           <div class="card-header">
             <h5>Vue d'ensemble - {{ formatMonth(selectedMonth) }}</h5>
             <small class="text-muted">
-              🟢 Heures saisies | 🔴 Pas d'heures | 🟡 Absence | ⚪ Weekend/Futur
+              🟢 Heures saisies | 🔴 Pas d'heures | 🟦 Vacances | 🟥 Maladie | 🟡 Autres absences | ⚪ Weekend/Futur
             </small>
           </div>
           <div class="card-body">
@@ -58,7 +58,9 @@
             <div class="mb-3">
               <span class="badge bg-success me-2">{{ stats.joursAvecHeures }} jours avec heures</span>
               <span class="badge bg-danger me-2">{{ stats.joursSansHeures }} jours sans heures</span>
-              <span class="badge bg-warning me-2">{{ stats.joursAbsence }} jours d'absence</span>
+              <span class="badge bg-info me-2">{{ stats.joursVacances }} jours de vacances</span>
+              <span class="badge bg-dark me-2">{{ stats.joursMaladie }} jours de maladie</span>
+              <span class="badge bg-warning me-2">{{ stats.joursAutresAbsences }} autres absences</span>
             </div>
 
             <!-- Calendrier par employé -->
@@ -160,21 +162,31 @@ const alerts = computed(() => {
 });
 
 const stats = computed(() => {
-  if (!monitoringData.value) return { joursAvecHeures: 0, joursSansHeures: 0, joursAbsence: 0 };
+  if (!monitoringData.value) return { 
+    joursAvecHeures: 0, 
+    joursSansHeures: 0, 
+    joursVacances: 0, 
+    joursMaladie: 0, 
+    joursAutresAbsences: 0 
+  };
   
   let joursAvecHeures = 0;
   let joursSansHeures = 0;
-  let joursAbsence = 0;
+  let joursVacances = 0;
+  let joursMaladie = 0;
+  let joursAutresAbsences = 0;
   
   monitoringData.value.forEach(emp => {
     emp.jours.forEach(jour => {
       if (jour.status === 'heures') joursAvecHeures++;
       else if (jour.status === 'manquant') joursSansHeures++;
-      else if (jour.status === 'absence') joursAbsence++;
+      else if (jour.status === 'vacances') joursVacances++;
+      else if (jour.status === 'maladie') joursMaladie++;
+      else if (jour.status === 'absence') joursAutresAbsences++;
     });
   });
   
-  return { joursAvecHeures, joursSansHeures, joursAbsence };
+  return { joursAvecHeures, joursSansHeures, joursVacances, joursMaladie, joursAutresAbsences };
 });
 
 const loadMonitoringData = async () => {
@@ -243,8 +255,11 @@ const loadMonitoringData = async () => {
       }
     });
     
-    // Carica assenze
-    const { data: absences } = await supabase.from('absences').select('*');
+    // Carica assenze approvate
+    const { data: absences } = await supabase
+      .from('absences')
+      .select('*')
+      .eq('status', 'approved');
     
     // Genera dati monitoring
     const monitoring = [];
@@ -293,11 +308,11 @@ const loadMonitoringData = async () => {
         const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr && h.ouvrier_id === employe.email);
         heuresJour += heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
         
-        // Controlla assenze
+        // Controlla assenze approvate
         const absenceJour = (absences || []).find(a => 
-          a.userId === employe.email &&
-          a.startDate <= dateStr && 
-          a.endDate >= dateStr
+          a.user_id === employe.email &&
+          a.start_date <= dateStr && 
+          a.end_date >= dateStr
         );
         hasAbsence = !!absenceJour;
         
@@ -306,7 +321,14 @@ const loadMonitoringData = async () => {
         if (isFuture) {
           status = 'future';
         } else if (hasAbsence) {
-          status = 'absence';
+          // Distingui tipo di assenza
+          if (absenceJour.type === 'vacances') {
+            status = 'vacances';
+          } else if (absenceJour.type === 'maladie') {
+            status = 'maladie';
+          } else {
+            status = 'absence';
+          }
         } else if (heuresJour > 0) {
           status = 'heures';
           employeData.joursTravailles++;
@@ -358,6 +380,8 @@ const getJourClass = (jour) => {
   switch (jour.status) {
     case 'heures': return `${baseClass} bg-success text-white`;
     case 'manquant': return `${baseClass} bg-danger text-white`;
+    case 'vacances': return `${baseClass} bg-info text-white`;
+    case 'maladie': return `${baseClass} bg-dark text-white`;
     case 'absence': return `${baseClass} bg-warning text-dark`;
     case 'weekend': return `${baseClass} bg-light text-muted`;
     case 'future': return `${baseClass} bg-secondary text-white`;
@@ -370,7 +394,9 @@ const getJourTooltip = (jour) => {
   switch (jour.status) {
     case 'heures': return `${date}: ${jour.heures}h travaillées`;
     case 'manquant': return `${date}: Aucune heure saisie`;
-    case 'absence': return `${date}: Absence (${jour.absence})`;
+    case 'vacances': return `${date}: Vacances (${jour.absence || 'approuvées'})`;
+    case 'maladie': return `${date}: Maladie (${jour.absence || 'approuvée'})`;
+    case 'absence': return `${date}: Absence (${jour.absence || 'autre'})`;
     case 'weekend': return `${date}: Weekend`;
     case 'future': return `${date}: Date future`;
     default: return date;
@@ -426,5 +452,14 @@ onMounted(() => {
   transform: scale(1.1);
   z-index: 10;
   position: relative;
+}
+
+/* Stili specifici per vacanze e malattie */
+.calendar-day.bg-info {
+  background: linear-gradient(135deg, #0dcaf0, #20c997) !important;
+}
+
+.calendar-day.bg-dark {
+  background: linear-gradient(135deg, #6f42c1, #d63384) !important;
 }
 </style>
