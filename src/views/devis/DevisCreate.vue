@@ -420,6 +420,10 @@ const continuerVersDevis = async () => {
         updateData.total = form.value.montant_corps; // HT
         updateData.draft = false;
         updateData.status = 'Terminé';
+      } else {
+        // Per altri tipi, assicura che non sia brouillon
+        updateData.draft = false;
+        updateData.status = 'En cours';
       }
       
       const { error } = await supabase
@@ -467,7 +471,7 @@ const continuerVersDevis = async () => {
       created_at: new Date().toISOString(),
       produits: [],
       total: modalitaPrezzi.value === 'aCorps' ? form.value.montant_corps : 0,
-      draft: modalitaPrezzi.value === 'aCorps' ? false : true,
+      draft: false,
       status: modalitaPrezzi.value === 'aCorps' ? 'Terminé' : 'En cours'
     };
     
