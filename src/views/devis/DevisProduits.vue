@@ -472,9 +472,16 @@ const devisParZone = computed(() => {
     if (!grouped[item.zone]) grouped[item.zone] = [];
     grouped[item.zone].push(item);
   });
-  return Object.entries(grouped).map(([nom, produits]) => ({ 
-    nom, 
-    produits: produits.sort((a, b) => a.article.localeCompare(b.article)) 
+  
+  // Ordina le zone secondo l'ordine originale definito nel devis
+  const orderedZones = zones.value.filter(zoneName => grouped[zoneName]);
+  
+  // Aggiungi eventuali zone non presenti nell'array originale (per sicurezza)
+  const extraZones = Object.keys(grouped).filter(zoneName => !zones.value.includes(zoneName));
+  
+  return [...orderedZones, ...extraZones].map(nom => ({
+    nom,
+    produits: grouped[nom].sort((a, b) => a.article.localeCompare(b.article))
   }));
 });
 
