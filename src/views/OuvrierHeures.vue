@@ -214,7 +214,12 @@ const fetchChantiers = async () => {
 
 const fetchHeuresSemaine = async () => {
   const userEmail = localStorage.getItem('userEmail');
-  if (!userEmail) return;
+  if (!userEmail) {
+    console.log('❌ Pas d\'email utilisateur pour charger les heures');
+    return;
+  }
+  
+  console.log('🔍 Chargement heures pour:', userEmail);
   
   try {
     const { data, error } = await supabase
@@ -223,11 +228,21 @@ const fetchHeuresSemaine = async () => {
       .eq('ouvrier_id', userEmail)
       .order('date', { ascending: false });
     
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Erreur query heures:', error);
+      throw error;
+    }
+    
+    console.log('📊 Heures trouvées:', data?.length || 0);
+    if (data && data.length > 0) {
+      console.log('📋 Première heure:', data[0]);
+    }
+    
     heuresSemaine.value = data || [];
     
   } catch (error) {
     console.error('Erreur lors du chargement des heures:', error);
+    heuresSemaine.value = [];
   }
 };
 
@@ -283,6 +298,10 @@ const ajouterHeure = async () => {
 const supprimerHeure = async (id) => {
   if (!confirm('Êtes-vous sûr de vouloir supprimer cette entrée?')) return;
   
+  const userEmail = localStorage.getItem('userEmail');
+  console.log('🗑️ Suppression heure ID:', id, 'pour user:', userEmail);
+  console.log('📊 Heures avant suppression:', heuresSemaine.value.length);
+  
   try {
     const { error } = await supabase
       .from('heures_ouvriers')
@@ -291,8 +310,11 @@ const supprimerHeure = async (id) => {
     
     if (error) throw error;
     
+    console.log('✅ Suppression réussie, rechargement...');
+    await fetchHeuresSemaine();
+    console.log('📊 Heures après rechargement:', heuresSemaine.value.length);
+    
     alert('Heure supprimée avec succès');
-    fetchHeuresSemaine();
   } catch (error) {
     console.error('Erreur lors de la suppression:', error);
     alert('Erreur lors de la suppression: ' + error.message);
