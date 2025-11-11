@@ -4,22 +4,39 @@
     
     <h2 class="text-center mb-4">Gestion des Primes</h2>
     
-    <!-- Filtro temporale -->
+    <!-- Filtres -->
     <div class="row mb-4">
       <div class="col-md-12">
         <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5>Primes par période</h5>
-            <div class="d-flex gap-2">
-              <select v-model="selectedMonth" @change="updatePeriod" class="form-select">
-                <option value="">Tous les mois</option>
-                <option v-for="month in availableMonths" :key="month.value" :value="month.value">
-                  {{ month.label }}
-                </option>
-              </select>
-              <select v-model="selectedYear" @change="updatePeriod" class="form-select">
-                <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
-              </select>
+          <div class="card-header">
+            <h5>Filtres</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <label class="form-label">Chantier:</label>
+                <select v-model="selectedChantier" @change="updatePeriod" class="form-select">
+                  <option value="">Tous les chantiers</option>
+                  <option v-for="chantier in availableChantiers" :key="chantier.id" :value="chantier.id">
+                    {{ chantier.nom }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Mois:</label>
+                <select v-model="selectedMonth" @change="updatePeriod" class="form-select">
+                  <option value="">Tous les mois</option>
+                  <option v-for="month in availableMonths" :key="month.value" :value="month.value">
+                    {{ month.label }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Année:</label>
+                <select v-model="selectedYear" @change="updatePeriod" class="form-select">
+                  <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -169,6 +186,7 @@ const collaborateurs = ref([]);
 const interimaires = ref([]);
 const selectedMonth = ref('');
 const selectedYear = ref(new Date().getFullYear());
+const selectedChantier = ref('');
 
 const fetchChantiers = async () => {
   const { data } = await supabase.from('chantiers').select('*');
@@ -402,11 +420,20 @@ const chantiersAvecMetrages = computed(() => {
   return chantiersData.sort((a, b) => new Date(b.derniereMiseAJour) - new Date(a.derniereMiseAJour));
 });
 
-// Cantieri filtrati per periodo
+// Cantieri disponibili per il filtro
+const availableChantiers = computed(() => {
+  return chantiersAvecMetrages.value.map(c => ({
+    id: c.id,
+    nom: c.nom
+  })).sort((a, b) => a.nom.localeCompare(b.nom));
+});
+
+// Cantieri filtrati per periodo e cantiere
 const chantiersFiltered = computed(() => {
   return chantiersAvecMetrages.value.filter(chantier => {
     if (selectedYear.value && chantier.anneeFacturation !== selectedYear.value) return false;
     if (selectedMonth.value && chantier.moisFacturation !== selectedMonth.value) return false;
+    if (selectedChantier.value && chantier.id !== selectedChantier.value) return false;
     return true;
   });
 });
