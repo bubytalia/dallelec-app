@@ -83,8 +83,8 @@
               <td>{{ item.taille }}</td>
               <td>{{ item.unite }}</td>
               <td>{{ item.ml }}</td>
-              <td>{{ getSupplementsML(item).toFixed(2) }}</td>
-              <td>{{ (item.ml + getSupplementsML(item)).toFixed(2) }}</td>
+              <td>{{ (item.totalML - item.ml).toFixed(2) }}</td>
+              <td>{{ item.totalML.toFixed(2) }}</td>
               <td>{{ item.prix.toFixed(2) }} CHF</td>
               <td>{{ item.informativo ? 'Info' : item.total.toFixed(2) + ' CHF' }}</td>
               <td>
