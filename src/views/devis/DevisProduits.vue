@@ -69,7 +69,7 @@
               <th>Taille</th>
               <th>Unité</th>
               <th>Quantité</th>
-              <th>Total Suppléments</th>
+              <th>Suppléments</th>
               <th>Total</th>
               <th>Prix Unit.</th>
               <th>Total</th>
@@ -83,8 +83,8 @@
               <td>{{ item.taille }}</td>
               <td>{{ item.unite }}</td>
               <td>{{ item.ml }}</td>
-              <td>{{ getTotalSupplements(item).toFixed(2) }} CHF</td>
-              <td>{{ item.totalML.toFixed(2) }}</td>
+              <td>{{ getSupplementsML(item).toFixed(2) }}</td>
+              <td>{{ (item.ml + getSupplementsML(item)).toFixed(2) }}</td>
               <td>{{ item.prix.toFixed(2) }} CHF</td>
               <td>{{ item.informativo ? 'Info' : item.total.toFixed(2) + ' CHF' }}</td>
               <td>
@@ -500,21 +500,21 @@ const supplementParZone = computed(() => {
       })));
     }
   });
-  return Object.entries(grouped).map(([nom, details]) => ({ nom, details }));
+  return Object.entries(grouped).map(([nom, details]) => ({ 
+    nom, 
+    details: details.sort((a, b) => a.code.localeCompare(b.code))
+  }));
 });
 
 const getSubtotal = (items) => items.reduce((sum, i) => sum + (i.informativo ? 0 : i.total), 0);
 
-// Calcola il totale supplementi per un singolo prodotto
-const getTotalSupplements = (item) => {
-  if (item.informativo) return 0;
+// Calcola i metri lineari dei supplementi per un singolo prodotto
+const getSupplementsML = (item) => {
+  if (item.informativo || !item.supplements || !Array.isArray(item.supplements)) return 0;
   
-  // Calcola supplementi come differenza tra total finale e totalML
-  const totalFinal = item.total || 0;
-  const totalML = item.totalML || 0;
-  const supplements = totalFinal - totalML;
-  
-  return Math.max(0, supplements); // Non può essere negativo
+  return item.supplements.reduce((sum, supplement) => {
+    return sum + (supplement.totalML || supplement.total || 0);
+  }, 0);
 };
 // Calcola il totale del devis applicando eventuale remise supplementaire.
 const getModalityAlertClass = () => {
