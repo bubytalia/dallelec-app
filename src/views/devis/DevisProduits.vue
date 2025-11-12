@@ -68,11 +68,8 @@
               <th>Produit</th>
               <th>Taille</th>
               <th>Unité</th>
-              <th>Code Article</th>
-              <th>Produit</th>
-              <th>Taille</th>
-              <th>Unité</th>
               <th>Quantité</th>
+              <th>Suppléments</th>
               <th>Total</th>
               <th>Prix Unit.</th>
               <th>Total</th>
@@ -85,11 +82,8 @@
               <td>{{ item.nom }}</td>
               <td>{{ item.taille }}</td>
               <td>{{ item.unite }}</td>
-              <td>{{ item.article }} <span v-if="item.informativo" class="badge bg-info">Info</span></td>
-              <td>{{ item.nom }}</td>
-              <td>{{ item.taille }}</td>
-              <td>{{ item.unite }}</td>
               <td>{{ item.ml }}</td>
+              <td>{{ (item.totalML - item.ml).toFixed(2) }}</td>
               <td>{{ item.totalML.toFixed(2) }}</td>
               <td>{{ item.prix.toFixed(2) }} CHF</td>
               <td>{{ item.informativo ? 'Info' : item.total.toFixed(2) + ' CHF' }}</td>
