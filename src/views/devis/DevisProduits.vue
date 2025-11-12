@@ -69,10 +69,10 @@
               <th>Taille</th>
               <th>Unité</th>
               <th>Quantité</th>
-              <th>Total ML</th>
-              <th>Prix Unit.</th>
               <th>Total Suppléments</th>
-              <th>Total Final</th>
+              <th>Total</th>
+              <th>Prix Unit.</th>
+              <th>Total</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -83,9 +83,9 @@
               <td>{{ item.taille }}</td>
               <td>{{ item.unite }}</td>
               <td>{{ item.ml }}</td>
-              <td>{{ item.totalML.toFixed(2) }} CHF</td>
-              <td>{{ item.prix.toFixed(2) }} CHF</td>
               <td>{{ getTotalSupplements(item).toFixed(2) }} CHF</td>
+              <td>{{ item.totalML.toFixed(2) }}</td>
+              <td>{{ item.prix.toFixed(2) }} CHF</td>
               <td>{{ item.informativo ? 'Info' : item.total.toFixed(2) + ' CHF' }}</td>
               <td>
                 <button class="btn btn-sm btn-warning me-2" @click="modifierItem(zone.nom, itemIndex)">✎</button>
@@ -507,10 +507,14 @@ const getSubtotal = (items) => items.reduce((sum, i) => sum + (i.informativo ? 0
 
 // Calcola il totale supplementi per un singolo prodotto
 const getTotalSupplements = (item) => {
-  if (!item.supplements || !Array.isArray(item.supplements)) return 0;
-  return item.supplements.reduce((sum, supplement) => {
-    return sum + (supplement.total || 0);
-  }, 0);
+  if (item.informativo) return 0;
+  
+  // Calcola supplementi come differenza tra total finale e totalML
+  const totalFinal = item.total || 0;
+  const totalML = item.totalML || 0;
+  const supplements = totalFinal - totalML;
+  
+  return Math.max(0, supplements); // Non può essere negativo
 };
 // Calcola il totale del devis applicando eventuale remise supplementaire.
 const getModalityAlertClass = () => {
