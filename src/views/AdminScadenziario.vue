@@ -7,32 +7,32 @@
     <!-- Filtri -->
     <div class="card mb-4">
       <div class="card-header">
-        <h5>Filtri</h5>
+        <h5>Filtres</h5>
       </div>
       <div class="card-body">
         <div class="row">
           <div class="col-md-3">
-            <label>Periodo:</label>
+            <label>Période:</label>
             <select v-model="filtroPeriodo" class="form-select">
-              <option value="tutti">Tutte le fatture</option>
-              <option value="scadute">Scadute</option>
-              <option value="30giorni">Prossimi 30 giorni</option>
-              <option value="60giorni">Prossimi 60 giorni</option>
+              <option value="tutti">Toutes les factures</option>
+              <option value="scadute">Échues</option>
+              <option value="30giorni">Prochains 30 jours</option>
+              <option value="60giorni">Prochains 60 jours</option>
             </select>
           </div>
           <div class="col-md-3">
-            <label>Stato:</label>
+            <label>Statut:</label>
             <select v-model="filtroStato" class="form-select">
-              <option value="">Tutti gli stati</option>
-              <option value="emise">Emise</option>
-              <option value="envoyee">Inviate</option>
-              <option value="en_retard">In ritardo</option>
+              <option value="">Tous les statuts</option>
+              <option value="emise">Émises</option>
+              <option value="envoyee">Envoyées</option>
+              <option value="en_retard">En retard</option>
             </select>
           </div>
           <div class="col-md-3">
             <label>Cliente:</label>
             <select v-model="filtroCliente" class="form-select">
-              <option value="">Tutti i clienti</option>
+              <option value="">Tous les clients</option>
               <option v-for="client in clientsUniques" :key="client" :value="client">{{ client }}</option>
             </select>
           </div>
@@ -48,7 +48,7 @@
       <div class="col-md-3">
         <div class="card bg-danger text-white text-center">
           <div class="card-body py-2">
-            <h6 class="mb-1">Scadute</h6>
+            <h6 class="mb-1">Échues</h6>
             <h5 class="mb-1">{{ facturesScadute.length }}</h5>
             <small>{{ formatCurrency(totalScadute) }}</small>
           </div>
@@ -57,7 +57,7 @@
       <div class="col-md-3">
         <div class="card bg-warning text-white text-center">
           <div class="card-body py-2">
-            <h6 class="mb-1">Prossimi 7 giorni</h6>
+            <h6 class="mb-1">Prochains 7 jours</h6>
             <h5 class="mb-1">{{ facturesProssimi7.length }}</h5>
             <small>{{ formatCurrency(totalProssimi7) }}</small>
           </div>
@@ -66,7 +66,7 @@
       <div class="col-md-3">
         <div class="card bg-info text-white text-center">
           <div class="card-body py-2">
-            <h6 class="mb-1">Prossimi 30 giorni</h6>
+            <h6 class="mb-1">Prochains 30 jours</h6>
             <h5 class="mb-1">{{ facturesProssimi30.length }}</h5>
             <small>{{ formatCurrency(totalProssimi30) }}</small>
           </div>
@@ -75,7 +75,7 @@
       <div class="col-md-3">
         <div class="card bg-success text-white text-center">
           <div class="card-body py-2">
-            <h6 class="mb-1">Pagate</h6>
+            <h6 class="mb-1">Payées</h6>
             <h5 class="mb-1">{{ facturesPayees.length }}</h5>
             <small>{{ formatCurrency(totalPayees) }}</small>
           </div>
@@ -86,24 +86,24 @@
     <!-- Tabella scadenziario -->
     <div class="card">
       <div class="card-header">
-        <h5>Scadenziario ({{ facturesFiltrate.length }} fatture)</h5>
+        <h5>Échéancier ({{ facturesFiltrate.length }} factures)</h5>
       </div>
       <div class="card-body">
         <div v-if="facturesFiltrate.length === 0" class="text-center text-muted py-4">
-          Nessuna fattura trovata con i filtri selezionati
+          Aucune facture trouvée avec les filtres sélectionnés
         </div>
         <div v-else class="table-responsive">
           <table class="table table-hover">
             <thead>
               <tr>
-                <th>N° Fattura</th>
-                <th>Cliente</th>
-                <th>Data Fattura</th>
-                <th>Scadenza</th>
-                <th>Giorni</th>
-                <th>Importo</th>
-                <th>Stato</th>
-                <th>Azioni</th>
+                <th>N° Facture</th>
+                <th>Client</th>
+                <th>Date Facture</th>
+                <th>Échéance</th>
+                <th>Jours</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -132,10 +132,10 @@
                   </select>
                 </td>
                 <td>
-                  <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-1" title="Genera PDF">
+                  <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-1" title="Générer PDF">
                     📄
                   </button>
-                  <button @click="inviaPromemoria(facture)" class="btn btn-sm btn-warning" title="Invia promemoria">
+                  <button @click="inviaPromemoria(facture)" class="btn btn-sm btn-warning" title="Envoyer rappel">
                     📧
                   </button>
                 </td>
@@ -231,7 +231,8 @@ const totalPayees = computed(() => {
 });
 
 const facturesFiltrate = computed(() => {
-  let filtered = factures.value;
+  // ✅ ESCLUDI SEMPRE le fatture pagate dallo scadenziario
+  let filtered = factures.value.filter(f => f.statut !== 'payee');
   
   // Filtro per periodo
   if (filtroPeriodo.value === 'scadute') {
@@ -247,8 +248,8 @@ const facturesFiltrate = computed(() => {
     });
   }
   
-  // Filtro per stato
-  if (filtroStato.value) {
+  // Filtro per stato (solo se non è 'payee')
+  if (filtroStato.value && filtroStato.value !== 'payee') {
     filtered = filtered.filter(f => f.statut === filtroStato.value);
   }
   
@@ -267,11 +268,11 @@ const getGiorniScadenza = (facture) => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   if (diffDays < 0) {
-    return `${Math.abs(diffDays)} gg scaduta`;
+    return `${Math.abs(diffDays)} j échu`;
   } else if (diffDays === 0) {
-    return 'Oggi';
+    return 'Aujourd\'hui';
   } else {
-    return `${diffDays} giorni`;
+    return `${diffDays} jours`;
   }
 };
 
@@ -344,7 +345,7 @@ const genererPDF = (facture) => {
 };
 
 const inviaPromemoria = (facture) => {
-  alert(`Promemoria per fattura ${facture.numero} - Funzionalità da implementare`);
+  alert(`Rappel pour facture ${facture.numero} - Fonctionnalité à implémenter`);
 };
 
 const resetFiltri = () => {

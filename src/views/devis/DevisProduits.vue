@@ -436,25 +436,45 @@ if (item.article) {
 
 // Modifica esistente
 const modifierItem = (zoneNom, itemIndex) => {
+  console.log('🔧 Modifica item:', { zoneNom, itemIndex });
+  
   const zoneItems = devisParZone.value.find(z => z.nom === zoneNom)?.produits || [];
+  console.log('📋 Items nella zona:', zoneItems.length);
+  
   const targetItem = zoneItems[itemIndex];
-  const globalIndex = devisItems.value.findIndex(i => i === targetItem);
+  console.log('🎯 Target item:', targetItem);
+  
+  if (!targetItem) {
+    console.error('❌ Item non trovato nella zona');
+    return;
+  }
+  
+  const globalIndex = devisItems.value.findIndex(i => 
+    i.zone === targetItem.zone && 
+    i.article === targetItem.article && 
+    i.nom === targetItem.nom
+  );
+  
+  console.log('🔍 Global index trovato:', globalIndex);
+  
   if (globalIndex !== -1) {
     const item = devisItems.value[globalIndex];
     editingItem.value = {
-  index: globalIndex,
-  zone: item.zone,
-  // includiamo sia article che code per il form
-  article: item.article,
-  code: item.article,
-  nom: item.nom,
-  taille: item.taille,
-  unite: item.unite,
-  ml: item.ml,
-  prix: item.prix,
-  supplements: JSON.parse(JSON.stringify(item.supplements || []))
-};
-
+      index: globalIndex,
+      zone: item.zone,
+      article: item.article,
+      code: item.article,
+      nom: item.nom,
+      taille: item.taille,
+      unite: item.unite,
+      ml: item.ml,
+      prix: item.prix,
+      informativo: item.informativo || false,
+      supplements: JSON.parse(JSON.stringify(item.supplements || []))
+    };
+    console.log('✅ EditingItem impostato:', editingItem.value);
+  } else {
+    console.error('❌ Item non trovato in devisItems');
   }
 };
 
