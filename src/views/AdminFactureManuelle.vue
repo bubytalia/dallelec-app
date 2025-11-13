@@ -236,6 +236,19 @@ const calculerTotal = (index) => {
   // Trigger reactive update
 };
 
+const calculateDateEcheance = (dateFacture, conditionsPaiement) => {
+  const date = new Date(dateFacture);
+  
+  // Estrai i giorni dalle condizioni di pagamento
+  const match = conditionsPaiement.match(/(\d+)\s*jours?/i);
+  const giorni = match ? parseInt(match[1]) : 30; // Default 30 giorni
+  
+  // Aggiungi i giorni alla data fattura
+  date.setDate(date.getDate() + giorni);
+  
+  return date.toISOString().split('T')[0];
+};
+
 const generateNumeroFacture = async () => {
   try {
     const { data: config } = await supabase
@@ -309,6 +322,7 @@ const sauvegarderFacture = async () => {
           client_nom: facture.value.clientNom,
           chantier_id: facture.value.chantierId || null,
           date_facture: facture.value.dateFacture,
+          date_echeance: calculateDateEcheance(facture.value.dateFacture, facture.value.conditionsPaiement),
           lignes: lignesFiltered,
           montant_ht: totalHT.value,
           montant_ttc: totalHT.value * 1.081,
@@ -337,7 +351,7 @@ const sauvegarderFacture = async () => {
           montant_ttc: totalHT.value * 1.081,
           statut: 'emise',
           notes: notesComplete,
-          date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          date_echeance: calculateDateEcheance(facture.value.dateFacture, facture.value.conditionsPaiement),
           created_at: new Date().toISOString()
         }]);
       
