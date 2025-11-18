@@ -2312,10 +2312,20 @@ const genererPDF = async (facture) => {
           2: { cellWidth: 25, halign: 'right' },
           3: { cellWidth: 30, halign: 'right' },
           4: { cellWidth: 35, halign: 'right' }
-        }
+        },
+        margin: { bottom: 80 },
+        showFoot: 'everyPage'
       });
       
-      const finalY = doc.lastAutoTable.finalY + 40;
+      let finalY = doc.lastAutoTable.finalY + 10;
+      
+      // Verifica spazio per totali (serve almeno 60mm)
+      if (finalY > 230) {
+        doc.addPage();
+        finalY = 20;
+      }
+      
+      finalY += 30;
       const totalHT = Number(facture.montant_ht || facture.montantHT || 0);
       const tva = totalHT * 0.081;
       const ttc = totalHT + tva;
