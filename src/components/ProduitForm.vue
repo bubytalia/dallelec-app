@@ -4,12 +4,31 @@
     <div class="row mb-3">
       <div class="col-md-3">
         <label>Produit</label>
-        <select v-model="selectedProduitId" class="form-select">
-          <option disabled value="">Code - Description (Taille)</option>
-          <option v-for="p in produits" :key="p.id" :value="p.id">
-            {{ p.article }} - {{ p.description }} ({{ p.taille }})
-          </option>
-        </select>
+        <div class="position-relative">
+          <input 
+            v-model="searchText" 
+            @focus="showDropdown = true"
+            @blur="hideDropdown"
+            type="text" 
+            class="form-control" 
+            placeholder="Rechercher un produit..."
+            autocomplete="off"
+          >
+          <div v-if="showDropdown && filteredProduits.length > 0" class="dropdown-menu show w-100" style="max-height: 300px; overflow-y: auto; z-index: 1050;">
+            <div v-if="filteredProduits.length > 50" class="dropdown-header">
+              {{ filteredProduits.length }} résultats trouvés - continuez à taper pour affiner
+            </div>
+            <button 
+              v-for="p in filteredProduits" 
+              :key="p.id" 
+              @mousedown="selectProduit(p)"
+              class="dropdown-item"
+              type="button"
+            >
+              <strong>{{ p.article }}</strong> - {{ p.description }} ({{ p.taille }})
+            </button>
+          </div>
+        </div>
       </div>
       <div class="col-md-2">
         <label>Quantité</label>
@@ -95,6 +114,8 @@ const suppQuantities = ref({});
 const localEditingItem = ref(null);
 const prezzoManuale = ref(0);
 const soloInformativo = ref(false);
+const searchText = ref('');
+const showDropdown = ref(false);
 
 const formValide = computed(() => {
   // Trova il prodotto selezionato per verificare se è un prodotto "ore"
@@ -132,6 +153,29 @@ const produits = computed(() => {
   });
 });
 
+const filteredProduits = computed(() => {
+  if (!searchText.value) return produits.value;
+  
+  const search = searchText.value.toLowerCase();
+  return produits.value.filter(p => 
+    (p.article || '').toLowerCase().includes(search) ||
+    (p.description || '').toLowerCase().includes(search) ||
+    (p.taille || '').toLowerCase().includes(search)
+  );
+});
+
+const selectProduit = (produit) => {
+  selectedProduitId.value = produit.id;
+  searchText.value = `${produit.article} - ${produit.description} (${produit.taille})`;
+  showDropdown.value = false;
+};
+
+const hideDropdown = () => {
+  setTimeout(() => {
+    showDropdown.value = false;
+  }, 200);
+};
+
 // Non serve più caricare nulla, tutto arriva come props
 // onMounted(() => {
 //   // Tutto caricato tramite props
@@ -145,6 +189,7 @@ watch(
     localEditingItem.value = { ...item };
     const produit = produits.value.find(p => p.article === item.article);
     selectedProduitId.value = produit?.id || '';
+    searchText.value = produit ? `${produit.article} - ${produit.description} (${produit.taille})` : '';
     selectedZone.value = item.zone;
     quantiteML.value = item.ml;
     selectedSupplements.value = item.supplements?.map((s) => s.supplement) || [];
@@ -326,6 +371,8 @@ const resetForm = () => {
   localEditingItem.value = null;
   prezzoManuale.value = 0;
   soloInformativo.value = false;
+  searchText.value = '';
+  showDropdown.value = false;
 };
 </script>
 

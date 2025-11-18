@@ -3144,8 +3144,8 @@ const genererPDF = async (facture) => {
       const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
       const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
       
-      docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, 270);
-      docFacture.text('Merci de votre confiance', 10, 280);
+      docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, 260);
+      docFacture.text('Merci de votre confiance', 10, 270);
       
       // Salva documenti con nomi personalizzati
       const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
@@ -3507,7 +3507,7 @@ const genererPDF = async (facture) => {
       
       doc.text(`Conditions de paiement: ${modalitaPagamento}`, 15, yPos);
       doc.setFontSize(9);
-      doc.text('Merci de votre confiance', 15, yPos + 10);
+      doc.text('Merci de votre confiance', 15, yPos + 8);
       
       // Numerazione pagine
       const totalPages = doc.internal.getNumberOfPages();
