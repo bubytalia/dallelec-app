@@ -2532,27 +2532,6 @@ const genererPDF = async (facture) => {
         yInfoRight += 6;
       }
       
-      // Aggiunge indirizzo cantiere
-      if (chantier?.adresse) {
-        yInfoRight += 5;
-        doc.setFontSize(9);
-        doc.text(`${chantier.adresse}`, 115, yInfoRight);
-        if (chantier?.ville) {
-          yInfoRight += 4;
-          doc.text(`${chantier.ville}`, 115, yInfoRight);
-        }
-        doc.setFontSize(10);
-      }
-      
-      // Aggiunge nome technicien
-      if (chantier?.technicien) {
-        yInfoRight += 6;
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(9);
-        doc.text(`Technicien: ${chantier.technicien}`, 115, yInfoRight);
-        doc.setFont('helvetica', 'normal');
-      }
-      
       return Math.max(yInfo, yInfoRight) + 20;
     };
 
