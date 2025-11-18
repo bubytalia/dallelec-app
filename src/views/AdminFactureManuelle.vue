@@ -41,32 +41,32 @@
         <table class="table">
           <thead>
             <tr>
-              <th>Description</th>
-              <th>Unité</th>
-              <th>Quantité</th>
-              <th>Prix unitaire</th>
-              <th>Total</th>
-              <th>Actions</th>
+              <th style="width: 45%;">Description</th>
+              <th style="width: 8%;">Unité</th>
+              <th style="width: 12%;">Quantité</th>
+              <th style="width: 15%;">Prix unitaire</th>
+              <th style="width: 12%;">Total</th>
+              <th style="width: 8%;">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(ligne, index) in facture.lignes" :key="index">
-              <td>
+              <td style="width: 45%;">
                 <input v-model="ligne.description" type="text" class="form-control" placeholder="Description">
               </td>
-              <td>
-                <input v-model="ligne.unite" type="text" class="form-control" placeholder="pcs, h, ml...">
+              <td style="width: 8%;">
+                <input v-model="ligne.unite" type="text" class="form-control form-control-sm" placeholder="pcs">
               </td>
-              <td>
-                <input v-model.number="ligne.quantite" type="number" step="0.01" class="form-control" @input="calculerTotal(index)">
+              <td style="width: 12%;">
+                <input v-model.number="ligne.quantite" type="number" step="0.01" class="form-control form-control-sm" @input="calculerTotal(index)">
               </td>
-              <td>
-                <input v-model.number="ligne.prixUnitaire" type="number" step="0.01" class="form-control" @input="calculerTotal(index)">
+              <td style="width: 15%;">
+                <input v-model.number="ligne.prixUnitaire" type="number" step="0.01" class="form-control form-control-sm" @input="calculerTotal(index)">
               </td>
-              <td>
+              <td style="width: 12%;">
                 <strong>{{ (ligne.quantite * ligne.prixUnitaire).toFixed(2) }} CHF</strong>
               </td>
-              <td>
+              <td style="width: 8%;">
                 <button @click="supprimerLigne(index)" class="btn btn-danger btn-sm">🗑</button>
               </td>
             </tr>

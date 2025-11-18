@@ -2195,6 +2195,8 @@ const genererPDF = async (facture) => {
         doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
         doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
         doc.text('1203 Genève', 195, 34, { align: 'right' });
+        doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
+        doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
         
         // Titolo più in basso
         doc.setFontSize(20);
@@ -2249,7 +2251,7 @@ const genererPDF = async (facture) => {
         if (chantier) {
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10);
-          doc.text(`CHANTIER N° ${chantier.numero_cantiere || 'N/A'}`, 115, yInfoRight);
+          doc.text(`CHANTIER N° ${chantier.numero_cantiere || chantier.numeroCantiere || 'N/A'}`, 115, yInfoRight);
           yInfoRight += 6;
           doc.setFont('helvetica', 'normal');
           doc.text(`${chantier.nom}`, 115, yInfoRight);
@@ -2356,14 +2358,14 @@ const genererPDF = async (facture) => {
       doc.setFontSize(9);
       doc.text('Merci de votre confiance', 15, yFooter + 10);
       
-      // Note se presenti (coordinate bancarie)
+      // Note se presenti
       const notes = facture.notes?.split('Conditions:')[0]?.trim();
       if (notes) {
         yFooter += 25;
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
-        doc.text('Coordonnées bancaires:', 15, yFooter);
+        doc.text('Notes:', 15, yFooter);
         yFooter += 6;
         
         doc.setFont('helvetica', 'normal');
@@ -2438,6 +2440,8 @@ const genererPDF = async (facture) => {
       doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
       doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
       doc.text('1203 Genève', 195, 34, { align: 'right' });
+      doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
+      doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
       
       // Titolo più in basso
       doc.setFontSize(20);
@@ -2493,12 +2497,40 @@ const genererPDF = async (facture) => {
       
       // Seconda colonna (destra) - Informazioni cantiere
       let yInfoRight = 67;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text(`CHANTIER N° ${chantier?.numero_cantiere || 'N/A'}`, 115, yInfoRight);
-      yInfoRight += 6;
-      doc.setFont('helvetica', 'normal');
-      doc.text(`${nomeChantier}`, 115, yInfoRight);
+      if (chantier) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(`CHANTIER N° ${chantier.numero_cantiere || chantier.numeroCantiere || 'N/A'}`, 115, yInfoRight);
+        yInfoRight += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${chantier.nom}`, 115, yInfoRight);
+        
+        // Aggiungi indirizzo cantiere se disponibile
+        if (chantier.adresse) {
+          yInfoRight += 5;
+          doc.setFontSize(9);
+          doc.text(`${chantier.adresse}`, 115, yInfoRight);
+          if (chantier.ville) {
+            yInfoRight += 4;
+            doc.text(`${chantier.ville}`, 115, yInfoRight);
+          }
+          doc.setFontSize(10);
+        }
+        
+        // Aggiungi technicien se disponibile
+        if (chantier.technicien) {
+          yInfoRight += 6;
+          doc.setFont('helvetica', 'italic');
+          doc.setFontSize(9);
+          doc.text(`Technicien: ${chantier.technicien}`, 115, yInfoRight);
+          doc.setFont('helvetica', 'normal');
+        }
+      } else {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('TRAVAUX GÉNÉRAUX', 115, yInfoRight);
+        yInfoRight += 6;
+      }
       
       // Aggiunge indirizzo cantiere
       if (chantier?.adresse) {
@@ -3175,6 +3207,7 @@ const genererPDF = async (facture) => {
       doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
       doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
       doc.text('1203 Genève', 195, 34, { align: 'right' });
+      doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
       
       doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
