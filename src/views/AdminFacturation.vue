@@ -3242,28 +3242,7 @@ const genererPDF = async (facture) => {
       doc.setFont('helvetica', 'normal');
       doc.text(`${nomeChantier}`, 115, yInfoRight);
       
-      // Indirizzo cantiere con tutti i possibili nomi campo
-      yInfoRight += 5;
-      doc.setFontSize(9);
-      const indirizzo = chantier?.adresse || chantier?.indirizzo || chantier?.address;
-      const citta = chantier?.ville || chantier?.citta || chantier?.city;
-      
-      if (indirizzo) {
-        doc.text(`${indirizzo}`, 115, yInfoRight);
-        if (citta) {
-          yInfoRight += 4;
-          doc.text(`${citta}`, 115, yInfoRight);
-        }
-      }
-      doc.setFontSize(10);
-      
-      if (chantier?.technicien) {
-        yInfoRight += 6;
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(9);
-        doc.text(`Technicien: ${chantier.technicien}`, 115, yInfoRight);
-        doc.setFont('helvetica', 'normal');
-      }
+
       
       let yPos = Math.max(yInfo, yInfoRight) + 20;
       
