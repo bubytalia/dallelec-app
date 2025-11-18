@@ -3135,7 +3135,15 @@ const genererPDF = async (facture) => {
       docFacture.text(labelFinal, 120, currentY + 4);
       docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 195, currentY + 4, { align: 'right' });
       
-      // Conditions de paiement in fondo alla pagina
+      // Conditions de paiement dinamiche
+      let footerY = currentY + 20;
+      
+      // Se siamo troppo in basso, vai a nuova pagina
+      if (footerY > 270) {
+        docFacture.addPage();
+        footerY = 20;
+      }
+      
       docFacture.setFont('helvetica', 'normal');
       docFacture.setFontSize(9);
       docFacture.setTextColor(100, 100, 100);
@@ -3144,8 +3152,8 @@ const genererPDF = async (facture) => {
       const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
       const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
       
-      docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, 260);
-      docFacture.text('Merci de votre confiance', 10, 270);
+      docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, footerY);
+      docFacture.text('Merci de votre confiance', 10, footerY + 10);
       
       // Salva documenti con nomi personalizzati
       const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
@@ -3495,8 +3503,15 @@ const genererPDF = async (facture) => {
         yPos = 20;
       }
       
-      // Conditions de paiement
-      yPos += 35;
+      // Conditions de paiement dinamiche
+      let footerY = yPos + 35;
+      
+      // Se siamo troppo in basso, vai a nuova pagina
+      if (footerY > 270) {
+        doc.addPage();
+        footerY = 20;
+      }
+      
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(80, 80, 80);
@@ -3505,9 +3520,9 @@ const genererPDF = async (facture) => {
       const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
       const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
       
-      doc.text(`Conditions de paiement: ${modalitaPagamento}`, 15, yPos);
+      doc.text(`Conditions de paiement: ${modalitaPagamento}`, 15, footerY);
       doc.setFontSize(9);
-      doc.text('Merci de votre confiance', 15, yPos + 8);
+      doc.text('Merci de votre confiance', 15, footerY + 8);
       
       // Numerazione pagine
       const totalPages = doc.internal.getNumberOfPages();
