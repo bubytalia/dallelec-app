@@ -356,12 +356,14 @@
                           </table>
                         </div>
                         
-                        <!-- RESOCONTO PERCENTUALE: Layout originale -->
+                        <!-- RESOCONTO PERCENTUALE: Layout con dettaglio sconto -->
                         <table v-else class="table table-sm table-bordered">
                           <thead class="table-secondary">
                             <tr>
                               <th>Zone</th>
                               <th>Avancement</th>
+                              <th>Montant Devis</th>
+                              <th>Remise</th>
                               <th>Montant HT</th>
                             </tr>
                           </thead>
@@ -369,12 +371,14 @@
                             <tr v-for="(percentage, zone) in detailResoconto.avancementi" :key="zone">
                               <td><strong>{{ zone }}</strong></td>
                               <td>{{ percentage }}%</td>
+                              <td>{{ calculateZoneMontantSenzaRemise(zone, percentage).toFixed(2) }} CHF</td>
+                              <td class="text-danger">{{ getRemiseDevis() }}%</td>
                               <td><strong>{{ calculateZoneMontant(zone, percentage).toFixed(2) }} CHF</strong></td>
                             </tr>
                           </tbody>
                           <tfoot class="table-warning">
                             <tr>
-                              <td colspan="2"><strong>Sous-total Travaux:</strong></td>
+                              <td colspan="4"><strong>Sous-total Travaux:</strong></td>
                               <td><strong>{{ calculateTotalTravaux().toFixed(2) }} CHF</strong></td>
                             </tr>
                           </tfoot>
@@ -694,13 +698,15 @@
                         <h6>Zones travaillées:</h6>
                         <table class="table table-sm table-bordered">
                           <thead>
-                            <tr><th>Zone</th><th>Avancement</th><th>Montant</th></tr>
+                            <tr><th>Zone</th><th>Avancement</th><th>Montant Devis</th><th>Remise</th><th>Montant HT</th></tr>
                           </thead>
                           <tbody>
                             <tr v-for="(percentage, zone) in getResocontoDetails(factureAnteprima.resoconto_id).avancementi" :key="zone">
                               <td>{{ zone }}</td>
                               <td>{{ percentage }}%</td>
-                              <td>{{ formatCurrency(calculateZoneMontantAnteprima(zone, percentage, factureAnteprima.chantier_id)) }}</td>
+                              <td>{{ formatCurrency(calculateZoneMontantSenzaRemiseAnteprima(zone, percentage, factureAnteprima.chantier_id)) }}</td>
+                              <td class="text-danger">{{ getRemiseDevisAnteprima(factureAnteprima.chantier_id) }}%</td>
+                              <td><strong>{{ formatCurrency(calculateZoneMontantAnteprima(zone, percentage, factureAnteprima.chantier_id)) }}</strong></td>
                             </tr>
                           </tbody>
                         </table>
@@ -1331,13 +1337,7 @@ const voirDetailResoconto = (resoconto) => {
 };
 
 // Funzioni per calcolo anteprima fattura
-const calculateZoneMontant = (zone, percentage) => {
-  // Se è un resoconto finale, calcola il valore delle quantità reali
-  if (detailResoconto.value.type === 'resoconto_finale') {
-    return calculateResocontoFinaleValue(zone);
-  }
-  
-  // Logica originale per resoconti percentuali
+const calculateZoneMontantSenzaRemise = (zone, percentage) => {
   const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
   const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
   
@@ -1355,6 +1355,54 @@ const calculateZoneMontant = (zone, percentage) => {
   const totaleZona = chantierDevis.produits
     .filter(p => p.zone === zone)
     .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  return totaleZona * percentage / 100;
+};
+
+const getRemiseDevis = () => {
+  const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  return chantierDevis?.remises || 0;
+};
+
+const calculateZoneMontant = (zone, percentage) => {
+  // Se è un resoconto finale, calcola il valore delle quantità reali
+  if (detailResoconto.value.type === 'resoconto_finale') {
+    return calculateResocontoFinaleValue(zone);
+  }
+  
+  // Logica originale per resoconti percentuali
+  const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  // DEBUG: Verifica remise supplémentaire
+  console.log('🔍 DEBUG REMISE - Devis:', chantierDevis?.numero, 'Remise:', chantierDevis?.remises);
+  
+  if (!chantierDevis) return 0;
+  
+  if (chantierDevis.modalita_prezzi === 'aCorps') {
+    const montantCorps = Number(chantierDevis.montant_corps || 0);
+    const numeroZone = chantierDevis.zones?.length || 1;
+    let montantPerZona = montantCorps / numeroZone;
+    
+    // Applica remise supplémentaire se presente
+    if (chantierDevis.remises && chantierDevis.remises > 0) {
+      montantPerZona = montantPerZona * (1 - chantierDevis.remises / 100);
+    }
+    
+    return montantPerZona * percentage / 100;
+  }
+  
+  if (!chantierDevis.produits) return 0;
+  
+  let totaleZona = chantierDevis.produits
+    .filter(p => p.zone === zone)
+    .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  // Applica remise supplémentaire se presente
+  if (chantierDevis.remises && chantierDevis.remises > 0) {
+    totaleZona = totaleZona * (1 - chantierDevis.remises / 100);
+  }
   
   return totaleZona * percentage / 100;
 };
@@ -3279,39 +3327,54 @@ const genererPDF = async (facture) => {
       
       // USA LE STESSE FUNZIONI DELL'ANTEPRIMA CHE FUNZIONANO
       const avancementData = Object.entries(resocontoDoc.avancementi || {}).map(([zona, percentuale]) => {
-        // CALCOLA IL TOTALE ZONA CORRETTAMENTE (come nell'anteprima)
-        let totaleZona = 0;
+        // CALCOLA IL TOTALE ZONA LORDO (senza remise)
+        let totaleZonaLordo = 0;
         if (chantierDevis?.produits) {
-          totaleZona = chantierDevis.produits
+          totaleZonaLordo = chantierDevis.produits
             .filter(p => p.zone === zona)
             .reduce((sum, p) => sum + Number(p.total || 0), 0);
         }
         
-        const montantZona = totaleZona * percentuale / 100;
+        const montantLordo = totaleZonaLordo * percentuale / 100;
+        const remisePerc = chantierDevis?.remises || 0;
         
-        console.log(`📊 PDF - ${zona}: devis=${totaleZona.toFixed(2)} CHF × ${percentuale}% = fattura=${montantZona.toFixed(2)} CHF`);
+        // Calcola montant netto dopo remise
+        let montantNetto = montantLordo;
+        if (remisePerc > 0) {
+          montantNetto = montantLordo * (1 - remisePerc / 100);
+        }
+        
+        console.log(`📊 PDF - ${zona}: lordo=${montantLordo.toFixed(2)} CHF, remise=${remisePerc}%, netto=${montantNetto.toFixed(2)} CHF`);
         
         return [
           zona,
           `${percentuale}%`,
-          totaleZona > 0 ? `${totaleZona.toFixed(2)} CHF` : 'N/A', // TOTALE DEVIS PER ZONA
-          `${montantZona.toFixed(2)} CHF`  // MONTANT DA FATTURARE
+          `${montantLordo.toFixed(2)} CHF`,
+          remisePerc > 0 ? `${remisePerc}%` : '-',
+          `${montantNetto.toFixed(2)} CHF`
         ];
       });
       
       if (avancementData.length > 0) {
         autoTable(doc, {
-          head: [['Zone', 'Avancement', 'Montant Devis', 'Montant HT']],
+          head: [['Zone', 'Avancement', 'Montant Brut', 'Remise', 'Montant Net HT']],
           body: avancementData,
           startY: yPos,
           theme: 'striped',
           headStyles: { 
             fillColor: [70, 130, 180], 
             textColor: 255,
-            fontSize: 10
+            fontSize: 9
           },
           bodyStyles: { 
-            fontSize: 9
+            fontSize: 8
+          },
+          columnStyles: {
+            0: { cellWidth: 35 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 35 },
+            3: { cellWidth: 20, halign: 'center' },
+            4: { cellWidth: 35, fontStyle: 'bold' }
           }
         });
         yPos = doc.lastAutoTable.finalY + 3;
@@ -4005,6 +4068,34 @@ const getMetrageDetails = (metrageId) => {
   return metrages.value.find(m => m.id === metrageId);
 };
 
+const calculateZoneMontantSenzaRemiseAnteprima = (zone, percentage, chantierId) => {
+  const chantier = chantiers.value.find(c => c.id == chantierId);
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  if (!chantierDevis) return 0;
+  
+  if (chantierDevis.modalita_prezzi === 'aCorps') {
+    const montantCorps = Number(chantierDevis.montant_corps || 0);
+    const numeroZone = chantierDevis.zones?.length || 1;
+    const montantPerZona = montantCorps / numeroZone;
+    return montantPerZona * percentage / 100;
+  }
+  
+  if (!chantierDevis.produits) return 0;
+  
+  const totaleZona = chantierDevis.produits
+    .filter(p => p.zone === zone)
+    .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  return totaleZona * percentage / 100;
+};
+
+const getRemiseDevisAnteprima = (chantierId) => {
+  const chantier = chantiers.value.find(c => c.id == chantierId);
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  return chantierDevis?.remises || 0;
+};
+
 const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
   const chantier = chantiers.value.find(c => c.id == chantierId);
   const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
@@ -4015,16 +4106,27 @@ const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
   if (chantierDevis.modalita_prezzi === 'aCorps') {
     const montantCorps = Number(chantierDevis.montant_corps || 0);
     const numeroZone = chantierDevis.zones?.length || 1;
-    const montantPerZona = montantCorps / numeroZone;
+    let montantPerZona = montantCorps / numeroZone;
+    
+    // Applica remise supplémentaire se presente
+    if (chantierDevis.remises && chantierDevis.remises > 0) {
+      montantPerZona = montantPerZona * (1 - chantierDevis.remises / 100);
+    }
+    
     return montantPerZona * percentage / 100;
   }
   
   // Per devis détaillé, usa i prodotti
   if (!chantierDevis.produits) return 0;
   
-  const totaleZona = chantierDevis.produits
+  let totaleZona = chantierDevis.produits
     .filter(p => p.zone === zone)
     .reduce((sum, p) => sum + Number(p.total || 0), 0);
+  
+  // Applica remise supplémentaire se presente
+  if (chantierDevis.remises && chantierDevis.remises > 0) {
+    totaleZona = totaleZona * (1 - chantierDevis.remises / 100);
+  }
   
   return totaleZona * percentage / 100;
 };
