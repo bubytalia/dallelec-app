@@ -39,6 +39,8 @@ const props = defineProps({
   notes: { type: String, default: '' },
   // Opzione per nascondere la lista supplementi
   hideSupplementsList: { type: Boolean, default: false },
+  // Opzione per nascondere i prezzi
+  hidePrices: { type: Boolean, default: false },
   // Remise supplémentaire in percentuale
   remiseSupplementaire: { type: Number, default: 0 },
   // Modalità prezzi del devis
@@ -175,51 +177,96 @@ const generatePdf = async () => {
     doc.setFont('helvetica', 'bold')
     doc.text(zoneName, 10, tableStartY)
     tableStartY += 6
-    // Testata e corpo della tabella (diversa per railEnergie)
-    const head = isRailEnergie ? [[
-      'Code',
-      'Produit',
-      'Taille',
-      'Unité',
-      'Quantité',
-      'Prix U.',
-      'Total'
-    ]] : [[
-      'Code',
-      'Produit',
-      'Taille',
-      'Unité',
-      'Quantité',
-      'Total Suppl. m.',
-      'Total m.',
-      'Prix U.',
-      'Total'
-    ]]
+    // Testata e corpo della tabella (diversa per railEnergie e hidePrices)
+    let head
+    if (props.hidePrices) {
+      // Versione senza prezzi
+      head = isRailEnergie ? [[
+        'Code',
+        'Produit',
+        'Taille',
+        'Unité',
+        'Quantité'
+      ]] : [[
+        'Code',
+        'Produit',
+        'Taille',
+        'Unité',
+        'Quantité',
+        'Total Suppl. m.',
+        'Total m.'
+      ]]
+    } else {
+      // Versione con prezzi (originale)
+      head = isRailEnergie ? [[
+        'Code',
+        'Produit',
+        'Taille',
+        'Unité',
+        'Quantité',
+        'Prix U.',
+        'Total'
+      ]] : [[
+        'Code',
+        'Produit',
+        'Taille',
+        'Unité',
+        'Quantité',
+        'Total Suppl. m.',
+        'Total m.',
+        'Prix U.',
+        'Total'
+      ]]
+    }
     const body = []
     if (Array.isArray(zone.produits)) {
       zone.produits.forEach((p) => {
-        if (isRailEnergie) {
-          body.push([
-            (p.article || '') + (p.informativo ? ' (Info)' : ''),
-            p.nom || '',
-            p.taille || '',
-            p.unite || '',
-            p.ml != null ? String(p.ml) : '',
-            p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
-            p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
-          ])
+        if (props.hidePrices) {
+          // Versione senza prezzi
+          if (isRailEnergie) {
+            body.push([
+              (p.article || '') + (p.informativo ? ' (Info)' : ''),
+              p.nom || '',
+              p.taille || '',
+              p.unite || '',
+              p.ml != null ? String(p.ml) : ''
+            ])
+          } else {
+            body.push([
+              (p.article || '') + (p.informativo ? ' (Info)' : ''),
+              p.nom || '',
+              p.taille || '',
+              p.unite || '',
+              p.ml != null ? String(p.ml) : '',
+              p.totalSuppML != null ? p.totalSuppML.toFixed(2) : '',
+              p.totalML != null ? p.totalML.toFixed(2) : ''
+            ])
+          }
         } else {
-          body.push([
-            (p.article || '') + (p.informativo ? ' (Info)' : ''),
-            p.nom || '',
-            p.taille || '',
-            p.unite || '',
-            p.ml != null ? String(p.ml) : '',
-            p.totalSuppML != null ? p.totalSuppML.toFixed(2) : '',
-            p.totalML != null ? p.totalML.toFixed(2) : '',
-            p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
-            p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
-          ])
+          // Versione con prezzi (originale)
+          if (isRailEnergie) {
+            body.push([
+              (p.article || '') + (p.informativo ? ' (Info)' : ''),
+              p.nom || '',
+              p.taille || '',
+              p.unite || '',
+              p.ml != null ? String(p.ml) : '',
+              p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
+              p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
+            ])
+          } else {
+            body.push([
+              (p.article || '') + (p.informativo ? ' (Info)' : ''),
+              p.nom || '',
+              p.taille || '',
+              p.unite || '',
+              p.ml != null ? String(p.ml) : '',
+              p.totalSuppML != null ? p.totalSuppML.toFixed(2) : '',
+              p.totalML != null ? p.totalML.toFixed(2) : '',
+              p.prix != null ? p.prix.toFixed(2) + ' CHF' : '',
+              p.informativo ? 'Info' : (p.total != null ? p.total.toFixed(2) + ' CHF' : '')
+            ])
+          }
         }
       })
     }
@@ -242,65 +289,96 @@ const generatePdf = async () => {
         fontSize: 7,
         valign: 'middle'
       },
-      columnStyles: isRailEnergie ? {
-        0: { cellWidth: 35, halign: 'left' }, // Code - ancora più largo per 14 caratteri
-        1: { cellWidth: 40, halign: 'left' }, // Produit - ridotto per compensare
-        2: { cellWidth: 20, halign: 'center' }, // Taille
-        3: { cellWidth: 15, halign: 'center' }, // Unité
-        4: { cellWidth: 15, halign: 'center' }, // Quantité
-        5: { cellWidth: 25, halign: 'right' }, // Prix U.
-        6: { cellWidth: 25, halign: 'right' } // Total
-      } : {
-        0: { cellWidth: 20 }, // Code
-        1: { cellWidth: 35 }, // Produit
-        2: { cellWidth: 15 }, // Taille
-        3: { cellWidth: 15 }, // Unité
-        4: { cellWidth: 20 }, // Quantité
-        5: { cellWidth: 20 }, // Total Suppl.
-        6: { cellWidth: 18 }, // Total
-        7: { cellWidth: 20 }, // Prix U.
-        8: { cellWidth: 20 } // Total
-      },
+      columnStyles: (() => {
+        if (props.hidePrices) {
+          // Stili per versione senza prezzi
+          return isRailEnergie ? {
+            0: { cellWidth: 45, halign: 'left' }, // Code - più largo
+            1: { cellWidth: 60, halign: 'left' }, // Produit - più largo
+            2: { cellWidth: 25, halign: 'center' }, // Taille
+            3: { cellWidth: 20, halign: 'center' }, // Unité
+            4: { cellWidth: 25, halign: 'center' } // Quantité
+          } : {
+            0: { cellWidth: 25 }, // Code
+            1: { cellWidth: 45 }, // Produit
+            2: { cellWidth: 20 }, // Taille
+            3: { cellWidth: 20 }, // Unité
+            4: { cellWidth: 25 }, // Quantité
+            5: { cellWidth: 25 }, // Total Suppl.
+            6: { cellWidth: 25 } // Total
+          }
+        } else {
+          // Stili originali con prezzi
+          return isRailEnergie ? {
+            0: { cellWidth: 35, halign: 'left' }, // Code - ancora più largo per 14 caratteri
+            1: { cellWidth: 40, halign: 'left' }, // Produit - ridotto per compensare
+            2: { cellWidth: 20, halign: 'center' }, // Taille
+            3: { cellWidth: 15, halign: 'center' }, // Unité
+            4: { cellWidth: 15, halign: 'center' }, // Quantité
+            5: { cellWidth: 25, halign: 'right' }, // Prix U.
+            6: { cellWidth: 25, halign: 'right' } // Total
+          } : {
+            0: { cellWidth: 20 }, // Code
+            1: { cellWidth: 35 }, // Produit
+            2: { cellWidth: 15 }, // Taille
+            3: { cellWidth: 15 }, // Unité
+            4: { cellWidth: 20 }, // Quantité
+            5: { cellWidth: 20 }, // Total Suppl.
+            6: { cellWidth: 18 }, // Total
+            7: { cellWidth: 20 }, // Prix U.
+            8: { cellWidth: 20 } // Total
+          }
+        }
+      })(),
       didDrawPage: (data) => {
         drawHeader(doc.internal.getCurrentPageInfo().pageNumber, plannedPages)
         // drawFooter(doc.internal.getCurrentPageInfo().pageNumber, plannedPages) - Rimosso per evitare duplicazione
       }
     })
-    // Calcola il sotto-totale della zona (escludendo articoli informativi)
-    let zoneSubtotal = 0
-    if (Array.isArray(zone.produits)) {
-      zoneSubtotal = zone.produits.reduce((acc, p) => acc + (p.informativo ? 0 : (p.total || 0)), 0)
-    }
-    // Posizione del sotto‑totale sotto la tabella
+    // Calcola il sotto-totale della zona (escludendo articoli informativi) solo se i prezzi sono visibili
     const finalY = doc.lastAutoTable.finalY || tableStartY + 10
-    doc.setFontSize(9)
-    doc.setFont('Helvetica', 'bold')
-    doc.text(`Sous-total: ${zoneSubtotal.toFixed(2)} CHF`, 170, finalY + 6, { align: 'right' })
-    tableStartY = finalY + 15
+    if (!props.hidePrices) {
+      let zoneSubtotal = 0
+      if (Array.isArray(zone.produits)) {
+        zoneSubtotal = zone.produits.reduce((acc, p) => acc + (p.informativo ? 0 : (p.total || 0)), 0)
+      }
+      // Posizione del sotto‑totale sotto la tabella
+      doc.setFontSize(9)
+      doc.setFont('Helvetica', 'bold')
+      doc.text(`Sous-total: ${zoneSubtotal.toFixed(2)} CHF`, 170, finalY + 6, { align: 'right' })
+      tableStartY = finalY + 15
+    } else {
+      tableStartY = finalY + 10
+    }
   })
 
-  // Sezione totali con remise détaillée
-  const subtotalSansRemise = devisTotal.value
-  const remisePct = props.remiseSupplementaire || 0
-  const montantRemise = subtotalSansRemise * (remisePct / 100)
-  const totalAvecRemise = subtotalSansRemise - montantRemise
-  
-  doc.setFontSize(9)
-  doc.setFont('Helvetica', 'normal')
-  doc.text(`Sous-total:`, 80, tableStartY + 6)
-  doc.text(`${subtotalSansRemise.toFixed(2)} CHF`, 170, tableStartY + 6, { align: 'right' })
-  
-  if (remisePct > 0) {
-    doc.text(`Remise suppl. (${remisePct}%):`, 80, tableStartY + 12)
-    doc.text(`-${montantRemise.toFixed(2)} CHF`, 170, tableStartY + 12, { align: 'right' })
-    tableStartY += 6
+  // Sezione totali con remise détaillée (solo se i prezzi sono visibili)
+  if (!props.hidePrices) {
+    const subtotalSansRemise = devisTotal.value
+    const remisePct = props.remiseSupplementaire || 0
+    const montantRemise = subtotalSansRemise * (remisePct / 100)
+    const totalAvecRemise = subtotalSansRemise - montantRemise
+    
+    doc.setFontSize(9)
+    doc.setFont('Helvetica', 'normal')
+    doc.text(`Sous-total:`, 80, tableStartY + 6)
+    doc.text(`${subtotalSansRemise.toFixed(2)} CHF`, 170, tableStartY + 6, { align: 'right' })
+    
+    if (remisePct > 0) {
+      doc.text(`Remise suppl. (${remisePct}%):`, 80, tableStartY + 12)
+      doc.text(`-${montantRemise.toFixed(2)} CHF`, 170, tableStartY + 12, { align: 'right' })
+      tableStartY += 6
+    }
+    
+    doc.setFontSize(10)
+    doc.setFont('Helvetica', 'bold')
+    doc.text(`Total Devis:`, 80, tableStartY + 12)
+    doc.text(`${totalAvecRemise.toFixed(2)} CHF`, 170, tableStartY + 12, { align: 'right' })
+    tableStartY += 26
+  } else {
+    // Se i prezzi sono nascosti, aggiungiamo solo un po' di spazio
+    tableStartY += 15
   }
-  
-  doc.setFontSize(10)
-  doc.setFont('Helvetica', 'bold')
-  doc.text(`Total Devis:`, 80, tableStartY + 12)
-  doc.text(`${totalAvecRemise.toFixed(2)} CHF`, 170, tableStartY + 12, { align: 'right' })
-  tableStartY += 26
 
   // Ora aggiungiamo la sezione "Détail des Suppléments par Zone" se esistono dati (non per railEnergie)
   if (!isRailEnergie && Array.isArray(props.supplementParZone) && props.supplementParZone.length) {
@@ -543,8 +621,9 @@ const generatePdf = async () => {
   const clientName = props.nomClient.replace(/[^a-zA-Z0-9]/g, '_') || 'Client'
   const chantierName = props.nomChantier.split(' - ')[0].replace(/[^a-zA-Z0-9]/g, '_') || 'Chantier'
   const numeroDevis = props.numeroDevis || 'DEV-000'
+  const priceSuffix = props.hidePrices ? '_SANS_PRIX' : ''
   
-  doc.save(`${clientName}_${chantierName}_${numeroDevis}.pdf`)
+  doc.save(`${clientName}_${chantierName}_${numeroDevis}${priceSuffix}.pdf`)
 };
 
 // Expose the generatePdf method

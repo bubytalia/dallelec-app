@@ -59,6 +59,13 @@
         </label>
         <div class="form-text">Cochez cette case si vous ne voulez pas afficher la page avec la liste des suppléments dans le PDF de ce devis.</div>
       </div>
+      <div class="form-check mt-3">
+        <input class="form-check-input" type="checkbox" id="hidePrices" v-model="hidePrices" />
+        <label class="form-check-label" for="hidePrices">
+          Masquer les prix dans le PDF
+        </label>
+        <div class="form-text">Cochez cette case pour générer un devis sans prix (utile pour les devis informatifs).</div>
+      </div>
     </div>
 
     <!-- Boutons de navigation -->
@@ -85,6 +92,7 @@
       :notes="notes"
       :famillesVisibles="famillesVisibles"
       :hideSupplementsList="hideSupplementsList"
+      :hidePrices="hidePrices"
       :remiseSupplementaire="devisData?.discount || 0"
       :modalitaPrezzi="devisData?.modalita_prezzi || 'scontistica'"
       style="display: none;"
@@ -149,6 +157,9 @@ const notes = ref('');
 
 // Opzione per nascondere lista supplementi nel PDF
 const hideSupplementsList = ref(false);
+
+// Opzione per nascondere i prezzi nel PDF
+const hidePrices = ref(false);
 
 // Références aux composants PDF
 const pdfRef = ref(null);
@@ -382,6 +393,11 @@ onMounted(async () => {
         hideSupplementsList.value = data.hide_supplements_list;
       }
       
+      // Carica opzione nascondere prezzi
+      if (data.hide_prices !== undefined) {
+        hidePrices.value = data.hide_prices;
+      }
+      
       // Imposta selectedPaiement DOPO aver caricato paiements
       if (data.paiement) {
         selectedPaiement.value = data.paiement;
@@ -427,6 +443,7 @@ const sauvegarder = async (asDraft) => {
         conditions_ne_comprend_pas: selectedExcluIds.value,
         notes: notes.value,
         hide_supplements_list: hideSupplementsList.value,
+        hide_prices: hidePrices.value,
         updated_at: new Date().toISOString(),
       })
       .eq('id', devisId);

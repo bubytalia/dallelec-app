@@ -81,6 +81,7 @@
                 </td>
                 <td>
                   <button class="btn btn-sm btn-outline-secondary me-1" @click="voirDevis(devis.id)">Voir</button>
+                  <button class="btn btn-sm btn-outline-primary me-1" @click="duplicateDevis(devis)" title="Dupliquer pour un autre client">📋</button>
                   <button class="btn btn-sm btn-danger" @click="effacerDevis(devis.id)" title="Effacer le devis">🗑️</button>
                 </td>
               </tr>
@@ -309,5 +310,65 @@ const creerDevisSupplementaire = (devisBase) => {
   });
   
   router.push(`/admin/devis/create?${params.toString()}`);
+};
+
+// ✅ NUOVO: Funzione per duplicare devis per altro cliente
+const duplicateDevis = async (devisOriginale) => {
+  try {
+    // Genera nuovo numero devis
+    const numeroDevis = `DEV-${Date.now().toString().slice(-6)}`;
+    
+    // Crea una copia completa del devis originale
+    const nuovoDevis = {
+      numero: numeroDevis,
+      nom: `${devisOriginale.nom} - COPIE`,
+      adresse: devisOriginale.adresse,
+      client_id: null, // Sarà selezionato dall'utente
+      technicien: devisOriginale.technicien,
+      zones: devisOriginale.zones || [],
+      modalita_prezzi: devisOriginale.modalita_prezzi || 'scontistica',
+      remises: devisOriginale.remises || {},
+      produits: devisOriginale.produits || [],
+      total: devisOriginale.total || 0,
+      // Campi specifici per devis à corps
+      description_corps: devisOriginale.description_corps || null,
+      montant_corps: devisOriginale.montant_corps || null,
+      // Altri campi
+      discount: devisOriginale.discount || 0,
+      conditions_generales: devisOriginale.conditions_generales || [],
+      conditions_comprend: devisOriginale.conditions_comprend || [],
+      conditions_ne_comprend_pas: devisOriginale.conditions_ne_comprend_pas || [],
+      notes: devisOriginale.notes || '',
+      hide_supplements_list: devisOriginale.hide_supplements_list || false,
+      hide_prices: devisOriginale.hide_prices || false,
+      paiement: devisOriginale.paiement || null,
+      // Stato iniziale
+      draft: true, // Inizia come bozza per permettere modifica cliente
+      status: 'En cours',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    // Inserisci il nuovo devis nel database
+    const { data: newDevis, error } = await supabase
+      .from('devis')
+      .insert([nuovoDevis])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    // Aggiorna la lista locale
+    devis.value.push(newDevis);
+    
+    alert(`Devis dupliqué avec succès! Numéro: ${numeroDevis}\nVous pouvez maintenant changer le client.`);
+    
+    // Naviga alla modifica del nuovo devis
+    router.push(`/admin/devis/edit/${newDevis.id}`);
+    
+  } catch (error) {
+    console.error('Erreur lors de la duplication du devis:', error);
+    alert('Erreur lors de la duplication: ' + error.message);
+  }
 };
 </script>
