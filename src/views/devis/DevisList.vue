@@ -340,6 +340,7 @@ const duplicateDevis = async (devisOriginale) => {
       conditions_ne_comprend_pas: devisOriginale.conditions_ne_comprend_pas || [],
       notes: devisOriginale.notes || '',
       hide_supplements_list: devisOriginale.hide_supplements_list || false,
+      hide_prices: devisOriginale.hide_prices || false,
       paiement: devisOriginale.paiement || null,
       // Stato iniziale
       draft: true, // Inizia come bozza per permettere modifica cliente
