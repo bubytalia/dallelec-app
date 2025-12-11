@@ -393,10 +393,10 @@ onMounted(async () => {
         hideSupplementsList.value = data.hide_supplements_list;
       }
       
-      // Carica opzione nascondere prezzi
-      if (data.hide_prices !== undefined) {
-        hidePrices.value = data.hide_prices;
-      }
+      // Carica opzione nascondere prezzi (temporaneamente disabilitato - colonna non esiste)
+      // if (data.hide_prices !== undefined) {
+      //   hidePrices.value = data.hide_prices;
+      // }
       
       // Imposta selectedPaiement DOPO aver caricato paiements
       if (data.paiement) {
@@ -443,7 +443,6 @@ const sauvegarder = async (asDraft) => {
         conditions_ne_comprend_pas: selectedExcluIds.value,
         notes: notes.value,
         hide_supplements_list: hideSupplementsList.value,
-        hide_prices: hidePrices.value,
         updated_at: new Date().toISOString(),
       })
       .eq('id', devisId);
