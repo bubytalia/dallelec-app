@@ -457,6 +457,20 @@ const continuerVersDevis = async () => {
     // Per ora usiamo un numero semplice basato sul timestamp
     const numeroDevis = `DEV-${Date.now().toString().slice(-6)}`;
 
+    // Carica dati extra se è una duplicazione
+    let extraData = {};
+    try {
+      const duplicateExtra = localStorage.getItem('duplicateDevisExtra');
+      if (duplicateExtra) {
+        extraData = JSON.parse(duplicateExtra);
+        // Pulisci localStorage dopo l'uso
+        localStorage.removeItem('duplicateDevisData');
+        localStorage.removeItem('duplicateDevisExtra');
+      }
+    } catch (e) {
+      console.warn('Errore caricamento dati extra:', e);
+    }
+    
     const newDevis = {
       numero: numeroDevis,
       nom: form.value.nom,
@@ -469,8 +483,17 @@ const continuerVersDevis = async () => {
       description_corps: form.value.description_corps || null,
       montant_corps: form.value.montant_corps || null,
       created_at: new Date().toISOString(),
-      produits: [],
-      total: modalitaPrezzi.value === 'aCorps' ? form.value.montant_corps : 0,
+      // Dati dalla duplicazione o default
+      produits: extraData.produits || [],
+      total: extraData.produits ? extraData.produits.reduce((sum, p) => sum + (p.total || 0), 0) : (modalitaPrezzi.value === 'aCorps' ? form.value.montant_corps : 0),
+      discount: extraData.discount || 0,
+      conditions_generales: extraData.conditions_generales || [],
+      conditions_comprend: extraData.conditions_comprend || [],
+      conditions_ne_comprend_pas: extraData.conditions_ne_comprend_pas || [],
+      notes: extraData.notes || '',
+      hide_supplements_list: extraData.hide_supplements_list || false,
+      hide_prices: extraData.hide_prices || false,
+      paiement: extraData.paiement || null,
       draft: false,
       status: modalitaPrezzi.value === 'aCorps' ? 'Terminé' : 'En cours'
     };
@@ -645,11 +668,20 @@ onMounted(async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const isDuplicate = urlParams.get('duplicate') === 'true';
     const baseDevisId = urlParams.get('baseDevisId');
+    const isDuplicateDevis = urlParams.get('duplicate_devis') === 'true';
+    const sourceDevisId = urlParams.get('source_devis_id');
     
     if (isDuplicate && baseDevisId) {
       console.log('🔄 Modalità duplicazione devis da:', baseDevisId);
       isDuplicateMode.value = true;
       await loadBaseDevisData(baseDevisId);
+      return; // Esce qui per evitare caricamento localStorage
+    }
+    
+    // ✅ NUOVO: Gestione duplicazione devis completa
+    if (isDuplicateDevis && sourceDevisId) {
+      console.log('📋 Modalità duplicazione devis completa da:', sourceDevisId);
+      await loadDuplicateDevisData(urlParams);
       return; // Esce qui per evitare caricamento localStorage
     }
 
@@ -726,6 +758,54 @@ onMounted(async () => {
     console.error('Errore caricamento dati:', error);
   }
 });
+
+// ✅ NUOVO: Funzione per caricare dati dalla duplicazione devis
+const loadDuplicateDevisData = async (urlParams) => {
+  try {
+    // Carica dati base dai parametri URL
+    form.value.nom = urlParams.get('nom') || '';
+    form.value.adresse = urlParams.get('adresse') || '';
+    form.value.technicien = urlParams.get('technicien') || '';
+    modalitaPrezzi.value = urlParams.get('modalita_prezzi') || 'scontistica';
+    
+    // Carica dati completi dal localStorage
+    try {
+      const duplicateData = localStorage.getItem('duplicateDevisData');
+      if (duplicateData) {
+        const data = JSON.parse(duplicateData);
+        
+        zones.value = data.zones || [];
+        remiseSelection.value = data.remises || {};
+        form.value.description_corps = data.description_corps || '';
+        form.value.montant_corps = data.montant_corps || 0;
+        
+        // Salva anche gli altri dati per il salvataggio successivo
+        localStorage.setItem('duplicateDevisExtra', JSON.stringify({
+          produits: data.produits || [],
+          discount: data.discount || 0,
+          conditions_generales: data.conditions_generales || [],
+          conditions_comprend: data.conditions_comprend || [],
+          conditions_ne_comprend_pas: data.conditions_ne_comprend_pas || [],
+          notes: data.notes || '',
+          hide_supplements_list: data.hide_supplements_list || false,
+          hide_prices: data.hide_prices || false,
+          paiement: data.paiement || null
+        }));
+        
+        console.log('✅ Dati duplicazione caricati:', {
+          zones: zones.value.length,
+          remises: Object.keys(remiseSelection.value).length,
+          modalita: modalitaPrezzi.value
+        });
+      }
+    } catch (e) {
+      console.warn('Errore caricamento dati duplicazione:', e);
+    }
+    
+  } catch (error) {
+    console.error('Errore loadDuplicateDevisData:', error);
+  }
+};
 
 // ✅ NUOVO: Funzione per caricare dati dal devis base
 const loadBaseDevisData = async (baseDevisId) => {
