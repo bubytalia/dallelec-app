@@ -127,8 +127,16 @@ const formValide = computed(() => {
     produit.nom?.toLowerCase().includes('ora')
   );
   
-  // Per prodotti "ore" o "solo informativi", permetti quantità 0
-  const quantityValid = (isHourProduct || soloInformativo.value) ? quantiteML.value >= 0 : quantiteML.value > 0;
+  // Verifica se ci sono supplementi selezionati con quantità > 0
+  const hasSupplements = selectedSupplements.value.some(suppName => {
+    const qty = suppQuantities.value[suppName] || 0;
+    return qty > 0;
+  });
+  
+  // Per prodotti "ore", "solo informativi", o quando ci sono supplementi, permetti quantità 0
+  const quantityValid = (isHourProduct || soloInformativo.value || hasSupplements) ? 
+    quantiteML.value >= 0 : quantiteML.value > 0;
+  
   const baseValid = selectedProduitId.value && selectedZone.value && quantityValid;
   
   if (props.modalitaPrezzi === 'prezziFissi') {
@@ -253,8 +261,13 @@ const ajouterLigne = () => {
     }
   }
   
-  // Per prodotti "ore" con quantità 0 o articoli "solo informativi", il totale è 0
-  const total = (isHourProduct && quantiteML.value === 0) || soloInformativo.value ? 0 : totalML * prixFinal;
+  // Calcolo del totale:
+  // - Se "solo informativo": totale = 0
+  // - Se prodotto "ore" con quantità 0 e nessun supplemento: totale = 0
+  // - Altrimenti: totalML * prixFinal (include supplementi anche se quantità prodotto = 0)
+  const total = soloInformativo.value ? 0 : 
+    (isHourProduct && quantiteML.value === 0 && totalSuppML === 0) ? 0 : 
+    totalML * prixFinal;
 
   const newItem = {
     zone: selectedZone.value,
@@ -333,8 +346,13 @@ const modifierLigne = () => {
     }
   }
   
-  // Per prodotti "ore" con quantità 0 o articoli "solo informativi", il totale è 0
-  const total = (isHourProduct && quantiteML.value === 0) || soloInformativo.value ? 0 : totalML * prixFinal;
+  // Calcolo del totale:
+  // - Se "solo informativo": totale = 0
+  // - Se prodotto "ore" con quantità 0 e nessun supplemento: totale = 0
+  // - Altrimenti: totalML * prixFinal (include supplementi anche se quantità prodotto = 0)
+  const total = soloInformativo.value ? 0 : 
+    (isHourProduct && quantiteML.value === 0 && totalSuppML === 0) ? 0 : 
+    totalML * prixFinal;
 
   const updatedItem = {
     zone: selectedZone.value,

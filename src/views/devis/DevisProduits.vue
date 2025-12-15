@@ -34,8 +34,10 @@
   <button class="btn btn-success me-2" @click="sauvegarderDevis(false)">📥 Sauvegarder le devis</button>
   <!-- Salvataggio come bozza -->
   <button class="btn btn-outline-primary me-2" @click="sauvegarderDevis(true)">💾 Sauver comme brouillon</button>
-  <!-- Abbandono del preventivo -->
-  <button class="btn btn-danger me-2" @click="abandonnerDevis">❌ Abandonner</button>
+  <!-- Annulla modifiche correnti -->
+  <button class="btn btn-warning me-2" @click="annullerModifications">↶ Annuler modifications</button>
+  <!-- Abbandono del preventivo (solo per bozze) -->
+  <button class="btn btn-danger me-2" @click="abandonnerDevis" v-if="isDraft">❌ Supprimer brouillon</button>
   <!-- Passa alla pagina delle condizioni (terza pagina) -->
   <button class="btn btn-info" @click="gotoConditions">→ Conditions</button>
 </div>
@@ -145,6 +147,8 @@ const remiseFamilles = ref(0);
 
 // Modalità prezzi del devis
 const modalitaPrezzi = ref('scontistica');
+const isDraft = ref(true);
+const originalDevisItems = ref([]);
 
 /**
  * Salva il devis su Supabase.
@@ -205,12 +209,58 @@ const sauvegarderDevis = async (asDraft = false) => {
 };
 
 /**
- * Abbandona il devis: conferma, elimina il documento e il backup locale.
+ * Annulla le modifiche correnti e ricarica i dati originali dal database
  */
-const abandonnerDevis = async () => {
-  if (!confirm('Sei sicuro di voler abbandonare il devis? Tutte le modifiche non salvate verranno perse.')) {
+const annullerModifications = async () => {
+  if (!confirm('Annuler toutes les modifications non sauvegardées?')) {
     return;
   }
+  
+  try {
+    // Ricarica i dati originali dal database
+    const { data: devisData, error } = await supabase
+      .from('devis')
+      .select('*')
+      .eq('id', devisId)
+      .single();
+    
+    if (error) throw error;
+    
+    if (devisData) {
+      // Ripristina i prodotti originali
+      if (Array.isArray(devisData.produits)) {
+        devisItems.value = devisData.produits.map(item => ({ ...item }));
+      } else {
+        devisItems.value = [];
+      }
+      
+      // Ripristina lo sconto originale
+      remiseSupplementaire.value = Number(devisData.discount) || 0;
+      
+      // Pulisci il form di editing
+      editingItem.value = null;
+      
+      alert('Modifications annulées. Données restaurées.');
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'annulation:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+/**
+ * Elimina il devis solo se è una bozza
+ */
+const abandonnerDevis = async () => {
+  if (!isDraft.value) {
+    alert('Impossible de supprimer un devis sauvegardé définitivement.');
+    return;
+  }
+  
+  if (!confirm('Supprimer définitivement ce brouillon de devis?')) {
+    return;
+  }
+  
   try {
     const { error } = await supabase
       .from('devis')
@@ -220,7 +270,7 @@ const abandonnerDevis = async () => {
     if (error) throw error;
     
     localStorage.removeItem('devisItems');
-    alert('Bozza eliminata.');
+    alert('Brouillon supprimé.');
     router.push('/admin/devis/list');
   } catch (error) {
     console.error('Erreur Supabase:', error);
@@ -303,13 +353,12 @@ onMounted(async () => {
       nomChantier.value = devisData.adresse || '';
       zones.value = devisData.zones || [];
       modalitaPrezzi.value = devisData.modalita_prezzi || 'scontistica';
+      isDraft.value = devisData.draft !== false; // true se draft è true o undefined
     
-
-    
-
       // Carica gli items del devis (prodotti) dal documento se esistenti
       if (Array.isArray(devisData.produits) && devisData.produits.length > 0) {
         devisItems.value = devisData.produits.map(item => ({ ...item }));
+        originalDevisItems.value = JSON.parse(JSON.stringify(devisItems.value));
       }
       // Se esiste uno sconto salvato nel documento, caricalo come valore di default
       if (devisData.discount !== undefined) {
