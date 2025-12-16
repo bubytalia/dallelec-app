@@ -548,9 +548,6 @@ const generatePdf = async () => {
       doc.text(lines, 12, yCond)
       yCond += lines.length * 6
     })
-  } else {
-    doc.text('- Ponts roulant et nacelles', 12, yCond)
-    yCond += 6
   }
   
   // "Le devis ne comprend pas"
@@ -568,19 +565,6 @@ const generatePdf = async () => {
       doc.text(lines, 12, yCond)
       yCond += lines.length * 6
     })
-  } else {
-    doc.text('- Mise à disposition d\'un local pour se changer et garder les outils', 12, yCond)
-    yCond += 6
-    doc.text('- La mise à la terre et sa continuitée', 12, yCond)
-    yCond += 6
-    doc.text('- La fourniture de matériel, compris goujon d\'encrage', 12, yCond)
-    yCond += 6
-    doc.text('- Main d\'oeuvre nécessaire pour déplacement matériels qui empêchent l\'installation', 12, yCond)
-    yCond += 6
-    doc.text('- La coordination avec la direction des travaux', 12, yCond)
-    yCond += 6
-    doc.text('- Traitement déchets dehors de chantier', 12, yCond)
-    yCond += 6
   }
   
   // Note
