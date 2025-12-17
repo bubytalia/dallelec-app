@@ -44,12 +44,22 @@
 
       <div>
         <label>Zones de chantier</label>
-        <input
-          v-model="newZone"
-          @keyup.enter="addZone"
-          class="form-control mb-2"
-          placeholder="Ajouter une zone et appuyez sur Entrée"
-        />
+        <div class="input-group mb-2">
+          <input
+            v-model="newZone"
+            @keyup.enter="addZone"
+            class="form-control"
+            placeholder="Ajouter une zone"
+          />
+          <button 
+            class="btn btn-outline-primary" 
+            type="button" 
+            @click="addZone"
+            :disabled="!newZone.trim()"
+          >
+            + Ajouter
+          </button>
+        </div>
         <div>
           <span v-for="(zone, index) in zones" :key="index" class="badge bg-primary me-2">
             {{ zone }} <span class="ms-1 cursor-pointer" @click="removeZone(index)">&times;</span>
