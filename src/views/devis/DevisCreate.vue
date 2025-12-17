@@ -52,12 +52,13 @@
             placeholder="Ajouter une zone"
           />
           <button 
-            class="btn btn-outline-primary" 
+            class="btn btn-primary btn-lg" 
             type="button" 
             @click="addZone"
             :disabled="!newZone.trim()"
+            style="min-width: 120px; font-size: 18px;"
           >
-            + Ajouter
+            ➕ Ajouter
           </button>
         </div>
         <div>
