@@ -71,6 +71,24 @@ export async function generateFacturePDF(facture, chantier, chantierDevis, clien
       doc.setFont('helvetica', 'bold');
       doc.text(`TOTAL TTC: ${ttc.toFixed(2)} CHF`, 140, finalY + 17);
       
+      // Condizioni di pagamento
+      const conditionsY = finalY + 35;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      // Estrai condizioni dalle notes
+      const conditionsMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
+      const conditionsPaiement = conditionsMatch ? conditionsMatch[1].trim() : '30 jours net';
+      
+      // Calcola data scadenza
+      const dateFacture = new Date(facture.date_facture);
+      const dateEcheance = facture.date_echeance ? 
+        new Date(facture.date_echeance).toLocaleDateString('fr-FR') :
+        dateFacture.toLocaleDateString('fr-FR');
+      
+      doc.text(`Conditions de paiement: ${conditionsPaiement}`, 10, conditionsY);
+      doc.text(`Date d'échéance: ${dateEcheance}`, 10, conditionsY + 7);
+      
       return doc;
     }
 
@@ -145,6 +163,23 @@ export async function generateFacturePDF(facture, chantier, chantierDevis, clien
       doc.text(acconti > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:', 125, yPos + 28);
       doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPos + 28, { align: 'right' });
       
+      // Condizioni di pagamento
+      const conditionsY = yPos + 50;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      // Estrai condizioni dalle notes
+      const conditionsMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
+      const conditionsPaiement = conditionsMatch ? conditionsMatch[1].trim() : '30 jours net';
+      
+      // Calcola data scadenza
+      const dateEcheance = facture.date_echeance ? 
+        new Date(facture.date_echeance).toLocaleDateString('fr-FR') :
+        new Date(facture.date_facture).toLocaleDateString('fr-FR');
+      
+      doc.text(`Conditions de paiement: ${conditionsPaiement}`, 10, conditionsY);
+      doc.text(`Date d'échéance: ${dateEcheance}`, 10, conditionsY + 7);
+      
       return doc;
     }
 
@@ -189,6 +224,23 @@ export async function generateFacturePDF(facture, chantier, chantierDevis, clien
       doc.setFont('helvetica', 'bold');
       doc.text('TOTAL TTC:', 125, yPos + 20);
       doc.text(`${totalTTC.toFixed(2)} CHF`, 190, yPos + 20, { align: 'right' });
+      
+      // Condizioni di pagamento
+      const conditionsY = yPos + 40;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      // Estrai condizioni dalle notes
+      const conditionsMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
+      const conditionsPaiement = conditionsMatch ? conditionsMatch[1].trim() : '30 jours net';
+      
+      // Calcola data scadenza
+      const dateEcheance = facture.date_echeance ? 
+        new Date(facture.date_echeance).toLocaleDateString('fr-FR') :
+        new Date(facture.date_facture).toLocaleDateString('fr-FR');
+      
+      doc.text(`Conditions de paiement: ${conditionsPaiement}`, 10, conditionsY);
+      doc.text(`Date d'échéance: ${dateEcheance}`, 10, conditionsY + 7);
       
       return doc;
     }

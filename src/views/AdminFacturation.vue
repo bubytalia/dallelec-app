@@ -1891,7 +1891,7 @@ const modifierFacture = (facture) => {
   nouvelleDate.value = facture.date_facture || facture.dateFacture;
   nouvelleDateEcheance.value = facture.date_echeance || facture.dateEcheance || '';
   // Estrai modalità pagamento dalle notes
-  const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+  const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
   nouvelleModalitePaiement.value = modalitaMatch ? modalitaMatch[1].trim() : '';
   console.log('🔍 Modalità estratta:', nouvelleModalitePaiement.value);
   nouvellesNotes.value = facture.notes || '';
@@ -2403,7 +2403,7 @@ const genererPDF = async (facture) => {
       doc.text(`${ttc.toFixed(2)} CHF`, 195, finalY + 20, { align: 'right' });
       
       // Conditions de paiement dalle notes
-      const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+      const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
       const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
       
       doc.setFont('helvetica', 'normal');
@@ -3197,7 +3197,7 @@ const genererPDF = async (facture) => {
       docFacture.setTextColor(100, 100, 100);
       
       // Estrai modalità di pagamento dalle notes
-      const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+      const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
       const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
       
       docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, footerY);
@@ -3580,7 +3580,7 @@ const genererPDF = async (facture) => {
       doc.setTextColor(80, 80, 80);
       
       // Estrai modalità di pagamento dalle notes
-      const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+      const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
       const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
       
       doc.text(`Conditions de paiement: ${modalitaPagamento}`, 15, footerY);
@@ -4008,7 +4008,7 @@ const genererPDF = async (facture) => {
     docFacture.setTextColor(100, 100, 100);
     
     // Estrai modalità di pagamento dalle notes
-    const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/);
+    const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
     const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
     
     docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, 270);
