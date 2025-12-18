@@ -6,10 +6,10 @@
     <h2 class="text-center mb-4">Modalités de Paiement</h2>
     
     <div class="alert alert-info mb-4">
-      <h6>💡 Spiegazione campi:</h6>
+      <h6>💡 Explication des champs:</h6>
       <ul class="mb-0">
-        <li><strong>Calcolo Scadenza:</strong> Giorni aggiunti alla data fattura per calcolare la scadenza</li>
-        <li><strong>Testo Cliente:</strong> Giorni mostrati nel PDF al cliente (es: "15 jours net")</li>
+        <li><strong>Calcul Échéance:</strong> Jours ajoutés à la date facture pour calculer l'échéance</li>
+        <li><strong>Texte Client:</strong> Jours affichés dans le PDF au client (ex: "15 jours net")</li>
       </ul>
     </div>
 
@@ -18,12 +18,12 @@
         <input v-model="newPaiement.nom" placeholder="Nom du mode de paiement" class="form-control" />
       </div>
       <div class="col-md-3">
-        <input v-model="newPaiement.giorni_calcolo" type="number" placeholder="Giorni per calcolo scadenza" class="form-control" />
-        <small class="text-muted">Per calcolare la data di scadenza</small>
+        <input v-model="newPaiement.giorni_calcolo" type="number" placeholder="Jours pour calcul échéance" class="form-control" />
+        <small class="text-muted">Pour calculer la date d'échéance</small>
       </div>
       <div class="col-md-3">
-        <input v-model="newPaiement.jours_echeance" type="number" placeholder="Giorni mostrati nel PDF" class="form-control" />
-        <small class="text-muted">Testo mostrato al cliente</small>
+        <input v-model="newPaiement.jours_echeance" type="number" placeholder="Jours affichés dans PDF" class="form-control" />
+        <small class="text-muted">Texte affiché au client</small>
       </div>
     </div>
 
@@ -34,9 +34,9 @@
     <table class="table table-striped">
       <thead>
         <tr>
-          <th>Modalità</th>
-          <th>Calcolo Scadenza</th>
-          <th>Testo Cliente</th>
+          <th>Modalité</th>
+          <th>Calcul Échéance</th>
+          <th>Texte Client</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -46,11 +46,11 @@
             <td><input v-model="editPaiement.nom" class="form-control" /></td>
             <td>
               <input v-model="editPaiement.giorni_calcolo" type="number" class="form-control" style="width:80px" />
-              <small class="text-muted">giorni</small>
+              <small class="text-muted">jours</small>
             </td>
             <td>
               <input v-model="editPaiement.jours_echeance" type="number" class="form-control" style="width:80px" />
-              <small class="text-muted">giorni</small>
+              <small class="text-muted">jours</small>
             </td>
             <td>
               <button class="btn btn-success btn-sm me-1" @click="updatePaiement(p.id)">✔</button>
@@ -59,8 +59,8 @@
           </template>
           <template v-else>
             <td>{{ p.nom }}</td>
-            <td>{{ p.giorni_calcolo || 30 }} giorni</td>
-            <td>{{ p.jours_echeance || p.giorni_calcolo || 30 }} giorni</td>
+            <td>{{ p.giorni_calcolo || 30 }} jours</td>
+            <td>{{ p.jours_echeance || p.giorni_calcolo || 30 }} jours</td>
             <td>
               <button class="btn btn-warning btn-sm me-1" @click="startEdit(p)">✎</button>
               <button class="btn btn-danger btn-sm" @click="deletePaiement(p.id)">🗑</button>
