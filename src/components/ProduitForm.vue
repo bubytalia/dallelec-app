@@ -23,9 +23,11 @@
               :key="p.id" 
               @mousedown="selectProduit(p)"
               class="dropdown-item"
+              :class="{ 'text-danger': !Number(p.prix) || Number(p.prix) <= 0 }"
               type="button"
             >
               <strong>{{ p.article }}</strong> - {{ p.description }} ({{ p.taille }})
+              <span v-if="!Number(p.prix) || Number(p.prix) <= 0" class="badge bg-danger ms-2">SANS PRIX</span>
             </button>
           </div>
         </div>
@@ -118,8 +120,16 @@ const searchText = ref('');
 const showDropdown = ref(false);
 
 const formValide = computed(() => {
-  // Trova il prodotto selezionato per verificare se è un prodotto "ore"
+  // Verifica se il prodotto selezionato ha un prezzo valido
   const produit = produits.value.find(p => p.id === selectedProduitId.value);
+  if (produit) {
+    const prix = Number(produit.prix);
+    if (!prix || prix <= 0) {
+      return false; // Form non valido se prezzo mancante
+    }
+  }
+  
+  // Trova il prodotto selezionato per verificare se è un prodotto "ore"
   const isHourProduct = produit && (
     produit.description?.toLowerCase().includes('heure') ||
     produit.description?.toLowerCase().includes('ora') ||
@@ -173,6 +183,13 @@ const filteredProduits = computed(() => {
 });
 
 const selectProduit = (produit) => {
+  // Verifica se il prodotto ha un prezzo valido
+  const prix = Number(produit.prix);
+  if (!prix || prix <= 0) {
+    alert(`⚠️ ATTENTION: L'article ${produit.article} n'a pas de prix défini.\nVeuillez contacter l'administrateur pour corriger le prix de cet article.`);
+    return;
+  }
+  
   selectedProduitId.value = produit.id;
   searchText.value = `${produit.article} - ${produit.description} (${produit.taille})`;
   showDropdown.value = false;
