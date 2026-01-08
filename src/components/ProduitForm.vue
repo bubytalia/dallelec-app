@@ -248,16 +248,17 @@ const ajouterLigne = () => {
     prixFinal = prezzoManuale.value;
   } else if (props.modalitaPrezzi === 'railEnergie') {
     // Modalità rail d'énergie: usa prezzo base senza sconti
-    prixFinal = produit.prix;
+    prixFinal = Number(produit.prix) || 0;
   } else {
     // Modalità remise: controlla se è prezzo netto
     if (produit.prezzo_netto) {
       // Prezzo netto: non applicare sconti
-      prixFinal = produit.prix;
+      prixFinal = Number(produit.prix) || 0;
     } else {
       // Applica sconto famiglie
       const remisePct = typeof props.discountFamille === 'number' ? props.discountFamille : 0;
-      prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+      const basePrix = Number(produit.prix) || 0;
+      prixFinal = localEditingItem.value ? localEditingItem.value.prix : basePrix * (1 - (remisePct / 100));
     }
   }
   
@@ -283,7 +284,7 @@ const ajouterLigne = () => {
     total,
     informativo: soloInformativo.value,
     // Dati congelati dal momento della creazione
-    prixOriginal: produit.prix,
+    prixOriginal: Number(produit.prix) || 0,
     descriptionOriginal: produit.description,
     tailleOriginal: produit.taille,
     uniteOriginal: produit.unite,
@@ -333,16 +334,17 @@ const modifierLigne = () => {
     prixFinal = prezzoManuale.value;
   } else if (props.modalitaPrezzi === 'railEnergie') {
     // Modalità rail d'énergie: usa prezzo base senza sconti
-    prixFinal = produit.prix;
+    prixFinal = Number(produit.prix) || 0;
   } else {
     // Modalità remise: controlla se è prezzo netto
     if (produit.prezzo_netto) {
       // Prezzo netto: non applicare sconti
-      prixFinal = produit.prix;
+      prixFinal = Number(produit.prix) || 0;
     } else {
       // Mantieni il prezzo esistente o applica sconto
       const remisePct = typeof props.discountFamille === 'number' ? props.discountFamille : 0;
-      prixFinal = localEditingItem.value ? localEditingItem.value.prix : produit.prix * (1 - (remisePct / 100));
+      const basePrix = Number(produit.prix) || 0;
+      prixFinal = localEditingItem.value ? localEditingItem.value.prix : basePrix * (1 - (remisePct / 100));
     }
   }
   
@@ -368,7 +370,7 @@ const modifierLigne = () => {
     total,
     informativo: soloInformativo.value,
     // Mantieni i dati originali congelati
-    prixOriginal: localEditingItem.value.prixOriginal || produit.prix,
+    prixOriginal: localEditingItem.value.prixOriginal || Number(produit.prix) || 0,
     descriptionOriginal: localEditingItem.value.descriptionOriginal || produit.description,
     tailleOriginal: localEditingItem.value.tailleOriginal || produit.taille,
     uniteOriginal: localEditingItem.value.uniteOriginal || produit.unite,
