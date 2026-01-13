@@ -275,7 +275,8 @@ const generatePdf = async () => {
       body: body,
       startY: tableStartY + 2,
       theme: 'plain',
-      pageBreak: 'avoid',
+      pageBreak: 'auto',
+      rowPageBreak: 'avoid',
       margin: { top: 35 }, // Aggiungiamo margine superiore per evitare sovrapposizione con logo
       headStyles: {
         fillColor: [230, 230, 230],
@@ -465,7 +466,8 @@ const generatePdf = async () => {
           body: body,
           startY: tableStartY + 6,
           theme: 'plain',
-          pageBreak: 'avoid',
+          pageBreak: 'auto',
+          rowPageBreak: 'avoid',
           margin: { top: 35 },
           headStyles: {
             fillColor: [240, 240, 240],
