@@ -145,9 +145,16 @@ const generatePdf = () => {
   const riepBody = [
     [`Già fatturato (${props.resocontoFinale.percentualeFatturata}%)`, `${props.resocontoFinale.importoFatturato.toFixed(2)} CHF`],
     ['Variazioni quantità', `${props.resocontoFinale.variazioniQuantita.toFixed(2)} CHF`],
-    ['Supplementi aggiuntivi', `${props.resocontoFinale.totalSupplementi.toFixed(2)} CHF`],
-    ['CONGUAGLIO FINALE', `${props.resocontoFinale.conguaglioFinale.toFixed(2)} CHF`]
+    ['Supplementi aggiuntivi', `${props.resocontoFinale.totalSupplementi.toFixed(2)} CHF`]
   ];
+  
+  // Aggiungi riga acconti se presenti
+  if (props.resocontoFinale.accontiPrecedenti && props.resocontoFinale.accontiPrecedenti > 0) {
+    riepBody.push(['Acomptes déjà facturés', `-${props.resocontoFinale.accontiPrecedenti.toFixed(2)} CHF`]);
+  }
+  
+  // Aggiungi riga finale
+  riepBody.push(['CONGUAGLIO FINALE', `${props.resocontoFinale.conguaglioFinale.toFixed(2)} CHF`]);
   
   autoTable(doc, {
     head: riepHead,
@@ -161,7 +168,8 @@ const generatePdf = () => {
       1: { cellWidth: 40, halign: 'right' }
     },
     didParseCell: (data) => {
-      if (data.row.index === 3) { // Riga finale
+      // Ultima riga è sempre il conguaglio finale
+      if (data.row.index === riepBody.length - 1) {
         data.cell.styles.fillColor = props.resocontoFinale.conguaglioFinale >= 0 ? [200, 255, 200] : [255, 200, 200];
         data.cell.styles.fontStyle = 'bold';
       }

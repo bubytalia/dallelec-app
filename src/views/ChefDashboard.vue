@@ -38,7 +38,7 @@
         <router-link to="/chef/chantiers/metrages-historique" class="btn btn-outline-dark w-100">📊 Historique Métrages</router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/chef/chantiers/resoconto-finale" class="btn btn-outline-danger w-100">📋 Resoconto Final</router-link>
+        <router-link to="/chef/chantiers/resoconto-finale" class="btn btn-outline-danger w-100">📋 Rapport Final</router-link>
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/aide" class="btn btn-outline-info w-100">❓ Aide</router-link>
