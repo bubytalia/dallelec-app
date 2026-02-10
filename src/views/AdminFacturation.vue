@@ -414,13 +414,13 @@
                               <span>Total HT:</span>
                               <strong>{{ calculateTotalHT().toFixed(2) }} CHF</strong>
                             </div>
-                            <div v-if="accontiPrecedentiResoconto > 0" class="d-flex justify-content-between mb-2 text-danger">
+                            <div v-if="totalAccontiZone > 0" class="d-flex justify-content-between mb-2 text-danger">
                               <span>Acconti HT:</span>
-                              <strong>-{{ accontiPrecedentiResoconto.toFixed(2) }} CHF</strong>
+                              <strong>-{{ totalAccontiZone.toFixed(2) }} CHF</strong>
                             </div>
-                            <div v-if="accontiPrecedentiResoconto > 0" class="d-flex justify-content-between mb-2">
+                            <div v-if="totalAccontiZone > 0" class="d-flex justify-content-between mb-2">
                               <span>Imponibile residuo:</span>
-                              <strong>{{ (calculateTotalHT() - accontiPrecedentiResoconto).toFixed(2) }} CHF</strong>
+                              <strong>{{ (calculateTotalHT() - totalAccontiZone).toFixed(2) }} CHF</strong>
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                               <span>TVA (8.1%):</span>
@@ -428,7 +428,7 @@
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between">
-                              <span class="h6">{{ accontiPrecedentiResoconto > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:' }}</span>
+                              <span class="h6">{{ totalAccontiZone > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:' }}</span>
                               <strong class="h5 text-success">{{ calculateTotalTTCWithAcconti().toFixed(2) }} CHF</strong>
                             </div>
                           </div>
@@ -436,15 +436,21 @@
                         
                         <div class="mt-3">
                           <div class="mb-3">
-                            <label class="form-label"><strong>Acconti già fatturati (CHF HT):</strong></label>
-                            <input 
-                              v-model.number="accontiPrecedentiResoconto" 
-                              type="number" 
-                              step="0.01" 
-                              class="form-control" 
-                              placeholder="0.00"
-                            >
-                            <small class="text-muted">Importo HT da sottrarre (es: 9250 per 2 acconti da 4625 HT + TVA)</small>
+                            <label class="form-label"><strong>Acomptes déjà facturés par zone (CHF HT):</strong></label>
+                            <div v-for="(percentage, zone) in detailResoconto.avancementi" :key="zone" class="mb-2">
+                              <label class="form-label small">{{ zone }}:</label>
+                              <input 
+                                v-model.number="accontiPerZona[zone]" 
+                                type="number" 
+                                step="0.01" 
+                                class="form-control form-control-sm" 
+                                :placeholder="`Acomptes pour ${zone}`"
+                              >
+                            </div>
+                            <div class="alert alert-info mt-2">
+                              <strong>Total acomptes: {{ totalAccontiZone.toFixed(2) }} CHF HT</strong>
+                            </div>
+                            <small class="text-muted">Montant HT à soustraire par zone</small>
                           </div>
                           
                           <div class="text-center">
@@ -904,6 +910,7 @@ const showDetailMetrage = ref(false);
 const detailMetrage = ref({});
 const accontiPrecedenti = ref(0);
 const accontiPrecedentiResoconto = ref(0);
+const accontiPerZona = ref({});
 const showDetailResoconto = ref(false);
 const detailResoconto = ref({});
 const showChangeStatut = ref(false);
@@ -1018,6 +1025,10 @@ const facturesImpayes = computed(() => {
   return factures.value
     .filter(f => f.statut === 'emise' || f.statut === 'envoyee' || f.statut === 'en_retard')
     .reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
+});
+
+const totalAccontiZone = computed(() => {
+  return Object.values(accontiPerZona.value).reduce((sum, val) => sum + (Number(val) || 0), 0);
 });
 
 const forceReload = async () => {
@@ -1304,6 +1315,13 @@ const voirDetailMetrage = (metrage) => {
 const voirDetailResoconto = (resoconto) => {
   detailResoconto.value = resoconto;
   accontiPrecedentiResoconto.value = 0; // Reset acconti
+  
+  // Inizializza accontiPerZona con 0 per ogni zona
+  accontiPerZona.value = {};
+  Object.keys(resoconto.avancementi || {}).forEach(zone => {
+    accontiPerZona.value[zone] = 0;
+  });
+  
   showDetailResoconto.value = true;
   
   // Debug per verificare i dati
@@ -1549,14 +1567,14 @@ const calculateTotalTTC = () => {
 
 const calculateTVAWithAcconti = () => {
   const totalHT = calculateTotalHT();
-  const acconti = Number(accontiPrecedentiResoconto.value || 0);
+  const acconti = Number(totalAccontiZone.value || 0);
   const imponibileResiduo = totalHT - acconti;
   return imponibileResiduo * 0.081;
 };
 
 const calculateTotalTTCWithAcconti = () => {
   const totalHT = calculateTotalHT();
-  const acconti = Number(accontiPrecedentiResoconto.value || 0);
+  const acconti = Number(totalAccontiZone.value || 0);
   const imponibileResiduo = totalHT - acconti;
   const tva = imponibileResiduo * 0.081;
   return imponibileResiduo + tva;
@@ -1625,7 +1643,7 @@ const approuverResoconto = async (resoconto) => {
     
     // USA NUMERO RISERVATO SE ESISTE (per correzioni)
     const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture();
-    const accontiInseriti = Number(accontiPrecedentiResoconto.value || 0);
+    const accontiInseriti = Number(totalAccontiZone.value || 0);
     
     // Calcola data scadenza (30 giorni dalla data fattura)
     const dataScadenza = new Date(dataScelta);
@@ -3443,42 +3461,41 @@ const genererPDF = async (facture) => {
           yPos = 20;
         }
         
-        // Titolo più grande e visibile per resoconti finali
-        if (resocontoDoc.type === 'resoconto_finale') {
-          doc.setFontSize(14);
-          doc.setFont('helvetica', 'bold');
-          doc.setFillColor(255, 255, 0); // Sfondo giallo
-          doc.rect(10, yPos - 3, 190, 10, 'F');
-          doc.setTextColor(200, 0, 0); // Testo rosso
-          doc.text('⚠️ SOTTRAZIONE ACOMPTES GIÀ FATTURATI', 15, yPos + 3);
-          doc.setTextColor(0, 0, 0);
-          yPos += 12;
-        } else {
-          doc.setFontSize(12);
-          doc.setFont('helvetica', 'bold');
-          doc.text('ACOMPTES PRÉCÉDENTS', 10, yPos);
-          yPos += 5;
-        }
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ACOMPTES PRÉCÉDENTS PAR ZONE', 10, yPos);
+        yPos += 5;
+        
+        // Crea tabella con acconti per zona
+        const accontiRows = [];
+        Object.entries(accontiPerZona.value).forEach(([zone, importo]) => {
+          if (importo > 0) {
+            accontiRows.push([
+              `Zone: ${zone}`,
+              `-${Number(importo).toFixed(2)} CHF`
+            ]);
+          }
+        });
+        
+        // Aggiungi riga totale
+        accontiRows.push([
+          { content: 'TOTAL ACOMPTES:', styles: { fontStyle: 'bold' } },
+          { content: `-${accontiModalValue.toFixed(2)} CHF`, styles: { fontStyle: 'bold' } }
+        ]);
         
         autoTable(doc, {
           head: [['Description', 'Montant HT']],
-          body: [[
-            resocontoDoc.type === 'resoconto_finale' ? 
-              'Acomptes précédents (40% du devis)' : 
-              'Acomptes déjà facturés',
-            `-${accontiModalValue.toFixed(2)} CHF`
-          ]],
+          body: accontiRows,
           startY: yPos,
           theme: 'grid',
           headStyles: { 
-            fillColor: resocontoDoc.type === 'resoconto_finale' ? [220, 53, 69] : [70, 130, 180], 
+            fillColor: [70, 130, 180], 
             textColor: 255, 
             fontSize: 10 
           },
           bodyStyles: { 
             fontSize: 10, 
-            fillColor: resocontoDoc.type === 'resoconto_finale' ? [255, 230, 230] : [255, 240, 240],
-            fontStyle: 'bold'
+            fillColor: [255, 240, 240]
           }
         });
         

@@ -306,10 +306,28 @@
 
 
 
+    <!-- Zone già aggiunte al resoconto -->
+    <div v-if="zoneSelezionate.length > 0" class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5>📋 Zones ajoutées au rapport ({{ zoneSelezionate.length }})</h5>
+      </div>
+      <div class="card-body">
+        <div v-for="(zona, idx) in zoneSelezionate" :key="idx" class="alert alert-info d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ zona.nome }}</strong> - {{ zona.prodotti.length }} produits - {{ zona.totalMLReali.toFixed(2) }} ML
+          </div>
+          <button @click="rimuoviZona(idx)" class="btn btn-sm btn-danger">🗑 Supprimer</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Azioni -->
     <div v-if="selectedZone" class="text-center">
-      <button @click="salvaResocontoFinale" class="btn btn-success">
-        💾 Sauvegarder et envoyer pour approbation
+      <button @click="aggiungiZonaAlResoconto" class="btn btn-primary me-2">
+        ➕ Ajouter cette zone au rapport
+      </button>
+      <button v-if="zoneSelezionate.length > 0" @click="salvaResocontoFinale" class="btn btn-success">
+        💾 Sauvegarder et envoyer pour approbation ({{ zoneSelezionate.length }} zones)
       </button>
     </div>
   </div>
@@ -330,6 +348,7 @@ const { user } = useAuth();
 const chantiers = ref([]);
 const selectedChantierId = ref('');
 const selectedZone = ref('');
+const zoneSelezionate = ref([]);
 const zones = ref([]);
 const prodottiZona = ref([]);
 const resocontiPercentuali = ref([]);
@@ -634,6 +653,13 @@ const loadZoneData = () => {
     return;
   }
   
+  // Verifica se la zona è già stata aggiunta
+  if (zoneSelezionate.value.some(z => z.nome === selectedZone.value)) {
+    alert('Cette zone a déjà été ajoutée au rapport');
+    selectedZone.value = '';
+    return;
+  }
+  
   console.log('🔍 Caricamento dati zona:', selectedZone.value);
   console.log('📦 Prodotti totali nel devis:', devisData.value.produits?.length || 0);
   
@@ -839,28 +865,87 @@ const fetchSupplements = async () => {
   }
 };
 
+const aggiungiZonaAlResoconto = () => {
+  if (!selectedZone.value || prodottiZona.value.length === 0) {
+    alert('Compléter les données de la zone avant de l\'ajouter');
+    return;
+  }
+  
+  // Verifica che la zona non sia già stata aggiunta
+  if (zoneSelezionate.value.some(z => z.nome === selectedZone.value)) {
+    alert('Cette zone a déjà été ajoutée');
+    return;
+  }
+  
+  // Aggiungi la zona con tutti i suoi dati
+  zoneSelezionate.value.push({
+    nome: selectedZone.value,
+    prodotti: JSON.parse(JSON.stringify(prodottiZona.value)),
+    regies: JSON.parse(JSON.stringify(regies.value)),
+    supplementiAggiuntivi: JSON.parse(JSON.stringify(supplementiAggiuntivi.value)),
+    totalMLPreviste: totalMLPreviste.value,
+    totalMLReali: totalMLReelles.value
+  });
+  
+  // Reset per aggiungere altra zona
+  selectedZone.value = '';
+  prodottiZona.value = [];
+  regies.value = [];
+  supplementiAggiuntivi.value = [];
+  
+  alert(`Zone ajoutée! Total zones: ${zoneSelezionate.value.length}`);
+};
+
+const rimuoviZona = (index) => {
+  if (confirm('Supprimer cette zone du rapport?')) {
+    zoneSelezionate.value.splice(index, 1);
+  }
+};
+
 const salvaResocontoFinale = async () => {
-  if (!selectedChantierId.value || !selectedZone.value) {
-    alert('Sélectionner chantier et zone');
+  if (!selectedChantierId.value) {
+    alert('Sélectionner chantier');
+    return;
+  }
+  
+  if (zoneSelezionate.value.length === 0) {
+    alert('Ajouter au moins une zone au rapport');
     return;
   }
   
   try {
+    // Crea avancementi con tutte le zone al 100%
+    const avancementi = {};
+    zoneSelezionate.value.forEach(zona => {
+      avancementi[zona.nome] = 100;
+    });
+    
+    // Combina tutti i dati delle zone
+    const tuttiProdotti = [];
+    const tutteRegies = [];
+    const tuttiSupplementi = [];
+    let totalMLPrevisteGlobale = 0;
+    let totalMLRealiGlobale = 0;
+    
+    zoneSelezionate.value.forEach(zona => {
+      tuttiProdotti.push(...zona.prodotti);
+      tutteRegies.push(...zona.regies.map(r => ({ ...r, zone: zona.nome })));
+      tuttiSupplementi.push(...zona.supplementiAggiuntivi.map(s => ({ ...s, zone: zona.nome })));
+      totalMLPrevisteGlobale += zona.totalMLPreviste;
+      totalMLRealiGlobale += zona.totalMLReali;
+    });
+    
     const resocontoData = {
       chantier_id: selectedChantierId.value,
       periode_month: new Date().toISOString().slice(0, 7),
-      avancementi: { [selectedZone.value]: 100 },
-      prodotti_reali: prodottiZona.value,
-      regies: regies.value,
-      supplementi_aggiuntivi: supplementiAggiuntivi.value,
-      total_ml_previste: totalMLPreviste.value,
-      total_ml_reali: totalMLReelles.value,
-      importo_fatturato_prodotti: importoFatturato.value,
-      importo_regie_fatturate: importoRegieFatturate.value,
-      variazioni_quantita: variazioniQuantita.value,
-      conguaglio_finale: conguaglioFinale.value,
-      acconti_precedenti: accontiPrecedenti.value || 0,
-      descrizione: `Resoconto finale zona ${selectedZone.value} - ${prodottiZona.value.length} prodotti`,
+      avancementi: avancementi,
+      prodotti_reali: tuttiProdotti,
+      regies: tutteRegies,
+      supplementi_aggiuntivi: tuttiSupplementi,
+      total_ml_previste: totalMLPrevisteGlobale,
+      total_ml_reali: totalMLRealiGlobale,
+      zone_details: zoneSelezionate.value,
+      descrizione: `Rapport final ${zoneSelezionate.value.length} zones: ${zoneSelezionate.value.map(z => z.nome).join(', ')}`,
       capocantiere: user.value?.email || localStorage.getItem('userEmail'),
       status: 'pending_approval',
       type: 'resoconto_finale',
@@ -873,11 +958,16 @@ const salvaResocontoFinale = async () => {
     
     if (error) throw error;
     
-    alert('Resoconto finale inviato per approbazione admin!\nPuoi continuare a modificare se necessario.');
+    alert(`Rapport final envoyé pour approbation!\n${zoneSelezionate.value.length} zones incluses`);
+    
+    // Reset tutto
+    zoneSelezionate.value = [];
+    selectedZone.value = '';
+    prodottiZona.value = [];
     
   } catch (error) {
     console.error('Errore salvataggio:', error);
-    alert('Errore nel salvataggio: ' + error.message);
+    alert('Erreur: ' + error.message);
   }
 };
 
