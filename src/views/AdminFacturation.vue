@@ -37,7 +37,10 @@
             <tbody>
               <!-- Resoconti percentuali -->
               <tr v-for="resoconto in resocontiEnAttente" :key="'r-' + resoconto.id">
-                <td><span class="badge bg-info">📊 Percentuel</span></td>
+                <td>
+                  <span v-if="resoconto.type === 'resoconto_finale'" class="badge bg-success">📋 Finale</span>
+                  <span v-else class="badge bg-info">📊 Percentuel</span>
+                </td>
                 <td>{{ getChantierNameWithNumber(resoconto.chantier_id || resoconto.chantierId) }}</td>
                 <td>{{ getClientName(resoconto.chantier_id || resoconto.chantierId) }}</td>
                 <td>{{ formatDate(resoconto.created_at) }}</td>
