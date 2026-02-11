@@ -2520,8 +2520,8 @@ const genererPDF = async (facture) => {
         const mese = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
         periodoRef = `Période: ${mese}`;
       }
-    } else if (resocontoDoc) {
-      // Fattura da resoconto percentuale
+    } else if (resocontoDoc && resocontoDoc.type !== 'resoconto_finale') {
+      // Fattura da resoconto percentuale (NON finale)
       if (resocontoDoc.periode_month) {
         const [year, month] = resocontoDoc.periode_month.split('-');
         const date = new Date(year, month - 1);
