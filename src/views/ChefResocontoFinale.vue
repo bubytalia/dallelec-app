@@ -322,8 +322,8 @@
     </div>
 
     <!-- Azioni -->
-    <div v-if="selectedZone" class="text-center">
-      <button @click="aggiungiZonaAlResoconto" class="btn btn-primary me-2">
+    <div class="text-center">
+      <button v-if="selectedZone" @click="aggiungiZonaAlResoconto" class="btn btn-primary me-2">
         ➕ Ajouter cette zone au rapport
       </button>
       <button v-if="zoneSelezionate.length > 0" @click="salvaResocontoFinale" class="btn btn-success">
@@ -887,6 +887,13 @@ const aggiungiZonaAlResoconto = () => {
     totalMLReali: totalMLReelles.value
   });
   
+  // Salva in localStorage come backup
+  localStorage.setItem('resoconto_draft', JSON.stringify({
+    chantierId: selectedChantierId.value,
+    zone: zoneSelezionate.value,
+    timestamp: new Date().toISOString()
+  }));
+  
   // Reset per aggiungere altra zona
   selectedZone.value = '';
   prodottiZona.value = [];
@@ -944,7 +951,6 @@ const salvaResocontoFinale = async () => {
       supplementi_aggiuntivi: tuttiSupplementi,
       total_ml_previste: totalMLPrevisteGlobale,
       total_ml_reali: totalMLRealiGlobale,
-      zone_details: zoneSelezionate.value,
       descrizione: `Rapport final ${zoneSelezionate.value.length} zones: ${zoneSelezionate.value.map(z => z.nome).join(', ')}`,
       capocantiere: user.value?.email || localStorage.getItem('userEmail'),
       status: 'pending_approval',
@@ -957,6 +963,9 @@ const salvaResocontoFinale = async () => {
       .insert([resocontoData]);
     
     if (error) throw error;
+    
+    // Rimuovi backup dopo salvataggio riuscito
+    localStorage.removeItem('resoconto_draft');
     
     alert(`Rapport final envoyé pour approbation!\n${zoneSelezionate.value.length} zones incluses`);
     
@@ -976,6 +985,23 @@ const salvaResocontoFinale = async () => {
 onMounted(async () => {
   await fetchChantiers();
   await fetchSupplements();
+  
+  // Recupera draft se esiste
+  const draft = localStorage.getItem('resoconto_draft');
+  if (draft) {
+    try {
+      const parsed = JSON.parse(draft);
+      if (confirm('Récupérer le brouillon précédent?')) {
+        selectedChantierId.value = parsed.chantierId;
+        await loadChantierData();
+        zoneSelezionate.value = parsed.zone;
+      } else {
+        localStorage.removeItem('resoconto_draft');
+      }
+    } catch (e) {
+      console.error('Errore recupero draft:', e);
+    }
+  }
   
   // Gestisci parametri URL
   const urlParams = new URLSearchParams(window.location.search);
