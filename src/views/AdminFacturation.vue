@@ -1620,21 +1620,20 @@ const approuverResoconto = async (resoconto) => {
       return;
     }
     
-    // Approva il resoconto (solo se tabella esiste)
-    try {
-      const { error } = await supabase
-        .from('resoconti_percentuali')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: 'admin',
-          acconti_per_zona: accontiPerZona.value  // SALVA GLI ACCONTI PER ZONA
-        })
-        .eq('id', resoconto.id);
-      
-      if (error) throw error;
-    } catch (err) {
-      console.log('Tabella resoconti_percentuali non esiste, skip update');
+    // Approva il resoconto
+    const { error: updateError } = await supabase
+      .from('resoconti_percentuali')
+      .update({
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: 'admin',
+        acconti_per_zona: accontiPerZona.value  // SALVA GLI ACCONTI PER ZONA
+      })
+      .eq('id', resoconto.id);
+    
+    if (updateError) {
+      console.error('Errore aggiornamento resoconto:', updateError);
+      throw new Error(`Impossibile aggiornare il resoconto: ${updateError.message}`);
     }
     
     // Genera la fattura
