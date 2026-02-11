@@ -332,22 +332,33 @@
                                 <td colspan="3">
                                   <div class="mb-2"><strong>Zone: {{ zone }}</strong></div>
                                   <div class="row">
-                                    <div class="col-md-8">
-                                      <small class="text-muted">1. Valore reale dalle quantità posate:</small><br>
+                                    <div class="col-md-6">
+                                      <small class="text-muted">1. Valeur réelle des quantités posées:</small><br>
                                       <strong class="text-success">{{ getValoreRealeZona(zone).toFixed(2) }} CHF</strong>
                                     </div>
+                                    <div class="col-md-6">
+                                      <label class="form-label small"><strong>Acompte déjà versé (CHF HT):</strong></label>
+                                      <input 
+                                        v-model.number="accontiPerZona[zone]" 
+                                        type="number" 
+                                        step="0.01" 
+                                        class="form-control form-control-sm" 
+                                        placeholder="0.00"
+                                        @input="updateTotalAcconti"
+                                      >
+                                    </div>
                                   </div>
-                                  <div class="row mt-2">
-                                    <div class="col-md-8">
-                                      <small class="text-muted">2. Già fatturato (precedenti acconti):</small><br>
-                                      <strong class="text-danger">-{{ getGiaFatturatoZona(zone).toFixed(2) }} CHF</strong>
+                                  <div class="row mt-2" v-if="accontiPerZona[zone] > 0">
+                                    <div class="col-md-12">
+                                      <small class="text-muted">2. Acompte à soustraire:</small><br>
+                                      <strong class="text-danger">-{{ Number(accontiPerZona[zone] || 0).toFixed(2) }} CHF</strong>
                                     </div>
                                   </div>
                                   <hr>
                                   <div class="row">
-                                    <div class="col-md-8">
-                                      <strong>3. DA FATTURARE:</strong><br>
-                                      <h5 class="text-primary">{{ calculateZoneMontant(zone, percentage).toFixed(2) }} CHF</h5>
+                                    <div class="col-md-12">
+                                      <strong>3. À FACTURER:</strong><br>
+                                      <h5 class="text-primary">{{ (getValoreRealeZona(zone) - Number(accontiPerZona[zone] || 0)).toFixed(2) }} CHF</h5>
                                     </div>
                                   </div>
                                 </td>
@@ -414,50 +425,22 @@
                               <span>Total HT:</span>
                               <strong>{{ calculateTotalHT().toFixed(2) }} CHF</strong>
                             </div>
-                            <div v-if="totalAccontiZone > 0" class="d-flex justify-content-between mb-2 text-danger">
-                              <span>Acconti HT:</span>
-                              <strong>-{{ totalAccontiZone.toFixed(2) }} CHF</strong>
-                            </div>
-                            <div v-if="totalAccontiZone > 0" class="d-flex justify-content-between mb-2">
-                              <span>Imponibile residuo:</span>
-                              <strong>{{ (calculateTotalHT() - totalAccontiZone).toFixed(2) }} CHF</strong>
-                            </div>
                             <div class="d-flex justify-content-between mb-2">
                               <span>TVA (8.1%):</span>
-                              <strong>{{ calculateTVAWithAcconti().toFixed(2) }} CHF</strong>
+                              <strong>{{ calculateTVA().toFixed(2) }} CHF</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between">
-                              <span class="h6">{{ totalAccontiZone > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:' }}</span>
-                              <strong class="h5 text-success">{{ calculateTotalTTCWithAcconti().toFixed(2) }} CHF</strong>
+                              <span class="h6">TOTAL TTC:</span>
+                              <strong class="h5 text-success">{{ calculateTotalTTC().toFixed(2) }} CHF</strong>
                             </div>
                           </div>
                         </div>
                         
-                        <div class="mt-3">
-                          <div class="mb-3">
-                            <label class="form-label"><strong>Acomptes déjà facturés par zone (CHF HT):</strong></label>
-                            <div v-for="(percentage, zone) in detailResoconto.avancementi" :key="zone" class="mb-2">
-                              <label class="form-label small">{{ zone }}:</label>
-                              <input 
-                                v-model.number="accontiPerZona[zone]" 
-                                type="number" 
-                                step="0.01" 
-                                class="form-control form-control-sm" 
-                                :placeholder="`Acomptes pour ${zone}`"
-                              >
-                            </div>
-                            <div class="alert alert-info mt-2">
-                              <strong>Total acomptes: {{ totalAccontiZone.toFixed(2) }} CHF HT</strong>
-                            </div>
-                            <small class="text-muted">Montant HT à soustraire par zone</small>
-                          </div>
-                          
-                          <div class="text-center">
-                            <small class="text-muted">
-                              💡 Ceci est l'aperçu de la facture qui sera générée
-                            </small>
-                          </div>
+                        <div class="mt-3 text-center">
+                          <small class="text-muted">
+                            💡 Ceci est l'aperçu de la facture qui sera générée
+                          </small>
                         </div>
                       </div>
                     </div>
@@ -1028,8 +1011,12 @@ const facturesImpayes = computed(() => {
 });
 
 const totalAccontiZone = computed(() => {
-  return Object.values(accontiPerZona.value).reduce((sum, val) => sum + (Number(val) || 0), 0);
+  return Object.values(accontiPerZona.value).reduce((sum, val) => sum + Number(val || 0), 0);
 });
+
+const updateTotalAcconti = () => {
+  // Forza aggiornamento computed
+};
 
 const forceReload = async () => {
   // Svuota completamente gli array
@@ -1262,7 +1249,7 @@ const autoriserFacturation = async (metrage) => {
     const montantRegiesHT = (metrage.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
     const montantHT = montantTravauxHT + montantRegiesHT;
     
-    const numeroFacture = await generateNumeroFacture();
+    const numeroFacture = await generateNumeroFacture(dataScelta);
     
     // Calcola data scadenza usando metodo di pagamento
     const dataScadenza = calculateDateEcheance(dataScelta, '30 jours net');
@@ -1314,12 +1301,12 @@ const voirDetailMetrage = (metrage) => {
 
 const voirDetailResoconto = (resoconto) => {
   detailResoconto.value = resoconto;
-  accontiPrecedentiResoconto.value = 0; // Reset acconti
+  accontiPrecedentiResoconto.value = 0;
   
-  // Inizializza accontiPerZona con 0 per ogni zona
+  // Inizializza acconti per zona
   accontiPerZona.value = {};
-  Object.keys(resoconto.avancementi || {}).forEach(zone => {
-    accontiPerZona.value[zone] = 0;
+  Object.keys(resoconto.avancementi || {}).forEach(zona => {
+    accontiPerZona.value[zona] = 0;
   });
   
   showDetailResoconto.value = true;
@@ -1525,10 +1512,13 @@ const calculateResocontoFinaleValue = (zone) => {
 const calculateTotalTravaux = () => {
   if (!detailResoconto.value.avancementi) return 0;
   
-  // Per resoconto finale, calcola solo la zona del resoconto
+  // Per resoconto finale, calcola tutte le zone
   if (detailResoconto.value.type === 'resoconto_finale') {
-    const zona = Object.keys(detailResoconto.value.avancementi)[0];
-    return calculateResocontoFinaleValue(zona);
+    return Object.keys(detailResoconto.value.avancementi).reduce((sum, zona) => {
+      const valoreReale = getValoreRealeZona(zona);
+      const acconto = Number(accontiPerZona.value[zona] || 0);
+      return sum + (valoreReale - acconto);
+    }, 0);
   }
   
   // Logica originale per resoconti percentuali
@@ -1642,8 +1632,10 @@ const approuverResoconto = async (resoconto) => {
     const montantHT = calculateTotalHT();
     
     // USA NUMERO RISERVATO SE ESISTE (per correzioni)
-    const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture();
-    const accontiInseriti = Number(totalAccontiZone.value || 0);
+    const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture(dataScelta);
+    
+    // NON salvare acconti nel database per resoconti finali (già sottratti nel calcolo)
+    const accontiDaSalvare = resoconto.type === 'resoconto_finale' ? 0 : Number(totalAccontiZone.value || 0);
     
     // Calcola data scadenza (30 giorni dalla data fattura)
     const dataScadenza = new Date(dataScelta);
@@ -1659,7 +1651,7 @@ const approuverResoconto = async (resoconto) => {
         montant_ht: montantHT,
         taux_tva: 8.1,
         montant_ttc: montantHT * 1.081,
-        acconti_precedenti: accontiInseriti,
+        acconti_precedenti: accontiDaSalvare,
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
         date_echeance: dataScadenza.toISOString().split('T')[0],
@@ -1781,7 +1773,7 @@ const generarFactureResoconto = async (resoconto) => {
     const montantHT = montantTravauxHT + montantRegiesHT;
     
     // USA NUMERO RISERVATO SE ESISTE (per correzioni)
-    const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture();
+    const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture(dataScelta);
     
     // Calcola data scadenza (30 giorni dalla data fattura)
     const dataScadenza = new Date(dataScelta);
@@ -2168,26 +2160,38 @@ const calculateDateEcheance = (dateFacture, methodePaiement = '30 jours net') =>
   return date.toISOString().split('T')[0];
 };
 
-const generateNumeroFacture = async () => {
+const generateNumeroFacture = async (dataFactura = null) => {
   try {
-    const { data: config } = await supabase
-      .from('configurazione_fatture')
-      .select('*')
-      .single();
+    // Usa l'anno della data fattura se fornita, altrimenti anno corrente
+    const anno = dataFactura ? new Date(dataFactura).getFullYear() : new Date().getFullYear();
     
-    const ultimoNumero = config?.ultimo_numero || 0;
-    const anno = config?.anno || new Date().getFullYear();
-    const prefisso = config?.prefisso || 'F';
+    // Carica tutte le fatture dell'anno
+    const { data: fattureAnno, error: fattureError } = await supabase
+      .from('factures')
+      .select('numero')
+      .like('numero', `F${anno}-%`)
+      .order('numero', { ascending: false });
     
-    const fattureAnno = factures.value.filter(f => {
-      const dataFattura = new Date(f.date_facture || f.dateFacture);
-      return dataFattura.getFullYear() === anno;
-    }).length;
+    if (fattureError) throw fattureError;
     
-    const prossimoNumero = ultimoNumero + fattureAnno + 1;
-    return `${prefisso}${anno}-${String(prossimoNumero).padStart(3, '0')}`;
+    // Trova il numero più alto
+    let ultimoNumero = 0;
+    if (fattureAnno && fattureAnno.length > 0) {
+      fattureAnno.forEach(f => {
+        const match = f.numero.match(/F\d{4}-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          if (num > ultimoNumero) ultimoNumero = num;
+        }
+      });
+    }
+    
+    const prossimoNumero = ultimoNumero + 1;
+    return `F${anno}-${String(prossimoNumero).padStart(3, '0')}`;
   } catch (error) {
-    return `F${new Date().getFullYear()}-${String(factures.value.length + 1).padStart(3, '0')}`;
+    console.error('Errore generazione numero:', error);
+    const anno = dataFactura ? new Date(dataFactura).getFullYear() : new Date().getFullYear();
+    return `F${anno}-${String(Date.now()).slice(-3)}`;
   }
 };
 
@@ -2617,6 +2621,14 @@ const genererPDF = async (facture) => {
       const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
       let yPos = drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
       
+      // Aggiungi intestazione RAPPORT FINAL
+      docMetrees.setFontSize(11);
+      docMetrees.setFont('helvetica', 'bold');
+      docMetrees.setFillColor(255, 250, 205);
+      docMetrees.rect(10, yPos - 3, 190, 8, 'F');
+      docMetrees.text('🎯 RAPPORT FINAL DE ZONE - QUANTITÉS RÉELLES POSÉES', 15, yPos + 2);
+      yPos += 12;
+      
       let totalMetreesHT = 0;
       
       if (resocontoDoc?.prodotti_reali) {
@@ -2892,6 +2904,15 @@ const genererPDF = async (facture) => {
       // 2. PDF FACTURE (avec prix) - COPIA ESATTA
       const docFacture = new jsPDF({ unit: 'mm', format: 'a4' });
       yPos = drawHeader(docFacture, `FACTURE N. ${facture.numero}`);
+      
+      // Aggiungi intestazione RAPPORT FINAL
+      docFacture.setFontSize(11);
+      docFacture.setFont('helvetica', 'bold');
+      docFacture.setFillColor(255, 250, 205);
+      docFacture.rect(10, yPos - 3, 190, 8, 'F');
+      docFacture.text('🎯 RAPPORT FINAL DE ZONE - DÉCOMPTE FINAL', 15, yPos + 2);
+      yPos += 12;
+      
       let totalFactureHT = 0;
       
       if (resocontoDoc?.prodotti_reali) {
@@ -2978,13 +2999,36 @@ const genererPDF = async (facture) => {
           
           yPos = docFacture.lastAutoTable.finalY + 5;
           
-          // Sous-total zona con sfondo
+          // Calcola imponibile devis zona
+          const imponibileZona = chantierDevis?.produits
+            ?.filter(p => p.zone === zoneName)
+            .reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
+          
+          // Calcola già fatturato zona
+          const giaFatturatoZona = getGiaFatturatoZona(zoneName);
+          
+          // Calcola totale da fatturare
+          const daFatturarezZona = zoneTotal - giaFatturatoZona;
+          
+          // Box riepilogo zona
           docFacture.setFillColor(250, 250, 250);
-          docFacture.rect(130, yPos - 2, 70, 6, 'F');
+          docFacture.rect(130, yPos - 2, 70, 24, 'F');
+          docFacture.setFont('helvetica', 'normal');
+          docFacture.setFontSize(8);
+          docFacture.text(`Imponibile:`, 135, yPos + 2);
+          docFacture.text(`${imponibileZona.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
+          
+          docFacture.setTextColor(200, 0, 0);
+          docFacture.text(`Già fatturato:`, 135, yPos + 8);
+          docFacture.text(`-${giaFatturatoZona.toFixed(2)} CHF`, 195, yPos + 8, { align: 'right' });
+          docFacture.setTextColor(0, 0, 0);
+          
           docFacture.setFont('helvetica', 'bold');
           docFacture.setFontSize(9);
-          docFacture.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 135, yPos + 2);
-          yPos += 12;
+          docFacture.text(`Totale da fatturare:`, 135, yPos + 14);
+          docFacture.text(`${daFatturarezZona.toFixed(2)} CHF`, 195, yPos + 14, { align: 'right' });
+          
+          yPos += 28;
         });
       }
       
@@ -3059,74 +3103,49 @@ const genererPDF = async (facture) => {
         
         docFacture.setFontSize(12);
         docFacture.setFont('helvetica', 'bold');
-        docFacture.text('ACOMPTES PRÉCÉDENTS', 10, yPos);
+        docFacture.text('ACOMPTES PRÉCÉDENTS PAR ZONE', 10, yPos);
         yPos += 5;
         
-        // Calcola dinamicamente gli acconti per zona
-        const nomeZona = Object.keys(resocontoDoc.avancementi || {})[0] || 'Zone inconnue';
-        
-        // RESET DELLA VARIABILE GLOBALE
-        totalImporto = 0;
-        
-        // Trova tutti i resoconti percentuali già approvati per questa zona
-        const resocontiPrecedenti = resocontiPercentuali.value.filter(r => 
-          r.status === 'approved' && 
-          (r.chantier_id || r.chantierId) === (resocontoDoc.chantier_id || resocontoDoc.chantierId) &&
-          r.id !== resocontoDoc.id &&
-          r.avancementi?.[nomeZona] > 0
-        );
-        
-        // Crea righe dettagliate per ogni acconto
+        // Crea righe dettagliate per ogni zona con acconti
         const accontiRows = [];
-        let totalPercentuale = 0;
+        let totalAccontiPDF = 0;
         
-        // Calcola il totale devis per questa zona UNA VOLTA
-        const chantier = chantiers.value.find(c => c.id == (resocontoDoc.chantier_id || resocontoDoc.chantierId));
-        const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
-        const totaleDevisZona = chantierDevis?.produits?.filter(p => p.zone === nomeZona).reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
-        
-        resocontiPrecedenti.forEach(r => {
-          const percentuale = r.avancementi[nomeZona];
-          const importoAcconto = totaleDevisZona * percentuale / 100;
-          
-          totalPercentuale += percentuale;
-          totalImporto += importoAcconto;
-          
-          const dataResoconto = new Date(r.created_at).toLocaleDateString('fr-FR');
-          accontiRows.push([
-            `Acompte ${dataResoconto} - Zone: ${nomeZona} (${percentuale}%)`,
-            `-${importoAcconto.toFixed(2)} CHF`
-          ]);
-        });
-        
-        // Se non ci sono resoconti precedenti ma c'è un importo, usa fallback
-        if (accontiRows.length === 0 && accontiHT > 0) {
-          // Usa il 40% del totale devis zona come fallback
-          const importoFallback = Math.max(accontiHT, totaleDevisZona * 0.40);
-          totalImporto = importoFallback;
-          accontiRows.push([
-            `Acomptes précédents Zone: ${nomeZona} (40%)`,
-            `-${importoFallback.toFixed(2)} CHF`
-          ]);
-        }
-        
-        autoTable(docFacture, {
-          head: [['Description', 'Montant HT']],
-          body: accontiRows,
-          startY: yPos,
-          theme: 'striped',
-          headStyles: { 
-            fillColor: [70, 130, 180], 
-            textColor: 255, 
-            fontSize: 10 
-          },
-          bodyStyles: { 
-            fontSize: 10, 
-            fontStyle: 'bold'
+        Object.keys(resocontoDoc.avancementi || {}).forEach(nomeZona => {
+          const accontoZona = Number(accontiPerZona.value[nomeZona] || 0);
+          if (accontoZona > 0) {
+            totalAccontiPDF += accontoZona;
+            accontiRows.push([
+              `Acomptes Zone: ${nomeZona}`,
+              `-${accontoZona.toFixed(2)} CHF`
+            ]);
           }
         });
         
-        yPos = docFacture.lastAutoTable.finalY + 10;
+        // Se ci sono acconti, mostra la tabella
+        if (accontiRows.length > 0) {
+          accontiRows.push([
+            { content: 'TOTAL ACOMPTES:', styles: { fontStyle: 'bold' } },
+            { content: `-${totalAccontiPDF.toFixed(2)} CHF`, styles: { fontStyle: 'bold' } }
+          ]);
+          
+          autoTable(docFacture, {
+            head: [['Description', 'Montant HT']],
+            body: accontiRows,
+            startY: yPos,
+            theme: 'striped',
+            headStyles: { 
+              fillColor: [70, 130, 180], 
+              textColor: 255, 
+              fontSize: 10 
+            },
+            bodyStyles: { 
+              fontSize: 10, 
+              fontStyle: 'bold'
+            }
+          });
+          
+          yPos = docFacture.lastAutoTable.finalY + 10;
+        }
       }
       
       // Verifica spazio per totali finali
@@ -3140,8 +3159,14 @@ const genererPDF = async (facture) => {
       const realTauxTVA = Number(facture.taux_tva || 8.1);
       const realMontantTVA = realMontantHT * (realTauxTVA / 100);
       
-      // UNIFICA IL CALCOLO: usa sempre totalImporto dalla tabella acconti
-      const accontiFinali = Math.max(totalImporto || 0, accontiHT); // USA IL VALORE PIÙ ALTO TRA CALCOLATO E FALLBACK
+      // Calcola acconti totali per resoconti finali
+      let accontiFinali = 0;
+      if (resocontoDoc.type === 'resoconto_finale') {
+        Object.keys(resocontoDoc.avancementi || {}).forEach(zona => {
+          accontiFinali += Number(accontiPerZona.value[zona] || 0);
+        });
+      }
+      
       const imponibileResiduoHT = realMontantHT - accontiFinali;
       const tvaResiduoHT = imponibileResiduoHT * (realTauxTVA / 100);
       const realMontantTTC = imponibileResiduoHT + tvaResiduoHT;
@@ -3161,7 +3186,7 @@ const genererPDF = async (facture) => {
       let currentY = yPos + 2;
       
       // SEMPRE mostra acconti per resoconti finali
-      if (resocontoDoc.type === 'resoconto_finale') {
+      if (resocontoDoc.type === 'resoconto_finale' && accontiFinali > 0) {
         docFacture.text('Total HT:', 120, currentY);
         docFacture.text(`${realMontantHT.toFixed(2)} CHF`, 195, currentY, { align: 'right' });
         currentY += 6;
@@ -3197,7 +3222,7 @@ const genererPDF = async (facture) => {
       
       docFacture.setFont('helvetica', 'bold');
       docFacture.setFontSize(12);
-      const labelFinal = resocontoDoc.type === 'resoconto_finale' ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
+      const labelFinal = (resocontoDoc.type === 'resoconto_finale' && accontiFinali > 0) ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
       docFacture.text(labelFinal, 120, currentY + 4);
       docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 195, currentY + 4, { align: 'right' });
       
