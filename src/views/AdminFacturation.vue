@@ -3036,7 +3036,7 @@ const genererPDF = async (facture) => {
           docFacture.rect(130, yPos - 2, 70, 24, 'F');
           docFacture.setFont('helvetica', 'normal');
           docFacture.setFontSize(8);
-          docFacture.text(`Montant devis:`, 135, yPos + 2);
+          docFacture.text(`Montant des metrages finaux:`, 135, yPos + 2);
           docFacture.text(`${imponibileZona.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
           
           docFacture.setTextColor(200, 0, 0);
