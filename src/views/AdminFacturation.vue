@@ -4,12 +4,12 @@
     
     <h2 class="text-center mb-4">Gestion Facturation</h2>
 
-    <!-- Resoconti et Métrages en attente -->
+    <!-- Resoconti et Mï¿½trages en attente -->
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <div>
-          <h5>Resoconti et Métrages en attente</h5>
-          <small class="text-muted">Resoconti percentuels à approuver et métrages prêts pour facturation</small>
+          <h5>Resoconti et Mï¿½trages en attente</h5>
+          <small class="text-muted">Resoconti percentuels ï¿½ approuver et mï¿½trages prï¿½ts pour facturation</small>
         </div>
         <div>
           <router-link to="/admin/facture-manuelle" class="btn btn-sm btn-success">
@@ -19,7 +19,7 @@
       </div>
       <div class="card-body">
         <div v-if="resocontiEnAttente.length === 0 && metragesEnAttente.length === 0" class="text-center text-muted py-4">
-          Aucun resoconto ou métrage en attente
+          Aucun resoconto ou mï¿½trage en attente
         </div>
         <div v-else-if="resocontiEnAttente.length > 0 || metragesEnAttente.length > 0" class="table-responsive">
           <table class="table">
@@ -29,8 +29,8 @@
                 <th>Chantier</th>
                 <th>Client</th>
                 <th>Date</th>
-                <th>Période</th>
-                <th>Détails</th>
+                <th>Pï¿½riode</th>
+                <th>Dï¿½tails</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -66,9 +66,9 @@
                   </button>
                 </td>
               </tr>
-              <!-- Métrages -->
+              <!-- Mï¿½trages -->
               <tr v-for="metrage in metragesEnAttente" :key="'m-' + metrage.id">
-                <td><span class="badge bg-secondary">?? Métrage</span></td>
+                <td><span class="badge bg-secondary">?? Mï¿½trage</span></td>
                 <td>{{ getChantierNameWithNumber(metrage.chantier_id) }}</td>
                 <td>{{ getClientName(metrage.chantier_id) }}</td>
                 <td>{{ formatDate(metrage.created_at) }}</td>
@@ -92,12 +92,12 @@
       </div>
     </div>
 
-    <!-- Factures récentes -->
+    <!-- Factures rï¿½centes -->
     <div class="card mb-4">
       <div class="card-header">
         <div class="row align-items-center">
           <div class="col-md-4">
-            <h5>Factures récentes</h5>
+            <h5>Factures rï¿½centes</h5>
           </div>
           <div class="col-md-8">
             <div class="row">
@@ -110,9 +110,9 @@
               <div class="col-md-4">
                 <select v-model="filtreStatut" class="form-select form-select-sm">
                   <option value="">Tous les statuts</option>
-                  <option value="emise">Émise</option>
-                  <option value="envoyee">Envoyée</option>
-                  <option value="payee">Payée</option>
+                  <option value="emise">ï¿½mise</option>
+                  <option value="envoyee">Envoyï¿½e</option>
+                  <option value="payee">Payï¿½e</option>
                   <option value="en_retard">En retard</option>
                 </select>
               </div>
@@ -127,13 +127,13 @@
       </div>
       <div class="card-body">
         <div v-if="facturesFiltrees.length === 0" class="text-center text-muted py-4">
-          {{ factures.length === 0 ? 'Aucune facture récente' : 'Aucune facture correspondant aux filtres' }}
+          {{ factures.length === 0 ? 'Aucune facture rï¿½cente' : 'Aucune facture correspondant aux filtres' }}
         </div>
         <div v-else class="table-responsive">
           <table class="table">
             <thead>
               <tr>
-                <th>N° Facture</th>
+                <th>Nï¿½ Facture</th>
                 <th>Chantier</th>
                 <th>Client</th>
                 <th>Date</th>
@@ -163,9 +163,9 @@
                     class="form-select form-select-sm"
                     :class="getStatutSelectClass(facture.statut)"
                   >
-                    <option value="emise">Émise</option>
-                    <option value="envoyee">Envoyée</option>
-                    <option value="payee">Payée</option>
+                    <option value="emise">ï¿½mise</option>
+                    <option value="envoyee">Envoyï¿½e</option>
+                    <option value="payee">Payï¿½e</option>
                     <option value="en_retard">En retard</option>
                   </select>
                 </td>
@@ -205,7 +205,7 @@
               <div class="card-body py-2">
                 <h6 class="mb-1">En Attente</h6>
                 <h5 class="mb-1">{{ metragesEnAttente.length }}</h5>
-                <small>Métrages</small>
+                <small>Mï¿½trages</small>
               </div>
             </div>
           </div>
@@ -214,14 +214,14 @@
               <div class="card-body py-2">
                 <h6 class="mb-1">Ce Mois</h6>
                 <h6 class="mb-1">{{ formatCurrency(facturationMois) }}</h6>
-                <small>Facturé</small>
+                <small>Facturï¿½</small>
               </div>
             </div>
           </div>
           <div class="col">
             <div class="card bg-primary text-white text-center">
               <div class="card-body py-2">
-                <h6 class="mb-1">Cette Année</h6>
+                <h6 class="mb-1">Cette Annï¿½e</h6>
                 <h6 class="mb-1">{{ formatCurrency(facturationAnnee) }}</h6>
                 <small>Total</small>
               </div>
@@ -230,18 +230,18 @@
           <div class="col">
             <div class="card bg-success text-white text-center">
               <div class="card-body py-2">
-                <h6 class="mb-1">Payées</h6>
+                <h6 class="mb-1">Payï¿½es</h6>
                 <h6 class="mb-1">{{ formatCurrency(facturesPayees) }}</h6>
-                <small>Encaissé</small>
+                <small>Encaissï¿½</small>
               </div>
             </div>
           </div>
           <div class="col">
             <div class="card bg-danger text-white text-center">
               <div class="card-body py-2">
-                <h6 class="mb-1">Impayées</h6>
+                <h6 class="mb-1">Impayï¿½es</h6>
                 <h6 class="mb-1">{{ formatCurrency(facturesImpayes) }}</h6>
-                <small>À encaisser</small>
+                <small>ï¿½ encaisser</small>
               </div>
             </div>
           </div>
@@ -249,20 +249,20 @@
       </div>
     </div>
 
-    <!-- Modal Détail Resoconto -->
+    <!-- Modal Dï¿½tail Resoconto -->
     <div v-if="showDetailResoconto" class="modal d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5>Détail Resoconto - {{ getChantierName(detailResoconto.chantier_id) }}</h5>
+            <h5>Dï¿½tail Resoconto - {{ getChantierName(detailResoconto.chantier_id) }}</h5>
             <button @click="showDetailResoconto = false" class="btn-close"></button>
           </div>
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
-                <h6>Informations Générales</h6>
+                <h6>Informations Gï¿½nï¿½rales</h6>
                 <p><strong>Chantier:</strong> {{ getChantierName(detailResoconto.chantier_id || detailResoconto.chantierId) }}</p>
-                <p><strong>Période:</strong> {{ detailResoconto.periode_month }}</p>
+                <p><strong>Pï¿½riode:</strong> {{ detailResoconto.periode_month }}</p>
                 <p><strong>Description:</strong> {{ detailResoconto.descrizione || '-' }}</p>
                 <p><strong>Date soumission:</strong> {{ formatDate(detailResoconto.created_at) }}</p>
               </div>
@@ -275,7 +275,7 @@
             </div>
             <div class="row mt-3" v-if="detailResoconto.regies && detailResoconto.regies.length > 0">
               <div class="col-md-12">
-                <h6>Régies (Heures supplémentaires)</h6>
+                <h6>Rï¿½gies (Heures supplï¿½mentaires)</h6>
                 <table class="table table-sm">
                   <thead>
                     <tr>
@@ -297,7 +297,7 @@
                   </tbody>
                   <tfoot>
                     <tr class="table-warning">
-                      <td colspan="3"><strong>Total Régies:</strong></td>
+                      <td colspan="3"><strong>Total Rï¿½gies:</strong></td>
                       <td><strong>{{ detailResoconto.regies.reduce((sum, r) => sum + (r.heures * (r.prixHeure || getPrixRegieChantier())), 0).toFixed(2) }} CHF</strong></td>
                       <td></td>
                     </tr>
@@ -316,7 +316,7 @@
                   <div class="card-body">
                     <div class="row">
                       <div class="col-md-8">
-                        <h6>Travaux réalisés:</h6>
+                        <h6>Travaux rï¿½alisï¿½s:</h6>
                         <!-- RESOCONTO FINALE: Mostra calcolo dettagliato -->
                         <div v-if="detailResoconto.type === 'resoconto_finale'">
                           <table class="table table-sm table-bordered">
@@ -333,11 +333,11 @@
                                   <div class="mb-2"><strong>Zone: {{ zone }}</strong></div>
                                   <div class="row">
                                     <div class="col-md-6">
-                                      <small class="text-muted">1. Valeur réelle des quantités posées:</small><br>
+                                      <small class="text-muted">1. Valeur rï¿½elle des quantitï¿½s posï¿½es:</small><br>
                                       <strong class="text-success">{{ getValoreRealeZona(zone).toFixed(2) }} CHF</strong>
                                     </div>
                                     <div class="col-md-6">
-                                      <label class="form-label small"><strong>Acompte déjà versé (CHF HT):</strong></label>
+                                      <label class="form-label small"><strong>Acompte dï¿½jï¿½ versï¿½ (CHF HT):</strong></label>
                                       <input 
                                         v-model.number="accontiPerZona[zone]" 
                                         type="number" 
@@ -350,14 +350,14 @@
                                   </div>
                                   <div class="row mt-2" v-if="accontiPerZona[zone] > 0">
                                     <div class="col-md-12">
-                                      <small class="text-muted">2. Acompte à soustraire:</small><br>
+                                      <small class="text-muted">2. Acompte ï¿½ soustraire:</small><br>
                                       <strong class="text-danger">-{{ Number(accontiPerZona[zone] || 0).toFixed(2) }} CHF</strong>
                                     </div>
                                   </div>
                                   <hr>
                                   <div class="row">
                                     <div class="col-md-12">
-                                      <strong>3. À FACTURER:</strong><br>
+                                      <strong>3. ï¿½ FACTURER:</strong><br>
                                       <h5 class="text-primary">{{ (getValoreRealeZona(zone) - Number(accontiPerZona[zone] || 0)).toFixed(2) }} CHF</h5>
                                     </div>
                                   </div>
@@ -396,18 +396,18 @@
                         </table>
                         
                         <div v-if="detailResoconto.regies && detailResoconto.regies.length > 0">
-                          <h6>Régies:</h6>
+                          <h6>Rï¿½gies:</h6>
                           <table class="table table-sm table-bordered">
                             <tbody>
                               <tr v-for="regie in detailResoconto.regies" :key="regie.zone + regie.description">
                                 <td>{{ regie.zone }} - {{ regie.description }}</td>
-                                <td>{{ regie.heures }}h × {{ (regie.prixHeure || getPrixRegieChantier()).toFixed(2) }} CHF</td>
+                                <td>{{ regie.heures }}h ï¿½ {{ (regie.prixHeure || getPrixRegieChantier()).toFixed(2) }} CHF</td>
                                 <td><strong>{{ (regie.heures * (regie.prixHeure || getPrixRegieChantier())).toFixed(2) }} CHF</strong></td>
                               </tr>
                             </tbody>
                             <tfoot class="table-warning">
                               <tr>
-                                <td colspan="2"><strong>Sous-total Régies:</strong></td>
+                                <td colspan="2"><strong>Sous-total Rï¿½gies:</strong></td>
                                 <td><strong>{{ calculateTotalRegies().toFixed(2) }} CHF</strong></td>
                               </tr>
                             </tfoot>
@@ -439,7 +439,7 @@
                         
                         <div class="mt-3 text-center">
                           <small class="text-muted">
-                            ?? Ceci est l'aperçu de la facture qui sera générée
+                            ?? Ceci est l'aperï¿½u de la facture qui sera gï¿½nï¿½rï¿½e
                           </small>
                         </div>
                       </div>
@@ -464,41 +464,41 @@
       </div>
     </div>
 
-    <!-- Modal Détail Métrage -->
+    <!-- Modal Dï¿½tail Mï¿½trage -->
     <div v-if="showDetailMetrage" class="modal d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5>Détail Métrage - {{ getChantierName(detailMetrage.chantier_id) }}</h5>
+            <h5>Dï¿½tail Mï¿½trage - {{ getChantierName(detailMetrage.chantier_id) }}</h5>
             <button @click="showDetailMetrage = false" class="btn-close"></button>
           </div>
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
-                <h6>Informations Générales</h6>
+                <h6>Informations Gï¿½nï¿½rales</h6>
                 <p><strong>Chantier:</strong> {{ getChantierName(detailMetrage.chantier_id) }}</p>
                 <p><strong>Client:</strong> {{ getClientName(detailMetrage.chantier_id) }}</p>
                 <p><strong>Date:</strong> {{ formatDate(detailMetrage.created_at) }}</p>
                 <p><strong>Chef:</strong> {{ detailMetrage.chef_id }}</p>
               </div>
               <div class="col-md-6">
-                <h6>Métrages</h6>
+                <h6>Mï¿½trages</h6>
                 <p><strong>Total ML:</strong> {{ (detailMetrage.total_ml || 0).toFixed(2) }} ML</p>
                 <p><strong>Produits:</strong> {{ detailMetrage.total_produits || 0 }}</p>
                 <p><strong>Zones:</strong> {{ detailMetrage.zones?.join(', ') || 'N/A' }}</p>
-                <p><strong>Montant Estimé:</strong> {{ formatCurrency(calculateMontantEstimeDettagliato()) }}</p>
+                <p><strong>Montant Estimï¿½:</strong> {{ formatCurrency(calculateMontantEstimeDettagliato()) }}</p>
               </div>
             </div>
             <div class="mt-3">
               <div class="mb-3">
-                <h6>Détail des items:</h6>
+                <h6>Dï¿½tail des items:</h6>
                 <div v-if="detailMetrage.items && detailMetrage.items.length > 0">
                   <table class="table table-sm table-bordered">
                     <thead class="table-light">
                       <tr>
                         <th>Article</th>
                         <th>Zone</th>
-                        <th>ML Posé</th>
+                        <th>ML Posï¿½</th>
                         <th>Total ML</th>
                         <th>Prix/ML</th>
                         <th>Total CHF</th>
@@ -525,9 +525,9 @@
                     </tfoot>
                   </table>
                   
-                  <!-- Détail suppléments -->
+                  <!-- Dï¿½tail supplï¿½ments -->
                   <div class="mt-3">
-                    <h6>Détail suppléments:</h6>
+                    <h6>Dï¿½tail supplï¿½ments:</h6>
                     <div v-for="item in detailMetrage.items" :key="'supp-' + item.article">
                       <div v-if="item.supplements && item.supplements.length > 0" class="mb-2">
                         <strong>{{ item.article }}:</strong>
@@ -538,12 +538,12 @@
                     </div>
                   </div>
                 </div>
-                <div v-else class="text-muted">Aucun détail disponible</div>
+                <div v-else class="text-muted">Aucun dï¿½tail disponible</div>
               </div>
               
-              <!-- Régies pour métrages -->
+              <!-- Rï¿½gies pour mï¿½trages -->
               <div class="mb-3" v-if="detailMetrage.regies && detailMetrage.regies.length > 0">
-                <h6>Régies (Heures supplémentaires):</h6>
+                <h6>Rï¿½gies (Heures supplï¿½mentaires):</h6>
                 <table class="table table-sm table-bordered">
                   <thead>
                     <tr>
@@ -565,7 +565,7 @@
                   </tbody>
                   <tfoot>
                     <tr class="table-warning">
-                      <td colspan="3"><strong>Total Régies:</strong></td>
+                      <td colspan="3"><strong>Total Rï¿½gies:</strong></td>
                       <td><strong>{{ detailMetrage.regies.reduce((sum, r) => sum + (r.heures * (r.prixHeure || getPrixRegieMetrage())), 0).toFixed(2) }} CHF</strong></td>
                       <td></td>
                     </tr>
@@ -573,7 +573,7 @@
                 </table>
               </div>
               <div class="mb-3">
-                <label class="form-label">Acconti già fatturati (CHF TTC):</label>
+                <label class="form-label">Acconti giï¿½ fatturati (CHF TTC):</label>
                 <input 
                   v-model.number="accontiPrecedenti" 
                   type="number" 
@@ -607,22 +607,22 @@
             <div class="mb-3">
               <label>Date Facture:</label>
               <input v-model="nouvelleDate" type="date" class="form-control">
-              <small class="text-muted">Modifiez la date pour l'aligner au période de référence</small>
+              <small class="text-muted">Modifiez la date pour l'aligner au pï¿½riode de rï¿½fï¿½rence</small>
             </div>
             <div class="mb-3">
-              <label>Date Échéance:</label>
+              <label>Date ï¿½chï¿½ance:</label>
               <input v-model="nouvelleDateEcheance" type="date" class="form-control">
             </div>
             <div class="mb-3">
-              <label>Modalité de paiement:</label>
+              <label>Modalitï¿½ de paiement:</label>
               <select v-model="nouvelleModalitePaiement" class="form-control">
-                <option value="">Sélectionner...</option>
+                <option value="">Sï¿½lectionner...</option>
                 <option v-for="paiement in paiements" :key="paiement.id" :value="paiement.nom">
                   {{ paiement.nom }}
                 </option>
               </select>
-              <small class="text-info">Debug: {{ paiements.length }} modalités chargées</small>
-              <small class="text-muted">La date d'échéance sera recalculée automatiquement</small>
+              <small class="text-info">Debug: {{ paiements.length }} modalitï¿½s chargï¿½es</small>
+              <small class="text-muted">La date d'ï¿½chï¿½ance sera recalculï¿½e automatiquement</small>
             </div>
             <div class="mb-3">
               <label>Notes:</label>
@@ -642,16 +642,16 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5>?? Aperçu Facture {{ factureAnteprima.numero }}</h5>
+            <h5>?? Aperï¿½u Facture {{ factureAnteprima.numero }}</h5>
             <button @click="showAnteprimaFacture = false" class="btn-close"></button>
           </div>
           <div class="modal-body">
             <div class="row">
               <div class="col-md-6">
-                <h6>Informations Générales</h6>
-                <p><strong>N° Facture:</strong> {{ factureAnteprima.numero }}</p>
+                <h6>Informations Gï¿½nï¿½rales</h6>
+                <p><strong>Nï¿½ Facture:</strong> {{ factureAnteprima.numero }}</p>
                 <p><strong>Date:</strong> {{ formatDate(factureAnteprima.date_facture) }}</p>
-                <p><strong>Échéance:</strong> {{ formatDate(factureAnteprima.date_echeance) }}</p>
+                <p><strong>ï¿½chï¿½ance:</strong> {{ formatDate(factureAnteprima.date_echeance) }}</p>
                 <p><strong>Chantier:</strong> {{ getChantierNameWithNumber(factureAnteprima.chantier_id) }}</p>
                 <p><strong>Client:</strong> {{ factureAnteprima.client_nom }}</p>
                 <p><strong>Statut:</strong> <span :class="getStatutClass(factureAnteprima.statut)">{{ getStatutLabel(factureAnteprima.statut) }}</span></p>
@@ -664,13 +664,13 @@
                 </p>
                 <p><strong>TVA ({{ factureAnteprima.taux_tva || 8.1 }}%):</strong> {{ formatCurrency(calculateTVAFacture(factureAnteprima)) }}</p>
                 <hr>
-                <p class="h5"><strong>{{ (factureAnteprima.acconti_precedenti || 0) > 0 ? 'Solde à payer:' : 'Total TTC:' }}</strong> 
+                <p class="h5"><strong>{{ (factureAnteprima.acconti_precedenti || 0) > 0 ? 'Solde ï¿½ payer:' : 'Total TTC:' }}</strong> 
                   <span class="text-success">{{ formatCurrency(calculateTotalFacture(factureAnteprima)) }}</span>
                 </p>
               </div>
             </div>
             
-            <!-- CONTENU DÉTAILLÉ FACTURE -->
+            <!-- CONTENU Dï¿½TAILLï¿½ FACTURE -->
             <div class="mt-4">
               <h6>?? Contenu Facture</h6>
               
@@ -684,7 +684,7 @@
                     <p><strong>Periodo:</strong> {{ getResocontoDetails(factureAnteprima.resoconto_id).periode_month }}</p>
                     <div class="row">
                       <div class="col-md-8">
-                        <h6>Zones travaillées:</h6>
+                        <h6>Zones travaillï¿½es:</h6>
                         <table class="table table-sm table-bordered">
                           <thead>
                             <tr><th>Zone</th><th>Avancement</th><th>Montant Devis</th><th>Remise</th><th>Montant HT</th></tr>
@@ -701,9 +701,9 @@
                         </table>
                       </div>
                       <div class="col-md-4" v-if="getResocontoDetails(factureAnteprima.resoconto_id).regies?.length > 0">
-                        <h6>Régies:</h6>
+                        <h6>Rï¿½gies:</h6>
                         <div v-for="regie in getResocontoDetails(factureAnteprima.resoconto_id).regies" :key="regie.zone + regie.description" class="mb-2">
-                          <small><strong>{{ regie.zone }}:</strong> {{ regie.heures }}h × {{ regie.prixHeure || 75 }} CHF = {{ formatCurrency(regie.heures * (regie.prixHeure || 75)) }}</small>
+                          <small><strong>{{ regie.zone }}:</strong> {{ regie.heures }}h ï¿½ {{ regie.prixHeure || 75 }} CHF = {{ formatCurrency(regie.heures * (regie.prixHeure || 75)) }}</small>
                         </div>
                       </div>
                     </div>
@@ -711,17 +711,17 @@
                 </div>
               </div>
               
-              <!-- Fattura da Métrage -->
+              <!-- Fattura da Mï¿½trage -->
               <div v-else-if="factureAnteprima.metrage_id" class="card bg-light">
                 <div class="card-header bg-secondary text-white">
-                  <strong>?? Fattura Métrage</strong>
+                  <strong>?? Fattura Mï¿½trage</strong>
                 </div>
                 <div class="card-body">
                   <div v-if="getMetrageDetails(factureAnteprima.metrage_id)">
                     <p><strong>Total ML:</strong> {{ (getMetrageDetails(factureAnteprima.metrage_id).total_ml || 0).toFixed(2) }} ML</p>
                     <p><strong>Zone:</strong> {{ getMetrageDetails(factureAnteprima.metrage_id).zones?.join(', ') || 'N/A' }}</p>
                     <div v-if="getMetrageDetails(factureAnteprima.metrage_id).regies?.length > 0">
-                      <h6>Régies incluse:</h6>
+                      <h6>Rï¿½gies incluse:</h6>
                       <div v-for="regie in getMetrageDetails(factureAnteprima.metrage_id).regies" :key="regie.zone + regie.description" class="mb-1">
                         <small>{{ regie.zone }}: {{ regie.heures }}h - {{ regie.description }}</small>
                       </div>
@@ -739,7 +739,7 @@
                   <div v-if="factureAnteprima.lignes?.length > 0">
                     <table class="table table-sm">
                       <thead>
-                        <tr><th>Descrizione</th><th>Qté</th><th>Prezzo</th><th>Total</th></tr>
+                        <tr><th>Descrizione</th><th>Qtï¿½</th><th>Prezzo</th><th>Total</th></tr>
                       </thead>
                       <tbody>
                         <tr v-for="ligne in factureAnteprima.lignes" :key="ligne.description">
@@ -768,7 +768,7 @@
           </div>
           <div class="modal-footer">
             <button @click="genererPDF(factureAnteprima)" class="btn btn-info me-2">
-              ?? Générer PDF
+              ?? Gï¿½nï¿½rer PDF
             </button>
             <button @click="showAnteprimaFacture = false" class="btn btn-secondary">
               Fermer
@@ -789,13 +789,13 @@
           <div class="modal-body">
             <div class="alert alert-warning">
               <strong>?? Attenzione:</strong><br>
-              • La facture {{ factureRiapertura.numero }} sera supprimée<br>
-              • Le rapport redeviendra modifiable pour le chef<br>
-              • La nouvelle facture gardera le même numéro
+              ï¿½ La facture {{ factureRiapertura.numero }} sera supprimï¿½e<br>
+              ï¿½ Le rapport redeviendra modifiable pour le chef<br>
+              ï¿½ La nouvelle facture gardera le mï¿½me numï¿½ro
             </div>
             <div class="mb-3">
               <label><strong>Motif de la correction:</strong></label>
-              <textarea v-model="motivoCorrezione" class="form-control" rows="3" placeholder="Décrivez le problème trouvé par le client..."></textarea>
+              <textarea v-model="motivoCorrezione" class="form-control" rows="3" placeholder="Dï¿½crivez le problï¿½me trouvï¿½ par le client..."></textarea>
             </div>
           </div>
           <div class="modal-footer">
@@ -818,9 +818,9 @@
             <div class="mb-3">
               <label>Nouveau Statut:</label>
               <select v-model="nouveauStatut" class="form-control">
-                <option value="emise">Émise</option>
-                <option value="envoyee">Envoyée</option>
-                <option value="payee">Payée</option>
+                <option value="emise">ï¿½mise</option>
+                <option value="envoyee">Envoyï¿½e</option>
+                <option value="payee">Payï¿½e</option>
                 <option value="en_retard">En retard</option>
               </select>
             </div>
@@ -837,7 +837,7 @@
       </div>
     </div>
 
-    <!-- Modal Date Personnalisée -->
+    <!-- Modal Date Personnalisï¿½e -->
     <div v-if="showDatePersonnalisee" class="modal d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog">
         <div class="modal-content">
@@ -848,9 +848,9 @@
           <div class="modal-body">
             <div class="alert alert-info">
               <strong>?? Information:</strong><br>
-              • La date par défaut est aujourd'hui<br>
-              • Vous pouvez choisir une date antérieure (ex: 30.09)<br>
-              • La date ne peut pas être antérieure à la dernière facture émise
+              ï¿½ La date par dï¿½faut est aujourd'hui<br>
+              ï¿½ Vous pouvez choisir une date antï¿½rieure (ex: 30.09)<br>
+              ï¿½ La date ne peut pas ï¿½tre antï¿½rieure ï¿½ la derniï¿½re facture ï¿½mise
             </div>
             <div class="mb-3">
               <label class="form-label"><strong>Date de la facture:</strong></label>
@@ -860,7 +860,7 @@
                 class="form-control"
                 :max="new Date().toISOString().split('T')[0]"
               >
-              <small class="text-muted">La date d'échéance sera automatiquement calculée (+30 jours)</small>
+              <small class="text-muted">La date d'ï¿½chï¿½ance sera automatiquement calculï¿½e (+30 jours)</small>
             </div>
           </div>
           <div class="modal-footer">
@@ -921,7 +921,7 @@ const resocontiEnAttente = computed(() => {
   console.log('?? Resoconti finali:', resocontiPercentuali.value.filter(r => r.type === 'resoconto_finale'));
   
   return resocontiPercentuali.value.filter(r => 
-    !r.draft && // Resoconto sauvegardé (non brouillon)
+    !r.draft && // Resoconto sauvegardï¿½ (non brouillon)
     ((r.status === 'en_attente' || r.status === 'pending_approval' || !r.status) || // En attente, pending o senza status
      (r.status === 'approved' && !hasFacture(r))) // Approvati senza fattura
   );
@@ -931,12 +931,12 @@ const hasFacture = (resoconto) => {
   return factures.value.some(f => (f.resocontoId || f.resoconto_id) === resoconto.id);
 };
 
-// Métrages complétés mais non encore facturés
+// Mï¿½trages complï¿½tï¿½s mais non encore facturï¿½s
 const metragesEnAttente = computed(() => {
   return metrages.value.filter(m => 
-    !m.draft && // Métrage sauvegardé (non brouillon)
+    !m.draft && // Mï¿½trage sauvegardï¿½ (non brouillon)
     (m.status === 'en_attente' || !m.status) && // En attente d'approbation ou ancien
-    !m.facture && // Pas encore facturé
+    !m.facture && // Pas encore facturï¿½
     ((m.total_ml || m.totalML) > 0 || (m.regies && m.regies.length > 0)) // A du contenu (ML ou regias)
   );
 });
@@ -945,7 +945,7 @@ const metragesEnAttente = computed(() => {
 const facturesRecentes = computed(() => {
   return factures.value
     .sort((a, b) => new Date(b.date_facture || b.dateFacture) - new Date(a.date_facture || a.dateFacture))
-    .slice(0, 50); // Mostra più fatture per i filtri
+    .slice(0, 50); // Mostra piï¿½ fatture per i filtri
 });
 
 // Clients uniques pour filtro
@@ -959,7 +959,7 @@ const clientsUniques = computed(() => {
   return Array.from(clients).sort();
 });
 
-// Factures filtrées
+// Factures filtrï¿½es
 const facturesFiltrees = computed(() => {
   let filtered = facturesRecentes.value;
   
@@ -1052,7 +1052,7 @@ const loadData = async () => {
     // Metodi di pagamento
     await loadPaiements();
     
-    // Métrages (se esiste la tabella)
+    // Mï¿½trages (se esiste la tabella)
     try {
       const { data: metragesData, error: metragesError } = await supabase
         .from('metrages')
@@ -1134,7 +1134,7 @@ const loadData = async () => {
       console.log('? Devis 11 NON trovato!');
     }
   } catch (error) {
-    console.error('Erreur chargement données:', error);
+    console.error('Erreur chargement donnï¿½es:', error);
   }
 };
 
@@ -1146,14 +1146,14 @@ const calculateMontantEstime = (metrage) => {
   if (!chantierDevis || !chantierDevis.total) return 0;
   
   // Stima basata sulla percentuale di completamento
-  // Se il métrage ha totalML, calcola percentuale rispetto al devis
+  // Se il mï¿½trage ha totalML, calcola percentuale rispetto al devis
   const devisML = chantierDevis.produits?.reduce((sum, p) => sum + (p.ml || 0), 0) || 1;
   const percentageComplete = Math.min((metrage.totalML || 0) / devisML, 1);
   
   return chantierDevis.total * percentageComplete;
 };
 
-// Funzioni per calcolo prezzi nel modal métrage
+// Funzioni per calcolo prezzi nel modal mï¿½trage
 const getPrixUnitaireItem = (item) => {
   const chantier = chantiers.value.find(c => c.id === detailMetrage.value.chantier_id);
   const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
@@ -1209,7 +1209,7 @@ const autoriserFacturation = async (metrage) => {
     
     // Simula dialog personalizzato
     setTimeout(() => {
-      if (confirm('Approuver ce métrage et autoriser la facturation ?')) {
+      if (confirm('Approuver ce mï¿½trage et autoriser la facturation ?')) {
         resolve(true);
       } else {
         resolve(false);
@@ -1226,11 +1226,11 @@ const autoriserFacturation = async (metrage) => {
     const ultimaDataFactura = await getUltimaDataFactura();
     
     if (ultimaDataFactura && new Date(dataScelta) < new Date(ultimaDataFactura)) {
-      alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+      alert(`Erreur: La date ne peut pas ï¿½tre antï¿½rieure ï¿½ la derniï¿½re facture (${formatDate(ultimaDataFactura)})`);
       return;
     }
     
-    // Approuve d'abord le métrage
+    // Approuve d'abord le mï¿½trage
     await supabase
       .from('metrages')
       .update({
@@ -1254,7 +1254,7 @@ const autoriserFacturation = async (metrage) => {
     // Calcola data scadenza usando metodo di pagamento
     const dataScadenza = calculateDateEcheance(dataScelta, '30 jours net');
     
-    // Crée la facture con data personalizzata
+    // Crï¿½e la facture con data personalizzata
     const { error } = await supabase
       .from('factures')
       .insert([{
@@ -1268,13 +1268,13 @@ const autoriserFacturation = async (metrage) => {
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
         date_echeance: dataScadenza,
-        notes: `Facture générée depuis métrage du ${formatDate(metrage.created_at)}`,
+        notes: `Facture gï¿½nï¿½rï¿½e depuis mï¿½trage du ${formatDate(metrage.created_at)}`,
         created_at: new Date().toISOString()
       }]);
     
     if (error) throw error;
     
-    // Marque le métrage comme facturé
+    // Marque le mï¿½trage comme facturï¿½
     await supabase
       .from('metrages')
       .update({
@@ -1284,11 +1284,11 @@ const autoriserFacturation = async (metrage) => {
       })
       .eq('id', metrage.id);
     
-    alert(`Métrage approuvé et facture ${numeroFacture} créée avec succès !`);
+    alert(`Mï¿½trage approuvï¿½ et facture ${numeroFacture} crï¿½ï¿½e avec succï¿½s !`);
     loadData();
     showDetailMetrage.value = false;
   } catch (error) {
-    console.error('Erreur création facture:', error);
+    console.error('Erreur crï¿½ation facture:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -1372,7 +1372,7 @@ const getRemiseDevis = () => {
 };
 
 const calculateZoneMontant = (zone, percentage) => {
-  // Se è un resoconto finale, calcola il valore delle quantità reali
+  // Se ï¿½ un resoconto finale, calcola il valore delle quantitï¿½ reali
   if (detailResoconto.value.type === 'resoconto_finale') {
     return calculateResocontoFinaleValue(zone);
   }
@@ -1381,7 +1381,7 @@ const calculateZoneMontant = (zone, percentage) => {
   const chantier = chantiers.value.find(c => c.id == (detailResoconto.value.chantier_id || detailResoconto.value.chantierId));
   const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
   
-  // DEBUG: Verifica remise supplémentaire
+  // DEBUG: Verifica remise supplï¿½mentaire
   console.log('?? DEBUG REMISE - Devis:', chantierDevis?.numero, 'Remise:', chantierDevis?.remises);
   
   if (!chantierDevis) return 0;
@@ -1391,7 +1391,7 @@ const calculateZoneMontant = (zone, percentage) => {
     const numeroZone = chantierDevis.zones?.length || 1;
     let montantPerZona = montantCorps / numeroZone;
     
-    // Applica remise supplémentaire se presente
+    // Applica remise supplï¿½mentaire se presente
     if (chantierDevis.remises && chantierDevis.remises > 0) {
       montantPerZona = montantPerZona * (1 - chantierDevis.remises / 100);
     }
@@ -1405,7 +1405,7 @@ const calculateZoneMontant = (zone, percentage) => {
     .filter(p => p.zone === zone)
     .reduce((sum, p) => sum + Number(p.total || 0), 0);
   
-  // Applica remise supplémentaire se presente
+  // Applica remise supplï¿½mentaire se presente
   if (chantierDevis.remises && chantierDevis.remises > 0) {
     totaleZona = totaleZona * (1 - chantierDevis.remises / 100);
   }
@@ -1476,7 +1476,7 @@ const calculateResocontoFinaleValue = (zone) => {
   
   let totaleReale = 0;
   
-  // 1. MONETIZZA il resoconto: calcola valore delle quantità reali posate
+  // 1. MONETIZZA il resoconto: calcola valore delle quantitï¿½ reali posate
   detailResoconto.value.prodotti_reali
     .filter(prodottoReale => prodottoReale.zone === zone)
     .forEach(prodottoReale => {
@@ -1490,7 +1490,7 @@ const calculateResocontoFinaleValue = (zone) => {
         const valoreItem = quantitaReale * prezzoUnitario;
         totaleReale += valoreItem;
         
-        console.log(`  ${prodottoReale.article}: ${quantitaReale} ML × ${prezzoUnitario} CHF = ${valoreItem.toFixed(2)} CHF`);
+        console.log(`  ${prodottoReale.article}: ${quantitaReale} ML ï¿½ ${prezzoUnitario} CHF = ${valoreItem.toFixed(2)} CHF`);
       }
     });
   
@@ -1499,7 +1499,7 @@ const calculateResocontoFinaleValue = (zone) => {
     .filter(p => p.zone === zone)
     .reduce((sum, p) => sum + Number(p.total || 0), 0);
   
-  // 3. TROVA il 40% già fatturato per QUESTA ZONA
+  // 3. TROVA il 40% giï¿½ fatturato per QUESTA ZONA
   const percentualeGiaFatturata = resocontiPercentuali.value
     .filter(r => 
       r.status === 'approved' && 
@@ -1508,7 +1508,7 @@ const calculateResocontoFinaleValue = (zone) => {
     )
     .reduce((sum, r) => sum + (r.avancementi?.[zone] || 0), 0);
   
-  // 4. CALCOLA l'importo già fatturato (40% di QUESTA ZONA)
+  // 4. CALCOLA l'importo giï¿½ fatturato (40% di QUESTA ZONA)
   const importoGiaFatturato = totaleDevisZona * percentualeGiaFatturata / 100;
   
   // 5. CALCOLA la differenza da fatturare
@@ -1516,7 +1516,7 @@ const calculateResocontoFinaleValue = (zone) => {
   
   console.log(`?? RESOCONTO FINALE - ${zone}:`);
   console.log(`  Valore reale totale: ${totaleReale.toFixed(2)} CHF`);
-  console.log(`  Già fatturato: ${importoGiaFatturato.toFixed(2)} CHF`);
+  console.log(`  Giï¿½ fatturato: ${importoGiaFatturato.toFixed(2)} CHF`);
   console.log(`  Da fatturare: ${differenza.toFixed(2)} CHF`);
   
   return differenza;
@@ -1599,7 +1599,7 @@ const approuverResoconto = async (resoconto) => {
     
     // Simula dialog personalizzato
     setTimeout(() => {
-      if (confirm('Approuver ce resoconto percentuel et générer la facture ?')) {
+      if (confirm('Approuver ce resoconto percentuel et gï¿½nï¿½rer la facture ?')) {
         resolve(true);
       } else {
         resolve(false);
@@ -1616,7 +1616,7 @@ const approuverResoconto = async (resoconto) => {
     const ultimaDataFactura = await getUltimaDataFactura();
     
     if (ultimaDataFactura && new Date(dataScelta) < new Date(ultimaDataFactura)) {
-      alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+      alert(`Erreur: La date ne peut pas ï¿½tre antï¿½rieure ï¿½ la derniï¿½re facture (${formatDate(ultimaDataFactura)})`);
       return;
     }
     
@@ -1647,7 +1647,7 @@ const approuverResoconto = async (resoconto) => {
     // USA NUMERO RISERVATO SE ESISTE (per correzioni)
     const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture(dataScelta);
     
-    // NON salvare acconti nel database per resoconti finali (già sottratti nel calcolo)
+    // NON salvare acconti nel database per resoconti finali (giï¿½ sottratti nel calcolo)
     const accontiDaSalvare = resoconto.type === 'resoconto_finale' ? 0 : Number(totalAccontiZone.value || 0);
     
     // Calcola data scadenza (30 giorni dalla data fattura)
@@ -1668,7 +1668,7 @@ const approuverResoconto = async (resoconto) => {
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
         date_echeance: dataScadenza.toISOString().split('T')[0],
-        notes: `Facture générée depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
+        notes: `Facture gï¿½nï¿½rï¿½e depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
         created_at: new Date().toISOString()
       }]);
     
@@ -1682,7 +1682,7 @@ const approuverResoconto = async (resoconto) => {
         .eq('id', resoconto.id);
     }
     
-    alert(`Resoconto approuvé et facture ${numeroFacture} créée!`);
+    alert(`Resoconto approuvï¿½ et facture ${numeroFacture} crï¿½ï¿½e!`);
     showDetailResoconto.value = false;  // Chiudi il modal
     // Piccolo delay per permettere al DB di aggiornarsi
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -1709,7 +1709,7 @@ const refuserResoconto = async (resoconto) => {
       .eq('id', resoconto.id);
     
     if (error) throw error;
-    alert('Resoconto refusé.');
+    alert('Resoconto refusï¿½.');
     loadData();
   } catch (error) {
     console.error('Erreur refus resoconto:', error);
@@ -1718,7 +1718,7 @@ const refuserResoconto = async (resoconto) => {
 };
 
 const eliminarResoconto = async (resoconto) => {
-  if (!confirm('Eliminer ce resoconto? Il sera marqué comme refusé et le chef pourra en créer un nouveau.')) return;
+  if (!confirm('Eliminer ce resoconto? Il sera marquï¿½ comme refusï¿½ et le chef pourra en crï¿½er un nouveau.')) return;
   
   try {
     const { error } = await supabase
@@ -1732,10 +1732,10 @@ const eliminarResoconto = async (resoconto) => {
       .eq('id', resoconto.id);
     
     if (error) throw error;
-    alert('Resoconto éliminé (marqué comme refusé).');
+    alert('Resoconto ï¿½liminï¿½ (marquï¿½ comme refusï¿½).');
     loadData();
   } catch (error) {
-    console.error('Erreur élimination:', error);
+    console.error('Erreur ï¿½limination:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -1756,7 +1756,7 @@ const generarFactureResoconto = async (resoconto) => {
     
     // Simula dialog personalizzato
     setTimeout(() => {
-      if (confirm('Générer la facture pour ce resoconto approuvé ?')) {
+      if (confirm('Gï¿½nï¿½rer la facture pour ce resoconto approuvï¿½ ?')) {
         resolve(true);
       } else {
         resolve(false);
@@ -1773,7 +1773,7 @@ const generarFactureResoconto = async (resoconto) => {
     const ultimaDataFactura = await getUltimaDataFactura();
     
     if (ultimaDataFactura && new Date(dataScelta) < new Date(ultimaDataFactura)) {
-      alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+      alert(`Erreur: La date ne peut pas ï¿½tre antï¿½rieure ï¿½ la derniï¿½re facture (${formatDate(ultimaDataFactura)})`);
       return;
     }
     
@@ -1808,7 +1808,7 @@ const generarFactureResoconto = async (resoconto) => {
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
         date_echeance: dataScadenza.toISOString().split('T')[0],
-        notes: `Facture générée depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
+        notes: `Facture gï¿½nï¿½rï¿½e depuis resoconto percentuel ${resoconto.periode_month || resoconto.periodeMonth}`,
         created_at: new Date().toISOString()
       }]);
     
@@ -1822,16 +1822,16 @@ const generarFactureResoconto = async (resoconto) => {
         .eq('id', resoconto.id);
     }
     
-    alert(`Facture ${numeroFacture} créée avec succès!`);
+    alert(`Facture ${numeroFacture} crï¿½ï¿½e avec succï¿½s!`);
     loadData();
   } catch (error) {
-    console.error('Erreur génération facture:', error);
+    console.error('Erreur gï¿½nï¿½ration facture:', error);
     alert('Erreur: ' + error.message);
   }
 };
 
 const eliminarMetrage = async (metrage) => {
-  if (!confirm('Eliminer ce métrage de test?')) return;
+  if (!confirm('Eliminer ce mï¿½trage de test?')) return;
   
   try {
     const { error } = await supabase
@@ -1840,16 +1840,16 @@ const eliminarMetrage = async (metrage) => {
       .eq('id', metrage.id);
     
     if (error) throw error;
-    alert('Métrage éliminé.');
+    alert('Mï¿½trage ï¿½liminï¿½.');
     loadData();
   } catch (error) {
-    console.error('Erreur élimination métrage:', error);
+    console.error('Erreur ï¿½limination mï¿½trage:', error);
     alert('Erreur: ' + error.message);
   }
 };
 
 const pulirVecchiResoconti = async () => {
-  if (!confirm('Supprimer tous les anciens resoconti de test? Cette action est irréversible.')) return;
+  if (!confirm('Supprimer tous les anciens resoconti de test? Cette action est irrï¿½versible.')) return;
   
   try {
     // Trova resoconti orfani (senza cantiere valido)
@@ -1867,7 +1867,7 @@ const pulirVecchiResoconti = async () => {
       if (error) console.error('Errore eliminazione resoconto:', error);
     }
     
-    alert(`${resocontiOrfani.length} anciens resoconti supprimés.`);
+    alert(`${resocontiOrfani.length} anciens resoconti supprimï¿½s.`);
     loadData();
   } catch (error) {
     console.error('Erreur nettoyage:', error);
@@ -1892,11 +1892,11 @@ const confirmerChangeStatut = async () => {
       .eq('id', factureEnCours.value.id);
     
     if (error) throw error;
-    alert('Statut mis à jour avec succès');
+    alert('Statut mis ï¿½ jour avec succï¿½s');
     loadData();
     showChangeStatut.value = false;
   } catch (error) {
-    console.error('Erreur mise à jour statut:', error);
+    console.error('Erreur mise ï¿½ jour statut:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -1916,10 +1916,10 @@ const modifierFacture = (facture) => {
   factureEnCours.value = facture;
   nouvelleDate.value = facture.date_facture || facture.dateFacture;
   nouvelleDateEcheance.value = facture.date_echeance || facture.dateEcheance || '';
-  // Estrai modalità pagamento dalle notes
+  // Estrai modalitï¿½ pagamento dalle notes
   const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
   nouvelleModalitePaiement.value = modalitaMatch ? modalitaMatch[1].trim() : '';
-  console.log('?? Modalità estratta:', nouvelleModalitePaiement.value);
+  console.log('?? Modalitï¿½ estratta:', nouvelleModalitePaiement.value);
   nouvellesNotes.value = facture.notes || '';
   showModifierFacture.value = true;
 };
@@ -1929,29 +1929,29 @@ const confirmerModificationFacture = async () => {
     // Valida la data - permetti modifica della stessa fattura
     const ultimaDataFactura = await getUltimaDataFactura();
     
-    // Controlla solo se non è la stessa fattura che stiamo modificando
+    // Controlla solo se non ï¿½ la stessa fattura che stiamo modificando
     if (ultimaDataFactura && new Date(nouvelleDate.value) < new Date(ultimaDataFactura)) {
-      // Verifica se la data dell'ultima fattura è diversa da quella attuale
+      // Verifica se la data dell'ultima fattura ï¿½ diversa da quella attuale
       const dataAttuale = factureEnCours.value.date_facture || factureEnCours.value.dateFacture;
       if (ultimaDataFactura !== dataAttuale) {
-        alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
+        alert(`Erreur: La date ne peut pas ï¿½tre antï¿½rieure ï¿½ la derniï¿½re facture (${formatDate(ultimaDataFactura)})`);
         return;
       }
     }
     
-    // Recalcola data scadenza se modalità pagamento è cambiata
+    // Recalcola data scadenza se modalitï¿½ pagamento ï¿½ cambiata
     let dataEcheanceFinale = nouvelleDateEcheance.value;
     if (nouvelleModalitePaiement.value) {
       dataEcheanceFinale = calculateDateEcheance(nouvelleDate.value, nouvelleModalitePaiement.value);
     }
     
-    // Aggiorna notes con modalità di pagamento
+    // Aggiorna notes con modalitï¿½ di pagamento
     let notesAggiornate = nouvellesNotes.value || '';
     if (nouvelleModalitePaiement.value) {
-      // Rimuovi vecchia modalità se presente
-      notesAggiornate = notesAggiornate.replace(/Modalité:\s*[^\n]+\n?/g, '');
-      // Aggiungi nuova modalità
-      notesAggiornate = (notesAggiornate.trim() + '\nModalité: ' + nouvelleModalitePaiement.value).trim();
+      // Rimuovi vecchia modalitï¿½ se presente
+      notesAggiornate = notesAggiornate.replace(/Modalitï¿½:\s*[^\n]+\n?/g, '');
+      // Aggiungi nuova modalitï¿½
+      notesAggiornate = (notesAggiornate.trim() + '\nModalitï¿½: ' + nouvelleModalitePaiement.value).trim();
     }
     
     const { error } = await supabase
@@ -1964,7 +1964,7 @@ const confirmerModificationFacture = async () => {
       .eq('id', factureEnCours.value.id);
     
     if (error) throw error;
-    alert('Facture modifiée avec succès');
+    alert('Facture modifiï¿½e avec succï¿½s');
     loadData();
     showModifierFacture.value = false;
   } catch (error) {
@@ -1977,14 +1977,14 @@ const corrigerFacture = async (facture) => {
   if (!confirm(`Recalculer le montant de la facture ${facture.numero} ?`)) return;
   
   try {
-    // Trova il métrage associato
+    // Trova il mï¿½trage associato
     const metrage = metrages.value.find(m => m.id === (facture.metrage_id || facture.metrageId));
     if (!metrage) {
-      alert('Métrage associé non trouvé');
+      alert('Mï¿½trage associï¿½ non trouvï¿½');
       return;
     }
     
-    console.log('Debug métrage pour correction:', metrage);
+    console.log('Debug mï¿½trage pour correction:', metrage);
     
     // Recalcule le montant
     let montantHT = 0;
@@ -2020,11 +2020,11 @@ const corrigerFacture = async (facture) => {
       montantHT += montantRegies;
     }
     
-    console.log('Montant total calculé:', montantHT);
+    console.log('Montant total calculï¿½:', montantHT);
     
     const montantTTC = montantHT * 1.081; // TVA 8.1%
     
-    // Met à jour la facture
+    // Met ï¿½ jour la facture
     const { error } = await supabase
       .from('factures')
       .update({
@@ -2035,7 +2035,7 @@ const corrigerFacture = async (facture) => {
     
     if (error) throw error;
     
-    alert(`Facture corrigée: ${montantTTC.toFixed(2)} CHF`);
+    alert(`Facture corrigï¿½e: ${montantTTC.toFixed(2)} CHF`);
     loadData();
   } catch (error) {
     console.error('Erreur correction facture:', error);
@@ -2044,7 +2044,7 @@ const corrigerFacture = async (facture) => {
 };
 
 const supprimerFacture = async (facture) => {
-  if (!confirm(`Supprimer la facture ${facture.numero} ?\n\nATTENTION: L'élément associé sera remis en attente de facturation.`)) return;
+  if (!confirm(`Supprimer la facture ${facture.numero} ?\n\nATTENTION: L'ï¿½lï¿½ment associï¿½ sera remis en attente de facturation.`)) return;
   
   try {
     // Supprime la facture
@@ -2055,7 +2055,7 @@ const supprimerFacture = async (facture) => {
     
     if (error) throw error;
     
-    // Remet le métrage en attente si il existe
+    // Remet le mï¿½trage en attente si il existe
     if (facture.metrage_id || facture.metrageId) {
       try {
         await supabase
@@ -2085,7 +2085,7 @@ const supprimerFacture = async (facture) => {
       }
     }
     
-    alert('Facture supprimée avec succès');
+    alert('Facture supprimï¿½e avec succï¿½s');
     loadData();
   } catch (error) {
     console.error('Erreur suppression facture:', error);
@@ -2101,7 +2101,7 @@ const getChantierName = (id) => {
 const getChantierNameWithNumber = (id) => {
   const chantier = chantiers.value.find(c => c.id == id);
   if (!chantier) return 'N/A';
-  const numero = chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
+  const numero = chantier.numero_cantiere ? `Nï¿½ ${chantier.numero_cantiere} - ` : '';
   return `${numero}${chantier.nom}`;
 };
 
@@ -2112,9 +2112,9 @@ const getClientName = (chantierId) => {
 
 const getStatutLabel = (statut) => {
   const labels = {
-    emise: 'Émise',
-    envoyee: 'Envoyée', 
-    payee: 'Payée',
+    emise: 'ï¿½mise',
+    envoyee: 'Envoyï¿½e', 
+    payee: 'Payï¿½e',
     en_retard: 'En retard'
   };
   return labels[statut] || statut;
@@ -2190,7 +2190,7 @@ const generateNumeroFacture = async (dataFactura = null) => {
     
     if (fattureError) throw fattureError;
     
-    // Trova il numero più alto
+    // Trova il numero piï¿½ alto
     let ultimoNumero = 0;
     if (fattureAnno && fattureAnno.length > 0) {
       fattureAnno.forEach(f => {
@@ -2272,19 +2272,19 @@ const genererPDF = async (facture) => {
       
       // Usa la stessa funzione drawHeader delle altre fatture
       const drawHeader = (doc, title) => {
-        // Logo più grande e più in basso
+        // Logo piï¿½ grande e piï¿½ in basso
         if (logo) doc.addImage(logo, 'JPEG', 15, 20, 70, 15);
         
-        // Dati azienda più grandi
+        // Dati azienda piï¿½ grandi
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
         doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
-        doc.text('1203 Genève', 195, 34, { align: 'right' });
+        doc.text('1203 Genï¿½ve', 195, 34, { align: 'right' });
         doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
         doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
         
-        // Titolo più in basso
+        // Titolo piï¿½ in basso
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
         doc.text(title, 15, 50);
@@ -2293,21 +2293,21 @@ const genererPDF = async (facture) => {
         doc.setLineWidth(0.5);
         doc.line(15, 55, 195, 55);
         
-        // Informazioni documento con più spazio
+        // Informazioni documento con piï¿½ spazio
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         let yInfo = 65;
         
-        // Prima colonna (sinistra) - più spaziosa
+        // Prima colonna (sinistra) - piï¿½ spaziosa
         doc.text(`Date: ${formatDate(facture.date_facture)}`, 15, yInfo);
         
         yInfo += 10;
         doc.setFont('helvetica', 'bold');
-        doc.text('FACTURÉ À:', 15, yInfo);
+        doc.text('FACTURï¿½ ï¿½:', 15, yInfo);
         yInfo += 6;
         doc.setFont('helvetica', 'normal');
         
-        // Dati cliente più grandi con text wrapping
+        // Dati cliente piï¿½ grandi con text wrapping
         const clientData = clients.value.find(c => c.nom === facture.client_nom);
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
@@ -2337,7 +2337,7 @@ const genererPDF = async (facture) => {
         if (chantier) {
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(10);
-          doc.text(`CHANTIER N° ${chantier.numero_cantiere || chantier.numeroCantiere || 'N/A'}`, 115, yInfoRight);
+          doc.text(`CHANTIER Nï¿½ ${chantier.numero_cantiere || chantier.numeroCantiere || 'N/A'}`, 115, yInfoRight);
           yInfoRight += 6;
           doc.setFont('helvetica', 'normal');
           doc.text(`${chantier.nom}`, 115, yInfoRight);
@@ -2362,7 +2362,7 @@ const genererPDF = async (facture) => {
           }
         }
         
-        return Math.max(yInfo, yInfoRight) + 20; // Ancora più spazio dopo l'header
+        return Math.max(yInfo, yInfoRight) + 20; // Ancora piï¿½ spazio dopo l'header
       };
       
       let startY = drawHeader(doc, `FACTURE N. ${facture.numero}`);
@@ -2379,7 +2379,7 @@ const genererPDF = async (facture) => {
       ]);
       
       autoTable(doc, {
-        head: [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']],
+        head: [['Description', 'Unitï¿½', 'Quantitï¿½', 'Prix unitaire', 'Total HT']],
         body: tableData,
         startY: startY,
         theme: 'striped',
@@ -2416,7 +2416,7 @@ const genererPDF = async (facture) => {
       const tva = totalHT * 0.081;
       const ttc = totalHT + tva;
       
-      // Box per i totali più elegante
+      // Box per i totali piï¿½ elegante
       doc.setFillColor(248, 249, 250);
       doc.rect(115, finalY - 5, 85, 30, 'F');
       doc.setDrawColor(180, 180, 180);
@@ -2430,7 +2430,7 @@ const genererPDF = async (facture) => {
       doc.text(`TVA (8.1%):`, 120, finalY + 9);
       doc.text(`${tva.toFixed(2)} CHF`, 195, finalY + 9, { align: 'right' });
       
-      // Linea separatrice più elegante
+      // Linea separatrice piï¿½ elegante
       doc.setLineWidth(0.5);
       doc.setDrawColor(100, 100, 100);
       doc.line(120, finalY + 13, 195, finalY + 13);
@@ -2483,7 +2483,7 @@ const genererPDF = async (facture) => {
       const dataFacture = facture.date_facture?.replace(/-/g, '') || new Date().toISOString().split('T')[0].replace(/-/g, '');
       
       doc.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}.pdf`);
-      alert('Facture générée avec succès!');
+      alert('Facture gï¿½nï¿½rï¿½e avec succï¿½s!');
       return;
     }
 
@@ -2494,26 +2494,31 @@ const genererPDF = async (facture) => {
     console.log('?? PDF - Tutti i devis IDs:', devis.value.map(d => ({id: d.id, type: typeof d.id})));
     const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id); // Usa == invece di ===
     
-    // Fattura da métrage détaillé
+    // Fattura da mï¿½trage dï¿½taillï¿½
     const metrageDoc = metrageId ? metrages.value.find(m => m.id === metrageId) : null;
     
     // Fattura da resoconto percentuale
     const resocontoDoc = resocontoId ? resocontiPercentuali.value.find(r => r.id === resocontoId) : null;
     
+    // Carica acconti per zona se resoconto finale
+    if (resocontoDoc?.type === 'resoconto_finale' && resocontoDoc.acconti_per_zona) {
+      accontiPerZona.value = resocontoDoc.acconti_per_zona;
+    }
+    
     const nomeCliente = facture.client_nom || chantier?.client || 'Client';
-    const numeroChantier = chantier?.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '';
+    const numeroChantier = chantier?.numero_cantiere ? `Nï¿½ ${chantier.numero_cantiere} - ` : '';
     const nomeChantier = chantier?.nom || 'N/A';
     
     // Periodo di riferimento
     let periodoRef = '';
     if (metrageDoc) {
-      // Fattura da métrage
+      // Fattura da mï¿½trage
       if (metrageDoc.periode_debut && metrageDoc.periode_fin) {
-        periodoRef = `Période: ${metrageDoc.periode_debut} - ${metrageDoc.periode_fin}`;
+        periodoRef = `Pï¿½riode: ${metrageDoc.periode_debut} - ${metrageDoc.periode_fin}`;
       } else if (metrageDoc.created_at) {
         const date = new Date(metrageDoc.created_at);
         const mese = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-        periodoRef = `Période: ${mese}`;
+        periodoRef = `Pï¿½riode: ${mese}`;
       }
     } else if (resocontoDoc) {
       // Fattura da resoconto percentuale
@@ -2521,25 +2526,25 @@ const genererPDF = async (facture) => {
         const [year, month] = resocontoDoc.periode_month.split('-');
         const date = new Date(year, month - 1);
         const mese = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-        periodoRef = `Période: ${mese}`;
+        periodoRef = `Pï¿½riode: ${mese}`;
       }
     }
 
     // Funzione helper per header
     const drawHeader = (doc, title) => {
-      // Logo più grande e più in basso
+      // Logo piï¿½ grande e piï¿½ in basso
       if (logo) doc.addImage(logo, 'JPEG', 15, 20, 70, 15);
       
-      // Dati azienda più grandi
+      // Dati azienda piï¿½ grandi
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
       doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
-      doc.text('1203 Genève', 195, 34, { align: 'right' });
+      doc.text('1203 Genï¿½ve', 195, 34, { align: 'right' });
       doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
       doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
       
-      // Titolo più in basso
+      // Titolo piï¿½ in basso
       doc.setFontSize(20);
       doc.setFont('helvetica', 'bold');
       doc.text(title, 15, 50);
@@ -2548,12 +2553,12 @@ const genererPDF = async (facture) => {
       doc.setLineWidth(0.5);
       doc.line(15, 55, 195, 55);
       
-      // Informazioni documento con più spazio
+      // Informazioni documento con piï¿½ spazio
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       let yInfo = 65;
       
-      // Prima colonna (sinistra) - più spaziosa
+      // Prima colonna (sinistra) - piï¿½ spaziosa
       doc.text(`Date: ${formatDate(facture.date_facture)}`, 15, yInfo);
       if (periodoRef) {
         yInfo += 6;
@@ -2562,11 +2567,11 @@ const genererPDF = async (facture) => {
       
       yInfo += 10;
       doc.setFont('helvetica', 'bold');
-      doc.text('FACTURÉ À:', 15, yInfo);
+      doc.text('FACTURï¿½ ï¿½:', 15, yInfo);
       yInfo += 6;
       doc.setFont('helvetica', 'normal');
       
-      // Dati cliente più grandi con text wrapping
+      // Dati cliente piï¿½ grandi con text wrapping
       const clientData = clients.value.find(c => c.nom === nomeCliente);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
@@ -2596,7 +2601,7 @@ const genererPDF = async (facture) => {
       if (chantier) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text(`CHANTIER N° ${chantier.numero_cantiere || chantier.numeroCantiere || 'N/A'}`, 115, yInfoRight);
+        doc.text(`CHANTIER Nï¿½ ${chantier.numero_cantiere || chantier.numeroCantiere || 'N/A'}`, 115, yInfoRight);
         yInfoRight += 6;
         doc.setFont('helvetica', 'normal');
         doc.text(`${chantier.nom}`, 115, yInfoRight);
@@ -2624,25 +2629,25 @@ const genererPDF = async (facture) => {
       } else {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text('TRAVAUX GÉNÉRAUX', 115, yInfoRight);
+        doc.text('TRAVAUX Gï¿½Nï¿½RAUX', 115, yInfoRight);
         yInfoRight += 6;
       }
       
       return Math.max(yInfo, yInfoRight) + 20;
     };
 
-    // FATTURA DA RESOCONTO FINALE - COPIA ESATTA LOGICA MÉTRAGES
+    // FATTURA DA RESOCONTO FINALE - COPIA ESATTA LOGICA Mï¿½TRAGES
     if (resocontoDoc && resocontoDoc.type === 'resoconto_finale') {
-      // 1. PDF MÉTRÉES (senza prezzi) - COPIA ESATTA
+      // 1. PDF Mï¿½TRï¿½ES (senza prezzi) - COPIA ESATTA
       const docMetrees = new jsPDF({ unit: 'mm', format: 'a4' });
-      let yPos = drawHeader(docMetrees, `MÉTRÉES DÉTAILLÉES - ${facture.numero}`);
+      let yPos = drawHeader(docMetrees, `Mï¿½TRï¿½ES Dï¿½TAILLï¿½ES - ${facture.numero}`);
       
       // Aggiungi intestazione RAPPORT FINAL
       docMetrees.setFontSize(11);
       docMetrees.setFont('helvetica', 'bold');
       docMetrees.setFillColor(255, 250, 205);
       docMetrees.rect(10, yPos - 3, 190, 8, 'F');
-      docMetrees.text('?? RAPPORT FINAL DE ZONE - QUANTITÉS RÉELLES POSÉES', 15, yPos + 2);
+      docMetrees.text('?? RAPPORT FINAL DE ZONE - QUANTITï¿½S Rï¿½ELLES POSï¿½ES', 15, yPos + 2);
       yPos += 12;
       
       let totalMetreesHT = 0;
@@ -2682,7 +2687,7 @@ const genererPDF = async (facture) => {
             
             const total = quantite + totalSuppl;
             
-            // Aggiungi prezzi anche nel PDF métrées
+            // Aggiungi prezzi anche nel PDF mï¿½trï¿½es
             const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
             const prezzoUnit = Number(prodottoDevis?.prix || 50);
             const totalItem = total * prezzoUnit;
@@ -2703,7 +2708,7 @@ const genererPDF = async (facture) => {
           });
           
           autoTable(docMetrees, {
-            head: [['Code', 'Produit', 'Taille', 'U', 'Qté', 'Suppl.', 'Total', 'Prix/U', 'Total CHF']],
+            head: [['Code', 'Produit', 'Taille', 'U', 'Qtï¿½', 'Suppl.', 'Total', 'Prix/U', 'Total CHF']],
             body: tableData,
             startY: yPos + 8,
             theme: 'striped',
@@ -2733,7 +2738,7 @@ const genererPDF = async (facture) => {
           
           yPos = docMetrees.lastAutoTable.finalY + 5;
           
-          // Sous-total zona nel PDF métrées
+          // Sous-total zona nel PDF mï¿½trï¿½es
           docMetrees.setFillColor(250, 250, 250);
           docMetrees.rect(130, yPos - 2, 70, 6, 'F');
           docMetrees.setFont('helvetica', 'bold');
@@ -2742,11 +2747,11 @@ const genererPDF = async (facture) => {
           yPos += 12;
         });
         
-        // Détail des suppléments par zone - COPIA ESATTA
+        // Dï¿½tail des supplï¿½ments par zone - COPIA ESATTA
         yPos += 10;
         docMetrees.setFontSize(14);
         docMetrees.setFont('helvetica', 'bold');
-        docMetrees.text('DÉTAIL DES SUPPLÉMENTS PAR ZONE', 10, yPos);
+        docMetrees.text('Dï¿½TAIL DES SUPPLï¿½MENTS PAR ZONE', 10, yPos);
         yPos += 10;
         
         Object.entries(itemsByZone).forEach(([zoneName, items]) => {
@@ -2798,12 +2803,12 @@ const genererPDF = async (facture) => {
               
               suppData.push([
                 '', '', '', 
-                { content: `Total Suppléments (${product.nom}):`, colSpan: 3, styles: { fontStyle: 'bold' } },
+                { content: `Total Supplï¿½ments (${product.nom}):`, colSpan: 3, styles: { fontStyle: 'bold' } },
                 { content: `${totalSupp.toFixed(2)} ML`, styles: { fontStyle: 'bold' } }
               ]);
               
               autoTable(docMetrees, {
-                head: [['Code Article', 'Produit', 'Taille', 'Supplément', 'Qté', 'Valeur', 'Total ML']],
+                head: [['Code Article', 'Produit', 'Taille', 'Supplï¿½ment', 'Qtï¿½', 'Valeur', 'Total ML']],
                 body: suppData,
                 startY: yPos,
                 theme: 'striped',
@@ -2833,7 +2838,7 @@ const genererPDF = async (facture) => {
           } else {
             docMetrees.setFontSize(9);
             docMetrees.setFont('helvetica', 'italic');
-            docMetrees.text('Aucun supplément pour cette zone', 15, yPos + 5);
+            docMetrees.text('Aucun supplï¿½ment pour cette zone', 15, yPos + 5);
             yPos += 10;
           }
           
@@ -2841,9 +2846,9 @@ const genererPDF = async (facture) => {
         });
       }
       
-      // Régies nel PDF métrées (per technicien)
+      // Rï¿½gies nel PDF mï¿½trï¿½es (per technicien)
       if (resocontoDoc.regies?.length > 0) {
-        // Verifica spazio per sezione régies
+        // Verifica spazio per sezione rï¿½gies
         if (yPos > 220) {
           docMetrees.addPage();
           yPos = 20;
@@ -2851,7 +2856,7 @@ const genererPDF = async (facture) => {
         
         docMetrees.setFontSize(14);
         docMetrees.setFont('helvetica', 'bold');
-        docMetrees.text('RÉGIES (HEURES SUPPLÉMENTAIRES)', 10, yPos);
+        docMetrees.text('Rï¿½GIES (HEURES SUPPLï¿½MENTAIRES)', 10, yPos);
         yPos += 10;
         
         const prixRegieChantier = chantier?.prix_regie || 75;
@@ -2897,15 +2902,15 @@ const genererPDF = async (facture) => {
         
         yPos = docMetrees.lastAutoTable.finalY + 5;
         
-        // Sous-total régies nel PDF métrées
+        // Sous-total rï¿½gies nel PDF mï¿½trï¿½es
         docMetrees.setFillColor(250, 250, 250);
         docMetrees.rect(130, yPos - 2, 70, 6, 'F');
         docMetrees.setFont('helvetica', 'bold');
         docMetrees.setFontSize(9);
-        docMetrees.text(`Sous-total Régies: ${totalRegiesMetrees.toFixed(2)} CHF`, 135, yPos + 2);
+        docMetrees.text(`Sous-total Rï¿½gies: ${totalRegiesMetrees.toFixed(2)} CHF`, 135, yPos + 2);
         yPos += 15;
         
-        // Total général nel PDF métrées
+        // Total gï¿½nï¿½ral nel PDF mï¿½trï¿½es
         docMetrees.setFillColor(245, 245, 245);
         docMetrees.rect(115, yPos - 5, 85, 15, 'F');
         docMetrees.setDrawColor(200, 200, 200);
@@ -2985,7 +2990,7 @@ const genererPDF = async (facture) => {
           });
           
           autoTable(docFacture, {
-            head: [['Code', 'Produit', 'Taille', 'U', 'Qté', 'Suppl.', 'Total', 'Prix/U', 'Total CHF']],
+            head: [['Code', 'Produit', 'Taille', 'U', 'Qtï¿½', 'Suppl.', 'Total', 'Prix/U', 'Total CHF']],
             body: tableData,
             startY: yPos + 8,
             theme: 'striped',
@@ -3020,7 +3025,7 @@ const genererPDF = async (facture) => {
             ?.filter(p => p.zone === zoneName)
             .reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
           
-          // Calcola già fatturato zona (usa accontiPerZona già calcolato)
+          // Calcola giï¿½ fatturato zona (usa accontiPerZona giï¿½ calcolato)
           const giaFatturatoZona = Number(accontiPerZona.value[zoneName] || 0);
           
           // Calcola totale da fatturare
@@ -3048,9 +3053,9 @@ const genererPDF = async (facture) => {
         });
       }
       
-      // Régies se presenti
+      // Rï¿½gies se presenti
       if (resocontoDoc.regies?.length > 0) {
-        // Verifica spazio per régies
+        // Verifica spazio per rï¿½gies
         if (yPos > 200) {
           docFacture.addPage();
           yPos = 20;
@@ -3058,7 +3063,7 @@ const genererPDF = async (facture) => {
         
         docFacture.setFontSize(12);
         docFacture.setFont('helvetica', 'bold');
-        docFacture.text('RÉGIES', 10, yPos);
+        docFacture.text('Rï¿½GIES', 10, yPos);
         
         const prixRegieChantier = chantier?.prix_regie || 75;
         const regieData = resocontoDoc.regies.map(regie => {
@@ -3182,7 +3187,7 @@ const genererPDF = async (facture) => {
     
     docFacture.setFont('helvetica', 'bold');
     docFacture.setFontSize(12);
-    const labelFinal = accontiHT > 0 ? 'SOLDE À PAYER:' : 'TOTAL TTC:';
+    const labelFinal = accontiHT > 0 ? 'SOLDE ï¿½ PAYER:' : 'TOTAL TTC:';
     docFacture.text(labelFinal, 120, currentY + 4);
     docFacture.text(`${realMontantTTC.toFixed(2)} CHF`, 195, currentY + 4, { align: 'right' });
     
@@ -3191,14 +3196,14 @@ const genererPDF = async (facture) => {
     docFacture.setFontSize(9);
     docFacture.setTextColor(100, 100, 100);
     
-    // Estrai modalità di pagamento dalle notes
+    // Estrai modalitï¿½ di pagamento dalle notes
     const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
     const modalitaPagamento = modalitaMatch ? modalitaMatch[1].trim() : '30 jours net';
     
     docFacture.text(`Conditions de paiement: ${modalitaPagamento}`, 10, 270);
     docFacture.text('Merci de votre confiance', 10, 280);
     
-    // Footer rimosso - dati già nell'header
+    // Footer rimosso - dati giï¿½ nell'header
     
     // Salva documenti con nomi personalizzati: NumeroFacture_DataFacture_Cliente_Cantiere
     const clientName = (facture.client_nom || chantier?.client || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
@@ -3209,11 +3214,11 @@ const genererPDF = async (facture) => {
     docMetrees.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}_Metrees.pdf`);
     docFacture.save(`${numeroFacture}_${dataFacture}_${clientName}_${chantierName}.pdf`);
     
-    alert('Deux documents générés:\n1. Métrées détaillées (pour technicien)\n2. Facture (pour comptabilité)');
+    alert('Deux documents gï¿½nï¿½rï¿½s:\n1. Mï¿½trï¿½es dï¿½taillï¿½es (pour technicien)\n2. Facture (pour comptabilitï¿½)');
     
   } catch (error) {
-    console.error('Erreur génération PDF:', error);
-    alert('Erreur génération PDF: ' + error.message);
+    console.error('Erreur gï¿½nï¿½ration PDF:', error);
+    alert('Erreur gï¿½nï¿½ration PDF: ' + error.message);
   }
 };
 
@@ -3286,13 +3291,13 @@ const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
   
   if (!chantierDevis) return 0;
   
-  // Per devis à corps, usa il montant forfaitaire diviso per le zone
+  // Per devis ï¿½ corps, usa il montant forfaitaire diviso per le zone
   if (chantierDevis.modalita_prezzi === 'aCorps') {
     const montantCorps = Number(chantierDevis.montant_corps || 0);
     const numeroZone = chantierDevis.zones?.length || 1;
     let montantPerZona = montantCorps / numeroZone;
     
-    // Applica remise supplémentaire se presente
+    // Applica remise supplï¿½mentaire se presente
     if (chantierDevis.remises && chantierDevis.remises > 0) {
       montantPerZona = montantPerZona * (1 - chantierDevis.remises / 100);
     }
@@ -3300,14 +3305,14 @@ const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
     return montantPerZona * percentage / 100;
   }
   
-  // Per devis détaillé, usa i prodotti
+  // Per devis dï¿½taillï¿½, usa i prodotti
   if (!chantierDevis.produits) return 0;
   
   let totaleZona = chantierDevis.produits
     .filter(p => p.zone === zone)
     .reduce((sum, p) => sum + Number(p.total || 0), 0);
   
-  // Applica remise supplémentaire se presente
+  // Applica remise supplï¿½mentaire se presente
   if (chantierDevis.remises && chantierDevis.remises > 0) {
     totaleZona = totaleZona * (1 - chantierDevis.remises / 100);
   }
@@ -3331,7 +3336,7 @@ const getUltimaDataFactura = async () => {
     if (error) throw error;
     return data?.[0]?.date_facture || null;
   } catch (error) {
-    console.error('Erreur récupération dernière date facture:', error);
+    console.error('Erreur rï¿½cupï¿½ration derniï¿½re date facture:', error);
     return null;
   }
 };
@@ -3353,7 +3358,7 @@ const riaprireResoconto = (facture) => {
 
 const confermaRiapertura = async () => {
   if (!motivoCorrezione.value.trim()) {
-    alert('Veuillez insérer le motif de la correction');
+    alert('Veuillez insï¿½rer le motif de la correction');
     return;
   }
   
@@ -3377,7 +3382,7 @@ const confermaRiapertura = async () => {
       .delete()
       .eq('id', facture.id);
     
-    alert(`Rapport rouvert pour correction.\nLe chef pourra le modifier et la nouvelle facture gardera le numéro ${numeroFactureOriginale}`);
+    alert(`Rapport rouvert pour correction.\nLe chef pourra le modifier et la nouvelle facture gardera le numï¿½ro ${numeroFactureOriginale}`);
     
     showRiaperturaResoconto.value = false;
     loadData();
