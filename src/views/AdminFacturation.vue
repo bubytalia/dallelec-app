@@ -3115,61 +3115,7 @@ const genererPDF = async (facture) => {
       console.log('🔍 PDF - Acconti calcolati:', accontiHT);
       console.log('🔍 PDF - Zone resoconto:', Object.keys(resocontoDoc.avancementi || {}));
       
-      // FORZA visualizzazione acconti per resoconti finali
-      if (resocontoDoc.type === 'resoconto_finale') {
-        if (yPos > 220) {
-          docFacture.addPage();
-          yPos = 20;
-        }
-        
-        docFacture.setFontSize(12);
-        docFacture.setFont('helvetica', 'bold');
-        docFacture.text('ACOMPTES PRÉCÉDENTS PAR ZONE', 10, yPos);
-        yPos += 5;
-        
-        // Crea righe dettagliate per ogni zona con acconti
-        const accontiRows = [];
-        let totalAccontiPDF = 0;
-        
-        Object.keys(resocontoDoc.avancementi || {}).forEach(nomeZona => {
-          const accontoZona = Number(accontiPerZona.value[nomeZona] || 0);
-          if (accontoZona > 0) {
-            totalAccontiPDF += accontoZona;
-            accontiRows.push([
-              `Acomptes Zone: ${nomeZona}`,
-              `-${accontoZona.toFixed(2)} CHF`
-            ]);
-          }
-        });
-        
-        // Se ci sono acconti, mostra la tabella
-        if (accontiRows.length > 0) {
-          accontiRows.push([
-            { content: 'TOTAL ACOMPTES:', styles: { fontStyle: 'bold' } },
-            { content: `-${totalAccontiPDF.toFixed(2)} CHF`, styles: { fontStyle: 'bold' } }
-          ]);
-          
-          autoTable(docFacture, {
-            head: [['Description', 'Montant HT']],
-            body: accontiRows,
-            startY: yPos,
-            theme: 'striped',
-            headStyles: { 
-              fillColor: [70, 130, 180], 
-              textColor: 255, 
-              fontSize: 10 
-            },
-            bodyStyles: { 
-              fontSize: 10, 
-              fontStyle: 'bold'
-            }
-          });
-          
-          yPos = docFacture.lastAutoTable.finalY + 10;
-        }
-      }
-      
-      // Verifica spazio per totali finali
+      // Calcola acconti finali`n      let accontiFinali = 0;`n      if (resocontoDoc.type === 'resoconto_finale') {`n        Object.keys(resocontoDoc.avancementi || {}).forEach(zona => {`n          accontiFinali += Number(accontiPerZona.value[zona] || 0);`n        });`n      }`n      `n      // Verifica spazio per totali finali
       if (yPos > 200) {
         docFacture.addPage();
         yPos = 20;
