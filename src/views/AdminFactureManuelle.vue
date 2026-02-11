@@ -251,21 +251,32 @@ const calculateDateEcheance = (dateFacture, conditionsPaiement) => {
 
 const generateNumeroFacture = async () => {
   try {
-    const { data: config } = await supabase
-      .from('configurazione_fatture')
-      .select('*')
-      .single();
+    // Usa sempre l'anno corrente
+    const anno = new Date().getFullYear();
+    const prefisso = 'F';
     
-    const ultimoNumero = config?.ultimo_numero || 0;
-    const anno = config?.anno || new Date().getFullYear();
-    const prefisso = config?.prefisso || 'F';
-    
-    const { data: factures } = await supabase
+    // Carica tutte le fatture dell'anno corrente
+    const { data: factures, error } = await supabase
       .from('factures')
       .select('numero')
-      .like('numero', `${prefisso}${anno}%`);
+      .like('numero', `${prefisso}${anno}-%`)
+      .order('numero', { ascending: false });
     
-    const prossimoNumero = ultimoNumero + (factures?.length || 0) + 1;
+    if (error) throw error;
+    
+    // Trova il numero più alto
+    let ultimoNumero = 0;
+    if (factures && factures.length > 0) {
+      factures.forEach(f => {
+        const match = f.numero.match(/F\d{4}-(\d+)/);
+        if (match) {
+          const num = parseInt(match[1]);
+          if (num > ultimoNumero) ultimoNumero = num;
+        }
+      });
+    }
+    
+    const prossimoNumero = ultimoNumero + 1;
     return `${prefisso}${anno}-${String(prossimoNumero).padStart(3, '0')}`;
   } catch (error) {
     return `F${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`;
