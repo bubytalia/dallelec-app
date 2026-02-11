@@ -1428,8 +1428,20 @@ const getValoreRealeZona = (zone) => {
       
       if (prodottoDevis) {
         const prezzoUnitario = Number(prodottoDevis.prix || 0);
-        const quantitaReale = Number(prodottoReale.totalML || prodottoReale.mlReali || 0);
-        return sum + (quantitaReale * prezzoUnitario);
+        const quantitaReale = Number(prodottoReale.mlReali || prodottoReale.totalML || 0);
+        
+        // Calcola supplementi
+        let totalSuppl = 0;
+        if (prodottoReale.supplements && Array.isArray(prodottoReale.supplements)) {
+          totalSuppl = prodottoReale.supplements.reduce((sumSupp, supp) => {
+            const qte = Number(supp.qte || supp.qtePosee || 0);
+            const valeur = Number(supp.valeur || 0);
+            return sumSupp + (qte * valeur);
+          }, 0);
+        }
+        
+        const totalQuantita = quantitaReale + totalSuppl;
+        return sum + (totalQuantita * prezzoUnitario);
       }
       return sum;
     }, 0);
