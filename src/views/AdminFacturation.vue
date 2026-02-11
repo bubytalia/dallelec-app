@@ -1647,6 +1647,17 @@ const approuverResoconto = async (resoconto) => {
     detailResoconto.value = resoconto;
     const montantHT = calculateTotalHT();
     
+    // Per resoconti finali, calcola correttamente il totale
+    let montantHTFattura = montantHT;
+    let montantTTCFattura = montantHT * 1.081;
+    
+    if (resoconto.type === 'resoconto_finale') {
+      // Per finali: montantHT è già netto (lavori - acconti)
+      // Usa il valore assoluto se negativo (errore di calcolo)
+      montantHTFattura = Math.abs(montantHT);
+      montantTTCFattura = montantHTFattura * 1.081;
+    }
+    
     // USA NUMERO RISERVATO SE ESISTE (per correzioni)
     const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture(dataScelta);
     
@@ -1664,9 +1675,9 @@ const approuverResoconto = async (resoconto) => {
         chantier_id: resoconto.chantier_id || resoconto.chantierId,
         resoconto_id: resoconto.id,
         date_facture: dataScelta,
-        montant_ht: montantHT,
+        montant_ht: montantHTFattura,
         taux_tva: 8.1,
-        montant_ttc: montantHT * 1.081,
+        montant_ttc: montantTTCFattura,
         acconti_precedenti: accontiDaSalvare,
         statut: 'emise',
         client_nom: chantier?.client || 'Client',
