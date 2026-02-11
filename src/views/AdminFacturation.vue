@@ -1685,6 +1685,8 @@ const approuverResoconto = async (resoconto) => {
     
     alert(`Resoconto approuvé et facture ${numeroFacture} créée!`);
     showDetailResoconto.value = false;  // Chiudi il modal
+    // Piccolo delay per permettere al DB di aggiornarsi
+    await new Promise(resolve => setTimeout(resolve, 500));
     await loadData();  // Aspetta il caricamento
   } catch (error) {
     console.error('Erreur approbation resoconto:', error);
