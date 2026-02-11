@@ -1306,7 +1306,8 @@ const voirDetailResoconto = (resoconto) => {
   // Inizializza acconti per zona
   accontiPerZona.value = {};
   Object.keys(resoconto.avancementi || {}).forEach(zona => {
-    accontiPerZona.value[zona] = 0;
+    // Carica acconti salvati o inizializza a 0
+    accontiPerZona.value[zona] = resoconto.acconti_per_zona?.[zona] || 0;
   });
   
   showDetailResoconto.value = true;
@@ -1614,7 +1615,8 @@ const approuverResoconto = async (resoconto) => {
         .update({
           status: 'approved',
           approved_at: new Date().toISOString(),
-          approved_by: 'admin'
+          approved_by: 'admin',
+          acconti_per_zona: accontiPerZona.value  // SALVA GLI ACCONTI PER ZONA
         })
         .eq('id', resoconto.id);
       
@@ -3004,8 +3006,8 @@ const genererPDF = async (facture) => {
             ?.filter(p => p.zone === zoneName)
             .reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
           
-          // Calcola già fatturato zona
-          const giaFatturatoZona = getGiaFatturatoZona(zoneName);
+          // Calcola già fatturato zona (usa accontiPerZona già calcolato)
+          const giaFatturatoZona = Number(accontiPerZona.value[zoneName] || 0);
           
           // Calcola totale da fatturare
           const daFatturarezZona = zoneTotal - giaFatturatoZona;
