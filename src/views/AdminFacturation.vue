@@ -1431,19 +1431,19 @@ const getValoreRealeZona = (zone) => {
       
       if (prodottoDevis) {
         const prezzoUnitario = Number(prodottoDevis.prix || 0);
-        const quantitaReale = Number(prodottoReale.mlReali || prodottoReale.totalML || 0);
+        const quantitaBase = Number(prodottoReale.mlReali || prodottoReale.mlPosee || 0);
         
         // Calcola supplementi
         let totalSuppl = 0;
         if (prodottoReale.supplements && Array.isArray(prodottoReale.supplements)) {
           totalSuppl = prodottoReale.supplements.reduce((sumSupp, supp) => {
             const qte = Number(supp.qte || supp.qtePosee || 0);
-            const valeur = Number(supp.valeur || 0);
+            const valeur = Number(supp.valeur || 1);
             return sumSupp + (qte * valeur);
           }, 0);
         }
         
-        const totalQuantita = quantitaReale + totalSuppl;
+        const totalQuantita = quantitaBase + totalSuppl;
         return sum + (totalQuantita * prezzoUnitario);
       }
       return sum;
@@ -1845,19 +1845,26 @@ const generarFactureResoconto = async (resoconto) => {
 };
 
 const eliminarMetrage = async (metrage) => {
-  if (!confirm('Eliminer ce métrage de test?')) return;
+  if (!confirm('Refuser ce métrage? Il sera renvoyé au chef pour correction.')) return;
+  
+  const motif = prompt('Motif du refus (optionnel):');
   
   try {
     const { error } = await supabase
       .from('metrages')
-      .delete()
+      .update({
+        status: 'rejected',
+        rejected_at: new Date().toISOString(),
+        rejected_by: 'admin',
+        rejection_reason: motif || 'Refusé par admin'
+      })
       .eq('id', metrage.id);
     
     if (error) throw error;
-    alert('Métrage éliminé.');
+    alert('Métrage refusé. Le chef pourra le modifier et le soumettre à nouveau.');
     loadData();
   } catch (error) {
-    console.error('Erreur élimination métrage:', error);
+    console.error('Erreur refus métrage:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -2687,7 +2694,21 @@ const genererPDF = async (facture) => {
           docMetrees.text(`Zone: ${zoneName}`, 12, yPos + 2);
           
           let zoneTotal = 0;
-          const tableData = items.map(item => {
+          const tableData = items
+            .filter(item => {
+              const quantite = Number(item.mlReali || item.totalML || 0);
+              let totalSuppl = 0;
+              if (item.supplements && Array.isArray(item.supplements)) {
+                totalSuppl = item.supplements.reduce((sum, supp) => {
+                  const qte = Number(supp.qte || supp.qtePosee || 0);
+                  const valeur = Number(supp.valeur || 0);
+                  return sum + (qte * valeur);
+                }, 0);
+              }
+              const total = quantite + totalSuppl;
+              return total > 0; // Filtra solo articoli con quantità > 0
+            })
+            .map(item => {
             const quantite = Number(item.mlReali || item.totalML || 0);
             let totalSuppl = 0;
             
@@ -2971,7 +2992,21 @@ const genererPDF = async (facture) => {
           docFacture.text(`Zone: ${zoneName}`, 12, yPos + 2);
           
           let zoneTotal = 0;
-          const tableData = items.map(item => {
+          const tableData = items
+            .filter(item => {
+              const quantite = Number(item.mlReali || item.totalML || 0);
+              let totalSuppl = 0;
+              if (item.supplements && Array.isArray(item.supplements)) {
+                totalSuppl = item.supplements.reduce((sum, supp) => {
+                  const qte = Number(supp.qte || supp.qtePosee || 0);
+                  const valeur = Number(supp.valeur || 0);
+                  return sum + (qte * valeur);
+                }, 0);
+              }
+              const total = quantite + totalSuppl;
+              return total > 0; // Filtra solo articoli con quantità > 0
+            })
+            .map(item => {
             const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
             const prezzoUnit = Number(prodottoDevis?.prix || 50);
             const quantite = Number(item.mlReali || item.totalML || 0);
@@ -2979,6 +3014,12 @@ const genererPDF = async (facture) => {
             let totalSuppl = 0;
             if (item.supplements && Array.isArray(item.supplements)) {
               totalSuppl = item.supplements.reduce((sum, supp) => {
+                // USA totalML se disponibile (già calcolato dal capocantiere)
+                // altrimenti calcola qte × valeur (per compatibilità vecchi dati)
+                const totalMLSupp = Number(supp.totalML || 0);
+                if (totalMLSupp > 0) {
+                  return sum + totalMLSupp;
+                }
                 const qte = Number(supp.qte || supp.qtePosee || 0);
                 const valeur = Number(supp.valeur || 0);
                 return sum + (qte * valeur);
@@ -3051,7 +3092,7 @@ const genererPDF = async (facture) => {
           docFacture.setFont('helvetica', 'normal');
           docFacture.setFontSize(8);
           docFacture.text(`Montant des metrages finaux:`, 135, yPos + 2);
-          docFacture.text(`${imponibileZona.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
+          docFacture.text(`${zoneTotal.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
           
           docFacture.setTextColor(200, 0, 0);
           docFacture.text(`Deja facture:`, 135, yPos + 8);
@@ -3666,6 +3707,11 @@ const genererPDF = async (facture) => {
           
           if (item.supplements && Array.isArray(item.supplements)) {
             totalSuppl = item.supplements.reduce((sum, supp) => {
+              // USA totalML se disponibile (già calcolato dal capocantiere)
+              const totalMLSupp = Number(supp.totalML || 0);
+              if (totalMLSupp > 0) {
+                return sum + totalMLSupp;
+              }
               const qte = Number(supp.qte || supp.qtePosee || 0);
               const valeur = Number(supp.valeur || 0);
               return sum + (qte * valeur);
