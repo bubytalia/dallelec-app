@@ -1647,22 +1647,27 @@ const approuverResoconto = async (resoconto) => {
     detailResoconto.value = resoconto;
     const montantHT = calculateTotalHT();
     
-    // Per resoconti finali, calcola correttamente il totale
+    // Per resoconti finali: montantHT è già netto (lavori - acconti)
+    // Per resoconti percentuali: montantHT è lordo
     let montantHTFattura = montantHT;
     let montantTTCFattura = montantHT * 1.081;
+    let accontiDaSalvare = 0;
     
     if (resoconto.type === 'resoconto_finale') {
-      // Per finali: montantHT è già netto (lavori - acconti)
-      // Usa il valore assoluto se negativo (errore di calcolo)
+      // FINALE: montantHT è già netto, acconti = 0
       montantHTFattura = Math.abs(montantHT);
       montantTTCFattura = montantHTFattura * 1.081;
+      accontiDaSalvare = 0; // Già sottratti
+    } else {
+      // PERCENTUALE: montantHT è lordo, salva acconti
+      accontiDaSalvare = Number(totalAccontiZone.value || 0);
+      // Calcola TTC corretto: (HT - acconti) × 1.081
+      const nettoHT = montantHTFattura - accontiDaSalvare;
+      montantTTCFattura = nettoHT * 1.081;
     }
     
     // USA NUMERO RISERVATO SE ESISTE (per correzioni)
     const numeroFacture = resoconto.numero_fattura_riservato || await generateNumeroFacture(dataScelta);
-    
-    // NON salvare acconti nel database per resoconti finali (già sottratti nel calcolo)
-    const accontiDaSalvare = resoconto.type === 'resoconto_finale' ? 0 : Number(totalAccontiZone.value || 0);
     
     // Calcola data scadenza (30 giorni dalla data fattura)
     const dataScadenza = new Date(dataScelta);

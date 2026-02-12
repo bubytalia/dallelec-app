@@ -4,6 +4,20 @@
 
     <h2 class="text-center mb-4">Métrages du Chantier</h2>
 
+    <!-- Alert métrages rifiutati -->
+    <div v-if="metragesRejected.length > 0" class="alert alert-danger mb-4">
+      <h5 class="alert-heading">⚠️ Métrages refusés ({{ metragesRejected.length }})</h5>
+      <p>L'admin a refusé certains métrages. Vous pouvez les modifier et les soumettre à nouveau.</p>
+      <hr>
+      <div v-for="metrage in metragesRejected" :key="metrage.id" class="mb-2">
+        <strong>{{ getChantierName(metrage.chantier_id) }}</strong> - 
+        <small class="text-muted">{{ formatDate(metrage.created_at) }}</small>
+        <br>
+        <small><strong>Motif:</strong> {{ metrage.rejection_reason || 'Non spécifié' }}</small>
+        <button @click="chargerMetrageRejected(metrage)" class="btn btn-sm btn-warning ms-2">✏️ Modifier</button>
+      </div>
+    </div>
+
     <!-- Info cantiere e devis -->
     <div class="alert alert-info text-center mb-4" v-if="numeroDevis || nomClient || nomChantier">
       <div v-if="numeroDevis"><strong>Numéro Devis:</strong> {{ numeroDevis }}</div>
@@ -273,6 +287,8 @@ const nouvelleRegie = ref({
   heures: 0,
   description: ''
 });
+
+const metragesRejected = ref([]);
 
 const fetchChantiers = async () => {
   const userEmail = localStorage.getItem('userEmail');
@@ -562,9 +578,40 @@ const getProgressClass = (item) => {
   return 'bg-success';
 };
 
-// Salvataggio (identico a DevisProduits)
 const sauvegarderMetrages = async () => {
   try {
+    // Se stiamo modificando un métrage rifiutato, aggiorna invece di inserire
+    if (currentMetrageId.value && metragesRejected.value.some(m => m.id === currentMetrageId.value)) {
+      const { error } = await supabase
+        .from('metrages')
+        .update({
+          items: metrageItems.value,
+          regies: [...regies.value],
+          total_ml: totalMLPose.value,
+          zones: zones.value,
+          total_produits: metrageItems.value.length,
+          periode_debut: periodeDebut.value,
+          periode_fin: periodeFin.value,
+          status: 'en_attente',
+          rejected_at: null,
+          rejected_by: null,
+          rejection_reason: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentMetrageId.value);
+      
+      if (error) throw error;
+      
+      alert('Métrage corrigé et soumis à nouveau avec succès!');
+      currentMetrageId.value = null;
+      currentMetrageInfo.value = '';
+      metrageItems.value = [];
+      regies.value = [];
+      await loadMetragesRejected();
+      return;
+    }
+    
+    // Inserimento nuovo métrage
     const { error } = await supabase
       .from('metrages')
       .insert([{
@@ -703,6 +750,49 @@ const formatDate = (date) => {
   return date?.toDate ? date.toDate().toLocaleDateString('fr-FR') : new Date(date).toLocaleDateString('fr-FR');
 };
 
+const loadMetragesRejected = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('metrages')
+      .select('*')
+      .eq('status', 'rejected');
+    
+    if (error) throw error;
+    
+    // Filtra solo i métrages dei cantieri del chef
+    const userEmail = localStorage.getItem('userEmail');
+    const chefChantiers = chantiers.value.map(c => c.id);
+    
+    metragesRejected.value = (data || []).filter(m => chefChantiers.includes(m.chantier_id));
+  } catch (error) {
+    console.error('Erreur chargement métrages refusés:', error);
+  }
+};
+
+const chargerMetrageRejected = (metrage) => {
+  // Seleziona il cantiere
+  selectedChantierId.value = metrage.chantier_id;
+  
+  // Carica i dati del cantiere
+  loadChantierData().then(() => {
+    // Carica i dati del métrage rifiutato
+    metrageItems.value = metrage.items || [];
+    regies.value = metrage.regies || [];
+    periodeDebut.value = metrage.periode_debut || '';
+    periodeFin.value = metrage.periode_fin || '';
+    currentMetrageId.value = metrage.id;
+    currentMetrageInfo.value = `⚠️ Métrage refusé - À corriger: ${metrage.rejection_reason || 'Non spécifié'}`;
+    
+    // Scroll al form
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+  });
+};
+
+const getChantierName = (chantierId) => {
+  const chantier = chantiers.value.find(c => c.id === chantierId);
+  return chantier ? `${chantier.numero_cantiere ? 'N° ' + chantier.numero_cantiere + ' - ' : ''}${chantier.nom}` : 'N/A';
+};
+
 const ajouterRegie = () => {
   if (!regieValide.value) return;
   
@@ -772,6 +862,9 @@ onMounted(async () => {
     console.log('📞 Chiamando fetchChantiers...');
     await fetchChantiers();
     console.log('✅ fetchChantiers completato');
+    
+    // Carica métrages rifiutati DOPO aver caricato i cantieri
+    await loadMetragesRejected();
     
     const urlParams = new URLSearchParams(window.location.search);
     const chantierId = urlParams.get('chantier');

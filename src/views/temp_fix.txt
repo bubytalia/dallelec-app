@@ -1,0 +1,6 @@
+﻿      let accontiFinali = 0;
+      
+      // Verifica spazio per totali finali
+      if (yPos > 200) {
+        docFacture.addPage();
+        yPos = 20;

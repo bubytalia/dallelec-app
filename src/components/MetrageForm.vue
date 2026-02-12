@@ -43,7 +43,7 @@
       <div class="col-md-3">
         <label>Suppléments</label>
         <div v-for="(sup, i) in supplementsDisponibles" :key="i" class="d-flex align-items-center mb-1">
-          <input type="checkbox" :value="sup.nom" v-model="selectedSupplements" class="form-check-input me-2" />
+          <input type="checkbox" :value="sup.nom" v-model="selectedSupplements" @change="onSupplementToggle(sup.nom)" class="form-check-input me-2" />
           <span class="me-2">{{ sup.nom }} ({{ sup.valeur }}m)</span>
           <input
             v-if="selectedSupplements.includes(sup.nom)"
@@ -290,6 +290,14 @@ const modifierLigne = () => {
 
   emit('update-item', index, updatedItem);
   resetForm();
+};
+
+// Quando si toglie la spunta, elimina anche la quantità
+const onSupplementToggle = (suppNom) => {
+  if (!selectedSupplements.value.includes(suppNom)) {
+    // Se la spunta è stata rimossa, elimina la quantità
+    delete suppQuantities.value[suppNom];
+  }
 };
 
 // Reset form

@@ -104,7 +104,7 @@
                     :value="supp.nom" 
                     v-model="prodotto.supplementiSelezionati" 
                     class="form-check-input me-1"
-                    @change="updateSupplementi(index)"
+                    @change="() => { onSupplementToggleResoconto(index, supp.nom); updateSupplementi(index); }"
                   >
                   <span class="me-1 small">{{ supp.nom }}</span>
                   <input
@@ -316,7 +316,10 @@
           <div>
             <strong>{{ zona.nome }}</strong> - {{ zona.prodotti.length }} produits - {{ zona.totalMLReali.toFixed(2) }} ML
           </div>
-          <button @click="rimuoviZona(idx)" class="btn btn-sm btn-danger">🗑 Supprimer</button>
+          <div>
+            <button @click="modificaZona(idx)" class="btn btn-sm btn-warning me-2">✏️ Modifier</button>
+            <button @click="rimuoviZona(idx)" class="btn btn-sm btn-danger">🗑 Supprimer</button>
+          </div>
         </div>
       </div>
     </div>
@@ -544,6 +547,21 @@ const loadChantierData = async () => {
       
       allDevisStessoCantiere = result.data || [];
       devisError = result.error;
+      
+      // Se il gruppo non trova devis, usa il fallback devis_id
+      if (!allDevisStessoCantiere || allDevisStessoCantiere.length === 0) {
+        console.log('⚠️ Gruppo vuoto, fallback a devis_id:', devisId);
+        if (devisId) {
+          const fallbackResult = await supabase
+            .from('devis')
+            .select('*')
+            .eq('id', devisId)
+            .single();
+          
+          allDevisStessoCantiere = fallbackResult.data ? [fallbackResult.data] : [];
+          devisError = fallbackResult.error;
+        }
+      }
     } else if (devisId) {
       // Logica vecchia: carica singolo devis
       console.log('🔄 Fallback a devis_id:', devisId);
@@ -788,8 +806,55 @@ const modificaProdotto = (index) => {
 
 
 
+const onSupplementToggleResoconto = (index, suppNom) => {
+  const prodotto = prodottiZona.value[index];
+  if (!prodotto.supplementiSelezionati) {
+    prodotto.supplementiSelezionati = [];
+  }
+  if (!prodotto.quantitaSupplementi) {
+    prodotto.quantitaSupplementi = {};
+  }
+  
+  if (!prodotto.supplementiSelezionati.includes(suppNom)) {
+    // Se la spunta è stata rimossa, elimina la quantità
+    delete prodotto.quantitaSupplementi[suppNom];
+    prodotto.quantitaSupplementi[suppNom] = 0;
+  }
+  
+  // Aggiorna l'array supplements del prodotto
+  aggiornaSupplementsProdotto(index);
+};
+
+const aggiornaSupplementsProdotto = (index) => {
+  const prodotto = prodottiZona.value[index];
+  
+  // Crea array supplements aggiornato
+  const supplementsAggiornati = [];
+  
+  if (prodotto.supplementiSelezionati && prodotto.quantitaSupplementi) {
+    prodotto.supplementiSelezionati.forEach(suppNom => {
+      const qte = prodotto.quantitaSupplementi[suppNom] || 0;
+      if (qte > 0) {
+        const supp = supplementsDisponibili.value.find(s => s.nom === suppNom);
+        supplementsAggiornati.push({
+          supplement: suppNom,
+          valeur: supp?.valeur || 1,
+          qtePosee: qte,
+          qte: qte,
+          totalML: qte * (supp?.valeur || 1)
+        });
+      }
+    });
+  }
+  
+  prodotto.supplements = supplementsAggiornati;
+};
+
 const updateSupplementi = (index) => {
   const prodotto = prodottiZona.value[index];
+  
+  // Aggiorna l'array supplements
+  aggiornaSupplementsProdotto(index);
   
   // Calcola total ML supplementi
   let totalSuppML = 0;
@@ -909,6 +974,21 @@ const rimuoviZona = (index) => {
   }
 };
 
+const modificaZona = (index) => {
+  const zona = zoneSelezionate.value[index];
+  
+  // Carica i dati della zona nel form
+  selectedZone.value = zona.nome;
+  prodottiZona.value = JSON.parse(JSON.stringify(zona.prodotti));
+  regies.value = JSON.parse(JSON.stringify(zona.regies));
+  supplementiAggiuntivi.value = JSON.parse(JSON.stringify(zona.supplementiAggiuntivi));
+  
+  // Rimuovi la zona dalla lista (verrà ri-aggiunta dopo la modifica)
+  zoneSelezionate.value.splice(index, 1);
+  
+  alert(`Zone "${zona.nome}" chargée pour modification. Modifiez les données et cliquez sur "Ajouter cette zone" pour sauvegarder.`);
+};
+
 const salvaResocontoFinale = async () => {
   if (!selectedChantierId.value) {
     alert('Sélectionner chantier');
@@ -921,6 +1001,9 @@ const salvaResocontoFinale = async () => {
   }
   
   try {
+    // Controlla se stiamo aggiornando un resoconto rifiutato
+    const resocontoId = zoneSelezionate.value[0]?.resocontoId;
+    
     // Crea avancementi con tutte le zone al 100%
     const avancementi = {};
     zoneSelezionate.value.forEach(zona => {
@@ -935,7 +1018,30 @@ const salvaResocontoFinale = async () => {
     let totalMLRealiGlobale = 0;
     
     zoneSelezionate.value.forEach(zona => {
-      tuttiProdotti.push(...zona.prodotti);
+      // Pulisci i supplementi prima di salvare
+      const prodottiPuliti = zona.prodotti.map(p => {
+        const prodottoPulito = { ...p };
+        
+        // Filtra solo supplementi con quantità > 0
+        if (prodottoPulito.supplements && Array.isArray(prodottoPulito.supplements)) {
+          prodottoPulito.supplements = prodottoPulito.supplements.filter(s => 
+            s.qtePosee > 0 || (s.qte && s.qte > 0)
+          );
+        }
+        
+        // Ricalcola totalML
+        const mlBase = prodottoPulito.mlReali || 0;
+        const mlSupp = (prodottoPulito.supplements || []).reduce((sum, s) => {
+          const qte = s.qtePosee || s.qte || 0;
+          const valeur = s.valeur || 1;
+          return sum + (qte * valeur);
+        }, 0);
+        prodottoPulito.totalML = mlBase + mlSupp;
+        
+        return prodottoPulito;
+      });
+      
+      tuttiProdotti.push(...prodottiPuliti);
       tutteRegies.push(...zona.regies.map(r => ({ ...r, zone: zona.nome })));
       tuttiSupplementi.push(...zona.supplementiAggiuntivi.map(s => ({ ...s, zone: zona.nome })));
       totalMLPrevisteGlobale += zona.totalMLPreviste;
@@ -958,16 +1064,43 @@ const salvaResocontoFinale = async () => {
       created_at: new Date().toISOString()
     };
     
-    const { error } = await supabase
-      .from('resoconti_percentuali')
-      .insert([resocontoData]);
+    let error;
+    
+    if (resocontoId) {
+      // Aggiorna resoconto esistente
+      const result = await supabase
+        .from('resoconti_percentuali')
+        .update({
+          ...resocontoData,
+          status: 'en_attente',
+          rejected_at: null,
+          rejected_by: null,
+          rejection_reason: null
+        })
+        .eq('id', resocontoId);
+      
+      error = result.error;
+      
+      if (!error) {
+        alert('Rapport final corrigé et soumis à nouveau!');
+      }
+    } else {
+      // Nuovo resoconto
+      const result = await supabase
+        .from('resoconti_percentuali')
+        .insert([resocontoData]);
+      
+      error = result.error;
+      
+      if (!error) {
+        alert(`Rapport final envoyé pour approbation!\n${zoneSelezionate.value.length} zones incluses`);
+      }
+    }
     
     if (error) throw error;
     
     // Rimuovi backup dopo salvataggio riuscito
     localStorage.removeItem('resoconto_draft');
-    
-    alert(`Rapport final envoyé pour approbation!\n${zoneSelezionate.value.length} zones incluses`);
     
     // Reset tutto
     zoneSelezionate.value = [];
@@ -985,6 +1118,47 @@ const salvaResocontoFinale = async () => {
 onMounted(async () => {
   await fetchChantiers();
   await fetchSupplements();
+  
+  // Controlla se c'è un resoconto finale rifiutato da caricare
+  const urlParams = new URLSearchParams(window.location.search);
+  const rejected = urlParams.get('rejected');
+  
+  if (rejected === 'true') {
+    const resocontoRejected = localStorage.getItem('resoconto_finale_rejected');
+    if (resocontoRejected) {
+      try {
+        const resoconto = JSON.parse(resocontoRejected);
+        alert(`Rapport final refusé chargé pour correction.\n\nMotif: ${resoconto.rejection_reason || 'Non spécifié'}`);
+        
+        // Carica il cantiere
+        selectedChantierId.value = resoconto.chantier_id;
+        await loadChantierData();
+        
+        // Carica i dati del resoconto nelle zone selezionate
+        if (resoconto.prodotti_reali && resoconto.avancementi) {
+          Object.keys(resoconto.avancementi).forEach(zonaNome => {
+            const prodottiZona = resoconto.prodotti_reali.filter(p => p.zone === zonaNome);
+            const regiesZona = (resoconto.regies || []).filter(r => r.zone === zonaNome);
+            
+            zoneSelezionate.value.push({
+              nome: zonaNome,
+              prodotti: prodottiZona,
+              regies: regiesZona,
+              supplementiAggiuntivi: [],
+              totalMLPreviste: prodottiZona.reduce((sum, p) => sum + (p.ml || 0), 0),
+              totalMLReali: prodottiZona.reduce((sum, p) => sum + (p.totalML || p.mlReali || 0), 0),
+              resocontoId: resoconto.id
+            });
+          });
+        }
+        
+        localStorage.removeItem('resoconto_finale_rejected');
+      } catch (e) {
+        console.error('Errore caricamento resoconto rifiutato:', e);
+      }
+    }
+    return;
+  }
   
   // Recupera draft se esiste
   const draft = localStorage.getItem('resoconto_draft');
@@ -1004,7 +1178,6 @@ onMounted(async () => {
   }
   
   // Gestisci parametri URL
-  const urlParams = new URLSearchParams(window.location.search);
   const chantierId = urlParams.get('chantier');
   const zone = urlParams.get('zone');
   

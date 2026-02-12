@@ -192,7 +192,18 @@
               <p><strong>Zones originales:</strong> {{ Object.keys(resoconto.avancementi || {}).join(', ') }}</p>
             </div>
             <div class="col-md-4 text-end">
-              <button @click="chargerPerCorrezione(resoconto)" class="btn btn-warning">
+              <button 
+                v-if="resoconto.type === 'resoconto_finale'"
+                @click="apriResocontoFinale(resoconto)" 
+                class="btn btn-warning"
+              >
+                📋 Corriger Rapport Final
+              </button>
+              <button 
+                v-else
+                @click="chargerPerCorrezione(resoconto)" 
+                class="btn btn-warning"
+              >
                 🔄 Corriger Rapport
               </button>
             </div>
@@ -555,7 +566,7 @@ const sauvegarderResoconto = async () => {
   try {
     const userEmail = localStorage.getItem('userEmail');
     
-    // Se è una correzione, aggiorna il resoconto esistente
+    // Se è una correzione (rejected o correction_needed), aggiorna il resoconto esistente
     if (resocontoInCorrezione.value) {
       const { error } = await supabase
         .from('resoconti_percentuali')
@@ -564,7 +575,11 @@ const sauvegarderResoconto = async () => {
           descrizione: descrizione.value,
           avancementi: { ...avancementiMensili.value },
           regies: [...regies.value],
-          status: 'en_attente'
+          status: 'en_attente',
+          rejected_at: null,
+          rejected_by: null,
+          rejection_reason: null,
+          updated_at: new Date().toISOString()
         })
         .eq('id', resocontoInCorrezione.value.id);
       
@@ -740,7 +755,7 @@ const loadResocontiInCorrezione = async () => {
       .from('resoconti_percentuali')
       .select('*')
       .eq('chantier_id', selectedChantierId.value)
-      .eq('status', 'correction_needed')
+      .in('status', ['correction_needed', 'rejected'])
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -749,6 +764,13 @@ const loadResocontiInCorrezione = async () => {
     console.log('Errore caricamento resoconti in correzione:', error);
     resocontiInCorrezione.value = [];
   }
+};
+
+const apriResocontoFinale = (resoconto) => {
+  // Salva il resoconto in localStorage per caricarlo nella pagina finale
+  localStorage.setItem('resoconto_finale_rejected', JSON.stringify(resoconto));
+  // Reindirizza alla pagina resoconto finale
+  router.push(`/chef/chantiers/resoconto-finale?chantier=${resoconto.chantier_id}&rejected=true`);
 };
 
 const chargerPerCorrezione = (resoconto) => {
@@ -771,6 +793,30 @@ const chargerPerCorrezione = (resoconto) => {
   }
 };
 
+const loadAllResocontiRejected = async () => {
+  try {
+    const userEmail = localStorage.getItem('userEmail');
+    
+    // Carica tutti i cantieri del chef
+    const chantierIds = chantiers.value.map(c => c.id);
+    
+    if (chantierIds.length === 0) return;
+    
+    const { data, error } = await supabase
+      .from('resoconti_percentuali')
+      .select('*')
+      .in('chantier_id', chantierIds)
+      .in('status', ['correction_needed', 'rejected'])
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    resocontiInCorrezione.value = data || [];
+  } catch (error) {
+    console.log('Errore caricamento resoconti rifiutati:', error);
+    resocontiInCorrezione.value = [];
+  }
+};
+
 const formatDate = (date) => {
   if (!date) return '-';
   if (date?.toDate) return date.toDate().toLocaleDateString('fr-FR');
@@ -779,6 +825,9 @@ const formatDate = (date) => {
 
 onMounted(async () => {
   await fetchChantiers();
+  
+  // Carica TUTTI i resoconti rifiutati del chef (non solo del cantiere selezionato)
+  await loadAllResocontiRejected();
   
   // Preseleziona cantiere da URL
   const urlParams = new URLSearchParams(window.location.search);
