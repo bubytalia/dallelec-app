@@ -53,19 +53,31 @@
                   <p>Heures totales</p>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <div class="text-center">
-                  <h4 class="text-success">{{ totalCout.toFixed(2) }} CHF</h4>
+                  <h4 class="text-danger">{{ totalCout.toFixed(2) }} CHF</h4>
                   <p>Coût total</p>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
+                <div class="text-center">
+                  <h4 class="text-success">{{ totalRicavi.toFixed(2) }} CHF</h4>
+                  <p>Revenus totaux</p>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="text-center">
+                  <h4 :class="totalMargine >= 0 ? 'text-success' : 'text-danger'">{{ totalMargine.toFixed(2) }} CHF</h4>
+                  <p>Marge totale</p>
+                </div>
+              </div>
+              <div class="col-md-2">
                 <div class="text-center">
                   <h4 class="text-info">{{ nombreChantiers }}</h4>
                   <p>Chantiers actifs</p>
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <div class="text-center">
                   <h4 class="text-warning">{{ nombrePersonnes }}</h4>
                   <p>Personnes impliquées</p>
@@ -96,19 +108,30 @@
                     <th>Coût Collaborateurs</th>
                     <th>Total Heures</th>
                     <th>Total Coût</th>
-                    <th>Coût/H</th>
+                    <th>Revenus</th>
+                    <th>Marge</th>
+                    <th>Rentabilité %</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(bilan, index) in bilansParChantier" :key="`bilan-${bilan.chantierId}-${index}`">
-                    <td>{{ getChantierName(bilan.chantierId) }}</td>
+                    <td>
+                      <strong>{{ getChantierName(bilan.chantierId) }}</strong><br>
+                      <small class="text-muted">ID: {{ bilan.chantierId }}</small>
+                    </td>
                     <td>{{ bilan.heuresChef.toFixed(2) }}</td>
                     <td>{{ bilan.coutChef.toFixed(2) }} CHF</td>
                     <td>{{ bilan.heuresCollaborateurs.toFixed(2) }}</td>
                     <td>{{ bilan.coutCollaborateurs.toFixed(2) }} CHF</td>
                     <td>{{ bilan.totalHeures.toFixed(2) }}</td>
                     <td>{{ bilan.totalCout.toFixed(2) }} CHF</td>
-                    <td>{{ bilan.coutHoraire.toFixed(2) }} CHF/h</td>
+                    <td>{{ bilan.ricavi.toFixed(2) }} CHF</td>
+                    <td :class="bilan.margine >= 0 ? 'text-success' : 'text-danger'">
+                      <strong>{{ bilan.margine.toFixed(2) }} CHF</strong>
+                    </td>
+                    <td :class="bilan.redditivita >= 0 ? 'text-success' : 'text-danger'">
+                      <strong>{{ bilan.redditivita.toFixed(1) }}%</strong>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -241,6 +264,7 @@ const collaborateurs = ref([])
 const chefs = ref([])
 const heuresPropres = ref([])
 const heuresInterim = ref([])
+const factures = ref([])
 const dateDebut = ref('')
 const dateFin = ref('')
 const selectedChantierId = ref('')
@@ -277,8 +301,8 @@ const getUserName = (userId) => {
 }
 
 const getChantierName = (chantierId) => {
-  const chantier = chantiers.value.find(c => c.id === chantierId)
-  return chantier ? chantier.nom : chantierId
+  const chantier = chantiers.value.find(c => String(c.id) === String(chantierId))
+  return chantier ? chantier.nom : `Cantiere ${chantierId}`
 }
 
 const getCoutHoraire = (userId, type) => {
@@ -341,6 +365,9 @@ const availableYears = computed(() => {
   return years
 })
 
+const totalRicavi = ref(0)
+const totalMargine = ref(0)
+
 // Fonctions de calcul
 const calculerBilans = async () => {
   if (!dateDebut.value || !dateFin.value) return
@@ -352,46 +379,40 @@ const calculerBilans = async () => {
   const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*')
   const heuresOuvriers = heuresOuvriersData || []
   
+  // Filtrer les factures par période
+  const facturesFiltrees = factures.value.filter(f => {
+    if (!f.date_facture) return false
+    const dateFacture = new Date(f.date_facture)
+    return dateFacture >= debut && dateFacture <= fin
+  })
+  
   // Filtrer les heures par période
   const heuresFiltrees = [...heuresPropres.value, ...heuresInterim.value, ...heuresOuvriers]
     .filter(h => {
       const dateHeure = h.date.toDate ? h.date.toDate() : new Date(h.date)
       return dateHeure >= debut && dateHeure <= fin
     })
-  
-  console.log('DEBUG - Heures après filtre période:', heuresFiltrees.length)
-  console.log('DEBUG - Période:', debut, 'à', fin)
-  console.log('DEBUG - Cantiere selezionato:', selectedChantierId.value)
 
   // Filtrer par chantier si sélectionné
   const heuresFinales = selectedChantierId.value 
     ? heuresFiltrees.filter(h => String(h.chantier_id) === String(selectedChantierId.value))
     : heuresFiltrees
-    
-  console.log('DEBUG - Heures finales après filtre cantiere:', heuresFinales.length)
-  
-  // Debug: mostra tutti i chantier_id presenti nelle ore
-  const chantiersIds = [...new Set(heuresFiltrees.map(h => h.chantier_id))]
-  console.log('DEBUG - Chantier IDs trovati nelle ore:', chantiersIds)
-  console.log('DEBUG - Cercando cantiere ID:', selectedChantierId.value)
 
   // Préparer les données détaillées
   heuresDetaillees.value = heuresFinales.map(h => {
     const isChefPropre = heuresPropres.value.some(hp => hp.id === h.id)
     const isChefInterim = heuresInterim.value.some(hi => hi.id === h.id)
-    const type = isChefPropre ? 'propre' : 'interim'
     const userId = h.chef_id || h.ouvrier_id
     
-    // Debug per identificare Chef inconnu
-    const userName = getUserName(userId)
-    if (userName.includes('Chef inconnu')) {
-      console.log('🔍 Chef inconnu trovato:', {
-        userId,
-        date: h.date,
-        heures: h.total_heures || h.heures_normales || h.heures || 0,
-        type,
-        chantier_id: h.chantier_id
-      })
+    // Determina il tipo in base al repertorio, non alla tabella
+    let type = 'interim'
+    const isInChefs = chefs.value.some(c => c.email === userId)
+    const isInCollaborateurs = collaborateurs.value.some(c => c.email === userId)
+    
+    if (isInChefs) {
+      type = 'propre'
+    } else if (isInCollaborateurs) {
+      type = 'interim'
     }
     
     return {
@@ -416,7 +437,10 @@ const calculerBilans = async () => {
         coutCollaborateurs: 0,
         totalHeures: 0,
         totalCout: 0,
-        coutHoraire: 0
+        coutHoraire: 0,
+        ricavi: 0,
+        margine: 0,
+        redditivita: 0
       }
     }
 
@@ -432,12 +456,23 @@ const calculerBilans = async () => {
     bilans[h.chantierId].totalCout += h.heures * h.coutHoraire
   })
 
-  // Calculer le coût horaire moyen par chantier
+  // Calculer ricavi, margine e redditività per ogni cantiere
   Object.values(bilans).forEach(bilan => {
     bilan.coutHoraire = bilan.totalHeures > 0 ? bilan.totalCout / bilan.totalHeures : 0
+    
+    // Calcola ricavi - usa solo fatture filtrate per periodo
+    const facturesChantier = facturesFiltrees.filter(f => String(f.chantier_id) === String(bilan.chantierId))
+    bilan.ricavi = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || parseFloat(f.montant_ht) || 0), 0)
+    
+    bilan.margine = bilan.ricavi - bilan.totalCout
+    bilan.redditivita = bilan.ricavi > 0 ? (bilan.margine / bilan.ricavi) * 100 : 0
   })
 
   bilansParChantier.value = Object.values(bilans)
+  
+  // Calcola totali ricavi e margine
+  totalRicavi.value = bilansParChantier.value.reduce((sum, b) => sum + b.ricavi, 0)
+  totalMargine.value = bilansParChantier.value.reduce((sum, b) => sum + b.margine, 0)
 
   // Calculer le rapport mensuel
   calculerRapportMensuel(heuresFinales)
@@ -532,6 +567,11 @@ const fetchData = async () => {
     // Charger les chantiers
     const { data: chantiersData } = await supabase.from('chantiers').select('*')
     chantiers.value = chantiersData || []
+    console.log('DEBUG - Chantiers caricati:', chantiers.value.map(c => ({ id: c.id, nom: c.nom })))
+
+    // Charger les factures
+    const { data: facturesData } = await supabase.from('factures').select('*')
+    factures.value = facturesData || []
 
     // Charger les collaborateurs
     const { data: collaborateursData } = await supabase.from('collaborateurs').select('*')
@@ -540,25 +580,18 @@ const fetchData = async () => {
     // Charger les chefs
     const { data: chefsData } = await supabase.from('chefdechantiers').select('*')
     chefs.value = chefsData || []
-    
-    // Debug: verifica dati caricati
-    console.log('DEBUG BILANCI - Chefs:', chefs.value.map(c => c.email + ' - ' + c.nom))
-    console.log('DEBUG BILANCI - Collaboratori:', collaborateurs.value.map(c => c.email + ' - ' + c.nom))
 
     // Charger les heures propres
     const { data: heuresPropreData } = await supabase.from('heures_chef_propres').select('*')
     heuresPropres.value = heuresPropreData || []
-    console.log('DEBUG - Heures chef propres:', heuresPropres.value.length)
 
     // Charger les heures intérimaires  
     const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*')
     heuresInterim.value = heuresInterimData || []
-    console.log('DEBUG - Heures interim:', heuresInterim.value.length)
     
     // Charger aussi les heures ouvriers
     const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*')
     const heuresOuvriers = heuresOuvriersData || []
-    console.log('DEBUG - Heures ouvriers:', heuresOuvriers.length)
 
     setDefaultDates()
     await calculerBilans()
