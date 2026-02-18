@@ -1431,12 +1431,13 @@ const getValoreRealeZona = (zone) => {
       
       if (prodottoDevis) {
         const prezzoUnitario = Number(prodottoDevis.prix || 0);
-        const quantitaBase = Number(prodottoReale.mlReali || prodottoReale.mlPosee || 0);
+        const quantitaBase = Number(prodottoReale.mlReali || prodottoReale.totalML || prodottoReale.mlPosee || 0);
         
-        // Calcola supplementi
         let totalSuppl = 0;
         if (prodottoReale.supplements && Array.isArray(prodottoReale.supplements)) {
           totalSuppl = prodottoReale.supplements.reduce((sumSupp, supp) => {
+            const totalMLSupp = Number(supp.totalML || 0);
+            if (totalMLSupp > 0) return sumSupp + totalMLSupp;
             const qte = Number(supp.qte || supp.qtePosee || 0);
             const valeur = Number(supp.valeur || 1);
             return sumSupp + (qte * valeur);
@@ -1641,27 +1642,73 @@ const approuverResoconto = async (resoconto) => {
     
     // Genera la fattura
     const chantier = chantiers.value.find(c => c.id === (resoconto.chantier_id || resoconto.chantierId));
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
+    const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
     
-    // USA LA STESSA LOGICA DEL PDF
+    // USA LO STESSO CALCOLO DEL PDF (come nel PDF riga ~3010)
     detailResoconto.value = resoconto;
-    const montantHT = calculateTotalHT();
     
-    // Per resoconti finali: montantHT è già netto (lavori - acconti)
-    // Per resoconti percentuali: montantHT è lordo
-    let montantHTFattura = montantHT;
-    let montantTTCFattura = montantHT * 1.081;
+    let montantHTFattura = 0;
     let accontiDaSalvare = 0;
     
-    if (resoconto.type === 'resoconto_finale') {
-      // FINALE: montantHT è già netto, acconti = 0
-      montantHTFattura = Math.abs(montantHT);
-      montantTTCFattura = montantHTFattura * 1.081;
-      accontiDaSalvare = 0; // Già sottratti
+    // CALCOLA DIRETTAMENTE DAI PRODOTTI REALI (COPIA ESATTA DEL PDF)
+    if (resoconto.type === 'resoconto_finale' && resoconto.prodotti_reali) {
+      // Per ogni prodotto reale, calcola: (quantità + supplementi) × prezzo
+      resoconto.prodotti_reali.forEach(item => {
+        const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+        
+        if (prodottoDevis) {
+          const prezzoUnit = Number(prodottoDevis.prix || 50);
+          const quantite = Number(item.mlReali || item.totalML || item.mlPosee || 0);
+          
+          // COPIA ESATTA DEL PDF (riga 3010)
+          let totalSuppl = 0;
+          if (item.supplements && Array.isArray(item.supplements)) {
+            totalSuppl = item.supplements.reduce((sum, supp) => {
+              const totalMLSupp = Number(supp.totalML || 0);
+              if (totalMLSupp > 0) {
+                return sum + totalMLSupp;
+              }
+              const qte = Number(supp.qte || supp.qtePosee || 0);
+              const valeur = Number(supp.valeur || 0);
+              return sum + (qte * valeur);
+            }, 0);
+          }
+          
+          const total = quantite + totalSuppl;
+          const totalItem = total * prezzoUnit;
+          montantHTFattura += totalItem;
+        }
+      });
+      
+      // Aggiungi régies
+      if (resoconto.regies?.length > 0) {
+        const prixRegieChantier = chantier?.prix_regie || 75;
+        resoconto.regies.forEach(regie => {
+          const heures = Number(regie.heures || 0);
+          const prixHeure = Number(regie.prixHeure || prixRegieChantier);
+          montantHTFattura += (heures * prixHeure);
+        });
+      }
+      
+      // Per resoconti finali: salva il totale LORDO e gli acconti separati
+      accontiDaSalvare = 0;
+      Object.keys(resoconto.avancementi || {}).forEach(zona => {
+        accontiDaSalvare += Number(accontiPerZona.value[zona] || 0);
+      });
     } else {
-      // PERCENTUALE: montantHT è lordo, salva acconti
+      // PERCENTUALE: usa calculateTotalHT() come prima
+      montantHTFattura = calculateTotalHT();
       accontiDaSalvare = Number(totalAccontiZone.value || 0);
-      // Calcola TTC corretto: (HT - acconti) × 1.081
+    }
+    
+    // Calcola TTC
+    let montantTTCFattura;
+    if (resoconto.type === 'resoconto_finale') {
+      // FINALE: calcola TTC sul netto (HT - acconti)
+      const nettoHT = montantHTFattura - accontiDaSalvare;
+      montantTTCFattura = nettoHT * 1.081;
+    } else {
+      // PERCENTUALE: sottrai acconti prima di calcolare TTC
       const nettoHT = montantHTFattura - accontiDaSalvare;
       montantTTCFattura = nettoHT * 1.081;
     }
@@ -2245,14 +2292,15 @@ const formatCurrency = (amount) => {
 };
 
 const calculateSoldeFinale = (facture) => {
+  // Per resoconti finali: montant_ttc è già corretto (acconti già sottratti)
   const acconti = Number(facture.acconti_precedenti || 0);
   
-  // Se non ci sono acconti, usa direttamente montant_ttc
+  // Se acconti = 0, il montant_ttc è già il valore finale
   if (acconti === 0) {
     return Number(facture.montant_ttc || facture.montantTTC || 0);
   }
   
-  // Se ci sono acconti, calcola il solde
+  // Se ci sono acconti salvati, calcola: (HT - acconti) × 1.081
   const montantHT = Number(facture.montant_ht || 0);
   const montantNetHT = montantHT - acconti;
   const tva = montantNetHT * 0.081;

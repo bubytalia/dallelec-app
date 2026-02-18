@@ -1022,19 +1022,24 @@ const salvaResocontoFinale = async () => {
       const prodottiPuliti = zona.prodotti.map(p => {
         const prodottoPulito = { ...p };
         
-        // Filtra solo supplementi con quantità > 0
+        // Filtra solo supplementi con quantità > 0 e calcola totalML
         if (prodottoPulito.supplements && Array.isArray(prodottoPulito.supplements)) {
-          prodottoPulito.supplements = prodottoPulito.supplements.filter(s => 
-            s.qtePosee > 0 || (s.qte && s.qte > 0)
-          );
+          prodottoPulito.supplements = prodottoPulito.supplements
+            .filter(s => s.qtePosee > 0 || (s.qte && s.qte > 0))
+            .map(s => {
+              const qte = s.qtePosee || s.qte || 0;
+              const valeur = s.valeur || 1;
+              return {
+                ...s,
+                totalML: qte * valeur
+              };
+            });
         }
         
         // Ricalcola totalML
         const mlBase = prodottoPulito.mlReali || 0;
         const mlSupp = (prodottoPulito.supplements || []).reduce((sum, s) => {
-          const qte = s.qtePosee || s.qte || 0;
-          const valeur = s.valeur || 1;
-          return sum + (qte * valeur);
+          return sum + (s.totalML || 0);
         }, 0);
         prodottoPulito.totalML = mlBase + mlSupp;
         
