@@ -11,6 +11,7 @@ import ChefDashboard from '@/views/ChefDashboard.vue';
 import AdminReportMensuel from '@/views/AdminReportMensuel.vue';
 
 import AdminBilanChantiers from '@/views/AdminBilanChantiers.vue';
+import AdminGestionEtatsChantiers from '@/views/AdminGestionEtatsChantiers.vue';
 import AdminAssocierDevis from '@/views/AdminAssocierDevis.vue';
 import AdminBilans from '@/views/AdminBilans.vue';
 import AdminFacturation from '@/views/AdminFacturation.vue';
@@ -104,6 +105,7 @@ const routes = [
   { path: '/admin/report-mensuel', name: 'AdminReportMensuel', component: AdminReportMensuel },
   { path: '/admin/gestion-feries', redirect: '/admin/absences' },
   { path: '/admin/bilan-chantiers', name: 'AdminBilanChantiers', component: AdminBilanChantiers },
+  { path: '/admin/gestion-etats-chantiers', name: 'AdminGestionEtatsChantiers', component: AdminGestionEtatsChantiers },
   { path: '/admin/associer-devis', name: 'AdminAssocierDevis', component: AdminAssocierDevis },
   { path: '/admin/facturation', name: 'AdminFacturation', component: AdminFacturation },
   { path: '/admin/facture-manuelle', name: 'AdminFactureManuelle', component: AdminFactureManuelle },

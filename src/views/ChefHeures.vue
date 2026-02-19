@@ -216,7 +216,11 @@ const fetchInterimaires = async () => {
 
 const fetchChantiers = async () => {
   try {
-    const { data, error } = await supabase.from('chantiers').select('*');
+    const { data, error } = await supabase
+      .from('chantiers')
+      .select('*')
+      .eq('etat_insertion_heures', 'ouvert');
+    
     if (error) throw error;
     chantiers.value = data || [];
   } catch (error) {

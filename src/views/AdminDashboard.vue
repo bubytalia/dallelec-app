@@ -72,7 +72,9 @@
       <div class="col-12">
         <h5 class="text-danger mb-3">Administration</h5>
       </div>
-
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/gestion-etats-chantiers" class="btn btn-outline-danger w-100">🏗️ États Chantiers</router-link>
+      </div>
       <div class="col-md-3 m-2">
         <router-link to="/aide" class="btn btn-outline-danger w-100">❓ Aide</router-link>
       </div>
