@@ -19,6 +19,7 @@ import AdminFactureManuelle from '@/views/AdminFactureManuelle.vue';
 import AdminScadenziario from '@/views/AdminScadenziario.vue';
 import AdminImportFatture from '@/views/AdminImportFatture.vue';
 import AdminMonitoringHeures from '@/views/AdminMonitoringHeures.vue';
+import AdminGestionHeures from '@/views/AdminGestionHeures.vue';
 import AdminAbsences from '@/views/AdminAbsences.vue';
 
 // Chef pages
@@ -112,6 +113,7 @@ const routes = [
   { path: '/admin/scadenziario', name: 'AdminScadenziario', component: AdminScadenziario },
   { path: '/admin/import-fatture', name: 'AdminImportFatture', component: AdminImportFatture },
   { path: '/admin/monitoring-heures', name: 'AdminMonitoringHeures', component: AdminMonitoringHeures },
+  { path: '/admin/gestion-heures', name: 'AdminGestionHeures', component: AdminGestionHeures },
   { path: '/admin/absences', name: 'AdminAbsences', component: AdminAbsences },
   { path: '/admin/premi', name: 'AdminPremi', component: () => import('@/views/AdminPremi.vue') },
   { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },

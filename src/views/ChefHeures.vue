@@ -111,7 +111,14 @@
               <td>{{ formatDate(heure.date) }}</td>
               <td>{{ heure.total_heures }}</td>
               <td>
-                <button @click="deleteHeure(heure.id, 'propres')" class="btn btn-danger btn-sm">🗑</button>
+                <button 
+                  v-if="isCurrentWeek(heure.date)"
+                  @click="deleteHeure(heure.id, 'propres')" 
+                  class="btn btn-danger btn-sm"
+                >
+                  🗑
+                </button>
+                <span v-else class="badge bg-secondary" title="Semaine verrouillée">🔒</span>
               </td>
             </tr>
           </tbody>
@@ -137,7 +144,14 @@
               <td>{{ heure.interinaire_nom }}</td>
               <td>{{ heure.total_heures }}</td>
               <td>
-                <button @click="deleteHeure(heure.id, 'interim')" class="btn btn-danger btn-sm">🗑</button>
+                <button 
+                  v-if="isCurrentWeek(heure.date)"
+                  @click="deleteHeure(heure.id, 'interim')" 
+                  class="btn btn-danger btn-sm"
+                >
+                  🗑
+                </button>
+                <span v-else class="badge bg-secondary" title="Semaine verrouillée">🔒</span>
               </td>
             </tr>
           </tbody>
@@ -157,6 +171,28 @@ const interimaires = ref([]);
 const chantiers = ref([]);
 const heuresPropres = ref([]);
 const heuresInterim = ref([]);
+
+// Funzione per ottenere inizio settimana corrente (Lunedì 00:00)
+const getStartOfCurrentWeek = () => {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
+// Verifica se una data è nella settimana corrente
+const isCurrentWeek = (dateStr) => {
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  const startOfWeek = getStartOfCurrentWeek();
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  return date >= startOfWeek && date <= endOfWeek;
+};
 
 // Options heures avec format HH:MM (incrementi di 15 minuti)
 const heuresOptions = ref([]);

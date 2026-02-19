@@ -57,6 +57,9 @@
         <router-link to="/admin/monitoring-heures" class="btn btn-outline-warning w-100">📊 Monitoring Heures</router-link>
       </div>
       <div class="col-md-3 m-2">
+        <router-link to="/admin/gestion-heures" class="btn btn-outline-warning w-100">✏️ Gestion Heures</router-link>
+      </div>
+      <div class="col-md-3 m-2">
         <router-link to="/admin/report-mensuel" class="btn btn-outline-warning w-100">Rapports Heures</router-link>
       </div>
       <div class="col-md-3 m-2">

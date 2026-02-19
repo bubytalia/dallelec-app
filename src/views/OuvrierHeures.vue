@@ -97,9 +97,15 @@
                     <td>{{ heure.heures }}h</td>
                     <td>{{ heure.type_travail || 'Normal' }}</td>
                     <td>
-                      <button @click="supprimerHeure(heure.id)" class="btn btn-sm btn-danger" title="Supprimer">
+                      <button 
+                        v-if="isCurrentWeek(heure.date)"
+                        @click="supprimerHeure(heure.id)" 
+                        class="btn btn-sm btn-danger" 
+                        title="Supprimer"
+                      >
                         🗑
                       </button>
+                      <span v-else class="badge bg-secondary" title="Semaine verrouillée">🔒</span>
                     </td>
                   </tr>
                 </tbody>
@@ -125,6 +131,28 @@ const chantiers = ref([]);
 const heuresSemaine = ref([]);
 const currentUser = ref(null);
 const adminOverride = ref(false);
+
+// Funzione per ottenere inizio settimana corrente (Lunedì 00:00)
+const getStartOfCurrentWeek = () => {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
+// Verifica se una data è nella settimana corrente
+const isCurrentWeek = (dateStr) => {
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  const startOfWeek = getStartOfCurrentWeek();
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  return date >= startOfWeek && date <= endOfWeek;
+};
 
 // Data massima per inserimento (oggi)
 const maxDate = computed(() => {
