@@ -370,7 +370,7 @@
                           </table>
                         </div>
                         
-                        <!-- RESOCONTO PERCENTUALE: Layout con dettaglio sconto -->
+                        <!-- RESOCONTO PERCENTUALE: Layout con campo acconti -->
                         <table v-else class="table table-sm table-bordered">
                           <thead class="table-secondary">
                             <tr>
@@ -397,6 +397,19 @@
                             </tr>
                           </tfoot>
                         </table>
+                        
+                        <!-- Campo acconti per resoconti percentuali -->
+                        <div v-if="detailResoconto.type !== 'resoconto_finale'" class="mt-3">
+                          <label class="form-label"><strong>Acomptes déjà versés (CHF HT):</strong></label>
+                          <input 
+                            v-model.number="accontiPrecedentiResoconto" 
+                            type="number" 
+                            step="0.01" 
+                            class="form-control" 
+                            placeholder="0.00"
+                          >
+                          <small class="text-muted">Montant à soustraire de la facture</small>
+                        </div>
                         
                         <div v-if="detailResoconto.regies && detailResoconto.regies.length > 0">
                           <h6>Régies:</h6>
@@ -428,14 +441,22 @@
                               <span>Total HT:</span>
                               <strong>{{ calculateTotalHT().toFixed(2) }} CHF</strong>
                             </div>
+                            <div v-if="detailResoconto.type !== 'resoconto_finale' && accontiPrecedentiResoconto > 0" class="d-flex justify-content-between mb-2 text-danger">
+                              <span>Acomptes HT:</span>
+                              <strong>-{{ accontiPrecedentiResoconto.toFixed(2) }} CHF</strong>
+                            </div>
+                            <div v-if="detailResoconto.type !== 'resoconto_finale' && accontiPrecedentiResoconto > 0" class="d-flex justify-content-between mb-2">
+                              <span>Net HT:</span>
+                              <strong>{{ (calculateTotalHT() - accontiPrecedentiResoconto).toFixed(2) }} CHF</strong>
+                            </div>
                             <div class="d-flex justify-content-between mb-2">
                               <span>TVA (8.1%):</span>
-                              <strong>{{ calculateTVA().toFixed(2) }} CHF</strong>
+                              <strong>{{ (detailResoconto.type !== 'resoconto_finale' && accontiPrecedentiResoconto > 0 ? (calculateTotalHT() - accontiPrecedentiResoconto) * 0.081 : calculateTVA()).toFixed(2) }} CHF</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between">
-                              <span class="h6">TOTAL TTC:</span>
-                              <strong class="h5 text-success">{{ calculateTotalTTC().toFixed(2) }} CHF</strong>
+                              <span class="h6">{{ (detailResoconto.type !== 'resoconto_finale' && accontiPrecedentiResoconto > 0) ? 'SOLDE À PAYER:' : 'TOTAL TTC:' }}</span>
+                              <strong class="h5 text-success">{{ (detailResoconto.type !== 'resoconto_finale' && accontiPrecedentiResoconto > 0 ? (calculateTotalHT() - accontiPrecedentiResoconto) * 1.081 : calculateTotalTTC()).toFixed(2) }} CHF</strong>
                             </div>
                           </div>
                         </div>
@@ -516,13 +537,21 @@
                         <td>{{ item.zone }}</td>
                         <td>{{ item.mlPosee }}</td>
                         <td>{{ calculateTotalMLItem(item) }}</td>
-                        <td>{{ getPrixUnitaireItem(item).toFixed(2) }} CHF</td>
-                        <td><strong>{{ calculateTotalItemCHF(item).toFixed(2) }} CHF</strong></td>
+                        <td>{{ getPrixUnitaireBrut(item).toFixed(2) }} CHF</td>
+                        <td><strong>{{ calculateTotalItemCHFBrut(item).toFixed(2) }} CHF</strong></td>
                       </tr>
                     </tbody>
                     <tfoot class="table-warning">
                       <tr>
                         <td colspan="5"><strong>Sous-total Produits:</strong></td>
+                        <td><strong>{{ calculateTotalProduitsCHFBrut().toFixed(2) }} CHF</strong></td>
+                      </tr>
+                      <tr v-if="getRemiseDevisMetrage() > 0" class="table-danger">
+                        <td colspan="5"><strong>Remise suppl. ({{ getRemiseDevisMetrage() }}%):</strong></td>
+                        <td><strong>-{{ (calculateTotalProduitsCHFBrut() * getRemiseDevisMetrage() / 100).toFixed(2) }} CHF</strong></td>
+                      </tr>
+                      <tr class="table-success">
+                        <td colspan="5"><strong>Total Produits HT:</strong></td>
                         <td><strong>{{ calculateTotalProduitsCHF().toFixed(2) }} CHF</strong></td>
                       </tr>
                     </tfoot>
@@ -894,6 +923,7 @@ const clients = ref([]);
 
 const showDetailMetrage = ref(false);
 const detailMetrage = ref({});
+const detailMetrageDevis = ref(null); // DEVIS FRESCO per il modal
 const accontiPrecedenti = ref(0);
 const accontiPrecedentiResoconto = ref(0);
 const accontiPerZona = ref({});
@@ -925,6 +955,7 @@ const resocontiEnAttente = computed(() => {
   
   return resocontiPercentuali.value.filter(r => 
     !r.draft && // Resoconto sauvegardé (non brouillon)
+    r.status !== 'rejected' && // ESCLUDI resoconti rifiutati/cancellati
     ((r.status === 'en_attente' || r.status === 'pending_approval' || !r.status) || // En attente, pending o senza status
      (r.status === 'approved' && !hasFacture(r))) // Approvati senza fattura
   );
@@ -1142,26 +1173,82 @@ const loadData = async () => {
 };
 
 const calculateMontantEstime = (metrage) => {
-  // Trova il devis associato al chantier
   const chantier = chantiers.value.find(c => c.id === metrage.chantierId);
-  const chantierDevis = devis.value.find(d => d.id === chantier?.devisId);
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devisId); // == invece di ===
   
   if (!chantierDevis || !chantierDevis.total) return 0;
   
-  // Stima basata sulla percentuale di completamento
-  // Se il métrage ha totalML, calcola percentuale rispetto al devis
   const devisML = chantierDevis.produits?.reduce((sum, p) => sum + (p.ml || 0), 0) || 1;
   const percentageComplete = Math.min((metrage.totalML || 0) / devisML, 1);
   
   return chantierDevis.total * percentageComplete;
 };
 
-// Funzioni per calcolo prezzi nel modal métrage
-const getPrixUnitaireItem = (item) => {
+// Funzioni per calcolo prezzi nel modal métrage - USA STESSA LOGICA DEL PDF
+const getPrixUnitaireBrut = (item) => {
   const chantier = chantiers.value.find(c => c.id === detailMetrage.value.chantier_id);
-  const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
   const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
   return Number(prodottoDevis?.prix || 50);
+};
+
+const calculateTotalItemCHFBrut = (item) => {
+  const totalML = calculateTotalMLItem(item);
+  const prezzoUnit = getPrixUnitaireBrut(item);
+  return totalML * prezzoUnit;
+};
+
+const calculateTotalProduitsCHFBrut = () => {
+  if (!detailMetrage.value.items) return 0;
+  return detailMetrage.value.items.reduce((sum, item) => sum + calculateTotalItemCHFBrut(item), 0);
+};
+
+const getPrixUnitaireItem = (item) => {
+  const prezzoUnit = getPrixUnitaireBrut(item);
+  const remisePerc = getRemiseDevisMetrage();
+  
+  if (remisePerc > 0) {
+    return prezzoUnit * (1 - remisePerc / 100);
+  }
+  
+  return prezzoUnit;
+};
+
+const calculateTotalItemCHF = (item) => {
+  const totalML = calculateTotalMLItem(item);
+  const prezzoUnit = getPrixUnitaireItem(item);
+  return totalML * prezzoUnit;
+};
+
+const calculateTotalProduitsCHF = () => {
+  const totalBrut = calculateTotalProduitsCHFBrut();
+  const remisePerc = getRemiseDevisMetrage();
+  
+  if (remisePerc > 0) {
+    return totalBrut * (1 - remisePerc / 100);
+  }
+  
+  return totalBrut;
+};
+
+const getRemiseDevisMetrage = () => {
+  const chantier = chantiers.value.find(c => c.id === detailMetrage.value.chantier_id);
+  const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
+  
+  if (!chantierDevis) return 0;
+  
+  // CALCOLA LA REMISE DAL DEVIS: (somma prodotti - total) / somma prodotti * 100
+  const sommaProdotti = chantierDevis.produits?.reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
+  const totalDevis = Number(chantierDevis.total || 0);
+  
+  if (sommaProdotti === 0) return 0;
+  
+  const remiseCalcolata = ((sommaProdotti - totalDevis) / sommaProdotti) * 100;
+  
+  console.log('🔍 Somma prodotti:', sommaProdotti, 'Total devis:', totalDevis, 'Remise:', remiseCalcolata.toFixed(2) + '%');
+  
+  return Math.round(remiseCalcolata * 100) / 100; // Arrotonda a 2 decimali
 };
 
 const calculateTotalMLItem = (item) => {
@@ -1179,17 +1266,6 @@ const calculateTotalMLItem = (item) => {
   return quantite + totalSuppl;
 };
 
-const calculateTotalItemCHF = (item) => {
-  const totalML = calculateTotalMLItem(item);
-  const prezzoUnit = getPrixUnitaireItem(item);
-  return totalML * prezzoUnit;
-};
-
-const calculateTotalProduitsCHF = () => {
-  if (!detailMetrage.value.items) return 0;
-  return detailMetrage.value.items.reduce((sum, item) => sum + calculateTotalItemCHF(item), 0);
-};
-
 const calculateMontantEstimeDettagliato = () => {
   const totalProduits = calculateTotalProduitsCHF();
   const totalRegies = (detailMetrage.value.regies || []).reduce((sum, r) => sum + (r.heures * (r.prixHeure || 75)), 0);
@@ -1197,43 +1273,9 @@ const calculateMontantEstimeDettagliato = () => {
 };
 
 const autoriserFacturation = async (metrage) => {
-  // Mostra dialog per scegliere la data
-  showDatePersonnalisee.value = true;
-  dateFacturePersonnalisee.value = new Date().toISOString().split('T')[0];
-  
-  // Aspetta la conferma dell'utente
-  const confirmed = await new Promise((resolve) => {
-    const originalConfirm = window.confirm;
-    window.confirm = (message) => {
-      showDatePersonnalisee.value = false;
-      window.confirm = originalConfirm;
-      return resolve(true);
-    };
-    
-    // Simula dialog personalizzato
-    setTimeout(() => {
-      if (confirm('Approuver ce métrage et autoriser la facturation ?')) {
-        resolve(true);
-      } else {
-        resolve(false);
-      }
-      showDatePersonnalisee.value = false;
-    }, 100);
-  });
-  
-  if (!confirmed) return;
+  if (!confirm('Approuver ce métrage et autoriser la facturation ?')) return;
   
   try {
-    // Valida la data
-    const dataScelta = dateFacturePersonnalisee.value;
-    const ultimaDataFactura = await getUltimaDataFactura();
-    
-    if (ultimaDataFactura && new Date(dataScelta) < new Date(ultimaDataFactura)) {
-      alert(`Erreur: La date ne peut pas être antérieure à la dernière facture (${formatDate(ultimaDataFactura)})`);
-      return;
-    }
-    
-    // Approuve d'abord le métrage
     await supabase
       .from('metrages')
       .update({
@@ -1244,27 +1286,55 @@ const autoriserFacturation = async (metrage) => {
       .eq('id', metrage.id);
     
     const chantier = chantiers.value.find(c => c.id === metrage.chantier_id);
-    const chantierDevis = devis.value.find(d => d.id === chantier?.devis_id);
+    const chantierDevis = devis.value.find(d => d.id == chantier?.devis_id);
     
-    const montantTravauxHT = calculateMontantEstime(metrage);
+    let montantProduitsHT = 0;
+    if (metrage.items && metrage.items.length > 0) {
+      metrage.items.forEach(item => {
+        const prodottoDevis = chantierDevis?.produits?.find(p => p.article === item.article);
+        const prezzoUnit = Number(prodottoDevis?.prix || 50);
+        const quantite = Number(item.mlPosee || 0);
+        
+        let totalSuppl = 0;
+        if (item.supplements && Array.isArray(item.supplements)) {
+          totalSuppl = item.supplements.reduce((sum, supp) => {
+            const qte = Number(supp.qte || supp.qtePosee || 0);
+            const valeur = Number(supp.valeur || 0);
+            return sum + (qte * valeur);
+          }, 0);
+        }
+        
+        const total = quantite + totalSuppl;
+        montantProduitsHT += total * prezzoUnit;
+      });
+    }
     
-    // Calcola montant regie
-    const montantRegiesHT = (metrage.regies || []).reduce((sum, r) => sum + (r.heures * r.prixHeure), 0);
-    const montantHT = montantTravauxHT + montantRegiesHT;
+    // APPLICA REMISE GLOBALE AL TOTALE
+    const sommaProdotti = chantierDevis?.produits?.reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
+    const totalDevis = Number(chantierDevis?.total || 0);
+    let remisePerc = 0;
     
-    const numeroFacture = await generateNumeroFacture(dataScelta);
+    if (sommaProdotti > 0) {
+      remisePerc = ((sommaProdotti - totalDevis) / sommaProdotti) * 100;
+    }
     
-    // Calcola data scadenza usando metodo di pagamento
-    const dataScadenza = calculateDateEcheance(dataScelta, '30 jours net');
+    if (remisePerc > 0) {
+      montantProduitsHT = montantProduitsHT * (1 - remisePerc / 100);
+    }
     
-    // Crée la facture con data personalizzata
+    const montantRegiesHT = (metrage.regies || []).reduce((sum, r) => sum + (r.heures * (r.prixHeure || 75)), 0);
+    const montantHT = montantProduitsHT + montantRegiesHT;
+    
+    const numeroFacture = await generateNumeroFacture();
+    const dataScadenza = calculateDateEcheance(new Date().toISOString().split('T')[0], '30 jours net');
+    
     const { error } = await supabase
       .from('factures')
       .insert([{
         numero: numeroFacture,
         chantier_id: metrage.chantier_id,
         metrage_id: metrage.id,
-        date_facture: dataScelta,
+        date_facture: new Date().toISOString().split('T')[0],
         montant_ht: montantHT,
         taux_tva: 8.1,
         montant_ttc: montantHT * 1.081,
@@ -1277,13 +1347,12 @@ const autoriserFacturation = async (metrage) => {
     
     if (error) throw error;
     
-    // Marque le métrage comme facturé
     await supabase
       .from('metrages')
       .update({
         facture: true,
         facture_numero: numeroFacture,
-        facture_date: dataScelta
+        facture_date: new Date().toISOString().split('T')[0]
       })
       .eq('id', metrage.id);
     
@@ -1296,9 +1365,31 @@ const autoriserFacturation = async (metrage) => {
   }
 };
 
-const voirDetailMetrage = (metrage) => {
+const voirDetailMetrage = async (metrage) => {
   detailMetrage.value = metrage;
-  accontiPrecedenti.value = 0; // Reset acconti
+  accontiPrecedenti.value = 0;
+  
+  // FORZA ricaricamento devis da Supabase
+  const chantier = chantiers.value.find(c => c.id === metrage.chantier_id);
+  
+  if (chantier?.devis_id) {
+    const { data: devisData } = await supabase
+      .from('devis')
+      .select('*')
+      .eq('id', chantier.devis_id)
+      .single();
+    
+    if (devisData) {
+      console.log('✅ Devis ricaricato da Supabase:', devisData.id, 'Prodotti:', devisData.produits?.length);
+      const existingIndex = devis.value.findIndex(d => d.id === devisData.id);
+      if (existingIndex >= 0) {
+        devis.value[existingIndex] = devisData;
+      } else {
+        devis.value.push(devisData);
+      }
+    }
+  }
+  
   showDetailMetrage.value = true;
 };
 
@@ -1631,7 +1722,8 @@ const approuverResoconto = async (resoconto) => {
         status: 'approved',
         approved_at: new Date().toISOString(),
         approved_by: 'admin',
-        acconti_per_zona: accontiPerZona.value  // SALVA GLI ACCONTI PER ZONA
+        acconti_per_zona: accontiPerZona.value,  // SALVA GLI ACCONTI PER ZONA
+        acconti_precedenti: accontiPrecedentiResoconto.value  // SALVA ACCONTI PERCENTUALI
       })
       .eq('id', resoconto.id);
     
@@ -1698,7 +1790,7 @@ const approuverResoconto = async (resoconto) => {
     } else {
       // PERCENTUALE: usa calculateTotalHT() come prima
       montantHTFattura = calculateTotalHT();
-      accontiDaSalvare = Number(totalAccontiZone.value || 0);
+      accontiDaSalvare = Number(accontiPrecedentiResoconto.value || 0);
     }
     
     // Calcola TTC
@@ -1897,26 +1989,30 @@ const generarFactureResoconto = async (resoconto) => {
 };
 
 const eliminarMetrage = async (metrage) => {
-  if (!confirm('Refuser ce métrage? Il sera renvoyé au chef pour correction.')) return;
-  
-  const motif = prompt('Motif du refus (optionnel):');
+  if (!confirm('Supprimer ce métrage?')) return;
   
   try {
+    // Verifica se esiste una fattura collegata
+    const { data: fattureCollegate } = await supabase
+      .from('factures')
+      .select('id')
+      .eq('metrage_id', metrage.id);
+    
+    if (fattureCollegate && fattureCollegate.length > 0) {
+      alert('Impossible de supprimer: ce métrage a déjà une facture associée.\nSupprimez d\'abord la facture.');
+      return;
+    }
+    
     const { error } = await supabase
       .from('metrages')
-      .update({
-        status: 'rejected',
-        rejected_at: new Date().toISOString(),
-        rejected_by: 'admin',
-        rejection_reason: motif || 'Refusé par admin'
-      })
+      .delete()
       .eq('id', metrage.id);
     
     if (error) throw error;
-    alert('Métrage refusé. Le chef pourra le modifier et le soumettre à nouveau.');
+    alert('Métrage supprimé.');
     loadData();
   } catch (error) {
-    console.error('Erreur refus métrage:', error);
+    console.error('Erreur suppression métrage:', error);
     alert('Erreur: ' + error.message);
   }
 };
@@ -2120,13 +2216,19 @@ const supprimerFacture = async (facture) => {
   if (!confirm(`Supprimer la facture ${facture.numero} ?\n\nATTENTION: L'élément associé sera remis en attente de facturation.`)) return;
   
   try {
-    // Supprime la facture
-    const { error } = await supabase
-      .from('factures')
-      .delete()
-      .eq('id', facture.id);
-    
-    if (error) throw error;
+    // Remet le resoconto en attente PRIMA di eliminare la fattura
+    if (facture.resoconto_id || facture.resocontoId) {
+      try {
+        await supabase
+          .from('resoconti_percentuali')
+          .update({
+            status: 'pending_approval'
+          })
+          .eq('id', facture.resoconto_id || facture.resocontoId);
+      } catch (err) {
+        console.log('Tabella resoconti_percentuali non esiste, skip update');
+      }
+    }
     
     // Remet le métrage en attente si il existe
     if (facture.metrage_id || facture.metrageId) {
@@ -2134,6 +2236,7 @@ const supprimerFacture = async (facture) => {
         await supabase
           .from('metrages')
           .update({
+            status: 'en_attente',
             facture: false,
             facture_numero: null,
             facture_date: null
@@ -2144,22 +2247,16 @@ const supprimerFacture = async (facture) => {
       }
     }
     
-    // Remet le resoconto en attente si il existe
-    if (facture.resoconto_id || facture.resocontoId) {
-      try {
-        await supabase
-          .from('resoconti_percentuali')
-          .update({
-            status: 'en_attente'
-          })
-          .eq('id', facture.resoconto_id || facture.resocontoId);
-      } catch (err) {
-        console.log('Tabella resoconti_percentuali non esiste, skip update');
-      }
-    }
+    // Supprime la facture DOPO aver aggiornato il resoconto
+    const { error } = await supabase
+      .from('factures')
+      .delete()
+      .eq('id', facture.id);
     
-    alert('Facture supprimée avec succès');
-    loadData();
+    if (error) throw error;
+    
+    alert('Facture supprimée avec succès. Le resoconto est de nouveau en attente d\'approbation.');
+    await loadData();
   } catch (error) {
     console.error('Erreur suppression facture:', error);
     alert('Erreur: ' + error.message);
@@ -3347,10 +3444,10 @@ const genererPDF = async (facture) => {
           return sum + getGiaFatturatoZona(zone);
         }, 0);
       } else {
-        // Per resoconti percentuali usa il valore salvato
-        accontiModalValue = Number(facture.acconti_precedenti || accontiPrecedentiResoconto.value || 0);
+        // Per resoconti percentuali usa il valore salvato nel resoconto o nella fattura
+        accontiModalValue = Number(facture.acconti_precedenti || resocontoDoc.acconti_precedenti || 0);
       }
-      console.log('🔍 PDF - Acconti calcolati:', accontiModalValue);
+      console.log('🔍 PDF - Acconti caricati:', accontiModalValue);
       
       // DEBUG DEVIS NEL PDF
       console.log('🔍 PDF - Chantier:', chantier);
@@ -3464,14 +3561,18 @@ const genererPDF = async (facture) => {
         
         console.log(`📊 PDF - ${zona}: lordo=${montantLordo.toFixed(2)} CHF, remise=${remisePerc}%, netto=${montantNetto.toFixed(2)} CHF`);
         
-        return [
-          zona,
-          `${percentuale}%`,
-          `${montantLordo.toFixed(2)} CHF`,
-          remisePerc > 0 ? `${remisePerc}%` : '-',
-          `${montantNetto.toFixed(2)} CHF`
-        ];
-      });
+        // Mostra solo se montant > 0
+        if (montantNetto > 0) {
+          return [
+            zona,
+            `${percentuale}%`,
+            `${montantLordo.toFixed(2)} CHF`,
+            remisePerc > 0 ? `${remisePerc}%` : '-',
+            `${montantNetto.toFixed(2)} CHF`
+          ];
+        }
+        return null;
+      }).filter(row => row !== null);
       
       if (avancementData.length > 0) {
         autoTable(doc, {
@@ -3566,10 +3667,11 @@ const genererPDF = async (facture) => {
         doc.text('ACOMPTES PRÉCÉDENTS PAR ZONE', 10, yPos);
         yPos += 5;
         
-        // Crea tabella con acconti per zona
+        // Crea tabella con acconti per zona - SOLO ZONE ATTIVE
         const accontiRows = [];
         Object.entries(accontiPerZona.value).forEach(([zone, importo]) => {
-          if (importo > 0) {
+          // Mostra solo zone con acconti > 0 E che sono nel resoconto
+          if (importo > 0 && resocontoDoc.avancementi?.[zone]) {
             accontiRows.push([
               `Zone: ${zone}`,
               `-${Number(importo).toFixed(2)} CHF`
@@ -3577,10 +3679,10 @@ const genererPDF = async (facture) => {
           }
         });
         
-        // Aggiungi riga totale
+        // Aggiungi riga totale con sfondo BIANCO
         accontiRows.push([
-          { content: 'TOTAL ACOMPTES:', styles: { fontStyle: 'bold' } },
-          { content: `-${accontiModalValue.toFixed(2)} CHF`, styles: { fontStyle: 'bold' } }
+          { content: 'TOTAL ACOMPTES:', styles: { fontStyle: 'bold', fillColor: [255, 255, 255] } },
+          { content: `-${accontiModalValue.toFixed(2)} CHF`, styles: { fontStyle: 'bold', fillColor: [255, 255, 255] } }
         ]);
         
         autoTable(doc, {
@@ -4010,10 +4112,61 @@ const genererPDF = async (facture) => {
         docFacture.text(`Sous-total: ${zoneTotal.toFixed(2)} CHF`, 135, yPos + 2);
         yPos += 12;
       });
+      
+      // SOUS-TOTAL PRODUITS
+      if (yPos > 240) {
+        docFacture.addPage();
+        yPos = 20;
+      }
+      
+      const totalProduitsBrut = totalFactureHT;
+      docFacture.setFillColor(245, 245, 245);
+      docFacture.rect(130, yPos - 2, 70, 6, 'F');
+      docFacture.setFont('helvetica', 'bold');
+      docFacture.setFontSize(10);
+      docFacture.text('Sous-total:', 135, yPos + 2);
+      docFacture.text(`${totalProduitsBrut.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
+      yPos += 8;
+      
+      // APPLICA REMISE GLOBALE
+      const sommaProdotti = chantierDevis?.produits?.reduce((sum, p) => sum + Number(p.total || 0), 0) || 0;
+      const totalDevisValue = Number(chantierDevis?.total || 0);
+      let remisePerc = 0;
+      
+      if (sommaProdotti > 0) {
+        remisePerc = ((sommaProdotti - totalDevisValue) / sommaProdotti) * 100;
+      }
+      
+      if (remisePerc > 0) {
+        docFacture.setFont('helvetica', 'normal');
+        docFacture.setFontSize(9);
+        docFacture.setTextColor(200, 0, 0);
+        const remiseAmount = totalProduitsBrut * (remisePerc / 100);
+        docFacture.text(`Remise suppl. (${remisePerc.toFixed(1)}%):`, 135, yPos + 2);
+        docFacture.text(`-${remiseAmount.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
+        docFacture.setTextColor(0, 0, 0);
+        yPos += 6;
+        
+        // Applica remise al totale
+        totalFactureHT = totalFactureHT * (1 - remisePerc / 100);
+        
+        // TOTAL NET
+        docFacture.setFont('helvetica', 'bold');
+        docFacture.setFontSize(10);
+        docFacture.text('Total Net:', 135, yPos + 2);
+        docFacture.text(`${totalFactureHT.toFixed(2)} CHF`, 195, yPos + 2, { align: 'right' });
+        yPos += 10;
+      }
     }
     
     // Régies se presenti
     if (metrageDoc.regies?.length > 0) {
+      // Verifica spazio per régies (serve almeno 40mm)
+      if (yPos > 230) {
+        docFacture.addPage();
+        yPos = 20;
+      }
+      
       docFacture.setFontSize(12);
       docFacture.setFont('helvetica', 'bold');
       docFacture.text('RÉGIES', 10, yPos);
