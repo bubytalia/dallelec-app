@@ -99,9 +99,7 @@ const supplementsAnagrafica = ref([]);
 
 // Tous les produits du devis
 const produitsDevis = computed(() => {
-  console.log('MetrageForm - devisData:', devisData);
   if (!devisData?.produits) {
-    console.log('MetrageForm - Pas de produits dans devisData');
     return [];
   }
   const produits = devisData.produits.map(p => ({
@@ -114,7 +112,6 @@ const produitsDevis = computed(() => {
     zone: p.zone,
     supplements: p.supplements || []
   }));
-  console.log('MetrageForm - Produits traités:', produits);
   return produits;
 });
 
@@ -150,10 +147,7 @@ const fetchSupplements = async () => {
       valeur: item.valeur || 1,
       ordre: item.ordre || 0
     }));
-    
-    console.log('Supplementi caricati:', supplementsAnagrafica.value);
   } catch (error) {
-    console.log('Tabella supplements non esiste ancora:', error);
     supplementsAnagrafica.value = [];
   }
 };

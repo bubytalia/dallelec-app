@@ -292,7 +292,6 @@ const metragesRejected = ref([]);
 
 const fetchChantiers = async () => {
   const userEmail = localStorage.getItem('userEmail');
-  console.log('🔍 UserEmail:', userEmail);
   
   try {
     // Trova il chef dalla tabella chefdechantiers
@@ -303,15 +302,12 @@ const fetchChantiers = async () => {
       .single();
     
     if (chefError || !chefData) {
-      console.error('❌ Chef non trovato');
       chantiers.value = [];
       return;
     }
     
-    const nomeCompleto1 = `${chefData.nom} ${chefData.prenom}`; // Maggi Daniele
-    const nomeCompleto2 = `${chefData.prenom} ${chefData.nom}`; // Daniele Maggi
-    
-    console.log('🔍 Cercando cantieri per:', { userEmail, nomeCompleto1, nomeCompleto2 });
+    const nomeCompleto1 = `${chefData.nom} ${chefData.prenom}`;
+    const nomeCompleto2 = `${chefData.prenom} ${chefData.nom}`;
     
     // Cerca cantieri per email o entrambi i formati nome
     const { data, error } = await supabase
@@ -321,11 +317,9 @@ const fetchChantiers = async () => {
     
     if (error) throw error;
     
-    console.log('✅ Cantieri trovati:', data?.length || 0);
     chantiers.value = data || [];
     
   } catch (error) {
-    console.error('❌ Errore:', error);
     chantiers.value = [];
   }
 };
@@ -342,19 +336,41 @@ const loadChantierData = async () => {
     // Trova il cantiere selezionato
     const chantier = chantiers.value.find(c => String(c.id) === String(selectedChantierId.value));
     
-    // Cerca tutti i devis dello stesso cantiere per nome e indirizzo
-    const { data: allDevisStessoCantiere, error: devisError } = await supabase
-      .from('devis')
-      .select('*')
-      .or(`nom.eq."${chantier.nom}",adresse.eq."${chantier.adresse}"`);
-    
-    if (devisError || !allDevisStessoCantiere || allDevisStessoCantiere.length === 0) {
-      console.error('Errore caricamento devis cantiere:', devisError);
-      alert('Chantier ou devis non trouvé.');
+    if (!chantier) {
+      alert('Cantiere non trovato');
       return;
     }
     
-    console.log(`📋 Trovati ${allDevisStessoCantiere.length} devis per il cantiere`);
+    // Usa il devis_id del cantiere se presente
+    let allDevisStessoCantiere = [];
+    
+    if (chantier.devis_id) {
+      // Carica il devis accoppiato (converti in numero se è stringa)
+      const devisIdNum = parseInt(chantier.devis_id);
+      
+      const { data: devisData, error: devisError } = await supabase
+        .from('devis')
+        .select('*')
+        .eq('id', devisIdNum);
+      
+      if (devisError || !devisData || devisData.length === 0) {
+        alert('Devis associé non trouvé (ID: ' + devisIdNum + ')');
+        return;
+      }
+      allDevisStessoCantiere = devisData;
+    } else {
+      // Fallback: cerca per nome e indirizzo
+      const { data: devisData, error: devisError } = await supabase
+        .from('devis')
+        .select('*')
+        .or(`nom.eq."${chantier.nom}",adresse.eq."${chantier.adresse}"`);
+      
+      if (devisError || !devisData || devisData.length === 0) {
+        alert('Chantier ou devis non trouvé.');
+        return;
+      }
+      allDevisStessoCantiere = devisData;
+    }
     
     // Controlla il tipo di métrage del cantiere
     if (chantier.type_metrage === 'percentuel') {
@@ -426,7 +442,6 @@ const loadChantierData = async () => {
         }
       });
       zones.value = Array.from(zoneSet).sort();
-      console.log(`✅ Zone caricate da ${allDevisData.length} devis:`, zones.value);
     } else {
       zones.value = [];
     }
@@ -434,7 +449,6 @@ const loadChantierData = async () => {
     // Non caricare automaticamente métrages esistenti - inizia sempre nuovo
     
   } catch (error) {
-    console.error('Erreur lors du chargement:', error);
     alert('Erreur lors du chargement: ' + error.message);
   }
 };
@@ -459,7 +473,7 @@ const loadExistingMetrages = async () => {
       currentMetrageInfo.value = `${count} métrage(s) existant(s) - Voir historique pour charger`;
     }
   } catch (error) {
-    console.error('Erreur lors du chargement des métrages existants:', error);
+    // Errore silenzioso
   }
 };
 
@@ -640,8 +654,7 @@ const sauvegarderMetrages = async () => {
     }
     
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error);
-    alert('Erreur lors de la sauvegarde: ' + error.message);
+    alert('Erreur lors de la sauvegarde');
   }
 };
 
@@ -664,8 +677,7 @@ const sauvegarderBrouillon = async () => {
     alert('Brouillon sauvegardé.');
     
   } catch (error) {
-    console.error('Erreur lors de la sauvegarde:', error);
-    alert('Erreur lors de la sauvegarde: ' + error.message);
+    alert('Erreur lors de la sauvegarde');
   }
 };
 
@@ -679,7 +691,7 @@ const voirHistorique = async () => {
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .sort((a, b) => b.createdAt?.toDate() - a.createdAt?.toDate());
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'historique:', error);
+      // Errore silenzioso
     }
   }
 };
@@ -724,8 +736,7 @@ const supprimerMetrage = async (metrageId) => {
       await voirHistorique(); // Refresh
       alert('Métrage supprimé.');
     } catch (error) {
-      console.error('Erreur lors de la suppression:', error);
-      alert('Erreur lors de la suppression: ' + error.message);
+      alert('Erreur lors de la suppression');
     }
   }
 };
@@ -760,12 +771,11 @@ const loadMetragesRejected = async () => {
     if (error) throw error;
     
     // Filtra solo i métrages dei cantieri del chef
-    const userEmail = localStorage.getItem('userEmail');
     const chefChantiers = chantiers.value.map(c => c.id);
     
     metragesRejected.value = (data || []).filter(m => chefChantiers.includes(m.chantier_id));
   } catch (error) {
-    console.error('Erreur chargement métrages refusés:', error);
+    // Errore silenzioso
   }
 };
 
@@ -856,12 +866,8 @@ const supprimerRegie = (index) => {
 };
 
 onMounted(async () => {
-  console.log('🚀 ChefMetrages - onMounted chiamato');
-  
   try {
-    console.log('📞 Chiamando fetchChantiers...');
     await fetchChantiers();
-    console.log('✅ fetchChantiers completato');
     
     // Carica métrages rifiutati DOPO aver caricato i cantieri
     await loadMetragesRejected();
@@ -881,7 +887,7 @@ onMounted(async () => {
       await loadChantierData();
     }
   } catch (error) {
-    console.error('❌ Errore in onMounted:', error);
+    // Errore silenzioso
   }
 });
 </script>

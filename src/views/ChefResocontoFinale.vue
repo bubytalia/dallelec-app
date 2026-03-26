@@ -12,12 +12,17 @@
             <h5>Sélectionner chantier</h5>
           </div>
           <div class="card-body">
-            <select v-model="selectedChantierId" class="form-control" @change="loadChantierData">
-              <option value="">Choisir un chantier ({{ chantiers.length }} disponibles)</option>
-              <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
-                {{ chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '' }}{{ chantier.nom }}
-              </option>
-            </select>
+            <div class="d-flex gap-2">
+              <select v-model="selectedChantierId" class="form-control" @change="loadChantierData">
+                <option value="">Choisir un chantier ({{ chantiers.length }} disponibles)</option>
+                <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
+                  {{ chantier.numeroCantiere ? `N° ${chantier.numeroCantiere} - ` : '' }}{{ chantier.nom }}
+                </option>
+              </select>
+              <button v-if="selectedChantierId" @click="refreshDevisData" class="btn btn-primary" title="Recharger les données du devis">
+                🔄
+              </button>
+            </div>
             <small class="text-muted mt-1 d-block" v-if="chantiers.length === 0">
               Aucun chantier assigné à {{ user?.email }}
             </small>
@@ -987,6 +992,24 @@ const modificaZona = (index) => {
   zoneSelezionate.value.splice(index, 1);
   
   alert(`Zone "${zona.nome}" chargée pour modification. Modifiez les données et cliquez sur "Ajouter cette zone" pour sauvegarder.`);
+};
+
+const refreshDevisData = async () => {
+  const zonaCorrente = selectedZone.value;
+  await loadChantierData();
+  if (zonaCorrente && zones.value.includes(zonaCorrente)) {
+    // Ricarica direttamente i prodotti senza passare per loadZoneData
+    const prodottiFiltrati = devisData.value.produits?.filter(p => p.zone === zonaCorrente) || [];
+    prodottiZona.value = prodottiFiltrati.map(p => ({
+      ...p, 
+      mlReali: p.ml,
+      supplementiSelezionati: [],
+      quantitaSupplementi: {},
+      totalML: p.ml
+    }));
+    selectedZone.value = zonaCorrente;
+  }
+  alert('Données du devis rechargées!');
 };
 
 const salvaResocontoFinale = async () => {

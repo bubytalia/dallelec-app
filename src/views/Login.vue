@@ -102,8 +102,6 @@ export default {
         let role = 'ouvrier'; // Default
         let userName = user.email;
         
-        console.log('🔍 DEBUG LOGIN - Email:', this.email);
-        
         try {
           // 1. Cerca in admins
           const { data: adminData, error: adminError } = await supabase
@@ -115,7 +113,6 @@ export default {
           if (adminData && !adminError) {
             role = 'admin';
             userName = `${adminData.prenom} ${adminData.nom}`;
-            console.log('✅ Trovato ADMIN:', userName);
           } else {
             // 2. Cerca in chefdechantiers
             const { data: chefData, error: chefError } = await supabase
@@ -127,7 +124,6 @@ export default {
             if (chefData && !chefError) {
               role = 'chef';
               userName = `${chefData.prenom} ${chefData.nom}`;
-              console.log('✅ Trovato CHEF:', userName);
             } else {
               // 3. Cerca in collaborateurs
               const { data: ouvrierData, error: ouvrierError } = await supabase
@@ -139,17 +135,12 @@ export default {
               if (ouvrierData && !ouvrierError) {
                 role = 'ouvrier';
                 userName = `${ouvrierData.prenom} ${ouvrierData.nom}`;
-                console.log('✅ Trovato OUVRIER:', userName);
-              } else {
-                console.log('❌ Utente non trovato in nessuna anagrafica');
               }
             }
           }
         } catch (error) {
-          console.log('❌ Errore anagrafica:', error);
+          // Errore silenzioso
         }
-        
-        console.log('🎯 RUOLO FINALE:', role, userName);
         
         // FALLBACK: Account di prova se non trovati nelle anagrafiche
         if (role === 'ouvrier' && userName === user.email) {
@@ -187,8 +178,6 @@ export default {
         }
         
       } catch (error) {
-        console.error('Erreur login:', error);
-        
         // Messaggi di errore user-friendly
         if (error.message === 'Invalid login credentials') {
           this.error = 'Email ou mot de passe incorrect';

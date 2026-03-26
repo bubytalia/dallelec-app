@@ -157,8 +157,17 @@ const originalDevisItems = ref([]);
  */
 const sauvegarderDevis = async (asDraft = false) => {
   try {
+    console.log('🔍 DEBUG SALVATAGGIO:');
+    console.log('  - Numero prodotti da salvare:', devisItems.value.length);
+    console.log('  - Primi 3 prodotti:', devisItems.value.slice(0, 3).map(p => p.article));
+    console.log('  - Total devis:', devisTotal.value);
+    
+    // ✅ Converti Proxy in oggetti normali per Supabase
+    const produitsNormali = JSON.parse(JSON.stringify(devisItems.value));
+    console.log('📦 Prodotti normalizzati:', produitsNormali.length);
+    
     const updateData = {
-      produits: devisItems.value,
+      produits: produitsNormali,
       total: devisTotal.value,
       discount: Number(remiseSupplementaire.value) || 0,
       draft: asDraft,
@@ -178,10 +187,16 @@ const sauvegarderDevis = async (asDraft = false) => {
       };
     }
     
-    const { error } = await supabase
+    console.log('📤 Invio update a Supabase...');
+    const { data: resultData, error } = await supabase
       .from('devis')
       .update(updateData)
-      .eq('id', devisId);
+      .eq('id', devisId)
+      .select();
+    
+    console.log('✅ Risposta Supabase:', resultData);
+    console.log('📦 Prodotti nella risposta:', resultData?.[0]?.produits?.length);
+    console.log('❌ Errore Supabase:', error);
     
     if (error) throw error;
     
@@ -329,15 +344,6 @@ onBeforeRouteLeave(async (to, from, next) => {
 
 // Carica numero devis
 onMounted(async () => {
-  // 🚨 PULIZIA CRITICA: Rimuovi localStorage per evitare mix di dati tra devis diversi
-  try {
-    localStorage.removeItem('devisItems');
-    localStorage.removeItem('devisDiscount');
-    console.log('🧹 localStorage pulito per nuovo devis');
-  } catch (e) {
-    console.warn('Errore pulizia localStorage:', e);
-  }
-  
   try {
     const { data: devisData, error } = await supabase
       .from('devis')
@@ -355,10 +361,14 @@ onMounted(async () => {
       modalitaPrezzi.value = devisData.modalita_prezzi || 'scontistica';
       isDraft.value = devisData.draft !== false; // true se draft è true o undefined
     
-      // Carica gli items del devis (prodotti) dal documento se esistenti
+      // ✅ CARICA SEMPRE DAL DATABASE (priorità assoluta)
       if (Array.isArray(devisData.produits) && devisData.produits.length > 0) {
         devisItems.value = devisData.produits.map(item => ({ ...item }));
         originalDevisItems.value = JSON.parse(JSON.stringify(devisItems.value));
+        console.log('✅ Prodotti caricati dal DB:', devisItems.value.length);
+      } else {
+        devisItems.value = [];
+        console.log('⚠️ Nessun prodotto nel DB');
       }
       // Se esiste uno sconto salvato nel documento, caricalo come valore di default
       if (devisData.discount !== undefined) {

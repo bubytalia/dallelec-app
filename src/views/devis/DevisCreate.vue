@@ -887,6 +887,23 @@ const loadBaseDevisData = async (baseDevisId) => {
       remiseSelection.value = { ...baseDevis.remises };
     }
     
+    // ✅ FIX: Salva prodotti e dati extra per il nuovo devis
+    try {
+      localStorage.setItem('duplicateDevisExtra', JSON.stringify({
+        produits: baseDevis.produits || [],
+        discount: baseDevis.discount || 0,
+        conditions_generales: baseDevis.conditions_generales || [],
+        conditions_comprend: baseDevis.conditions_comprend || [],
+        conditions_ne_comprend_pas: baseDevis.conditions_ne_comprend_pas || [],
+        notes: baseDevis.notes || '',
+        hide_supplements_list: baseDevis.hide_supplements_list || false,
+        hide_prices: baseDevis.hide_prices || false,
+        paiement: baseDevis.paiement || null
+      }));
+    } catch (e) {
+      console.warn('Errore salvataggio dati extra duplicazione:', e);
+    }
+    
     console.log('✅ Form precompilato con:', {
       cantiere: form.value.nom,
       client: form.value.client,
