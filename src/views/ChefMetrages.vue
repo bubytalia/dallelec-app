@@ -480,7 +480,7 @@ const loadExistingMetrages = async () => {
 // Aggiunta/modifica riga (identico a DevisProduits)
 const handleUpdateItem = (index, item) => {
   const duplicate = metrageItems.value.find(i =>
-    i.zone === item.zone && i.nom === item.nom && i.taille === item.taille && i !== metrageItems.value[index]
+    i.zone === item.zone && i.article === item.article && i !== metrageItems.value[index]
   );
   if (duplicate) {
     alert("Ce produit existe déjà dans cette zone.");
