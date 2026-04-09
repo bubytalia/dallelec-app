@@ -23,12 +23,12 @@
           <option v-for="(zone, i) in zones" :key="i" :value="zone">{{ zone }}</option>
         </select>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-4">
         <label>Produit</label>
-        <select v-model="selectedProduitId" class="form-select">
+        <select v-model="selectedProduitId" class="form-select form-select-lg">
           <option disabled value="">Sélectionner un produit</option>
           <option v-for="p in produitsZone" :key="p.id" :value="p.id">
-            {{ p.nom }} ({{ p.taille }})
+            [{{ p.article }}] {{ p.nom }} ({{ p.taille }})
           </option>
         </select>
       </div>
