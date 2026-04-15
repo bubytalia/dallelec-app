@@ -337,8 +337,15 @@ const generatePdf = async () => {
       }
     })
     // Calcola il sotto-totale della zona (escludendo articoli informativi) solo se i prezzi sono visibili
-    const finalY = doc.lastAutoTable.finalY || tableStartY + 10
+    let finalY = doc.lastAutoTable.finalY || tableStartY + 10
     if (!props.hidePrices) {
+      // Controllo spazio per sous-total zona
+      if (finalY > 270) {
+        doc.addPage()
+        currentPage++
+        drawHeader(currentPage, plannedPages)
+        finalY = 50
+      }
       let zoneSubtotal = 0
       if (Array.isArray(zone.produits)) {
         zoneSubtotal = zone.produits.reduce((acc, p) => acc + (p.informativo ? 0 : (p.total || 0)), 0)
@@ -355,6 +362,14 @@ const generatePdf = async () => {
 
   // Sezione totali con remise détaillée (solo se i prezzi sono visibili)
   if (!props.hidePrices) {
+    // Controllo spazio: servono almeno 40mm per i totali
+    if (tableStartY > 250) {
+      doc.addPage()
+      currentPage++
+      drawHeader(currentPage, plannedPages)
+      tableStartY = 50
+    }
+
     const subtotalSansRemise = devisTotal.value
     const remisePct = props.remiseSupplementaire || 0
     const montantRemise = subtotalSansRemise * (remisePct / 100)
