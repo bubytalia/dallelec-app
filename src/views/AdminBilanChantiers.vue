@@ -153,24 +153,24 @@
               <table class="table table-striped">
                 <thead>
                   <tr>
+                    <th>Date</th>
                     <th>Personne</th>
                     <th>Type</th>
                     <th>Chantier</th>
                     <th>Heures</th>
                     <th>Coût/H</th>
                     <th>Total</th>
-                    <th>Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="(heure, index) in heuresDetaillees" :key="`heure-${heure.id}-${index}`">
+                    <td>{{ formatDate(heure.date) }}</td>
                     <td>{{ getUserName(heure.userId) }}</td>
                     <td>{{ heure.type === 'propre' ? 'Chef' : 'Collaborateur' }}</td>
                     <td>{{ getChantierName(heure.chantierId) }}</td>
                     <td>{{ heure.heures }}</td>
                     <td>{{ heure.coutHoraire }} CHF/h</td>
                     <td>{{ (heure.heures * heure.coutHoraire).toFixed(2) }} CHF</td>
-                    <td>{{ formatDate(heure.date) }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -424,6 +424,15 @@ const calculerBilans = async () => {
       coutHoraire: h.tarif_utilise || getCoutHoraire(userId, type)
     }
   })
+
+  // Sort per data decrescente
+  const toISO = (d) => {
+    if (!d) return ''
+    if (typeof d === 'string') return d.substring(0, 10)
+    if (d.toDate) return d.toDate().toISOString().substring(0, 10)
+    return new Date(d).toISOString().substring(0, 10)
+  }
+  heuresDetaillees.value = [...heuresDetaillees.value].sort((a, b) => toISO(b.date).localeCompare(toISO(a.date)))
 
   // Calculer les bilans par chantier
   const bilans = {}
