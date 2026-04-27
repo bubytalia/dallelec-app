@@ -16,13 +16,7 @@
       <button type="button" class="btn-close" @click="dismissFerieAlert"></button>
     </div>
 
-    <!-- Alert métrages/resoconti rifiutati -->
-    <div v-if="showRejectedAlert" class="alert alert-danger alert-dismissible fade show" role="alert">
-      <strong>⚠️ Rapports refusés:</strong> {{ rejectedAlertMessage }}
-      <router-link v-if="metragesRejected > 0" to="/chef/chantiers/metrages" class="btn btn-danger btn-sm ms-2">Voir métrages</router-link>
-      <router-link v-if="resocontiRejected > 0" to="/chef/chantiers/resoconto-percentuale" class="btn btn-danger btn-sm ms-2">Voir resoconti</router-link>
-      <button type="button" class="btn-close" @click="dismissRejectedAlert"></button>
-    </div>
+
 
     <h2 class="text-center mb-4">Tableau de bord Chef de Chantier</h2>
     <p class="text-center">Bienvenue dans le système de gestion Dallelec.</p>
@@ -39,15 +33,7 @@
       <div class="col-md-3 m-2">
         <router-link to="/chef/premi" class="btn btn-outline-info w-100">Primes</router-link>
       </div>
-      <div class="col-md-3 m-2">
-        <router-link to="/chef/chantiers/metrages" class="btn btn-outline-secondary w-100">Métrages</router-link>
-      </div>
-      <div class="col-md-3 m-2">
-        <router-link to="/chef/chantiers/metrages-historique" class="btn btn-outline-dark w-100">📊 Historique Métrages</router-link>
-      </div>
-      <div class="col-md-3 m-2">
-        <router-link to="/chef/chantiers/resoconto-finale" class="btn btn-outline-danger w-100">📋 Rapport Final</router-link>
-      </div>
+
       <div class="col-md-3 m-2">
         <router-link to="/aide" class="btn btn-outline-info w-100">❓ Aide</router-link>
       </div>
@@ -63,10 +49,7 @@ import RetourButton from '@/components/RetourButton.vue';
 const showHoursAlert = ref(false);
 const showFerieAlert = ref(false);
 const ferieAlertMessage = ref('');
-const showRejectedAlert = ref(false);
-const rejectedAlertMessage = ref('');
-const metragesRejected = ref(0);
-const resocontiRejected = ref(0);
+
 
 const checkTodayHours = async () => {
   try {
@@ -155,55 +138,11 @@ const dismissFerieAlert = () => {
   showFerieAlert.value = false;
 };
 
-const dismissRejectedAlert = () => {
-  showRejectedAlert.value = false;
-};
 
-const checkRejectedReports = async () => {
-  try {
-    const userEmail = localStorage.getItem('userEmail');
-    
-    const { data: chantiers } = await supabase
-      .from('chantiers')
-      .select('id')
-      .eq('capocantiere', userEmail);
-    
-    const chantierIds = (chantiers || []).map(c => c.id);
-    
-    if (chantierIds.length === 0) return;
-    
-    const { data: metrages } = await supabase
-      .from('metrages')
-      .select('*')
-      .in('chantier_id', chantierIds)
-      .eq('status', 'rejected');
-    
-    metragesRejected.value = (metrages || []).length;
-    
-    const { data: resoconti } = await supabase
-      .from('resoconti_percentuali')
-      .select('*')
-      .in('chantier_id', chantierIds)
-      .eq('status', 'rejected');
-    
-    resocontiRejected.value = (resoconti || []).length;
-    
-    const total = metragesRejected.value + resocontiRejected.value;
-    
-    if (total > 0) {
-      rejectedAlertMessage.value = `Vous avez ${total} rapport(s) refusé(s) à corriger`;
-      showRejectedAlert.value = true;
-    }
-    
-  } catch (error) {
-    console.error('Erreur contrôle rapports refusés:', error);
-  }
-};
 
 onMounted(() => {
   checkTodayHours();
   checkFerieResponses();
-  checkRejectedReports();
 });
 </script>
 

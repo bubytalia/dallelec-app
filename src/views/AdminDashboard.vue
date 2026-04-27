@@ -73,6 +73,22 @@
     <!-- Section Administration -->
     <div class="row justify-content-center mt-4">
       <div class="col-12">
+        <h5 class="text-info mb-3">Métrages / Resoconti</h5>
+      </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/metrages" class="btn btn-outline-info w-100">📏 Sélection Chantier</router-link>
+      </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/metrages-historique" class="btn btn-outline-info w-100">📊 Historique Métrages</router-link>
+      </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/resoconto-finale" class="btn btn-outline-info w-100">📋 Rapport Final</router-link>
+      </div>
+    </div>
+
+    <!-- Section Administration -->
+    <div class="row justify-content-center mt-4">
+      <div class="col-12">
         <h5 class="text-danger mb-3">Administration</h5>
       </div>
       <div class="col-md-3 m-2">

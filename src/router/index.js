@@ -27,12 +27,14 @@ import ChefHeures from '@/views/ChefHeures.vue';
 import ChefChantiers from '@/views/ChefChantiers.vue';
 import ChefAbsences from '@/views/ChefAbsences.vue';
 import ChefBilan from '@/views/ChefBilan.vue';
-import ChefMetrages from '@/views/ChefMetrages.vue';
-import ChefResocontoPercentuale from '@/views/ChefResocontoPercentuale.vue';
-import ChefResocontoFinale from '@/views/ChefResocontoFinale.vue';
-import ChefSelectionCantiere from '@/views/ChefSelectionCantiere.vue';
 import ChefPremi from '@/views/ChefPremi.vue';
-import ChefMetragesHistorique from '@/views/ChefMetragesHistorique.vue';
+
+// Admin Métrages pages
+import AdminMetragesSelection from '@/views/AdminMetragesSelection.vue';
+import AdminMetrages from '@/views/AdminMetrages.vue';
+import AdminResocontoPercentuale from '@/views/AdminResocontoPercentuale.vue';
+import AdminResocontoFinale from '@/views/AdminResocontoFinale.vue';
+import AdminMetragesHistorique from '@/views/AdminMetragesHistorique.vue';
 
 // Ouvrier pages
 import OuvrierDashboard from '@/views/OuvrierDashboard.vue';
@@ -121,19 +123,21 @@ const routes = [
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },
 
 
+  // Admin Métrages routes
+  { path: '/admin/metrages', name: 'AdminMetragesSelection', component: AdminMetragesSelection, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/metrages-detail', name: 'AdminMetrages', component: AdminMetrages, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/resoconto-percentuale', name: 'AdminResocontoPercentuale', component: AdminResocontoPercentuale, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/resoconto-finale', name: 'AdminResocontoFinale', component: AdminResocontoFinale, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/metrages-historique', name: 'AdminMetragesHistorique', component: AdminMetragesHistorique, beforeEnter: requireRole(['admin']) },
+
   // Chef routes
   { path: '/chef', name: 'ChefDashboard', component: ChefDashboard, beforeEnter: requireRole(['chef']) },
   { path: '/chef/heures', name: 'ChefHeures', component: ChefHeures, beforeEnter: requireRole(['chef']) },
   { path: '/chef/chantiers', name: 'ChefChantiers', component: ChefChantiers, beforeEnter: requireRole(['chef']) },
   { path: '/chef/absences', name: 'ChefAbsences', component: ChefAbsences, beforeEnter: requireRole(['chef']) },
-  { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan }, // TODO: creare componente specifico
-  { path: '/chef/chantiers/metrages', name: 'ChefSelectionCantiere', component: ChefSelectionCantiere },
-  { path: '/chef/chantiers/metrages-detail', name: 'ChefMetrages', component: ChefMetrages },
-  { path: '/chef/chantiers/resoconto-percentuale', name: 'ChefResocontoPercentuale', component: ChefResocontoPercentuale },
-  { path: '/chef/chantiers/resoconto-finale', name: 'ChefResocontoFinale', component: ChefResocontoFinale },
-  { path: '/chef/chantiers/metrages-historique', name: 'ChefMetragesHistorique', component: ChefMetragesHistorique },
+  { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan },
   { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
-  { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers }, // TODO: creare componente specifico
+  { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers },
 
   // Ouvrier routes
   { path: '/ouvrier', name: 'OuvrierDashboard', component: OuvrierDashboard, beforeEnter: requireRole(['ouvrier']) },
