@@ -55,7 +55,7 @@
                     @click="generarFactureResoconto(resoconto)" 
                     class="btn btn-sm btn-warning me-1"
                   >
-                    💰 Genera Fattura
+                    💰 Générer Facture
                   </button>
                   <button 
                     v-else
@@ -86,7 +86,7 @@
                     @click="autoriserFacturation(metrage)" 
                     class="btn btn-sm btn-warning me-1"
                   >
-                    💰 Genera Fattura
+                    💰 Générer Facture
                   </button>
                   <button 
                     v-else
