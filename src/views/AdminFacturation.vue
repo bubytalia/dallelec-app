@@ -8,8 +8,8 @@
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <div>
-          <h5>Resoconti et Métrages en attente</h5>
-          <small class="text-muted">Resoconti percentuels à approuver et métrages prêts pour facturation</small>
+          <h5>Rapports et Métrages en attente</h5>
+          <small class="text-muted">Rapports percentuels à approuver et métrages prêts pour facturation</small>
         </div>
         <div>
           <router-link to="/admin/facture-manuelle" class="btn btn-sm btn-success">
@@ -35,7 +35,7 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Resoconti percentuali -->
+              <!-- Rapports percentuels -->
               <tr v-for="resoconto in resocontiEnAttente" :key="'r-' + resoconto.id">
                 <td>
                   <span v-if="resoconto.type === 'resoconto_finale'" class="badge bg-success">📋 Finale</span>
