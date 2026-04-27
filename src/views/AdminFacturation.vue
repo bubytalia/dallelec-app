@@ -82,18 +82,10 @@
                     👁
                   </button>
                   <button 
-                    v-if="metrage.status === 'approved'"
                     @click="autoriserFacturation(metrage)" 
                     class="btn btn-sm btn-warning me-1"
                   >
                     💰 Générer Facture
-                  </button>
-                  <button 
-                    v-else
-                    @click="autoriserFacturation(metrage)" 
-                    class="btn btn-sm btn-success me-1"
-                  >
-                    ✅
                   </button>
                   <button @click="eliminarMetrage(metrage)" class="btn btn-sm btn-danger">
                     🗑
