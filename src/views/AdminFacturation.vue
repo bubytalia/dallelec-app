@@ -81,7 +81,18 @@
                   <button @click="voirDetailMetrage(metrage)" class="btn btn-sm btn-info me-1">
                     👁
                   </button>
-                  <button @click="autoriserFacturation(metrage)" class="btn btn-sm btn-success me-1">
+                  <button 
+                    v-if="metrage.status === 'approved'"
+                    @click="autoriserFacturation(metrage)" 
+                    class="btn btn-sm btn-warning me-1"
+                  >
+                    💰 Genera Fattura
+                  </button>
+                  <button 
+                    v-else
+                    @click="autoriserFacturation(metrage)" 
+                    class="btn btn-sm btn-success me-1"
+                  >
                     ✅
                   </button>
                   <button @click="eliminarMetrage(metrage)" class="btn btn-sm btn-danger">
@@ -968,10 +979,11 @@ const hasFacture = (resoconto) => {
 // Métrages complétés mais non encore facturés
 const metragesEnAttente = computed(() => {
   return metrages.value.filter(m => 
-    !m.draft && // Métrage sauvegardé (non brouillon)
-    (m.status === 'en_attente' || !m.status) && // En attente d'approbation ou ancien
-    !m.facture && // Pas encore facturé
-    ((m.total_ml || m.totalML) > 0 || (m.regies && m.regies.length > 0)) // A du contenu (ML ou regias)
+    !m.draft &&
+    (m.status === 'en_attente' || m.status === 'approved' || !m.status) &&
+    !m.facture &&
+    !m.facture_numero &&
+    ((m.total_ml || m.totalML) > 0 || (m.regies && m.regies.length > 0))
   );
 });
 
