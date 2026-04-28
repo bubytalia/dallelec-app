@@ -28,8 +28,10 @@
       </div>
       <div class="col-md-3">
         <select v-model="sortBy" class="form-select">
-          <option value="numero">Trier par numéro (récent)</option>
-          <option value="date">Trier par date (récent)</option>
+          <option value="date_desc">Date ↓ (récent en haut)</option>
+          <option value="date_asc">Date ↑ (ancien en haut)</option>
+          <option value="numero_desc">Numéro ↓ (récent en haut)</option>
+          <option value="numero_asc">Numéro ↑ (ancien en haut)</option>
         </select>
       </div>
     </div>
@@ -120,7 +122,7 @@ const sousfamilles = ref([]);
 const filterClient = ref('');
 const filterTechnicien = ref('');
 const filterStatus = ref('');
-const sortBy = ref('numero');
+const sortBy = ref('date_desc');
 
 const router = useRouter();
 const cantieri = ref([]);
@@ -170,21 +172,22 @@ const filteredDevis = computed(() => {
     const matchStatus = !filterStatus.value || state === filterStatus.value;
     return matchClient && matchTech && matchStatus;
   });
-  // Ordiniamo in base alla selezione
-  return list.slice().sort((a, b) => {
-    if (sortBy.value === 'date') {
-      // Ordinamento per data (più recenti per primi)
-      const dateA = new Date(a.created_at || a.createdAt || 0);
-      const dateB = new Date(b.created_at || b.createdAt || 0);
-      return dateB - dateA;
-    } else {
-      // Ordinamento per numero devis (più alti per primi)
-      const numA = parseInt(String(a.numero).split('-')[1] || '0', 10);
-      const numB = parseInt(String(b.numero).split('-')[1] || '0', 10);
-      return numB - numA;
-    }
-  });
+  return list.slice().sort((a, b) => sortDevis(a, b, sortBy.value));
 });
+
+// Funzione di ordinamento riutilizzabile
+const sortDevis = (a, b, mode) => {
+  // asc = 1 (A→Z, vecchio→nuovo), desc = -1 (Z→A, nuovo→vecchio)
+  const dir = mode.endsWith('_asc') ? 1 : -1;
+  if (mode.startsWith('date')) {
+    const dateA = new Date(a.created_at || a.createdAt || 0);
+    const dateB = new Date(b.created_at || b.createdAt || 0);
+    return (dateA - dateB) * dir;
+  }
+  const numA = parseInt(String(a.numero).replace(/\D/g, '') || '0', 10);
+  const numB = parseInt(String(b.numero).replace(/\D/g, '') || '0', 10);
+  return (numA - numB) * dir;
+};
 
 // Computed per raggruppare devis per cantiere
 const groupedDevis = computed(() => {
@@ -200,9 +203,14 @@ const groupedDevis = computed(() => {
     }
     groups[chantier].devis.push(d);
   });
-  
-  // Ordina i gruppi per nome cantiere
-  return Object.values(groups).sort((a, b) => a.chantier.localeCompare(b.chantier));
+
+  // Ordina i devis dentro ogni gruppo
+  const result = Object.values(groups);
+  result.forEach(g => g.devis.sort((a, b) => sortDevis(a, b, sortBy.value)));
+
+  // Ordina i gruppi: il cantiere col devis più recente (primo del gruppo) in cima
+  result.sort((a, b) => sortDevis(a.devis[0], b.devis[0], sortBy.value));
+  return result;
 });
 
 // Helpers

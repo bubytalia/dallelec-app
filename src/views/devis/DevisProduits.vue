@@ -36,6 +36,16 @@
   <button class="btn btn-outline-primary me-2" @click="sauvegarderDevis(true)">💾 Sauver comme brouillon</button>
   <!-- Annulla modifiche correnti -->
   <button class="btn btn-warning me-2" @click="annullerModifications">↶ Annuler modifications</button>
+  <!-- Ricalcolo prezzi con scontistiche attuali -->
+  <button 
+    v-if="modalitaPrezzi === 'scontistica'" 
+    class="btn btn-outline-danger me-2" 
+    style="border-width: 2px; font-weight: bold;" 
+    @click="recalculerPrix"
+    :disabled="recalculating"
+  >
+    {{ recalculating ? '⏳ Recalcul...' : '⚠️ Recalculer prix et remises (données actuelles)' }}
+  </button>
   <!-- Abbandono del preventivo (solo per bozze) -->
   <button class="btn btn-danger me-2" @click="abandonnerDevis" v-if="isDraft">❌ Supprimer brouillon</button>
   <!-- Passa alla pagina delle condizioni (terza pagina) -->
@@ -149,6 +159,7 @@ const remiseFamilles = ref(0);
 const modalitaPrezzi = ref('scontistica');
 const isDraft = ref(true);
 const originalDevisItems = ref([]);
+const recalculating = ref(false);
 
 /**
  * Salva il devis su Supabase.
@@ -220,6 +231,109 @@ const sauvegarderDevis = async (asDraft = false) => {
   } catch (error) {
     console.error('❌ ERRORE SALVATAGGIO:', error);
     alert('Erreur Supabase: ' + error.message);
+  }
+};
+
+/**
+ * Ricalcola tutti i prezzi del devis usando le scontistiche attuali delle sous-familles.
+ */
+const recalculerPrix = async () => {
+  const msg = '⚠️ ATTENTION: Cette opération va recalculer TOUS les prix du devis '
+    + 'en utilisant:\n'
+    + '- Les PRIX DE BASE actuels du catalogue produits\n'
+    + '- Les REMISES actuelles des sous-familles\n\n'
+    + 'Les prix existants seront écrasés.\n\n'
+    + 'Voulez-vous continuer?';
+  if (!confirm(msg)) return;
+
+  recalculating.value = true;
+  try {
+    // 1. Rileggi le remises salvate nel devis
+    const { data: devisData, error: dErr } = await supabase
+      .from('devis')
+      .select('remises')
+      .eq('id', devisId)
+      .single();
+    if (dErr) throw dErr;
+    const remisesObj = devisData?.remises || {};
+
+    // 2. Rileggi le sous-familles attuali
+    const { data: allSous, error: sErr } = await supabase
+      .from('sousfamilles')
+      .select('*');
+    if (sErr) throw sErr;
+
+    // 3. Calcola la nuova remise totale
+    let newTotalPct = 0;
+    Object.values(remisesObj).forEach(sousId => {
+      const sous = allSous.find(s => s.id === sousId);
+      if (sous) newTotalPct += Number(sous.pourcentage) || 0;
+    });
+
+    // 4. Rileggi il catalogo prodotti per avere i prezzi base aggiornati
+    const { data: catalogueProduits, error: pErr } = await supabase
+      .from('produits')
+      .select('*');
+    if (pErr) throw pErr;
+    console.log('📦 Catalogo prodotti caricati:', catalogueProduits.length);
+
+    // 5. Ricalcola ogni riga
+    let updated = 0;
+    let notFound = [];
+    let prixChanges = [];
+    devisItems.value = devisItems.value.map(item => {
+      // Match robusto: trim + case insensitive
+      const itemArt = (item.article || '').trim().toLowerCase();
+      const catalogProd = catalogueProduits.find(p => 
+        (p.article || '').trim().toLowerCase() === itemArt
+      );
+      if (!catalogProd) {
+        console.warn('❌ Articolo non trovato nel catalogo:', item.article);
+        notFound.push(item.article);
+        return item;
+      }
+      console.log(`✅ Match: ${item.article} → prix catalogue: ${catalogProd.prix}, prix devis: ${item.prix}`);
+
+      const oldPrix = item.prix;
+      const basePrix = Number(catalogProd.prix) || 0;
+      let newPrix;
+      if (catalogProd.prezzo_netto) {
+        newPrix = basePrix;
+      } else {
+        newPrix = basePrix * (1 - newTotalPct / 100);
+      }
+
+      // Per gli informativi: aggiorna il prix unitario ma il totale resta 0
+      const newTotal = item.informativo ? 0 : item.totalML * newPrix;
+      if (Math.abs(oldPrix - newPrix) > 0.001) {
+        prixChanges.push(`${item.article}: ${oldPrix.toFixed(2)} → ${newPrix.toFixed(2)}`);
+      }
+      updated++;
+      return { ...item, prix: newPrix, total: newTotal, prixOriginal: basePrix };
+    });
+
+    remiseFamilles.value = newTotalPct;
+
+    let msg2 = `✅ Recalcul terminé!\n\n`
+      + `Remise totale: ${newTotalPct.toFixed(1)}%\n`
+      + `Produits mis à jour: ${updated}/${devisItems.value.length}\n`;
+    if (prixChanges.length > 0) {
+      msg2 += `\n📊 Prix modifiés (${prixChanges.length}):\n`
+        + prixChanges.slice(0, 10).join('\n');
+      if (prixChanges.length > 10) msg2 += `\n... et ${prixChanges.length - 10} autres`;
+    } else {
+      msg2 += `\nAucun changement de prix détecté.`;
+    }
+    if (notFound.length > 0) {
+      msg2 += `\n\n⚠️ Articles non trouvés dans le catalogue: ${notFound.join(', ')}`;
+    }
+    msg2 += `\n\n⚠️ N'oubliez pas de SAUVEGARDER le devis.`;
+    alert(msg2);
+  } catch (error) {
+    console.error('Erreur recalcul prix:', error);
+    alert('Erreur: ' + error.message);
+  } finally {
+    recalculating.value = false;
   }
 };
 
