@@ -262,25 +262,38 @@
       </div>
     </div>
 
-    <!-- Dashboard Graphiques -->
-    <div v-if="showBilanType === 'dashboard'" class="row">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">
-            <h5>Évolution Mensuelle</h5>
-          </div>
-          <div class="card-body">
-            <canvas ref="chartEvolution" width="400" height="200"></canvas>
-          </div>
-        </div>
+    <!-- Dashboard -->
+    <div v-if="showBilanType === 'dashboard'" class="card mb-4">
+      <div class="card-header">
+        <h5>Dashboard - Résumé</h5>
       </div>
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-header">
-            <h5>Répartition par Client</h5>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Top 5 Clients par CA HT</h6>
+            <table class="table table-sm">
+              <thead><tr><th>Client</th><th>Facturé HT</th><th>Marge</th></tr></thead>
+              <tbody>
+                <tr v-for="c in bilansClients.slice(0, 5)" :key="c.clientNom">
+                  <td>{{ c.clientNom }}</td>
+                  <td>{{ formatCurrency(c.facture) }}</td>
+                  <td :class="c.marge >= 0 ? 'text-success' : 'text-danger'">{{ formatCurrency(c.marge) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div class="card-body">
-            <canvas ref="chartClients" width="400" height="200"></canvas>
+          <div class="col-md-6">
+            <h6>Top 5 Chantiers par CA HT</h6>
+            <table class="table table-sm">
+              <thead><tr><th>Chantier</th><th>Facturé HT</th><th>Marge</th></tr></thead>
+              <tbody>
+                <tr v-for="b in [...bilansChantiers].sort((a,b) => b.facture - a.facture).slice(0, 5)" :key="b.chantierId">
+                  <td>{{ b.chantierNom }}</td>
+                  <td>{{ formatCurrency(b.facture) }}</td>
+                  <td :class="b.marge >= 0 ? 'text-success' : 'text-danger'">{{ formatCurrency(b.marge) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -444,23 +457,27 @@ const totauxClients = ref({ nbChantiers: 0, devis: 0, facture: 0, couts: 0, marg
 // Années disponibles
 const availableYears = computed(() => {
   const years = new Set();
-  devis.value.forEach(d => {
-    if (d.createdAt) {
-      years.add(new Date(d.createdAt).getFullYear());
-    }
+  // Usa le date delle fatture per determinare gli anni disponibili
+  factures.value.forEach(f => {
+    const d = f.date_facture || f.dateFacture;
+    if (d) years.add(new Date(d).getFullYear());
   });
+  // Aggiungi anche anni dai devis
+  devis.value.forEach(d => {
+    const dt = d.created_at || d.createdAt;
+    if (dt) years.add(new Date(dt).getFullYear());
+  });
+  if (years.size === 0) years.add(new Date().getFullYear());
   return Array.from(years).sort((a, b) => b - a);
 });
 
 // Techniciens disponibles
 const availableTechniciens = computed(() => {
-  const techniciens = new Set();
-  devis.value.forEach(d => {
-    if (d.technicien) {
-      techniciens.add(d.technicien);
-    }
+  const techs = new Set();
+  chantiers.value.forEach(c => {
+    if (c.technicien) techs.add(c.technicien);
   });
-  return Array.from(techniciens).sort();
+  return Array.from(techs).sort();
 });
 
 // Chargement données
@@ -648,7 +665,7 @@ const loadBilansMensuels = () => {
       ...heuresChef.value.filter(h => {
         const date = new Date(h.date);
         return date.getFullYear() === year && date.getMonth() === month;
-      }).map(h => (h.heuresPropres || 0) * (h.tarif_utilise || 45)),
+      }).map(h => (h.total_heures || 0) * (h.tarif_utilise || 45)),
       ...heuresOuvriers.value.filter(h => {
         const date = new Date(h.date);
         return date.getFullYear() === year && date.getMonth() === month;
@@ -656,7 +673,7 @@ const loadBilansMensuels = () => {
       ...heuresInterim.value.filter(h => {
         const date = new Date(h.date);
         return date.getFullYear() === year && date.getMonth() === month;
-      }).map(h => (h.heuresInterim || 0) * (h.tarif_utilise || 35))
+      }).map(h => (h.total_heures || 0) * (h.tarif_utilise || 35))
     ].reduce((sum, cost) => sum + cost, 0);
 
     const marge = factureTotal - coutsHeuresMonth;
@@ -691,13 +708,9 @@ const loadBilansMensuels = () => {
 const calculateBilansClients = () => {
   const clientsMap = new Map();
 
-  // Filtra devis per technicien se selezionato
-  const filteredDevis = selectedTechnicien.value ? 
-    devis.value.filter(d => !d.draft && d.technicien === selectedTechnicien.value) :
-    devis.value.filter(d => !d.draft);
-
-  filteredDevis.forEach(d => {
-    const clientNom = d.nom || 'Client Inconnu';
+  // Raggruppa chantiers per client (usa il campo 'client' del chantier)
+  chantiers.value.forEach(chantier => {
+    const clientNom = chantier.client || 'Client Inconnu';
     
     if (!clientsMap.has(clientNom)) {
       clientsMap.set(clientNom, {
@@ -713,43 +726,53 @@ const calculateBilansClients = () => {
 
     const client = clientsMap.get(clientNom);
     client.nbChantiers++;
-    client.devis += d.total || 0;
-    
-    // Trova chantier associato per calcolare facture e costi
-    const chantierAssocie = chantiers.value.find(c => c.devisId === d.id);
-    if (chantierAssocie) {
-      // Factures per questo chantier
-      const facturesChantier = factures.value.filter(f => f.chantierId === chantierAssocie.id);
-      client.facture += facturesChantier.reduce((sum, f) => sum + (f.montantTTC || 0), 0);
-      
-      // Costi heures usando tarif_utilise (non retroattivo)
-      const heuresChefCost = heuresChef.value.filter(h => h.chantierId === chantierAssocie.id)
-        .reduce((sum, h) => sum + (h.heuresPropres || 0) * (h.tarif_utilise || 45), 0);
-      const heuresOuvriersCost = heuresOuvriers.value.filter(h => h.chantierId === chantierAssocie.id)
-        .reduce((sum, h) => sum + (h.heures || 0) * (h.tarif_utilise || 25), 0);
-      const heuresInterimCost = heuresInterim.value.filter(h => h.chantierId === chantierAssocie.id)
-        .reduce((sum, h) => sum + (h.heuresInterim || 0) * (h.tarif_utilise || 35), 0);
-      
-      client.coutsHeures += heuresChefCost + heuresOuvriersCost + heuresInterimCost;
+
+    // Devis associato
+    const chantierDevis = devis.value.find(d => String(d.id) === String(chantier.devis_id));
+    if (chantierDevis) {
+      client.devis += chantierDevis.total || 0;
     }
-    
-    if (!client.dernierChantier || (d.createdAt && new Date(d.createdAt) > new Date(client.dernierChantier))) {
-      client.dernierChantier = d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : 'N/A';
+
+    // Factures per questo chantier (HT derivato da TTC)
+    const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
+    client.facture += facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0) / 1.081, 0);
+
+    // Coûts heures
+    const coutsChef = heuresChef.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || 0) * (h.tarif_utilise || 45), 0);
+    const coutsOuvriers = heuresOuvriers.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.heures || 0) * (h.tarif_utilise || 25), 0);
+    const coutsInterim = heuresInterim.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || 0) * (h.tarif_utilise || 35), 0);
+    client.coutsHeures += coutsChef + coutsOuvriers + coutsInterim;
+
+    // Dernier chantier
+    const dateChantier = chantier.created_at || chantier.updated_at;
+    if (dateChantier && (!client.dernierChantier || new Date(dateChantier) > new Date(client.dernierChantierDate || 0))) {
+      client.dernierChantier = chantier.nom;
+      client.dernierChantierDate = dateChantier;
     }
   });
+
+  // Filtra per technicien se selezionato
+  if (selectedTechnicien.value) {
+    const chantiersFiltered = chantiers.value
+      .filter(c => c.technicien === selectedTechnicien.value)
+      .map(c => c.client);
+    for (const [key] of clientsMap) {
+      if (!chantiersFiltered.includes(key)) clientsMap.delete(key);
+    }
+  }
 
   bilansClients.value = Array.from(clientsMap.values()).map(client => {
     const marge = client.facture - client.coutsHeures;
     const pourcentageRealisation = client.devis > 0 ? Math.round((client.facture / client.devis) * 100) : 0;
-    
-    return {
-      ...client,
-      marge,
-      pourcentageRealisation
-    };
-  });
+    return { ...client, marge, pourcentageRealisation };
+  }).sort((a, b) => b.facture - a.facture);
   
-  // Calcola totali clients
   totauxClients.value = {
     nbChantiers: bilansClients.value.reduce((sum, c) => sum + c.nbChantiers, 0),
     devis: bilansClients.value.reduce((sum, c) => sum + c.devis, 0),
