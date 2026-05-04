@@ -62,7 +62,7 @@
               <div class="col-md-2">
                 <div class="text-center">
                   <h4 class="text-success">{{ totalRicavi.toFixed(2) }} CHF</h4>
-                  <p>Revenus totaux</p>
+                  <p>Revenus totaux HT</p>
                 </div>
               </div>
               <div class="col-md-2">
@@ -108,7 +108,7 @@
                     <th>Coût Collaborateurs</th>
                     <th>Total Heures</th>
                     <th>Total Coût</th>
-                    <th>Revenus</th>
+                    <th>Revenus HT</th>
                     <th>Marge</th>
                     <th>Rentabilité %</th>
                   </tr>
@@ -471,7 +471,7 @@ const calculerBilans = async () => {
     
     // Calcola ricavi - usa solo fatture filtrate per periodo
     const facturesChantier = facturesFiltrees.filter(f => String(f.chantier_id) === String(bilan.chantierId))
-    bilan.ricavi = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || parseFloat(f.montant_ht) || 0), 0)
+    bilan.ricavi = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ht) || 0), 0)
     
     bilan.margine = bilan.ricavi - bilan.totalCout
     bilan.redditivita = bilan.ricavi > 0 ? (bilan.margine / bilan.ricavi) * 100 : 0
