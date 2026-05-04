@@ -43,13 +43,22 @@
       </div>
     </div>
 
-    <!-- Statistiques -->
+    <!-- Statistiques + Export -->
     <div class="row mb-3">
-      <div class="col-md-12">
-        <div class="alert alert-info">
+      <div class="col-md-8">
+        <div class="alert alert-info mb-0">
           <strong>Total heures trouvées:</strong> {{ totalHeures.toFixed(2) }}h | 
           <strong>Entrées:</strong> {{ heuresFiltrees.length }}
         </div>
+      </div>
+      <div class="col-md-4 d-flex align-items-center justify-content-end gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="sansPrix" v-model="exportSansPrix">
+          <label class="form-check-label" for="sansPrix">Sans prix</label>
+        </div>
+        <button @click="exporterPDF" class="btn btn-outline-primary" :disabled="heuresFiltrees.length === 0">
+          📄 Exporter PDF
+        </button>
       </div>
     </div>
 
@@ -127,6 +136,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase.js'
 import RetourButton from '../components/RetourButton.vue'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 const chantiers = ref([])
 const employes = ref([])
@@ -141,6 +152,7 @@ const filterDateFin = ref('')
 
 const editingId = ref(null)
 const editingHeure = ref({})
+const exportSansPrix = ref(true)
 
 const fetchChantiers = async () => {
   const { data } = await supabase.from('chantiers').select('*').order('nom')
@@ -273,6 +285,54 @@ const deleteHeure = async (heure) => {
   } else {
     chargerHeures()
   }
+}
+
+const exporterPDF = () => {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: exportSansPrix.value ? 'portrait' : 'landscape' })
+  
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Gestion Heures Employés', 15, 15)
+  
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  let subtitle = `Période: ${filterDateDebut.value || '...'} au ${filterDateFin.value || '...'}`
+  if (filterEmploye.value) subtitle += ` | Employé: ${getEmployeName(filterEmploye.value)}`
+  if (filterChantier.value) subtitle += ` | Chantier: ${getChantierName(filterChantier.value)}`
+  doc.text(subtitle, 15, 22)
+  doc.text(`Total: ${totalHeures.value.toFixed(2)}h — ${heuresFiltrees.value.length} entrées`, 15, 27)
+
+  const head = exportSansPrix.value
+    ? [['Date', 'Employé', 'Type', 'Chantier', 'Heures']]
+    : [['Date', 'Employé', 'Type', 'Chantier', 'Heures', 'Tarif/h', 'Total CHF']]
+
+  const body = heuresFiltrees.value.map(h => {
+    const row = [
+      formatDate(h.date),
+      h.employe_nom,
+      getTypeLabel(h.type),
+      getChantierName(h.chantier_id),
+      `${(h.heures || 0).toFixed(2)}`
+    ]
+    if (!exportSansPrix.value) {
+      row.push(`${h.tarif_utilise || '-'}`, `${((h.heures || 0) * (h.tarif_utilise || 0)).toFixed(2)}`)
+    }
+    return row
+  })
+
+  autoTable(doc, {
+    head,
+    body,
+    startY: 32,
+    theme: 'striped',
+    headStyles: { fillColor: [70, 130, 180], textColor: 255, fontSize: 9 },
+    bodyStyles: { fontSize: 8 },
+    styles: { cellPadding: 2 }
+  })
+
+  const d1 = filterDateDebut.value?.replace(/-/g, '') || 'all'
+  const d2 = filterDateFin.value?.replace(/-/g, '') || 'all'
+  doc.save(`Heures_${d1}_${d2}.pdf`)
 }
 
 onMounted(() => {
