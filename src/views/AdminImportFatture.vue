@@ -172,9 +172,8 @@ const importaFatture = async () => {
       montant_ttc: f.importo,
       statut: 'payee',
       client_nom: chantier?.client || 'Cliente',
-      notes: 'Fattura storica importata',
-      created_at: new Date().toISOString(),
-      is_imported: true
+      notes: 'Facture historique importée',
+      created_at: new Date().toISOString()
     }));
     
     const { error } = await supabase
