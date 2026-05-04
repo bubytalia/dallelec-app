@@ -9,9 +9,9 @@
       <div class="col-md-3">
         <div class="card bg-primary text-white">
           <div class="card-body text-center">
-            <h5>Chiffre d'Affaires</h5>
+            <h5>Chiffre d'Affaires HT</h5>
             <h3>{{ formatCurrency(kpis.chiffreAffaires) }}</h3>
-            <small>Total devis approuvés</small>
+            <small>Total facturé HT</small>
           </div>
         </div>
       </div>
@@ -95,10 +95,10 @@
               <tr>
                 <th>Chantier</th>
                 <th>Client</th>
-                <th>Devis (€)</th>
-                <th>Facturé (€)</th>
-                <th>Coût Heures (€)</th>
-                <th>Marge (€)</th>
+                <th>Devis HT</th>
+                <th>Facturé HT</th>
+                <th>Coût Heures</th>
+                <th>Marge</th>
                 <th>% de réalisation</th>
                 <th>Actions</th>
               </tr>
@@ -160,10 +160,10 @@
             <thead>
               <tr>
                 <th>Mois</th>
-                <th>Devis (€)</th>
-                <th>Facturé (€)</th>
-                <th>Coût Heures (€)</th>
-                <th>Marge (€)</th>
+                <th>Devis HT</th>
+                <th>Facturé HT</th>
+                <th>Coût Heures</th>
+                <th>Marge</th>
                 <th>% de réalisation</th>
                 <th>Nb Chantiers</th>
               </tr>
@@ -219,10 +219,10 @@
               <tr>
                 <th>Client</th>
                 <th>Nb Chantiers</th>
-                <th>Devis (€)</th>
-                <th>Facturé (€)</th>
-                <th>Coût Heures (€)</th>
-                <th>Marge (€)</th>
+                <th>Devis HT</th>
+                <th>Facturé HT</th>
+                <th>Coût Heures</th>
+                <th>Marge</th>
                 <th>% de réalisation</th>
                 <th>Dernier Chantier</th>
               </tr>
@@ -515,7 +515,11 @@ const loadData = async () => {
 
 const calculateKPIs = () => {
   // Chiffre d'affaires = factures émises (tous statuts)
-  const ca = factures.value.reduce((sum, f) => sum + (f.montant_ttc || f.montantTTC || 0), 0);
+  // Ricava HT dal TTC per coerenza (montant_ht può includere importi pre-acconti)
+  const ca = factures.value.reduce((sum, f) => {
+    const ttc = parseFloat(f.montant_ttc) || 0
+    return sum + (ttc / 1.081)
+  }, 0);
 
   // Coûts heures usando tarif_utilise (non retroattivo)
   const coutsChef = heuresChef.value.reduce((sum, h) => {
@@ -554,7 +558,10 @@ const calculateBilansChantiers = () => {
 
     // Trouve les factures pour ce chantier
     const facturesChantier = factures.value.filter(f => f.chantier_id === chantier.id);
-    const factureTotal = facturesChantier.reduce((sum, f) => sum + (f.montant_ttc || f.montantTTC || 0), 0);
+    const factureTotal = facturesChantier.reduce((sum, f) => {
+      const ttc = parseFloat(f.montant_ttc) || 0
+      return sum + (ttc / 1.081)
+    }, 0);
 
     // Calcola coûts heures usando tarif_utilise (non retroattivo)
     const heuresChefFiltered = heuresChef.value.filter(h => String(h.chantier_id) === String(chantier.id));
@@ -631,7 +638,10 @@ const loadBilansMensuels = () => {
     });
 
     const devisTotal = monthDevis.reduce((sum, d) => sum + (d.total || 0), 0);
-    const factureTotal = monthFactures.reduce((sum, f) => sum + (f.montant_ttc || f.montantTTC || 0), 0);
+    const factureTotal = monthFactures.reduce((sum, f) => {
+      const ttc = parseFloat(f.montant_ttc) || 0
+      return sum + (ttc / 1.081)
+    }, 0);
     
     // Calcola coûts heures usando tarif_utilise (non retroattivo)
     const coutsHeuresMonth = [
@@ -838,7 +848,7 @@ const voirBilancioDettagliato = (chantierId) => {
     .forEach(f => {
       const mois = new Date(f.date_facture || f.dateFacture).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
       if (!heuresParMois[mois]) heuresParMois[mois] = { factures: 0, heures: [] };
-      heuresParMois[mois].factures += f.montant_ttc || f.montantTTC || 0;
+      heuresParMois[mois].factures += (parseFloat(f.montant_ttc) || 0) / 1.081;
     });
   
   bilancioDettagliato.value = {
@@ -893,9 +903,9 @@ const voirDetailChantier = (chantierId) => {
 };
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat('fr-CH', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'CHF'
   }).format(amount);
 };
 
