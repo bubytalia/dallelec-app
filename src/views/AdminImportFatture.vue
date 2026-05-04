@@ -57,7 +57,7 @@
               <input v-model="nuovaFattura.data" type="date" class="form-control">
             </div>
             <div class="col-md-3">
-              <input v-model="nuovaFattura.importo" type="number" step="0.01" class="form-control" placeholder="Montant CHF">
+              <input v-model="nuovaFattura.importo" type="number" step="0.01" class="form-control" placeholder="Montant TTC (CHF)">
             </div>
             <div class="col-md-3">
               <button @click="aggiungiFattura" class="btn btn-success" :disabled="!selectedChantier">➕ Ajouter</button>
