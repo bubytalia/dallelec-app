@@ -982,7 +982,11 @@ const metragesEnAttente = computed(() => {
 // Factures des 30 derniers jours
 const facturesRecentes = computed(() => {
   return factures.value
-    .sort((a, b) => new Date(b.date_facture || b.dateFacture) - new Date(a.date_facture || a.dateFacture))
+    .sort((a, b) => {
+      const numA = parseInt(String(a.numero).replace(/\D/g, '') || '0', 10)
+      const numB = parseInt(String(b.numero).replace(/\D/g, '') || '0', 10)
+      return numB - numA
+    })
     .slice(0, 50); // Mostra più fatture per i filtri
 });
 

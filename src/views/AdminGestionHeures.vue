@@ -332,6 +332,16 @@ const exporterPDF = () => {
 
   const d1 = filterDateDebut.value?.replace(/-/g, '') || 'all'
   const d2 = filterDateFin.value?.replace(/-/g, '') || 'all'
+
+  const totalPages = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setTextColor(150, 150, 150)
+    const pageW = doc.internal.pageSize.getWidth()
+    doc.text(`Page ${i} / ${totalPages}`, pageW - 15, doc.internal.pageSize.getHeight() - 10, { align: 'right' })
+  }
+
   doc.save(`Heures_${d1}_${d2}.pdf`)
 }
 
