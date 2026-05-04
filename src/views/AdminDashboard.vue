@@ -38,7 +38,7 @@
         <router-link to="/admin/scadenziario" class="btn btn-outline-success w-100">📅 Échéancier</router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/admin/import-fatture" class="btn btn-outline-success w-100">📥 Import Fatture</router-link>
+        <router-link to="/admin/import-fatture" class="btn btn-outline-success w-100">📥 Import Factures</router-link>
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/bilans" class="btn btn-outline-success w-100">📊 Bilans Financiers</router-link>

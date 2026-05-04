@@ -2,43 +2,43 @@
   <div class="container py-4">
     <RetourButton to="/admin" />
     
-    <h2 class="text-center mb-4">Importazione Fatture Storiche</h2>
+    <h2 class="text-center mb-4">Importation Factures Historiques</h2>
 
     <!-- Configurazione numerazione -->
     <div class="card mb-4">
       <div class="card-header">
-        <h5>1. Configurazione Numerazione</h5>
+        <h5>1. Configuration Numérotation</h5>
       </div>
       <div class="card-body">
         <div class="row">
           <div class="col-md-4">
-            <label>Ultimo numero fattura emesso:</label>
-            <input v-model="ultimoNumero" type="number" class="form-control" placeholder="es. 1250">
+            <label>Dernier numéro de facture émis :</label>
+            <input v-model="ultimoNumero" type="number" class="form-control" placeholder="ex. 1250">
           </div>
           <div class="col-md-4">
-            <label>Anno:</label>
+            <label>Année :</label>
             <input v-model="anno" type="number" class="form-control">
           </div>
           <div class="col-md-4">
-            <label>Prossima fattura sarà:</label>
+            <label>Prochaine facture sera :</label>
             <div class="form-control bg-light">F{{ anno }}-{{ String(ultimoNumero + 1).padStart(3, '0') }}</div>
           </div>
         </div>
-        <button @click="salvaConfig" class="btn btn-primary mt-2">💾 Salva Configurazione</button>
+        <button @click="salvaConfig" class="btn btn-primary mt-2">💾 Sauvegarder Configuration</button>
       </div>
     </div>
 
     <!-- Importazione rapida -->
     <div class="card">
       <div class="card-header">
-        <h5>2. Importazione Rapida Fatture</h5>
+        <h5>2. Importation Rapide Factures</h5>
       </div>
       <div class="card-body">
         <div class="row mb-3">
           <div class="col-md-6">
-            <label>Cantiere:</label>
+            <label>Chantier :</label>
             <select v-model="selectedChantier" class="form-control">
-              <option value="">Seleziona cantiere</option>
+              <option value="">Sélectionner un chantier</option>
               <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
                 {{ chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ` : '' }}{{ chantier.nom }}
               </option>
@@ -48,34 +48,34 @@
 
         <!-- Form aggiunta fattura -->
         <div class="border p-3 mb-3">
-          <h6>Aggiungi Fattura Storica</h6>
+          <h6>Ajouter Facture Historique</h6>
           <div class="row">
             <div class="col-md-3">
-              <input v-model="nuovaFattura.numero" type="text" class="form-control" placeholder="N° Fattura">
+              <input v-model="nuovaFattura.numero" type="text" class="form-control" placeholder="N° Facture">
             </div>
             <div class="col-md-3">
               <input v-model="nuovaFattura.data" type="date" class="form-control">
             </div>
             <div class="col-md-3">
-              <input v-model="nuovaFattura.importo" type="number" step="0.01" class="form-control" placeholder="Importo CHF">
+              <input v-model="nuovaFattura.importo" type="number" step="0.01" class="form-control" placeholder="Montant CHF">
             </div>
             <div class="col-md-3">
-              <button @click="aggiungiFattura" class="btn btn-success" :disabled="!selectedChantier">➕ Aggiungi</button>
+              <button @click="aggiungiFattura" class="btn btn-success" :disabled="!selectedChantier">➕ Ajouter</button>
             </div>
           </div>
         </div>
 
         <!-- Lista fatture da importare -->
         <div v-if="fattureImport.length > 0">
-          <h6>Fatture da importare ({{ fattureImport.length }}):</h6>
+          <h6>Factures à importer ({{ fattureImport.length }}) :</h6>
           <div class="table-responsive">
             <table class="table table-sm">
               <thead>
                 <tr>
-                  <th>Numero</th>
-                  <th>Data</th>
-                  <th>Importo</th>
-                  <th>Azioni</th>
+                  <th>Numéro</th>
+                  <th>Date</th>
+                  <th>Montant</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,7 +90,7 @@
               </tbody>
             </table>
           </div>
-          <button @click="importaFatture" class="btn btn-primary">💾 Importa Tutte ({{ fattureImport.length }})</button>
+          <button @click="importaFatture" class="btn btn-primary">💾 Importer Toutes ({{ fattureImport.length }})</button>
         </div>
       </div>
     </div>
@@ -131,7 +131,7 @@ const salvaConfig = async () => {
       }]);
     
     if (error) throw error;
-    alert('Configurazione salvata!');
+    alert('Configuration sauvegardée !');
   } catch (error) {
     alert('Errore: ' + error.message);
   }
@@ -139,7 +139,7 @@ const salvaConfig = async () => {
 
 const aggiungiFattura = () => {
   if (!nuovaFattura.value.numero || !nuovaFattura.value.data || !nuovaFattura.value.importo) {
-    alert('Compila tutti i campi');
+    alert('Remplissez tous les champs');
     return;
   }
   
@@ -158,7 +158,7 @@ const rimuoviFattura = (index) => {
 };
 
 const importaFatture = async () => {
-  if (!confirm(`Importare ${fattureImport.value.length} fatture?`)) return;
+  if (!confirm(`Importer ${fattureImport.value.length} factures ?`)) return;
   
   try {
     const chantier = chantiers.value.find(c => c.id == selectedChantier.value);
@@ -183,10 +183,10 @@ const importaFatture = async () => {
     
     if (error) throw error;
     
-    alert(`${fattureImport.value.length} fatture importate con successo!`);
+    alert(`${fattureImport.value.length} factures importées avec succès !`);
     fattureImport.value = [];
   } catch (error) {
-    alert('Errore importazione: ' + error.message);
+    alert('Erreur importation : ' + error.message);
   }
 };
 

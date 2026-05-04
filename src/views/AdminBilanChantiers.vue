@@ -18,19 +18,13 @@
         <label class="form-label">Période de fin</label>
         <input type="date" v-model="dateFin" class="form-control" @change="() => calculerBilans()">
       </div>
-      <div class="col-md-3">
+      <div class="col-md-4">
         <label class="form-label">Chantier</label>
         <select v-model="selectedChantierId" class="form-control" @change="() => calculerBilans()">
           <option value="">Tous les chantiers</option>
           <option v-for="chantier in chantiers" :key="chantier.id" :value="chantier.id">
             {{ chantier.nom }}
           </option>
-        </select>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Année</label>
-        <select v-model="selectedYear" class="form-control" @change="() => calculerBilans()">
-          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
         </select>
       </div>
     </div>
