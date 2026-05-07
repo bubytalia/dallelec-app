@@ -465,7 +465,7 @@ const calculerBilans = async () => {
     
     // Calcola ricavi - usa solo fatture filtrate per periodo
     const facturesChantier = facturesFiltrees.filter(f => String(f.chantier_id) === String(bilan.chantierId))
-    bilan.ricavi = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ht) || 0), 0)
+    bilan.ricavi = facturesChantier.reduce((sum, f) => sum + ((parseFloat(f.montant_ttc) || 0) / 1.081), 0)
     
     bilan.margine = bilan.ricavi - bilan.totalCout
     bilan.redditivita = bilan.ricavi > 0 ? (bilan.margine / bilan.ricavi) * 100 : 0

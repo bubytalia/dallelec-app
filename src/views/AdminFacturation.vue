@@ -656,7 +656,7 @@
                   {{ paiement.nom }}
                 </option>
               </select>
-              <small class="text-info">Debug: {{ paiements.length }} modalités chargées</small>
+
               <small class="text-muted">La date d'échéance sera recalculée automatiquement</small>
             </div>
             <div class="mb-3">
@@ -2093,10 +2093,9 @@ const modifierFacture = (facture) => {
   factureEnCours.value = facture;
   nouvelleDate.value = facture.date_facture || facture.dateFacture;
   nouvelleDateEcheance.value = facture.date_echeance || facture.dateEcheance || '';
-  // Estrai modalità pagamento dalle notes
-  const modalitaMatch = facture.notes?.match(/Conditions:\s*([^\n]+)/);
+  // Estrai modalità pagamento dalle notes (cerca sia Modalité che Conditions)
+  const modalitaMatch = facture.notes?.match(/Modalité:\s*([^\n]+)/) || facture.notes?.match(/Conditions:\s*([^\n]+)/);
   nouvelleModalitePaiement.value = modalitaMatch ? modalitaMatch[1].trim() : '';
-  console.log('🔍 Modalità estratta:', nouvelleModalitePaiement.value);
   nouvellesNotes.value = facture.notes || '';
   showModifierFacture.value = true;
 };
@@ -2125,10 +2124,11 @@ const confirmerModificationFacture = async () => {
     // Aggiorna notes con modalità di pagamento
     let notesAggiornate = nouvellesNotes.value || '';
     if (nouvelleModalitePaiement.value) {
-      // Rimuovi vecchia modalità se presente
+      // Rimuovi vecchia modalità (entrambi i formati)
       notesAggiornate = notesAggiornate.replace(/Modalité:\s*[^\n]+\n?/g, '');
-      // Aggiungi nuova modalità
-      notesAggiornate = (notesAggiornate.trim() + '\nModalité: ' + nouvelleModalitePaiement.value).trim();
+      notesAggiornate = notesAggiornate.replace(/Conditions:\s*[^\n]+\n?/g, '');
+      // Aggiungi nuova modalità con formato "Conditions:" (usato dal PDF)
+      notesAggiornate = (notesAggiornate.trim() + '\nConditions: ' + nouvelleModalitePaiement.value).trim();
     }
     
     const { error } = await supabase
