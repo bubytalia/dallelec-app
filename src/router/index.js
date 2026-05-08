@@ -32,6 +32,7 @@ import ChefPremi from '@/views/ChefPremi.vue';
 // Admin Métrages pages
 import AdminMetragesSelection from '@/views/AdminMetragesSelection.vue';
 import AdminMetrages from '@/views/AdminMetrages.vue';
+import AdminRilevamento from '@/views/AdminRilevamento.vue';
 import AdminResocontoPercentuale from '@/views/AdminResocontoPercentuale.vue';
 import AdminResocontoFinale from '@/views/AdminResocontoFinale.vue';
 import AdminMetragesHistorique from '@/views/AdminMetragesHistorique.vue';
@@ -126,6 +127,7 @@ const routes = [
   // Admin Métrages routes
   { path: '/admin/metrages', name: 'AdminMetragesSelection', component: AdminMetragesSelection, beforeEnter: requireRole(['admin']) },
   { path: '/admin/metrages-detail', name: 'AdminMetrages', component: AdminMetrages, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/rilevamento', name: 'AdminRilevamento', component: AdminRilevamento, beforeEnter: requireRole(['admin']) },
   { path: '/admin/resoconto-percentuale', name: 'AdminResocontoPercentuale', component: AdminResocontoPercentuale, beforeEnter: requireRole(['admin']) },
   { path: '/admin/resoconto-finale', name: 'AdminResocontoFinale', component: AdminResocontoFinale, beforeEnter: requireRole(['admin']) },
   { path: '/admin/metrages-historique', name: 'AdminMetragesHistorique', component: AdminMetragesHistorique, beforeEnter: requireRole(['admin']) },

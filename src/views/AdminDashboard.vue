@@ -76,6 +76,9 @@
         <h5 class="text-info mb-3">Métrages / Resoconti</h5>
       </div>
       <div class="col-md-3 m-2">
+        <router-link to="/admin/rilevamento" class="btn btn-info text-white w-100">📋 Relevé Chantier</router-link>
+      </div>
+      <div class="col-md-3 m-2">
         <router-link to="/admin/metrages" class="btn btn-outline-info w-100">📏 Sélection Chantier</router-link>
       </div>
       <div class="col-md-3 m-2">
