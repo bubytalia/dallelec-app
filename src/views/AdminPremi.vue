@@ -103,11 +103,12 @@
                 <th>Prime Eff.</th>
                 <th>Prime Rég.</th>
                 <th>Prime Totale</th>
-                <th>Détail</th>
+                <th>Statut</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="prime in chef.primes" :key="prime.chantierId">
+              <tr v-for="prime in chef.primes" :key="prime.chantierId" :class="prime.payee ? 'table-success' : ''">
                 <td><strong>{{ prime.chantierNom }}</strong></td>
                 <td>{{ prime.clientNom }}</td>
                 <td>{{ formatCurrency(prime.budgetDisponible) }}</td>
@@ -128,6 +129,9 @@
                   <span :class="prime.primeRegies > 0 ? 'text-warning' : 'text-muted'">
                     {{ formatCurrency(prime.primeRegies) }}
                   </span>
+                  <small v-if="!prime.enAttivo && prime.heuresRegies > 0" class="d-block text-danger">
+                    (non éligible)
+                  </small>
                 </td>
                 <td>
                   <span :class="prime.primeTotale > 0 ? 'text-success fw-bold' : 'text-muted'">
@@ -135,7 +139,22 @@
                   </span>
                 </td>
                 <td>
-                  <button @click="voirDetail(prime)" class="btn btn-sm btn-outline-info">👁</button>
+                  <span v-if="prime.payee" class="badge bg-success">
+                    ✅ Payé {{ getMonthLabel(prime.moisPaiement) }}
+                  </span>
+                  <span v-else-if="prime.primeTotale > 0" class="badge bg-warning text-dark">
+                    ⏳ À payer
+                  </span>
+                  <span v-else class="badge bg-secondary">-</span>
+                </td>
+                <td>
+                  <button @click="voirDetail(prime)" class="btn btn-sm btn-outline-info me-1">👁</button>
+                  <button v-if="prime.primeTotale > 0 && !prime.payee" @click="ouvrirPaiement(prime)" class="btn btn-sm btn-outline-success" title="Marquer comme payé">
+                    💰
+                  </button>
+                  <button v-if="prime.payee" @click="annulerPaiement(prime)" class="btn btn-sm btn-outline-danger" title="Annuler paiement">
+                    ↩
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -145,6 +164,7 @@
                 <td><strong>{{ formatCurrency(chef.totalEfficacite) }}</strong></td>
                 <td><strong>{{ formatCurrency(chef.totalRegies) }}</strong></td>
                 <td><strong>{{ formatCurrency(chef.totalPrime) }}</strong></td>
+                <td></td>
                 <td></td>
               </tr>
             </tfoot>
@@ -169,7 +189,9 @@
             <div class="row">
               <div class="col-md-6">
                 <h6>Calcul Budget</h6>
-                <p><strong>Facturé TTC:</strong> {{ formatCurrency(detailPrime.importoFatturato) }}</p>
+                <p><strong>Facturé TTC total:</strong> {{ formatCurrency(detailPrime.importoFatturato) }}</p>
+                <p><strong>Montant régies (déduit):</strong> -{{ formatCurrency(detailPrime.montantRegies) }}</p>
+                <p><strong>Facturé hors régies:</strong> {{ formatCurrency(detailPrime.fatturatHorsRegies) }}</p>
                 <p><strong>% Impresa:</strong> {{ detailPrime.percentualeImpresa }}%</p>
                 <p><strong>Budget Disponible:</strong> {{ formatCurrency(detailPrime.budgetDisponible) }}</p>
               </div>
@@ -201,14 +223,41 @@
                     ❌ <strong>{{ Math.abs(detailPrime.heuresGagnees) }}h en excès</strong> → Pas de prime efficacité
                     <br><small class="text-muted">Il faudrait réduire de {{ Math.abs(detailPrime.heuresGagnees) }}h pour atteindre le budget</small>
                   </p>
-                  <p v-if="detailPrime.heuresRegies > 0">
+                  <p v-if="detailPrime.heuresRegies > 0 && detailPrime.enAttivo">
                     ✅ <strong>{{ detailPrime.heuresRegies }}h régies</strong> → Prime régies: {{ formatCurrency(detailPrime.primeRegies) }}
+                  </p>
+                  <p v-else-if="detailPrime.heuresRegies > 0 && !detailPrime.enAttivo">
+                    ❌ <strong>{{ detailPrime.heuresRegies }}h régies</strong> → Non éligible (chantier pas en attivo)
                   </p>
                   <hr>
                   <p class="mb-0"><strong>Prime Totale: {{ formatCurrency(detailPrime.primeTotale) }}</strong></p>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal Paiement -->
+    <div v-if="showPaiementModal" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>Enregistrer Paiement Prime</h5>
+            <button @click="showPaiementModal = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <p><strong>Montant (brut):</strong> {{ formatCurrency(paiementForm.montant) }}</p>
+            <div class="mb-3">
+              <label class="form-label">Mois de la fiche de paie</label>
+              <input type="month" v-model="paiementForm.moisPaiement" class="form-control" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="showPaiementModal = false" class="btn btn-secondary">Annuler</button>
+            <button @click="enregistrerPaiement" class="btn btn-success" :disabled="!paiementForm.moisPaiement">
+              ✅ Confirmer paiement
+            </button>
           </div>
         </div>
       </div>
@@ -235,10 +284,13 @@ const heuresPropres = ref([]);
 const heuresInterimData = ref([]);
 const heuresOuvriersData = ref([]);
 const chefdechantiers = ref([]);
+const primesPaiements = ref([]);
 
 // Modal
 const showDetail = ref(false);
 const detailPrime = ref({});
+const showPaiementModal = ref(false);
+const paiementForm = ref({ chantierId: null, capocantiere: '', montant: 0, moisPaiement: '' });
 
 // Chargement données
 const loadData = async () => {
@@ -264,9 +316,41 @@ const loadData = async () => {
     // Resoconti (table might not exist)
     const { data: rp } = await supabase.from('resoconti_percentuali').select('*');
     resocontiPercentuali.value = rp || [];
+
+    // Paiements primes
+    const { data: pp } = await supabase.from('primes_paiements').select('*');
+    primesPaiements.value = pp || [];
   } catch (error) {
     console.error('Erreur chargement données primes:', error);
   }
+};
+
+// Calcul montant régies facturées pour un chantier
+const getRegiesData = (chantierId) => {
+  let heures = 0;
+  let montant = 0;
+
+  metrages.value
+    .filter(m => String(m.chantier_id) === String(chantierId) && m.regies)
+    .forEach(m => {
+      const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
+      (regies || []).forEach(r => {
+        heures += r.heures || 0;
+        montant += (r.heures || 0) * (r.prixHeure || 0);
+      });
+    });
+
+  resocontiPercentuali.value
+    .filter(r => String(r.chantier_id) === String(chantierId) && r.regies && r.status === 'approved')
+    .forEach(r => {
+      const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
+      (regies || []).forEach(rg => {
+        heures += rg.heures || 0;
+        montant += (rg.heures || 0) * (rg.prixHeure || 0);
+      });
+    });
+
+  return { heures, montant };
 };
 
 // Calcul primes par chantier
@@ -275,11 +359,20 @@ const premesCalculated = computed(() => {
     const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
     if (facturesChantier.length === 0) return null;
 
+    // Fatturato totale TTC
     const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0), 0);
-    const percentualeImpresa = chantier.percentuale_impresa || 30;
-    const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeImpresa / 100);
 
-    // Heures par type
+    // Régies: heures et montant facturé
+    const regiesData = getRegiesData(chantier.id);
+    const montantRegiesTTC = regiesData.montant * 1.081; // TTC
+
+    // Fatturato HORS régies (base pour le calcul du budget)
+    const fatturatHorsRegies = importoTotaleFatturato - montantRegiesTTC;
+
+    const percentualeImpresa = chantier.percentuale_impresa || 30;
+    const budgetOreDisponibile = fatturatHorsRegies * (1 - percentualeImpresa / 100);
+
+    // Heures par type (TOUTES les heures travaillées)
     const heuresChef = heuresPropres.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
       .reduce((sum, h) => sum + (h.total_heures || 0), 0);
@@ -292,41 +385,32 @@ const premesCalculated = computed(() => {
       .filter(h => String(h.chantier_id) === String(chantier.id))
       .reduce((sum, h) => sum + (h.heures || 0), 0);
 
-    // Heures régies
-    const heuresRegiesMetrages = metrages.value
-      .filter(m => String(m.chantier_id) === String(chantier.id) && m.regies)
-      .reduce((sum, m) => {
-        const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
-        return sum + (regies || []).reduce((rs, r) => rs + (r.heures || 0), 0);
-      }, 0);
+    const heuresRegies = regiesData.heures;
+    // Heures réelles HORS régies (les régies ne pèsent pas sur le budget)
+    const heuresTotales = heuresChef + heuresInterim + heuresOuvriers;
+    const heuresReelles = heuresTotales - heuresRegies;
 
-    const heuresRegiesResoconti = resocontiPercentuali.value
-      .filter(r => String(r.chantier_id) === String(chantier.id) && r.regies && r.status === 'approved')
-      .reduce((sum, r) => {
-        const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
-        return sum + (regies || []).reduce((rs, rg) => rs + (rg.heures || 0), 0);
-      }, 0);
-
-    const heuresRegies = heuresRegiesMetrages + heuresRegiesResoconti;
-    const heuresReelles = heuresChef + heuresInterim + heuresOuvriers;
-
-    // Coût horaire moyen pondéré
+    // Coût horaire moyen pondéré (sur heures hors régies)
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     const coutTotal = (heuresChef * tarifChef) + (heuresOuvriers * tarifOuvrier) + (heuresInterim * tarifInterim);
-    const costoOrarioMedio = heuresReelles > 0 ? coutTotal / heuresReelles : tarifChef;
+    const costoOrarioMedio = heuresTotales > 0 ? coutTotal / heuresTotales : tarifChef;
 
     // Heures prévues et gagnées
     const heuresPrevues = costoOrarioMedio > 0 ? budgetOreDisponibile / costoOrarioMedio : 0;
     const heuresGagnees = heuresPrevues - heuresReelles;
 
-    // Primes
+    // Primes: régies payées SEULEMENT si cantiere en attivo
     const primeEfficacite = heuresGagnees > 0 ? heuresGagnees * 26 : 0;
-    const primeRegies = heuresRegies * 5;
+    const enAttivo = heuresGagnees > 0;
+    const primeRegies = enAttivo ? heuresRegies * 5 : 0;
     const primeTotale = primeEfficacite + primeRegies;
 
     // Période (basée sur la première facture)
     const primaFactura = [...facturesChantier].sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
     const dateFacturation = primaFactura?.date_facture ? new Date(primaFactura.date_facture) : new Date();
+
+    // Statut paiement
+    const paiement = primesPaiements.value.find(pp => pp.chantier_id === chantier.id && pp.capocantiere === chantier.capocantiere);
 
     return {
       chantierId: chantier.id,
@@ -343,8 +427,14 @@ const premesCalculated = computed(() => {
       primeEfficacite: Math.round(primeEfficacite * 100) / 100,
       primeRegies: Math.round(primeRegies * 100) / 100,
       primeTotale: Math.round(primeTotale * 100) / 100,
+      enAttivo,
+      // Paiement
+      payee: !!paiement,
+      moisPaiement: paiement?.mois_paiement || '',
       // Détails modal
       importoFatturato: importoTotaleFatturato,
+      montantRegies: regiesData.montant,
+      fatturatHorsRegies: Math.round(fatturatHorsRegies * 100) / 100,
       percentualeImpresa,
       costoOrarioMedio: Math.round(costoOrarioMedio * 100) / 100,
       heuresChef: Math.round(heuresChef * 10) / 10,
@@ -427,8 +517,52 @@ const voirDetail = (prime) => {
   showDetail.value = true;
 };
 
+const ouvrirPaiement = (prime) => {
+  paiementForm.value = {
+    chantierId: prime.chantierId,
+    capocantiere: prime.capocantiere,
+    montant: prime.primeTotale,
+    moisPaiement: ''
+  };
+  showPaiementModal.value = true;
+};
+
+const enregistrerPaiement = async () => {
+  const { chantierId, capocantiere, montant, moisPaiement } = paiementForm.value;
+  if (!moisPaiement) return;
+
+  await supabase.from('primes_paiements').upsert({
+    chantier_id: chantierId,
+    capocantiere,
+    montant,
+    mois_paiement: moisPaiement
+  }, { onConflict: 'chantier_id,capocantiere' });
+
+  // Reload paiements
+  const { data } = await supabase.from('primes_paiements').select('*');
+  primesPaiements.value = data || [];
+  showPaiementModal.value = false;
+};
+
+const annulerPaiement = async (prime) => {
+  await supabase.from('primes_paiements')
+    .delete()
+    .eq('chantier_id', prime.chantierId)
+    .eq('capocantiere', prime.capocantiere);
+
+  const { data } = await supabase.from('primes_paiements').select('*');
+  primesPaiements.value = data || [];
+};
+
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format(amount || 0);
+};
+
+const getMonthLabel = (moisStr) => {
+  if (!moisStr) return '';
+  const [y, m] = moisStr.split('-');
+  const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  return `${months[parseInt(m)-1]} ${y}`;
 };
 
 onMounted(() => { loadData(); });

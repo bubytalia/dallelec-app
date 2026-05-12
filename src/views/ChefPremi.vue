@@ -98,6 +98,9 @@
           <!-- Colonne droite: résultat -->
           <div class="col-md-6">
             <div v-if="chantier.primeTotale > 0" class="alert alert-success mb-0">
+              <p v-if="chantier.payee" class="mb-1">
+                💰 <strong>Payé en {{ getMonthLabel(chantier.moisPaiement) }}</strong> (brut en fiche de paie)
+              </p>
               <p v-if="chantier.primeEfficacite > 0" class="mb-1">
                 ✅ Prime efficacité: <strong>{{ formatCurrency(chantier.primeEfficacite) }}</strong>
                 <br><small>{{ chantier.heuresGagnees }}h gagnées × 26 CHF</small>
@@ -117,9 +120,8 @@
                   <br>Excès: {{ Math.abs(chantier.heuresGagnees) }}h
                 </small>
               </p>
-              <p v-if="chantier.primeRegies > 0" class="mb-0">
-                ✅ Prime régies: <strong>{{ formatCurrency(chantier.primeRegies) }}</strong>
-                <small>({{ chantier.heuresRegies }}h × 5 CHF)</small>
+              <p v-if="chantier.heuresRegies > 0" class="mb-0 text-muted">
+                <small>⚠️ {{ chantier.heuresRegies }}h régies non éligibles (chantier pas en attivo)</small>
               </p>
               <p v-else class="mb-0 text-muted"><small>Aucune heure régie enregistrée</small></p>
             </div>
@@ -142,6 +144,7 @@ import RetourButton from '@/components/RetourButton.vue';
 const selectedMonth = ref('');
 const selectedYear = ref('');
 const currentUserEmail = ref('');
+const primesPaiements = ref([]);
 
 // Données
 const chantiers = ref([]);
@@ -176,6 +179,38 @@ const loadData = async () => {
   // Resoconti
   const { data: rp } = await supabase.from('resoconti_percentuali').select('*');
   resocontiPercentuali.value = rp || [];
+
+  // Paiements
+  const { data: pp } = await supabase.from('primes_paiements').select('*');
+  primesPaiements.value = pp || [];
+};
+
+// Calcul montant régies pour un chantier
+const getRegiesData = (chantierId) => {
+  let heures = 0;
+  let montant = 0;
+
+  metrages.value
+    .filter(m => String(m.chantier_id) === String(chantierId) && m.regies)
+    .forEach(m => {
+      const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
+      (regies || []).forEach(r => {
+        heures += r.heures || 0;
+        montant += (r.heures || 0) * (r.prixHeure || 0);
+      });
+    });
+
+  resocontiPercentuali.value
+    .filter(r => String(r.chantier_id) === String(chantierId) && r.regies && r.status === 'approved')
+    .forEach(r => {
+      const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
+      (regies || []).forEach(rg => {
+        heures += rg.heures || 0;
+        montant += (rg.heures || 0) * (rg.prixHeure || 0);
+      });
+    });
+
+  return { heures, montant };
 };
 
 // Calcul primes pour les chantiers du chef connecté
@@ -187,8 +222,16 @@ const mesChantiersPrimes = computed(() => {
     if (facturesChantier.length === 0) return null;
 
     const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0), 0);
+
+    // Régies: heures et montant facturé
+    const regiesData = getRegiesData(chantier.id);
+    const montantRegiesTTC = regiesData.montant * 1.081;
+
+    // Fatturato HORS régies
+    const fatturatHorsRegies = importoTotaleFatturato - montantRegiesTTC;
+
     const percentualeImpresa = chantier.percentuale_impresa || 30;
-    const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeImpresa / 100);
+    const budgetOreDisponibile = fatturatHorsRegies * (1 - percentualeImpresa / 100);
 
     const heuresChef = heuresPropres.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -202,38 +245,28 @@ const mesChantiersPrimes = computed(() => {
       .filter(h => String(h.chantier_id) === String(chantier.id))
       .reduce((sum, h) => sum + (h.heures || 0), 0);
 
-    // Régies
-    const heuresRegiesMetrages = metrages.value
-      .filter(m => String(m.chantier_id) === String(chantier.id) && m.regies)
-      .reduce((sum, m) => {
-        const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
-        return sum + (regies || []).reduce((rs, r) => rs + (r.heures || 0), 0);
-      }, 0);
-
-    const heuresRegiesResoconti = resocontiPercentuali.value
-      .filter(r => String(r.chantier_id) === String(chantier.id) && r.regies && r.status === 'approved')
-      .reduce((sum, r) => {
-        const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
-        return sum + (regies || []).reduce((rs, rg) => rs + (rg.heures || 0), 0);
-      }, 0);
-
-    const heuresRegies = heuresRegiesMetrages + heuresRegiesResoconti;
-    const heuresReelles = heuresChef + heuresInterim + heuresOuvriers;
+    const heuresRegies = regiesData.heures;
+    const heuresTotales = heuresChef + heuresInterim + heuresOuvriers;
+    const heuresReelles = heuresTotales - heuresRegies;
 
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     const coutTotal = (heuresChef * tarifChef) + (heuresOuvriers * tarifOuvrier) + (heuresInterim * tarifInterim);
-    const costoOrarioMedio = heuresReelles > 0 ? coutTotal / heuresReelles : tarifChef;
+    const costoOrarioMedio = heuresTotales > 0 ? coutTotal / heuresTotales : tarifChef;
 
     const heuresPrevues = costoOrarioMedio > 0 ? budgetOreDisponibile / costoOrarioMedio : 0;
     const heuresGagnees = heuresPrevues - heuresReelles;
 
     const primeEfficacite = heuresGagnees > 0 ? heuresGagnees * 26 : 0;
-    const primeRegies = heuresRegies * 5;
+    const enAttivo = heuresGagnees > 0;
+    const primeRegies = enAttivo ? heuresRegies * 5 : 0;
     const primeTotale = primeEfficacite + primeRegies;
 
     // Période
     const primaFactura = [...facturesChantier].sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
     const dateFacturation = primaFactura?.date_facture ? new Date(primaFactura.date_facture) : new Date();
+
+    // Paiement
+    const paiement = primesPaiements.value.find(pp => pp.chantier_id === chantier.id && pp.capocantiere === chantier.capocantiere);
 
     return {
       chantierId: chantier.id,
@@ -248,7 +281,10 @@ const mesChantiersPrimes = computed(() => {
       heuresRegies: Math.round(heuresRegies * 10) / 10,
       primeEfficacite: Math.round(primeEfficacite * 100) / 100,
       primeRegies: Math.round(primeRegies * 100) / 100,
-      primeTotale: Math.round(primeTotale * 100) / 100
+      primeTotale: Math.round(primeTotale * 100) / 100,
+      enAttivo,
+      payee: !!paiement,
+      moisPaiement: paiement?.mois_paiement || ''
     };
   }).filter(Boolean);
 });
@@ -282,6 +318,13 @@ const availableYears = computed(() => {
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format(amount || 0);
+};
+
+const getMonthLabel = (moisStr) => {
+  if (!moisStr) return '';
+  const [y, m] = moisStr.split('-');
+  const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  return `${months[parseInt(m)-1]} ${y}`;
 };
 
 onMounted(() => { loadData(); });
