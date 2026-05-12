@@ -1,171 +1,136 @@
 <template>
-  <div class="container py-5">
+  <div class="container py-4">
     <RetourButton to="/chef" />
     
-    <h2 class="text-center mb-4">Gestion des Primes</h2>
-    
+    <h2 class="text-center mb-4">Mes Primes</h2>
+
     <!-- Filtres -->
     <div class="row mb-4">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h5>Filtres</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-4">
-                <label class="form-label">Chantier:</label>
-                <select v-model="selectedChantier" @change="updatePeriod" class="form-select">
-                  <option value="">Tous les chantiers</option>
-                  <option v-for="chantier in availableChantiers" :key="chantier.id" :value="chantier.id">
-                    {{ chantier.nom }}
-                  </option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Mois:</label>
-                <select v-model="selectedMonth" @change="updatePeriod" class="form-select">
-                  <option value="">Tous les mois</option>
-                  <option v-for="month in availableMonths" :key="month.value" :value="month.value">
-                    {{ month.label }}
-                  </option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Année:</label>
-                <select v-model="selectedYear" @change="updatePeriod" class="form-select">
-                  <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="col-md-6">
+        <label class="form-label">Mois</label>
+        <select v-model="selectedMonth" class="form-select">
+          <option value="">Tous les mois</option>
+          <option v-for="month in availableMonths" :key="month.value" :value="month.value">
+            {{ month.label }}
+          </option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Année</label>
+        <select v-model="selectedYear" class="form-select">
+          <option value="">Toutes les années</option>
+          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+        </select>
       </div>
     </div>
 
-    <!-- Riepilogo generale premi -->
+    <!-- Résumé -->
     <div class="row mb-4">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h5>Résumé des primes {{ selectedMonth ? getMonthName(selectedMonth) : '' }} {{ selectedYear }}</h5>
+      <div class="col-md-4">
+        <div class="card bg-success text-white">
+          <div class="card-body text-center">
+            <h5>Prime Totale</h5>
+            <h3>{{ formatCurrency(totalPrime) }}</h3>
           </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 class="text-primary">{{ totalHeuresPrevuesFiltered.toFixed(1) }}h</h4>
-                  <p>Total heures prévues</p>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 class="text-info">{{ totalHeuresImployeesFiltered.toFixed(1) }}h</h4>
-                  <p>Total heures employées</p>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 :class="totalHeuresGagneesFiltered > 0 ? 'text-success' : 'text-danger'">{{ totalHeuresGagneesFiltered > 0 ? '+' : '' }}{{ totalHeuresGagneesFiltered.toFixed(1) }}h</h4>
-                  <p>Heures gagnées</p>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="text-center">
-                  <h4 :class="totalPrimeFiltered > 0 ? 'text-success' : 'text-muted'">{{ (totalPrimeFiltered / 26).toFixed(1) }}h</h4>
-                  <p>Prime totale (heures)</p>
-                </div>
-              </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-primary text-white">
+          <div class="card-body text-center">
+            <h5>Heures Gagnées</h5>
+            <h3>{{ totalHeuresGagnees > 0 ? '+' : '' }}{{ totalHeuresGagnees.toFixed(1) }}h</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bg-warning text-white">
+          <div class="card-body text-center">
+            <h5>Heures Régies</h5>
+            <h3>{{ totalHeuresRegies.toFixed(1) }}h</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Détail par chantier -->
+    <div v-for="chantier in chantiersFiltered" :key="chantier.chantierId" class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center"
+           :class="chantier.primeTotale > 0 ? 'bg-light' : ''">
+        <div>
+          <strong>{{ chantier.chantierNom }}</strong>
+          <small class="text-muted ms-2">{{ chantier.clientNom }}</small>
+        </div>
+        <span class="badge" :class="chantier.primeTotale > 0 ? 'bg-success' : 'bg-secondary'">
+          {{ formatCurrency(chantier.primeTotale) }}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Colonne gauche: données -->
+          <div class="col-md-6">
+            <table class="table table-sm mb-0">
+              <tr>
+                <td>Budget disponible (après % impresa)</td>
+                <td class="text-end"><strong>{{ formatCurrency(chantier.budgetDisponible) }}</strong></td>
+              </tr>
+              <tr>
+                <td>Heures prévues (budget / coût moyen)</td>
+                <td class="text-end">{{ chantier.heuresPrevues }}h</td>
+              </tr>
+              <tr>
+                <td>Heures réelles employées</td>
+                <td class="text-end">{{ chantier.heuresReelles }}h</td>
+              </tr>
+              <tr>
+                <td>Heures gagnées</td>
+                <td class="text-end">
+                  <span :class="chantier.heuresGagnees > 0 ? 'text-success fw-bold' : 'text-danger fw-bold'">
+                    {{ chantier.heuresGagnees > 0 ? '+' : '' }}{{ chantier.heuresGagnees }}h
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td>Heures régies</td>
+                <td class="text-end">{{ chantier.heuresRegies }}h</td>
+              </tr>
+            </table>
+          </div>
+          <!-- Colonne droite: résultat -->
+          <div class="col-md-6">
+            <div v-if="chantier.primeTotale > 0" class="alert alert-success mb-0">
+              <p v-if="chantier.primeEfficacite > 0" class="mb-1">
+                ✅ Prime efficacité: <strong>{{ formatCurrency(chantier.primeEfficacite) }}</strong>
+                <br><small>{{ chantier.heuresGagnees }}h gagnées × 26 CHF</small>
+              </p>
+              <p v-if="chantier.primeRegies > 0" class="mb-1">
+                ✅ Prime régies: <strong>{{ formatCurrency(chantier.primeRegies) }}</strong>
+                <br><small>{{ chantier.heuresRegies }}h × 5 CHF</small>
+              </p>
+              <hr class="my-2">
+              <p class="mb-0 fw-bold">Total: {{ formatCurrency(chantier.primeTotale) }}</p>
+            </div>
+            <div v-else class="alert alert-warning mb-0">
+              <p class="mb-1">❌ <strong>Pas de prime efficacité</strong></p>
+              <p class="mb-1 text-muted">
+                <small>
+                  Heures employées ({{ chantier.heuresReelles }}h) supérieures aux heures prévues ({{ chantier.heuresPrevues }}h).
+                  <br>Excès: {{ Math.abs(chantier.heuresGagnees) }}h
+                </small>
+              </p>
+              <p v-if="chantier.primeRegies > 0" class="mb-0">
+                ✅ Prime régies: <strong>{{ formatCurrency(chantier.primeRegies) }}</strong>
+                <small>({{ chantier.heuresRegies }}h × 5 CHF)</small>
+              </p>
+              <p v-else class="mb-0 text-muted"><small>Aucune heure régie enregistrée</small></p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Dettaglio per cantiere -->
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h5>Détail par chantier</h5>
-          </div>
-          <div class="card-body">
-            <div v-if="chantiersAvecMetrages.length === 0" class="text-center text-muted">
-              Aucun chantier avec métrages enregistrés
-            </div>
-            <div v-else>
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Chantier</th>
-                    <th>Heures prévues</th>
-                    <th>Heures employées</th>
-                    <th>Heures gagnées</th>
-                    <th>Heures régies</th>
-                    <th>Prime efficacité</th>
-                    <th>Prime régies</th>
-                    <th>Prime totale</th>
-                    <th>Période</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="chantier in chantiersFiltered" :key="chantier.id">
-                    <td>
-                      <strong>{{ chantier.nom }}</strong><br>
-                      <small class="text-muted">{{ chantier.adresse }}</small>
-                    </td>
-                    <td>{{ chantier.heuresPrevues }}h</td>
-                    <td>{{ chantier.heuresImployees }}h</td>
-                    <td>
-                      <span :class="chantier.heuresGagnees > 0 ? 'text-success fw-bold' : 'text-danger'">
-                        {{ chantier.heuresGagnees > 0 ? '+' : '' }}{{ chantier.heuresGagnees }}h
-                      </span>
-                    </td>
-                    <td>
-                      <span class="text-warning fw-bold">
-                        {{ chantier.heuresRegies }}h
-                      </span>
-                    </td>
-                    <td>
-                      <span :class="chantier.primeEfficacite > 0 ? 'text-success fw-bold' : 'text-muted'">
-                        {{ chantier.primeEfficacite.toFixed(2) }} CHF
-                      </span>
-                    </td>
-                    <td>
-                      <span :class="chantier.primeRegies > 0 ? 'text-warning fw-bold' : 'text-muted'">
-                        {{ chantier.primeRegies.toFixed(2) }} CHF
-                      </span>
-                    </td>
-                    <td>
-                      <span :class="chantier.prime > 0 ? 'text-success fw-bold' : 'text-muted'">
-                        {{ chantier.prime.toFixed(2) }} CHF
-                      </span>
-                    </td>
-                    <td>{{ getMonthName(chantier.moisFacturation) }} {{ chantier.anneeFacturation }}</td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="table-primary">
-                    <td><strong>Total</strong></td>
-                    <td><strong>{{ totalHeuresPrevuesFiltered.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ totalHeuresImployeesFiltered.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ totalHeuresGagneesFiltered.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ totalHeuresRegiesFiltered.toFixed(1) }}h</strong></td>
-                    <td><strong>{{ totalPrimeEfficaciteFiltered.toFixed(2) }} CHF</strong></td>
-                    <td><strong>{{ totalPrimeRegiesFiltered.toFixed(2) }} CHF</strong></td>
-                    <td><strong>{{ totalPrimeFiltered.toFixed(2) }} CHF</strong></td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div v-if="chantiersFiltered.length === 0" class="alert alert-info text-center">
+      Aucun chantier avec facturation trouvé pour la période sélectionnée.
     </div>
-
-
   </div>
 </template>
 
@@ -174,333 +139,154 @@ import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
+const selectedMonth = ref('');
+const selectedYear = ref('');
+const currentUserEmail = ref('');
+
+// Données
 const chantiers = ref([]);
-const devis = ref([]);
 const factures = ref([]);
 const metrages = ref([]);
 const resocontiPercentuali = ref([]);
 const heuresPropres = ref([]);
-const heuresInterim = ref([]);
-const heuresOuvriers = ref([]);
-const collaborateurs = ref([]);
-const interimaires = ref([]);
-const selectedMonth = ref('');
-const selectedYear = ref(new Date().getFullYear());
-const selectedChantier = ref('');
+const heuresInterimData = ref([]);
+const heuresOuvriersData = ref([]);
 
-const fetchChantiers = async () => {
-  const { data } = await supabase.from('chantiers').select('*');
-  chantiers.value = data || [];
+const loadData = async () => {
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser();
+  currentUserEmail.value = user?.email || '';
+
+  const [ch, fa, me, hp, hi, ho] = await Promise.all([
+    supabase.from('chantiers').select('*'),
+    supabase.from('factures').select('*'),
+    supabase.from('metrages').select('*'),
+    supabase.from('heures_chef_propres').select('*'),
+    supabase.from('heures_chef_interim').select('*'),
+    supabase.from('heures_ouvriers').select('*')
+  ]);
+
+  chantiers.value = ch.data || [];
+  factures.value = fa.data || [];
+  metrages.value = me.data || [];
+  heuresPropres.value = hp.data || [];
+  heuresInterimData.value = hi.data || [];
+  heuresOuvriersData.value = ho.data || [];
+
+  // Resoconti
+  const { data: rp } = await supabase.from('resoconti_percentuali').select('*');
+  resocontiPercentuali.value = rp || [];
 };
 
-const fetchDevis = async () => {
-  const { data } = await supabase.from('devis').select('*');
-  devis.value = data || [];
-};
+// Calcul primes pour les chantiers du chef connecté
+const mesChantiersPrimes = computed(() => {
+  const mesChantiers = chantiers.value.filter(c => c.capocantiere === currentUserEmail.value);
 
-const fetchMetrages = async () => {
-  const { data } = await supabase.from('metrages').select('*');
-  metrages.value = data || [];
-};
+  return mesChantiers.map(chantier => {
+    const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
+    if (facturesChantier.length === 0) return null;
 
-const fetchHeuresPropres = async () => {
-  const { data } = await supabase.from('heures_chef_propres').select('*');
-  heuresPropres.value = data || [];
-};
-
-const fetchHeuresInterim = async () => {
-  const { data } = await supabase.from('heures_chef_interim').select('*');
-  heuresInterim.value = data || [];
-};
-
-const fetchHeuresOuvriers = async () => {
-  try {
-    let { data, error } = await supabase.from('heures_ouvriers').select('*');
-    if (error) {
-      const result = await supabase.from('heures').select('*');
-      data = result.data;
-    }
-    heuresOuvriers.value = data || [];
-  } catch (error) {
-    heuresOuvriers.value = [];
-  }
-};
-
-const fetchFactures = async () => {
-  const { data } = await supabase.from('factures').select('*');
-  factures.value = data || [];
-};
-
-const fetchCollaborateurs = async () => {
-  const { data } = await supabase.from('collaborateurs').select('*');
-  collaborateurs.value = data || [];
-};
-
-const fetchInterimaires = async () => {
-  const { data } = await supabase.from('interimaires').select('*');
-  interimaires.value = data || [];
-};
-
-const fetchResocontiPercentuali = async () => {
-  try {
-    const { data } = await supabase.from('resoconti_percentuali').select('*');
-    resocontiPercentuali.value = data || [];
-  } catch (error) {
-    console.log('Tabella resoconti_percentuali non disponibile');
-    resocontiPercentuali.value = [];
-  }
-};
-
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('fr-FR');
-};
-
-const getMonthName = (monthNum) => {
-  if (!monthNum) return '';
-  const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-                 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-  return months[monthNum - 1] || '';
-};
-
-const updatePeriod = () => {
-  // Trigger reactive update
-};
-
-// Mois disponibili
-const availableMonths = computed(() => {
-  return [
-    { value: 1, label: 'Janvier' },
-    { value: 2, label: 'Février' },
-    { value: 3, label: 'Mars' },
-    { value: 4, label: 'Avril' },
-    { value: 5, label: 'Mai' },
-    { value: 6, label: 'Juin' },
-    { value: 7, label: 'Juillet' },
-    { value: 8, label: 'Août' },
-    { value: 9, label: 'Septembre' },
-    { value: 10, label: 'Octobre' },
-    { value: 11, label: 'Novembre' },
-    { value: 12, label: 'Décembre' }
-  ];
-});
-
-// Anni disponibili
-const availableYears = computed(() => {
-  const currentYear = new Date().getFullYear();
-  const years = [];
-  for (let year = currentYear - 2; year <= currentYear + 1; year++) {
-    years.push(year);
-  }
-  return years;
-});
-
-// Computed per calcolare i dati dei premi secondo la formula corretta
-const chantiersAvecMetrages = computed(() => {
-  const chantiersData = [];
-  
-  chantiers.value.forEach(chantier => {
-    // 1. Trova factures per questo cantiere (quantità posate fatturate)
-    const facturesChantier = factures.value.filter(f => f.chantier_id === chantier.id);
-    if (facturesChantier.length === 0) return;
-    
-    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
-    
-    // 2. Importo - % impresa (percentuale configurabile per cantiere)
-    const percentualeImpresa = chantier.percentuale_impresa || 30; // Default 30%
+    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0), 0);
+    const percentualeImpresa = chantier.percentuale_impresa || 30;
     const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeImpresa / 100);
-    
-    // 3. Calcola ore impiegate reali (ESCLUSE le regie) e costo orario medio
-    if (chantier.nom === 'torre di pisa') {
-      console.log('🔍 DEBUG cantiere torre di pisa:');
-      console.log('Chantier ID:', chantier.id);
-      console.log('Heures propres totali:', heuresPropres.value.length);
-      console.log('Sample heures propres:', JSON.stringify(heuresPropres.value.slice(0, 2), null, 2));
-      console.log('Heures ouvriers totali:', heuresOuvriers.value.length);
-      console.log('Sample heures ouvriers:', JSON.stringify(heuresOuvriers.value.slice(0, 2), null, 2));
-    }
-    
-    const heuresChefFiltered = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id));
-    if (chantier.nom === 'torre di pisa') {
-      console.log('Heures chef filtrate:', heuresChefFiltered.length, heuresChefFiltered);
-    }
-    const heuresChefChantier = heuresChefFiltered.reduce((sum, h) => sum + (h.total_heures || h.heures_propres || 0), 0);
-    
-    const heuresInterimChantier = heuresInterim.value
+
+    const heuresChef = heuresPropres.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || h.heures_interim || 0), 0);
-    
-    const heuresOuvriersFiltered = heuresOuvriers.value.filter(h => String(h.chantier_id) === String(chantier.id));
-    if (chantier.nom === 'torre di pisa') {
-      console.log('Heures ouvriers filtrate:', heuresOuvriersFiltered.length, heuresOuvriersFiltered);
-    }
-    const heuresOuvriersChantier = heuresOuvriersFiltered.reduce((sum, h) => sum + (h.heures || 0), 0);
-    
-    // Calcola ore regie da métrages E resoconti percentuali
-    const heuresRegiesMetrages = [...metrages.value]
-      .filter(m => (m.chantier_id === chantier.id || m.chantierId === chantier.id) && m.regies)
+      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+
+    const heuresInterim = heuresInterimData.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+
+    const heuresOuvriers = heuresOuvriersData.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.heures || 0), 0);
+
+    // Régies
+    const heuresRegiesMetrages = metrages.value
+      .filter(m => String(m.chantier_id) === String(chantier.id) && m.regies)
       .reduce((sum, m) => {
         const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
-        return sum + (regies || []).reduce((regieSum, r) => regieSum + (r.heures || 0), 0);
+        return sum + (regies || []).reduce((rs, r) => rs + (r.heures || 0), 0);
       }, 0);
-    
-    const heuresRegiesResoconti = [...resocontiPercentuali.value]
-      .filter(r => (r.chantier_id === chantier.id || r.chantierId === chantier.id) && r.regies && r.status === 'approved')
+
+    const heuresRegiesResoconti = resocontiPercentuali.value
+      .filter(r => String(r.chantier_id) === String(chantier.id) && r.regies && r.status === 'approved')
       .reduce((sum, r) => {
         const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
-        return sum + (regies || []).reduce((regieSum, regie) => regieSum + (regie.heures || 0), 0);
+        return sum + (regies || []).reduce((rs, rg) => rs + (rg.heures || 0), 0);
       }, 0);
-    
-    const heuresRegiesChantier = heuresRegiesMetrages + heuresRegiesResoconti;
-    
-    const heuresImployees = heuresChefChantier + heuresInterimChantier + heuresOuvriersChantier;
-    
-    if (chantier.nom === 'torre di pisa') {
-      console.log('⏰ Ore trovate per torre di pisa:');
-      console.log('Chef:', heuresChefChantier, 'Interim:', heuresInterimChantier, 'Ouvriers:', heuresOuvriersChantier);
-      console.log('Total:', heuresImployees);
-    }
-    
-    // 4. Calcola costo orario medio ponderato dei dipendenti intervenuti
-    const tarifChef = 45; // CHF/h
-    const tarifOuvrier = 41; // CHF/h (come da tabella bilans)
-    const tarifInterim = 47.5; // CHF/h (come da tabella bilans)
-    
-    const costoTotaleOre = (heuresChefChantier * tarifChef) + 
-                          (heuresOuvriersChantier * tarifOuvrier) + 
-                          (heuresInterimChantier * tarifInterim);
-    
-    const costoOrarioMedio = heuresImployees > 0 ? costoTotaleOre / heuresImployees : tarifChef;
-    
-    // 5. Ore previste teoriche = Budget disponibile / Costo orario medio
-    const heuresPrevues = budgetOreDisponibile / costoOrarioMedio;
-    
-    // 6. Calcolo premio: se ore reali < ore previste → premio + premio regie
-    const heuresGagnees = heuresPrevues - heuresImployees;
-    const primeEfficacite = heuresGagnees > 0 ? heuresGagnees * 26 : 0; // 26 CHF/h solo se positivo
-    
-    // 7. Premio regie: 5 CHF per ogni ora di regie (se cantiere attivo)
-    const primeRegies = heuresRegiesChantier * 5; // 5 CHF/h per regie
-    
-    const prime = primeEfficacite + primeRegies;
-    
-    // Trova ultima attività
-    const dernierMetrage = metrages.value
-      .filter(m => m.chantier_id === chantier.id || m.chantierId === chantier.id)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-    
-    const derniereHeure = [...heuresPropres.value, ...heuresInterim.value, ...heuresOuvriers.value]
-      .filter(h => h.chantier_id === chantier.id || h.chantierId === chantier.id)
-      .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))[0];
-    
-    const derniereMiseAJour = new Date(dernierMetrage?.created_at || derniereHeure?.date || derniereHeure?.created_at || new Date());
-    
-    // Determina mese e anno di fatturazione (dalla prima fattura)
-    const primaFactura = facturesChantier.sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
-    const dateFacturation = new Date(primaFactura.date_facture);
-    const moisFacturation = dateFacturation.getMonth() + 1;
-    const anneeFacturation = dateFacturation.getFullYear();
-    
-    chantiersData.push({
-      id: chantier.id,
-      nom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
-      adresse: chantier.adresse,
+
+    const heuresRegies = heuresRegiesMetrages + heuresRegiesResoconti;
+    const heuresReelles = heuresChef + heuresInterim + heuresOuvriers;
+
+    const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
+    const coutTotal = (heuresChef * tarifChef) + (heuresOuvriers * tarifOuvrier) + (heuresInterim * tarifInterim);
+    const costoOrarioMedio = heuresReelles > 0 ? coutTotal / heuresReelles : tarifChef;
+
+    const heuresPrevues = costoOrarioMedio > 0 ? budgetOreDisponibile / costoOrarioMedio : 0;
+    const heuresGagnees = heuresPrevues - heuresReelles;
+
+    const primeEfficacite = heuresGagnees > 0 ? heuresGagnees * 26 : 0;
+    const primeRegies = heuresRegies * 5;
+    const primeTotale = primeEfficacite + primeRegies;
+
+    // Période
+    const primaFactura = [...facturesChantier].sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
+    const dateFacturation = primaFactura?.date_facture ? new Date(primaFactura.date_facture) : new Date();
+
+    return {
+      chantierId: chantier.id,
+      chantierNom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
+      clientNom: chantier.client || 'N/A',
+      moisFacturation: dateFacturation.getMonth() + 1,
+      anneeFacturation: dateFacturation.getFullYear(),
+      budgetDisponible: Math.round(budgetOreDisponibile * 100) / 100,
       heuresPrevues: Math.round(heuresPrevues * 10) / 10,
-      heuresImployees,
+      heuresReelles: Math.round(heuresReelles * 10) / 10,
       heuresGagnees: Math.round(heuresGagnees * 10) / 10,
-      heuresRegies: Math.round(heuresRegiesChantier * 10) / 10,
+      heuresRegies: Math.round(heuresRegies * 10) / 10,
       primeEfficacite: Math.round(primeEfficacite * 100) / 100,
       primeRegies: Math.round(primeRegies * 100) / 100,
-      prime: Math.round(prime * 100) / 100,
-      moisFacturation,
-      anneeFacturation,
-      derniereMiseAJour
-    });
-  });
-  
-  return chantiersData.sort((a, b) => new Date(b.derniereMiseAJour) - new Date(a.derniereMiseAJour));
+      primeTotale: Math.round(primeTotale * 100) / 100
+    };
+  }).filter(Boolean);
 });
 
-// Cantieri disponibili per il filtro
-const availableChantiers = computed(() => {
-  return chantiersAvecMetrages.value.map(c => ({
-    id: c.id,
-    nom: c.nom
-  })).sort((a, b) => a.nom.localeCompare(b.nom));
-});
-
-// Cantieri filtrati per periodo e cantiere
+// Filtrage
 const chantiersFiltered = computed(() => {
-  return chantiersAvecMetrages.value.filter(chantier => {
-    if (selectedYear.value && chantier.anneeFacturation !== selectedYear.value) return false;
-    if (selectedMonth.value && chantier.moisFacturation !== selectedMonth.value) return false;
-    if (selectedChantier.value && chantier.id !== selectedChantier.value) return false;
+  return mesChantiersPrimes.value.filter(c => {
+    if (selectedMonth.value && c.moisFacturation !== selectedMonth.value) return false;
+    if (selectedYear.value && c.anneeFacturation !== selectedYear.value) return false;
     return true;
-  });
+  }).sort((a, b) => b.primeTotale - a.primeTotale);
 });
 
-// Totali filtrati
-const totalHeuresPrevuesFiltered = computed(() => {
-  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresPrevues, 0);
+// Totaux
+const totalPrime = computed(() => chantiersFiltered.value.reduce((sum, c) => sum + c.primeTotale, 0));
+const totalHeuresGagnees = computed(() => chantiersFiltered.value.reduce((sum, c) => sum + c.heuresGagnees, 0));
+const totalHeuresRegies = computed(() => chantiersFiltered.value.reduce((sum, c) => sum + c.heuresRegies, 0));
+
+// Filtres
+const availableMonths = [
+  { value: 1, label: 'Janvier' }, { value: 2, label: 'Février' }, { value: 3, label: 'Mars' },
+  { value: 4, label: 'Avril' }, { value: 5, label: 'Mai' }, { value: 6, label: 'Juin' },
+  { value: 7, label: 'Juillet' }, { value: 8, label: 'Août' }, { value: 9, label: 'Septembre' },
+  { value: 10, label: 'Octobre' }, { value: 11, label: 'Novembre' }, { value: 12, label: 'Décembre' }
+];
+
+const availableYears = computed(() => {
+  const years = new Set(mesChantiersPrimes.value.map(c => c.anneeFacturation));
+  return Array.from(years).sort((a, b) => b - a);
 });
 
-const totalHeuresImployeesFiltered = computed(() => {
-  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresImployees, 0);
-});
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format(amount || 0);
+};
 
-const totalHeuresGagneesFiltered = computed(() => {
-  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresGagnees, 0);
-});
-
-const totalPrimeFiltered = computed(() => {
-  return chantiersFiltered.value.reduce((sum, c) => sum + c.prime, 0);
-});
-
-const totalHeuresRegiesFiltered = computed(() => {
-  return chantiersFiltered.value.reduce((sum, c) => sum + c.heuresRegies, 0);
-});
-
-const totalPrimeEfficaciteFiltered = computed(() => {
-  return chantiersFiltered.value.reduce((sum, c) => sum + c.primeEfficacite, 0);
-});
-
-const totalPrimeRegiesFiltered = computed(() => {
-  return chantiersFiltered.value.reduce((sum, c) => sum + c.primeRegies, 0);
-});
-
-const totalHeuresPrevues = computed(() => {
-  return chantiersAvecMetrages.value.reduce((sum, c) => sum + c.heuresPrevues, 0);
-});
-
-const totalHeuresImployees = computed(() => {
-  return chantiersAvecMetrages.value.reduce((sum, c) => sum + c.heuresImployees, 0);
-});
-
-const totalHeuresGagnees = computed(() => {
-  return chantiersAvecMetrages.value.reduce((sum, c) => sum + c.heuresGagnees, 0);
-});
-
-const totalPrime = computed(() => {
-  return chantiersAvecMetrages.value.reduce((sum, c) => sum + c.prime, 0);
-});
-
-onMounted(async () => {
-  await Promise.all([
-    fetchChantiers(),
-    fetchDevis(),
-    fetchFactures(),
-    fetchMetrages(),
-    fetchResocontiPercentuali(),
-    fetchHeuresPropres(),
-    fetchHeuresInterim(),
-    fetchHeuresOuvriers(),
-    fetchCollaborateurs(),
-    fetchInterimaires()
-  ]);
-});
+onMounted(() => { loadData(); });
 </script>
 
 <style scoped>
-.card {
-  margin-bottom: 1rem;
-}
+.card-header.bg-light { border-left: 4px solid #198754; }
 </style>

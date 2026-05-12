@@ -13,35 +13,29 @@
           </div>
           <div class="card-body">
             <div class="row">
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label>Chef de Chantier</label>
-                <select v-model="selectedChef" @change="updateFilters" class="form-select">
+                <select v-model="selectedChef" class="form-select">
                   <option value="">Tous les chefs</option>
-                  <option v-for="chef in availableChefs" :key="chef" :value="chef">{{ chef }}</option>
+                  <option v-for="chef in availableChefs" :key="chef.email" :value="chef.email">
+                    {{ chef.prenom }} {{ chef.nom }}
+                  </option>
                 </select>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label>Mois</label>
-                <select v-model="selectedMonth" @change="updateFilters" class="form-select">
+                <select v-model="selectedMonth" class="form-select">
                   <option value="">Tous les mois</option>
                   <option v-for="month in availableMonths" :key="month.value" :value="month.value">
                     {{ month.label }}
                   </option>
                 </select>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-4">
                 <label>Année</label>
-                <select v-model="selectedYear" @change="updateFilters" class="form-select">
+                <select v-model="selectedYear" class="form-select">
+                  <option value="">Toutes les années</option>
                   <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label>Statut</label>
-                <select v-model="selectedStatus" @change="updateFilters" class="form-select">
-                  <option value="">Tous</option>
-                  <option value="positif">Primes positives</option>
-                  <option value="negatif">Primes négatives</option>
-                  <option value="zero">Aucune prime</option>
                 </select>
               </div>
             </div>
@@ -57,7 +51,6 @@
           <div class="card-body text-center">
             <h5>Total Primes</h5>
             <h3>{{ formatCurrency(kpis.totalPrimes) }}</h3>
-            <small>Période sélectionnée</small>
           </div>
         </div>
       </div>
@@ -66,7 +59,6 @@
           <div class="card-body text-center">
             <h5>Primes Efficacité</h5>
             <h3>{{ formatCurrency(kpis.primesEfficacite) }}</h3>
-            <small>Heures gagnées</small>
           </div>
         </div>
       </div>
@@ -75,7 +67,6 @@
           <div class="card-body text-center">
             <h5>Primes Régies</h5>
             <h3>{{ formatCurrency(kpis.primesRegies) }}</h3>
-            <small>Heures régies</small>
           </div>
         </div>
       </div>
@@ -84,47 +75,41 @@
           <div class="card-body text-center">
             <h5>Chantiers</h5>
             <h3>{{ kpis.nbChantiers }}</h3>
-            <small>Avec primes</small>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Tableau détaillé -->
-    <div class="card">
+    <!-- Détail par Chef -->
+    <div v-for="chef in chefsWithPrimes" :key="chef.email" class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5>Détail des Primes par Chantier</h5>
-        <button @click="exportCSV" class="btn btn-outline-primary btn-sm">
-          📊 Export CSV
-        </button>
+        <h5 class="mb-0">{{ chef.prenom }} {{ chef.nom }}</h5>
+        <span class="badge" :class="chef.totalPrime > 0 ? 'bg-success' : 'bg-secondary'">
+          Total: {{ formatCurrency(chef.totalPrime) }}
+        </span>
       </div>
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-striped">
+          <table class="table table-striped table-sm">
             <thead>
               <tr>
                 <th>Chantier</th>
-                <th>Chef</th>
-                <th>Période</th>
+                <th>Client</th>
                 <th>Budget (CHF)</th>
-                <th>Heures Prévues</th>
-                <th>Heures Réelles</th>
-                <th>Heures Gagnées</th>
-                <th>Heures Régies</th>
-                <th>Prime Efficacité</th>
-                <th>Prime Régies</th>
+                <th>H. Prévues</th>
+                <th>H. Réelles</th>
+                <th>H. Gagnées</th>
+                <th>H. Régies</th>
+                <th>Prime Eff.</th>
+                <th>Prime Rég.</th>
                 <th>Prime Totale</th>
-                <th>Actions</th>
+                <th>Détail</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="prime in premesFiltered" :key="prime.chantierId">
-                <td>
-                  <strong>{{ prime.chantierNom }}</strong><br>
-                  <small class="text-muted">{{ prime.clientNom }}</small>
-                </td>
-                <td>{{ prime.chefNom }}</td>
-                <td>{{ getMonthName(prime.moisFacturation) }} {{ prime.anneeFacturation }}</td>
+              <tr v-for="prime in chef.primes" :key="prime.chantierId">
+                <td><strong>{{ prime.chantierNom }}</strong></td>
+                <td>{{ prime.clientNom }}</td>
                 <td>{{ formatCurrency(prime.budgetDisponible) }}</td>
                 <td>{{ prime.heuresPrevues }}h</td>
                 <td>{{ prime.heuresReelles }}h</td>
@@ -135,39 +120,41 @@
                 </td>
                 <td>{{ prime.heuresRegies }}h</td>
                 <td>
-                  <span :class="prime.primeEfficacite > 0 ? 'text-success fw-bold' : 'text-muted'">
+                  <span :class="prime.primeEfficacite > 0 ? 'text-success' : 'text-muted'">
                     {{ formatCurrency(prime.primeEfficacite) }}
                   </span>
                 </td>
                 <td>
-                  <span :class="prime.primeRegies > 0 ? 'text-warning fw-bold' : 'text-muted'">
+                  <span :class="prime.primeRegies > 0 ? 'text-warning' : 'text-muted'">
                     {{ formatCurrency(prime.primeRegies) }}
                   </span>
                 </td>
                 <td>
-                  <span :class="getPrimeClass(prime.primeTotale)">
+                  <span :class="prime.primeTotale > 0 ? 'text-success fw-bold' : 'text-muted'">
                     {{ formatCurrency(prime.primeTotale) }}
                   </span>
                 </td>
                 <td>
-                  <button @click="voirDetail(prime)" class="btn btn-sm btn-info">
-                    👁 Détail
-                  </button>
+                  <button @click="voirDetail(prime)" class="btn btn-sm btn-outline-info">👁</button>
                 </td>
               </tr>
             </tbody>
             <tfoot class="table-secondary">
               <tr>
-                <td colspan="8"><strong>TOTAUX</strong></td>
-                <td><strong>{{ formatCurrency(totaux.primeEfficacite) }}</strong></td>
-                <td><strong>{{ formatCurrency(totaux.primeRegies) }}</strong></td>
-                <td><strong>{{ formatCurrency(totaux.primeTotale) }}</strong></td>
+                <td colspan="7"><strong>Total {{ chef.prenom }} {{ chef.nom }}</strong></td>
+                <td><strong>{{ formatCurrency(chef.totalEfficacite) }}</strong></td>
+                <td><strong>{{ formatCurrency(chef.totalRegies) }}</strong></td>
+                <td><strong>{{ formatCurrency(chef.totalPrime) }}</strong></td>
                 <td></td>
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
+    </div>
+
+    <div v-if="chefsWithPrimes.length === 0" class="alert alert-info text-center">
+      Aucune donnée de prime disponible pour les filtres sélectionnés.
     </div>
 
     <!-- Modal Détail -->
@@ -182,7 +169,7 @@
             <div class="row">
               <div class="col-md-6">
                 <h6>Calcul Budget</h6>
-                <p><strong>Facturé:</strong> {{ formatCurrency(detailPrime.importoFatturato) }}</p>
+                <p><strong>Facturé TTC:</strong> {{ formatCurrency(detailPrime.importoFatturato) }}</p>
                 <p><strong>% Impresa:</strong> {{ detailPrime.percentualeImpresa }}%</p>
                 <p><strong>Budget Disponible:</strong> {{ formatCurrency(detailPrime.budgetDisponible) }}</p>
               </div>
@@ -197,19 +184,28 @@
               <div class="col-md-12">
                 <h6>Détail Heures Réelles</h6>
                 <ul>
-                  <li>Chef: {{ detailPrime.heuresChef }}h × {{ formatCurrency(45) }}/h = {{ formatCurrency(detailPrime.heuresChef * 45) }}</li>
-                  <li>Ouvriers: {{ detailPrime.heuresOuvriers }}h × {{ formatCurrency(41) }}/h = {{ formatCurrency(detailPrime.heuresOuvriers * 41) }}</li>
-                  <li>Intérimaires: {{ detailPrime.heuresInterim }}h × {{ formatCurrency(47.5) }}/h = {{ formatCurrency(detailPrime.heuresInterim * 47.5) }}</li>
+                  <li>Chef: {{ detailPrime.heuresChef }}h × 45 CHF/h = {{ formatCurrency(detailPrime.heuresChef * 45) }}</li>
+                  <li>Ouvriers: {{ detailPrime.heuresOuvriers }}h × 41 CHF/h = {{ formatCurrency(detailPrime.heuresOuvriers * 41) }}</li>
+                  <li>Intérimaires: {{ detailPrime.heuresInterim }}h × 47.5 CHF/h = {{ formatCurrency(detailPrime.heuresInterim * 47.5) }}</li>
                 </ul>
               </div>
             </div>
             <div class="row mt-3">
               <div class="col-md-12">
-                <div class="alert" :class="detailPrime.primeTotale > 0 ? 'alert-success' : 'alert-secondary'">
-                  <h6>Résultat Final</h6>
-                  <p><strong>Prime Efficacité:</strong> {{ formatCurrency(detailPrime.primeEfficacite) }}</p>
-                  <p><strong>Prime Régies:</strong> {{ formatCurrency(detailPrime.primeRegies) }}</p>
-                  <p><strong>Prime Totale:</strong> {{ formatCurrency(detailPrime.primeTotale) }}</p>
+                <div class="alert" :class="detailPrime.primeTotale > 0 ? 'alert-success' : 'alert-warning'">
+                  <h6>Résultat</h6>
+                  <p v-if="detailPrime.heuresGagnees > 0">
+                    ✅ <strong>{{ detailPrime.heuresGagnees }}h gagnées</strong> → Prime efficacité: {{ formatCurrency(detailPrime.primeEfficacite) }}
+                  </p>
+                  <p v-else>
+                    ❌ <strong>{{ Math.abs(detailPrime.heuresGagnees) }}h en excès</strong> → Pas de prime efficacité
+                    <br><small class="text-muted">Il faudrait réduire de {{ Math.abs(detailPrime.heuresGagnees) }}h pour atteindre le budget</small>
+                  </p>
+                  <p v-if="detailPrime.heuresRegies > 0">
+                    ✅ <strong>{{ detailPrime.heuresRegies }}h régies</strong> → Prime régies: {{ formatCurrency(detailPrime.primeRegies) }}
+                  </p>
+                  <hr>
+                  <p class="mb-0"><strong>Prime Totale: {{ formatCurrency(detailPrime.primeTotale) }}</strong></p>
                 </div>
               </div>
             </div>
@@ -228,8 +224,7 @@ import RetourButton from '@/components/RetourButton.vue';
 // Filtres
 const selectedChef = ref('');
 const selectedMonth = ref('');
-const selectedYear = ref(new Date().getFullYear());
-const selectedStatus = ref('');
+const selectedYear = ref('');
 
 // Données
 const chantiers = ref([]);
@@ -237,184 +232,185 @@ const factures = ref([]);
 const metrages = ref([]);
 const resocontiPercentuali = ref([]);
 const heuresPropres = ref([]);
-const heuresInterim = ref([]);
-const heuresOuvriers = ref([]);
+const heuresInterimData = ref([]);
+const heuresOuvriersData = ref([]);
 const chefdechantiers = ref([]);
 
 // Modal
 const showDetail = ref(false);
 const detailPrime = ref({});
 
-// Chargement données (même logique que ChefPremi)
+// Chargement données
 const loadData = async () => {
-  const [
-    { data: chantiersData },
-    { data: facturesData },
-    { data: metragesData },
-    { data: resocontiData },
-    { data: heuresProprData },
-    { data: heuresIntData },
-    { data: heuresOuvData },
-    { data: chefsData }
-  ] = await Promise.all([
-    supabase.from('chantiers').select('*'),
-    supabase.from('factures').select('*'),
-    supabase.from('metrages').select('*'),
-    supabase.from('resoconti_percentuali').select('*').catch(() => ({ data: [] })),
-    supabase.from('heures_chef_propres').select('*'),
-    supabase.from('heures_chef_interim').select('*'),
-    supabase.from('heures_ouvriers').select('*'),
-    supabase.from('chefdechantiers').select('*')
-  ]);
+  try {
+    const [ch, fa, me, hp, hi, ho, cdc] = await Promise.all([
+      supabase.from('chantiers').select('*'),
+      supabase.from('factures').select('*'),
+      supabase.from('metrages').select('*'),
+      supabase.from('heures_chef_propres').select('*'),
+      supabase.from('heures_chef_interim').select('*'),
+      supabase.from('heures_ouvriers').select('*'),
+      supabase.from('chefdechantiers').select('*')
+    ]);
 
-  chantiers.value = chantiersData || [];
-  factures.value = facturesData || [];
-  metrages.value = metragesData || [];
-  resocontiPercentuali.value = resocontiData || [];
-  heuresPropres.value = heuresProprData || [];
-  heuresInterim.value = heuresIntData || [];
-  heuresOuvriers.value = heuresOuvData || [];
-  chefdechantiers.value = chefsData || [];
+    chantiers.value = ch.data || [];
+    factures.value = fa.data || [];
+    metrages.value = me.data || [];
+    heuresPropres.value = hp.data || [];
+    heuresInterimData.value = hi.data || [];
+    heuresOuvriersData.value = ho.data || [];
+    chefdechantiers.value = cdc.data || [];
+
+    // Resoconti (table might not exist)
+    const { data: rp } = await supabase.from('resoconti_percentuali').select('*');
+    resocontiPercentuali.value = rp || [];
+  } catch (error) {
+    console.error('Erreur chargement données primes:', error);
+  }
 };
 
-// Calcolo premi (stessa logica di ChefPremi ma con info chef)
+// Calcul primes par chantier
 const premesCalculated = computed(() => {
-  const premesData = [];
-  
-  chantiers.value.forEach(chantier => {
+  return chantiers.value.map(chantier => {
     const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
-    if (facturesChantier.length === 0) return;
-    
-    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
+    if (facturesChantier.length === 0) return null;
+
+    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0), 0);
     const percentualeImpresa = chantier.percentuale_impresa || 30;
     const budgetOreDisponibile = importoTotaleFatturato * (1 - percentualeImpresa / 100);
-    
-    const heuresChefChantier = heuresPropres.value
+
+    // Heures par type
+    const heuresChef = heuresPropres.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || h.heures_propres || 0), 0);
-    
-    const heuresInterimChantier = heuresInterim.value
+      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+
+    const heuresInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || h.heures_interim || 0), 0);
-    
-    const heuresOuvriersChantier = heuresOuvriers.value
+      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+
+    const heuresOuvriers = heuresOuvriersData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
       .reduce((sum, h) => sum + (h.heures || 0), 0);
 
+    // Heures régies
     const heuresRegiesMetrages = metrages.value
       .filter(m => String(m.chantier_id) === String(chantier.id) && m.regies)
       .reduce((sum, m) => {
         const regies = typeof m.regies === 'string' ? JSON.parse(m.regies) : m.regies;
-        return sum + (regies || []).reduce((regieSum, r) => regieSum + (r.heures || 0), 0);
+        return sum + (regies || []).reduce((rs, r) => rs + (r.heures || 0), 0);
       }, 0);
-    
+
     const heuresRegiesResoconti = resocontiPercentuali.value
       .filter(r => String(r.chantier_id) === String(chantier.id) && r.regies && r.status === 'approved')
       .reduce((sum, r) => {
         const regies = typeof r.regies === 'string' ? JSON.parse(r.regies) : r.regies;
-        return sum + (regies || []).reduce((regieSum, regie) => regieSum + (regie.heures || 0), 0);
+        return sum + (regies || []).reduce((rs, rg) => rs + (rg.heures || 0), 0);
       }, 0);
-    
-    const heuresRegiesChantier = heuresRegiesMetrages + heuresRegiesResoconti;
-    
-    const heuresImployees = heuresChefChantier + heuresInterimChantier + heuresOuvriersChantier;
-    
-    const tarifChef = 45;
-    const tarifOuvrier = 41;
-    const tarifInterim = 47.5;
-    
-    const costoTotaleOre = (heuresChefChantier * tarifChef) + 
-                          (heuresOuvriersChantier * tarifOuvrier) + 
-                          (heuresInterimChantier * tarifInterim);
-    
-    const costoOrarioMedio = heuresImployees > 0 ? costoTotaleOre / heuresImployees : tarifChef;
-    const heuresPrevues = budgetOreDisponibile / costoOrarioMedio;
-    const heuresGagnees = heuresPrevues - heuresImployees;
+
+    const heuresRegies = heuresRegiesMetrages + heuresRegiesResoconti;
+    const heuresReelles = heuresChef + heuresInterim + heuresOuvriers;
+
+    // Coût horaire moyen pondéré
+    const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
+    const coutTotal = (heuresChef * tarifChef) + (heuresOuvriers * tarifOuvrier) + (heuresInterim * tarifInterim);
+    const costoOrarioMedio = heuresReelles > 0 ? coutTotal / heuresReelles : tarifChef;
+
+    // Heures prévues et gagnées
+    const heuresPrevues = costoOrarioMedio > 0 ? budgetOreDisponibile / costoOrarioMedio : 0;
+    const heuresGagnees = heuresPrevues - heuresReelles;
+
+    // Primes
     const primeEfficacite = heuresGagnees > 0 ? heuresGagnees * 26 : 0;
-    const primeRegies = heuresRegiesChantier * 5;
-    const prime = primeEfficacite + primeRegies;
-    
-    // Trova chef responsabile (prova diversi campi)
-    let chefResponsable = chefdechantiers.value.find(c => 
-      c.id === chantier.chef_id || 
-      c.id === chantier.chef_de_chantier_id ||
-      c.email === chantier.chef_email
-    );
-    
-    // Se non trovato, cerca nelle ore chi ha lavorato come chef
-    if (!chefResponsable) {
-      const chefDaOre = heuresPropres.value.find(h => String(h.chantier_id) === String(chantier.id));
-      if (chefDaOre) {
-        chefResponsable = chefdechantiers.value.find(c => 
-          c.id === chefDaOre.chef_id || 
-          c.email === chefDaOre.chef_id
-        );
-      }
-    }
-    
-    // Periodo fatturazione
-    const primaFactura = facturesChantier.sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
-    const dateFacturation = new Date(primaFactura.date_facture);
-    
-    premesData.push({
+    const primeRegies = heuresRegies * 5;
+    const primeTotale = primeEfficacite + primeRegies;
+
+    // Période (basée sur la première facture)
+    const primaFactura = [...facturesChantier].sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
+    const dateFacturation = primaFactura?.date_facture ? new Date(primaFactura.date_facture) : new Date();
+
+    return {
       chantierId: chantier.id,
       chantierNom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
       clientNom: chantier.client || 'N/A',
-      chefNom: chefResponsable?.nom || chefResponsable?.prenom + ' ' + chefResponsable?.nom || 'Chef inconnu',
-      chefId: chantier.chef_id,
+      capocantiere: chantier.capocantiere || '',
       moisFacturation: dateFacturation.getMonth() + 1,
       anneeFacturation: dateFacturation.getFullYear(),
-      budgetDisponible: budgetOreDisponibile,
+      budgetDisponible: Math.round(budgetOreDisponibile * 100) / 100,
       heuresPrevues: Math.round(heuresPrevues * 10) / 10,
-      heuresReelles: heuresImployees,
+      heuresReelles: Math.round(heuresReelles * 10) / 10,
       heuresGagnees: Math.round(heuresGagnees * 10) / 10,
-      heuresRegies: Math.round(heuresRegiesChantier * 10) / 10,
+      heuresRegies: Math.round(heuresRegies * 10) / 10,
       primeEfficacite: Math.round(primeEfficacite * 100) / 100,
       primeRegies: Math.round(primeRegies * 100) / 100,
-      primeTotale: Math.round(prime * 100) / 100,
-      // Détails pour modal
+      primeTotale: Math.round(primeTotale * 100) / 100,
+      // Détails modal
       importoFatturato: importoTotaleFatturato,
       percentualeImpresa,
-      costoOrarioMedio,
-      heuresChef: heuresChefChantier,
-      heuresOuvriers: heuresOuvriersChantier,
-      heuresInterim: heuresInterimChantier
-    });
+      costoOrarioMedio: Math.round(costoOrarioMedio * 100) / 100,
+      heuresChef: Math.round(heuresChef * 10) / 10,
+      heuresOuvriers: Math.round(heuresOuvriers * 10) / 10,
+      heuresInterim: Math.round(heuresInterim * 10) / 10
+    };
+  }).filter(Boolean);
+});
+
+// Filtrage
+const premesFiltered = computed(() => {
+  return premesCalculated.value.filter(p => {
+    if (selectedChef.value && p.capocantiere !== selectedChef.value) return false;
+    if (selectedMonth.value && p.moisFacturation !== selectedMonth.value) return false;
+    if (selectedYear.value && p.anneeFacturation !== selectedYear.value) return false;
+    return true;
   });
-  
-  return premesData.sort((a, b) => b.primeTotale - a.primeTotale);
 });
 
-// Filtres computed
+// Grouper par chef
+const chefsWithPrimes = computed(() => {
+  const map = new Map();
+
+  premesFiltered.value.forEach(prime => {
+    const email = prime.capocantiere;
+    if (!map.has(email)) {
+      const chef = chefdechantiers.value.find(c => c.email === email);
+      map.set(email, {
+        email,
+        nom: chef?.nom || email.split('@')[0],
+        prenom: chef?.prenom || '',
+        primes: [],
+        totalEfficacite: 0,
+        totalRegies: 0,
+        totalPrime: 0
+      });
+    }
+    const entry = map.get(email);
+    entry.primes.push(prime);
+    entry.totalEfficacite += prime.primeEfficacite;
+    entry.totalRegies += prime.primeRegies;
+    entry.totalPrime += prime.primeTotale;
+  });
+
+  return Array.from(map.values()).sort((a, b) => b.totalPrime - a.totalPrime);
+});
+
+// Filtres disponibles
 const availableChefs = computed(() => {
-  const chefs = new Set();
-  premesCalculated.value.forEach(p => chefs.add(p.chefNom));
-  return Array.from(chefs).sort();
+  const emails = new Set(premesCalculated.value.map(p => p.capocantiere).filter(Boolean));
+  return Array.from(emails).map(email => {
+    const chef = chefdechantiers.value.find(c => c.email === email);
+    return { email, nom: chef?.nom || email.split('@')[0], prenom: chef?.prenom || '' };
+  }).sort((a, b) => a.nom.localeCompare(b.nom));
 });
 
-const availableMonths = computed(() => [
+const availableMonths = [
   { value: 1, label: 'Janvier' }, { value: 2, label: 'Février' }, { value: 3, label: 'Mars' },
   { value: 4, label: 'Avril' }, { value: 5, label: 'Mai' }, { value: 6, label: 'Juin' },
   { value: 7, label: 'Juillet' }, { value: 8, label: 'Août' }, { value: 9, label: 'Septembre' },
   { value: 10, label: 'Octobre' }, { value: 11, label: 'Novembre' }, { value: 12, label: 'Décembre' }
-]);
+];
 
 const availableYears = computed(() => {
-  const years = new Set();
-  premesCalculated.value.forEach(p => years.add(p.anneeFacturation));
+  const years = new Set(premesCalculated.value.map(p => p.anneeFacturation));
   return Array.from(years).sort((a, b) => b - a);
-});
-
-const premesFiltered = computed(() => {
-  return premesCalculated.value.filter(prime => {
-    if (selectedChef.value && prime.chefNom !== selectedChef.value) return false;
-    if (selectedMonth.value && prime.moisFacturation !== selectedMonth.value) return false;
-    if (selectedYear.value && prime.anneeFacturation !== selectedYear.value) return false;
-    if (selectedStatus.value === 'positif' && prime.primeTotale <= 0) return false;
-    if (selectedStatus.value === 'negatif' && prime.primeTotale >= 0) return false;
-    if (selectedStatus.value === 'zero' && prime.primeTotale !== 0) return false;
-    return true;
-  });
 });
 
 // KPIs
@@ -425,59 +421,19 @@ const kpis = computed(() => ({
   nbChantiers: premesFiltered.value.length
 }));
 
-const totaux = computed(() => ({
-  primeEfficacite: premesFiltered.value.reduce((sum, p) => sum + p.primeEfficacite, 0),
-  primeRegies: premesFiltered.value.reduce((sum, p) => sum + p.primeRegies, 0),
-  primeTotale: premesFiltered.value.reduce((sum, p) => sum + p.primeTotale, 0)
-}));
-
 // Méthodes
-const updateFilters = () => {
-  // Trigger reactive update
-};
-
 const voirDetail = (prime) => {
   detailPrime.value = prime;
   showDetail.value = true;
 };
 
-const exportCSV = () => {
-  const headers = ['Chantier', 'Chef', 'Période', 'Budget', 'H.Prévues', 'H.Réelles', 'H.Gagnées', 'H.Régies', 'Prime Efficacité', 'Prime Régies', 'Prime Totale'];
-  const rows = premesFiltered.value.map(p => [
-    p.chantierNom, p.chefNom, `${getMonthName(p.moisFacturation)} ${p.anneeFacturation}`,
-    p.budgetDisponible, p.heuresPrevues, p.heuresReelles, p.heuresGagnees, p.heuresRegies,
-    p.primeEfficacite, p.primeRegies, p.primeTotale
-  ]);
-  
-  const csv = [headers, ...rows].map(row => row.join(';')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `primes_${selectedYear.value}.csv`;
-  a.click();
-};
-
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('fr-CH', {
-    style: 'currency',
-    currency: 'CHF'
-  }).format(amount);
+  return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF' }).format(amount || 0);
 };
 
-const getPrimeClass = (amount) => {
-  if (amount > 0) return 'text-success fw-bold';
-  if (amount < 0) return 'text-danger fw-bold';
-  return 'text-muted';
-};
-
-const getMonthName = (monthNum) => {
-  const months = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-                 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-  return months[monthNum] || '';
-};
-
-onMounted(() => {
-  loadData();
-});
+onMounted(() => { loadData(); });
 </script>
+
+<style scoped>
+.modal { z-index: 1050; }
+</style>

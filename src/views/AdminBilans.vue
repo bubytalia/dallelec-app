@@ -85,8 +85,18 @@
 
     <!-- Bilans par Chantier -->
     <div v-if="showBilanType === 'chantiers'" class="card mb-4">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h5>Bilans par Chantier</h5>
+        <div class="d-flex gap-2">
+          <select v-model="selectedYearChantiers" @change="calculateBilansChantiers" class="form-select" style="width:auto">
+            <option value="">Toutes les années</option>
+            <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+          </select>
+          <select v-model="selectedClientChantiers" @change="calculateBilansChantiers" class="form-select" style="width:auto">
+            <option value="">Tous les clients</option>
+            <option v-for="cl in availableClients" :key="cl" :value="cl">{{ cl }}</option>
+          </select>
+        </div>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -99,7 +109,7 @@
                 <th>Facturé HT</th>
                 <th>Coût Heures</th>
                 <th>Marge</th>
-                <th>% de réalisation</th>
+                <th>% Marge</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -114,8 +124,8 @@
                   {{ formatCurrency(bilan.marge) }}
                 </td>
                 <td>
-                  <span :class="getRealisationClass(bilan.pourcentageRealisation)">
-                    {{ bilan.pourcentageRealisation }}%
+                  <span :class="getMargeClass(bilan.margePourcentage)">
+                    {{ bilan.margePourcentage }}%
                   </span>
                 </td>
                 <td>
@@ -135,7 +145,7 @@
                 <td :class="totauxChantiers.marge >= 0 ? 'text-success' : 'text-danger'">
                   {{ formatCurrency(totauxChantiers.marge) }}
                 </td>
-                <td>{{ totauxChantiers.pourcentageRealisation }}%</td>
+                <td>{{ totauxChantiers.margePourcentage }}%</td>
                 <td></td>
               </tr>
             </tbody>
@@ -416,6 +426,8 @@ const showBilanType = ref('chantiers');
 const selectedYear = ref(new Date().getFullYear());
 const selectedTechnicien = ref('');
 const selectedYearClients = ref('');
+const selectedYearChantiers = ref('');
+const selectedClientChantiers = ref('');
 const showDetailChantier = ref(false);
 const detailChantier = ref({});
 const showBilancioDettagliato = ref(false);
@@ -477,6 +489,15 @@ const availableTechniciens = computed(() => {
     if (c.technicien) techs.add(c.technicien);
   });
   return Array.from(techs).sort();
+});
+
+// Clients disponibles
+const availableClients = computed(() => {
+  const cls = new Set();
+  chantiers.value.forEach(c => {
+    if (c.client) cls.add(c.client);
+  });
+  return Array.from(cls).sort();
 });
 
 // Chargement données
@@ -567,22 +588,37 @@ const calculateKPIs = () => {
 };
 
 const calculateBilansChantiers = () => {
-  bilansChantiers.value = chantiers.value.map(chantier => {
+  const yearFilter = selectedYearChantiers.value;
+  const clientFilter = selectedClientChantiers.value;
+
+  let filteredChantiers = chantiers.value;
+  if (clientFilter) {
+    filteredChantiers = filteredChantiers.filter(c => c.client === clientFilter);
+  }
+
+  bilansChantiers.value = filteredChantiers.map(chantier => {
     // Trouve le devis associé
     const chantierDevis = devis.value.find(d => d.id === chantier.devis_id);
     const devisTotal = chantierDevis?.total || 0;
 
     // Trouve les factures pour ce chantier
-    const facturesChantier = factures.value.filter(f => f.chantier_id === chantier.id);
+    let facturesChantier = factures.value.filter(f => f.chantier_id === chantier.id);
+    if (yearFilter) {
+      facturesChantier = facturesChantier.filter(f => {
+        const d = f.date_facture || f.dateFacture;
+        return d && new Date(d).getFullYear() === yearFilter;
+      });
+    }
     const factureTotal = facturesChantier.reduce((sum, f) => {
       const ttc = parseFloat(f.montant_ttc) || 0
       return sum + (ttc / 1.081)
     }, 0);
 
     // Calcola coûts heures usando tarif_utilise (non retroattivo)
-    const heuresChefFiltered = heuresChef.value.filter(h => String(h.chantier_id) === String(chantier.id));
-    const heuresOuvriersFiltered = heuresOuvriers.value.filter(h => String(h.chantier_id) === String(chantier.id));
-    const heuresInterimFiltered = heuresInterim.value.filter(h => String(h.chantier_id) === String(chantier.id));
+    const filterByYear = (h) => !yearFilter || (h.date && new Date(h.date).getFullYear() === yearFilter);
+    const heuresChefFiltered = heuresChef.value.filter(h => String(h.chantier_id) === String(chantier.id) && filterByYear(h));
+    const heuresOuvriersFiltered = heuresOuvriers.value.filter(h => String(h.chantier_id) === String(chantier.id) && filterByYear(h));
+    const heuresInterimFiltered = heuresInterim.value.filter(h => String(h.chantier_id) === String(chantier.id) && filterByYear(h));
 
     // Calcola costi usando tariffe salvate al momento della registrazione
     const coutsChef = heuresChefFiltered.reduce((sum, h) => {
@@ -603,9 +639,7 @@ const calculateBilansChantiers = () => {
     const coutsHeures = coutsChef + coutsOuvriers + coutsInterim;
 
     const marge = factureTotal - coutsHeures;
-    // Se non c'è devis, usa le fatture come base per il calcolo
-    const baseCalcul = devisTotal > 0 ? devisTotal : factureTotal;
-    const pourcentageRealisation = baseCalcul > 0 ? Math.round((factureTotal / baseCalcul) * 100) : (factureTotal > 0 ? 100 : 0);
+    const margePourcentage = factureTotal > 0 ? Math.round((marge / factureTotal) * 100) : 0;
 
     // Trova il cliente
     const client = clients.value.find(c => c.id === chantier.client_id);
@@ -619,18 +653,19 @@ const calculateBilansChantiers = () => {
       facture: factureTotal,
       coutsHeures,
       marge,
-      pourcentageRealisation
+      margePourcentage
     };
   });
 
   // Calcola totali
+  const totalFacture = bilansChantiers.value.reduce((sum, b) => sum + b.facture, 0);
+  const totalMarge = bilansChantiers.value.reduce((sum, b) => sum + b.marge, 0);
   totauxChantiers.value = {
     devis: bilansChantiers.value.reduce((sum, b) => sum + b.devisTotal, 0),
-    facture: bilansChantiers.value.reduce((sum, b) => sum + b.facture, 0),
+    facture: totalFacture,
     couts: bilansChantiers.value.reduce((sum, b) => sum + b.coutsHeures, 0),
-    marge: bilansChantiers.value.reduce((sum, b) => sum + b.marge, 0),
-    pourcentageRealisation: bilansChantiers.value.length > 0 ? 
-      Math.round(bilansChantiers.value.reduce((sum, b) => sum + b.pourcentageRealisation, 0) / bilansChantiers.value.length) : 0
+    marge: totalMarge,
+    margePourcentage: totalFacture > 0 ? Math.round((totalMarge / totalFacture) * 100) : 0
   };
 };
 
