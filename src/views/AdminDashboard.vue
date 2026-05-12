@@ -63,7 +63,12 @@
         <router-link to="/admin/report-mensuel" class="btn btn-outline-warning w-100">Rapports Heures</router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/admin/absences" class="btn btn-outline-warning w-100">🏖️ Gestion Absences & Congés</router-link>
+        <router-link to="/admin/absences" class="btn btn-outline-warning w-100 position-relative">
+          🏖️ Gestion Absences & Congés
+          <span v-if="pendingAbsences > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+            {{ pendingAbsences }}
+          </span>
+        </router-link>
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/premi" class="btn btn-outline-warning w-100">🎯 Gestion Primes</router-link>
@@ -107,17 +112,23 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { supabase } from '@/supabase';
 import { useRouter } from 'vue-router';
 
 export default {
   setup() {
 
-
-
 const router = useRouter();
+const pendingAbsences = ref(0);
 
+const loadPendingAbsences = async () => {
+  const { count } = await supabase
+    .from('absences')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  pendingAbsences.value = count || 0;
+};
 
 const handleLogout = async () => {
   try {
@@ -131,8 +142,13 @@ const handleLogout = async () => {
   }
 };
 
+onMounted(() => {
+  loadPendingAbsences();
+});
+
 return {
-  handleLogout
+  handleLogout,
+  pendingAbsences
 };
 
   }
