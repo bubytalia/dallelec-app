@@ -205,12 +205,10 @@
     <div v-if="showBilanType === 'clients'" class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h5>Bilans par Client</h5>
-        <div>
-          <select v-model="selectedTechnicien" @change="calculateBilansClients" class="form-select">
-            <option value="">Tous les techniciens</option>
-            <option v-for="tech in availableTechniciens" :key="tech" :value="tech">{{ tech }}</option>
-          </select>
-        </div>
+        <select v-model="selectedYearClients" @change="calculateBilansClients" class="form-select" style="width:auto">
+          <option value="">Toutes les années</option>
+          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+        </select>
       </div>
       <div class="card-body">
         <div class="table-responsive">
@@ -223,7 +221,7 @@
                 <th>Facturé HT</th>
                 <th>Coût Heures</th>
                 <th>Marge</th>
-                <th>% de réalisation</th>
+                <th>% Marge</th>
                 <th>Dernier Chantier</th>
               </tr>
             </thead>
@@ -238,8 +236,8 @@
                   {{ formatCurrency(bilan.marge) }}
                 </td>
                 <td>
-                  <span :class="getRealisationClass(bilan.pourcentageRealisation)">
-                    {{ bilan.pourcentageRealisation }}%
+                  <span :class="getMargeClass(bilan.margePourcentage)">
+                    {{ bilan.margePourcentage }}%
                   </span>
                 </td>
                 <td>{{ bilan.dernierChantier }}</td>
@@ -253,7 +251,7 @@
                 <td :class="totauxClients.marge >= 0 ? 'text-success' : 'text-danger'">
                   {{ formatCurrency(totauxClients.marge) }}
                 </td>
-                <td>{{ totauxClients.pourcentageRealisation }}%</td>
+                <td>{{ totauxClients.margePourcentage }}%</td>
                 <td></td>
               </tr>
             </tbody>
@@ -417,6 +415,7 @@ import RetourButton from '@/components/RetourButton.vue';
 const showBilanType = ref('chantiers');
 const selectedYear = ref(new Date().getFullYear());
 const selectedTechnicien = ref('');
+const selectedYearClients = ref('');
 const showDetailChantier = ref(false);
 const detailChantier = ref({});
 const showBilancioDettagliato = ref(false);
@@ -707,10 +706,35 @@ const loadBilansMensuels = () => {
 
 const calculateBilansClients = () => {
   const clientsMap = new Map();
+  const yearFilter = selectedYearClients.value;
 
   // Raggruppa chantiers per client (usa il campo 'client' del chantier)
   chantiers.value.forEach(chantier => {
     const clientNom = chantier.client || 'Client Inconnu';
+
+    // Factures per questo chantier filtrate per anno
+    let facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
+    if (yearFilter) {
+      facturesChantier = facturesChantier.filter(f => {
+        const d = f.date_facture || f.dateFacture;
+        return d && new Date(d).getFullYear() === yearFilter;
+      });
+    }
+
+    // Heures filtrate per anno
+    const filterByYear = (h) => {
+      if (!yearFilter) return true;
+      return h.date && new Date(h.date).getFullYear() === yearFilter;
+    };
+
+    const heuresChefFiltered = heuresChef.value.filter(h => String(h.chantier_id) === String(chantier.id) && filterByYear(h));
+    const heuresOuvriersFiltered = heuresOuvriers.value.filter(h => String(h.chantier_id) === String(chantier.id) && filterByYear(h));
+    const heuresInterimFiltered = heuresInterim.value.filter(h => String(h.chantier_id) === String(chantier.id) && filterByYear(h));
+
+    // Se anno selezionato e nessuna fattura/ore per questo chantier, skip
+    if (yearFilter && facturesChantier.length === 0 && heuresChefFiltered.length === 0 && heuresOuvriersFiltered.length === 0 && heuresInterimFiltered.length === 0) {
+      return;
+    }
     
     if (!clientsMap.has(clientNom)) {
       clientsMap.set(clientNom, {
@@ -733,20 +757,13 @@ const calculateBilansClients = () => {
       client.devis += chantierDevis.total || 0;
     }
 
-    // Factures per questo chantier (HT derivato da TTC)
-    const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
+    // Factures (HT derivato da TTC)
     client.facture += facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0) / 1.081, 0);
 
     // Coûts heures
-    const coutsChef = heuresChef.value
-      .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0) * (h.tarif_utilise || 45), 0);
-    const coutsOuvriers = heuresOuvriers.value
-      .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.heures || 0) * (h.tarif_utilise || 25), 0);
-    const coutsInterim = heuresInterim.value
-      .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0) * (h.tarif_utilise || 35), 0);
+    const coutsChef = heuresChefFiltered.reduce((sum, h) => sum + (h.total_heures || 0) * (h.tarif_utilise || 45), 0);
+    const coutsOuvriers = heuresOuvriersFiltered.reduce((sum, h) => sum + (h.heures || 0) * (h.tarif_utilise || 25), 0);
+    const coutsInterim = heuresInterimFiltered.reduce((sum, h) => sum + (h.total_heures || 0) * (h.tarif_utilise || 35), 0);
     client.coutsHeures += coutsChef + coutsOuvriers + coutsInterim;
 
     // Dernier chantier
@@ -757,20 +774,10 @@ const calculateBilansClients = () => {
     }
   });
 
-  // Filtra per technicien se selezionato
-  if (selectedTechnicien.value) {
-    const chantiersFiltered = chantiers.value
-      .filter(c => c.technicien === selectedTechnicien.value)
-      .map(c => c.client);
-    for (const [key] of clientsMap) {
-      if (!chantiersFiltered.includes(key)) clientsMap.delete(key);
-    }
-  }
-
   bilansClients.value = Array.from(clientsMap.values()).map(client => {
     const marge = client.facture - client.coutsHeures;
-    const pourcentageRealisation = client.devis > 0 ? Math.round((client.facture / client.devis) * 100) : 0;
-    return { ...client, marge, pourcentageRealisation };
+    const margePourcentage = client.facture > 0 ? Math.round((marge / client.facture) * 100) : 0;
+    return { ...client, marge, margePourcentage };
   }).sort((a, b) => b.facture - a.facture);
   
   totauxClients.value = {
@@ -779,8 +786,11 @@ const calculateBilansClients = () => {
     facture: bilansClients.value.reduce((sum, c) => sum + c.facture, 0),
     couts: bilansClients.value.reduce((sum, c) => sum + c.coutsHeures, 0),
     marge: bilansClients.value.reduce((sum, c) => sum + c.marge, 0),
-    pourcentageRealisation: bilansClients.value.length > 0 ? 
-      Math.round(bilansClients.value.reduce((sum, c) => sum + c.pourcentageRealisation, 0) / bilansClients.value.length) : 0
+    margePourcentage: (() => {
+      const totalFacture = bilansClients.value.reduce((sum, c) => sum + c.facture, 0);
+      const totalMarge = bilansClients.value.reduce((sum, c) => sum + c.marge, 0);
+      return totalFacture > 0 ? Math.round((totalMarge / totalFacture) * 100) : 0;
+    })()
   };
 };
 
@@ -942,6 +952,13 @@ const getRealisationClass = (pourcentage) => {
   if (pourcentage >= 50) return 'badge bg-warning';
   if (pourcentage > 0) return 'badge bg-danger';
   return 'badge bg-secondary';
+};
+
+const getMargeClass = (pourcentage) => {
+  if (pourcentage >= 30) return 'badge bg-success';
+  if (pourcentage >= 15) return 'badge bg-info';
+  if (pourcentage >= 0) return 'badge bg-warning';
+  return 'badge bg-danger';
 };
 
 onMounted(() => {
