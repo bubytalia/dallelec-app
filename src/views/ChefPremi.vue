@@ -26,7 +26,15 @@
 
     <!-- Résumé -->
     <div class="row mb-4">
-      <div class="col-md-6">
+      <div class="col-md-4">
+        <div class="card bg-success text-white">
+          <div class="card-body text-center">
+            <h5>Prime Totale</h5>
+            <h3>{{ formatCurrency(totalPrime) }}</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
         <div class="card bg-primary text-white">
           <div class="card-body text-center">
             <h5>Heures Gagnées</h5>
@@ -34,7 +42,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="card bg-warning text-white">
           <div class="card-body text-center">
             <h5>Heures Régies</h5>
@@ -47,13 +55,13 @@
     <!-- Détail par chantier -->
     <div v-for="chantier in chantiersFiltered" :key="chantier.chantierId" class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center"
-           :class="chantier.heuresGagnees > 0 ? 'bg-light' : ''">
+           :class="chantier.primeTotale > 0 ? 'bg-light' : ''">
         <div>
           <strong>{{ chantier.chantierNom }}</strong>
           <small class="text-muted ms-2">{{ chantier.clientNom }}</small>
         </div>
-        <span class="badge" :class="chantier.heuresGagnees > 0 ? 'bg-success' : 'bg-secondary'">
-          {{ chantier.heuresGagnees > 0 ? '+' : '' }}{{ chantier.heuresGagnees }}h
+        <span class="badge" :class="chantier.primeTotale > 0 ? 'bg-success' : 'bg-secondary'">
+          {{ formatCurrency(chantier.primeTotale) }}
         </span>
       </div>
       <div class="card-body">
@@ -90,11 +98,15 @@
                 💰 <strong>Payé en {{ getMonthLabel(chantier.moisPaiement) }}</strong>
               </p>
               <p v-if="chantier.primeEfficacite > 0" class="mb-1">
-                ✅ <strong>{{ chantier.heuresGagnees }}h gagnées</strong>
+                ✅ Prime efficacité: <strong>{{ formatCurrency(chantier.primeEfficacite) }}</strong>
+                <br><small>{{ chantier.heuresGagnees }}h gagnées</small>
               </p>
               <p v-if="chantier.primeRegies > 0" class="mb-1">
-                ✅ <strong>{{ chantier.heuresRegies }}h régies</strong>
+                ✅ Prime régies: <strong>{{ formatCurrency(chantier.primeRegies) }}</strong>
+                <br><small>{{ chantier.heuresRegies }}h régies</small>
               </p>
+              <hr class="my-2">
+              <p class="mb-0 fw-bold">Total: {{ formatCurrency(chantier.primeTotale) }}</p>
             </div>
             <div v-else class="alert alert-warning mb-0">
               <p class="mb-1">❌ <strong>Pas de prime</strong></p>
