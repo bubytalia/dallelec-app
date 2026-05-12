@@ -330,6 +330,7 @@ const getRegiesData = (chantierId) => {
   let heures = 0;
   let montant = 0;
 
+  // Régies depuis métrages
   metrages.value
     .filter(m => String(m.chantier_id) === String(chantierId) && m.regies)
     .forEach(m => {
@@ -340,6 +341,7 @@ const getRegiesData = (chantierId) => {
       });
     });
 
+  // Régies depuis resoconti percentuali
   resocontiPercentuali.value
     .filter(r => String(r.chantier_id) === String(chantierId) && r.regies && r.status === 'approved')
     .forEach(r => {
@@ -347,6 +349,17 @@ const getRegiesData = (chantierId) => {
       (regies || []).forEach(rg => {
         heures += rg.heures || 0;
         montant += (rg.heures || 0) * (rg.prixHeure || 0);
+      });
+    });
+
+  // Régies depuis factures manuelles (regies_manuelles)
+  factures.value
+    .filter(f => String(f.chantier_id) === String(chantierId) && f.regies_manuelles)
+    .forEach(f => {
+      const regies = typeof f.regies_manuelles === 'string' ? JSON.parse(f.regies_manuelles) : f.regies_manuelles;
+      (regies || []).forEach(r => {
+        heures += r.heures || 0;
+        montant += (r.heures || 0) * (r.prixHeure || 0);
       });
     });
 

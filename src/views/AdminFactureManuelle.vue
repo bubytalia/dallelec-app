@@ -77,6 +77,47 @@
           <button @click="ajouterLigne" class="btn btn-secondary">➕ Ajouter ligne</button>
         </div>
 
+        <!-- Heures de régies -->
+        <div v-if="facture.chantierId" class="card mb-4 border-warning">
+          <div class="card-header bg-warning bg-opacity-25">
+            <h6 class="mb-0">⏱ Heures de régies (pour calcul primes)</h6>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              Indiquer ici les heures de régies incluses dans cette facture. Elles seront prises en compte dans le calcul des primes du chef de chantier.
+            </p>
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th style="width:120px">Heures</th>
+                  <th style="width:120px">Prix/h (CHF)</th>
+                  <th style="width:100px">Total</th>
+                  <th style="width:60px"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(regie, idx) in facture.regies" :key="idx">
+                  <td><input v-model="regie.description" type="text" class="form-control form-control-sm" placeholder="Description régie"></td>
+                  <td><input v-model.number="regie.heures" type="number" step="0.5" class="form-control form-control-sm"></td>
+                  <td><input v-model.number="regie.prixHeure" type="number" step="0.01" class="form-control form-control-sm"></td>
+                  <td><strong>{{ ((regie.heures || 0) * (regie.prixHeure || 0)).toFixed(2) }}</strong></td>
+                  <td><button @click="facture.regies.splice(idx, 1)" class="btn btn-danger btn-sm">🗑</button></td>
+                </tr>
+              </tbody>
+            </table>
+            <button @click="facture.regies.push({ description: '', heures: 0, prixHeure: selectedChantierPrixRegie })"
+                    class="btn btn-outline-warning btn-sm">
+              ➕ Ajouter régie
+            </button>
+            <div v-if="facture.regies.length > 0" class="mt-2">
+              <small class="text-muted">
+                Total régies: <strong>{{ totalRegiesHeures }}h</strong> = <strong>{{ totalRegiesMontant.toFixed(2) }} CHF</strong>
+              </small>
+            </div>
+          </div>
+        </div>
+
         <!-- Totaux -->
         <div class="row">
           <div class="col-md-8"></div>
@@ -153,7 +194,22 @@ const facture = ref({
   notes: '',
   lignes: [
     { description: '', unite: '', quantite: 1, prixUnitaire: 0 }
-  ]
+  ],
+  regies: []
+});
+
+const selectedChantierPrixRegie = computed(() => {
+  if (!facture.value.chantierId) return 75;
+  const ch = chantiers.value.find(c => c.id === facture.value.chantierId || String(c.id) === String(facture.value.chantierId));
+  return ch?.prix_regie || 75;
+});
+
+const totalRegiesHeures = computed(() => {
+  return facture.value.regies.reduce((sum, r) => sum + (r.heures || 0), 0);
+});
+
+const totalRegiesMontant = computed(() => {
+  return facture.value.regies.reduce((sum, r) => sum + (r.heures || 0) * (r.prixHeure || 0), 0);
 });
 
 const totalHT = computed(() => {
@@ -303,7 +359,8 @@ const loadFactureForEdit = async (factureId) => {
       conditionsPaiement: data.notes?.includes('Conditions:') ? 
         data.notes.split('Conditions: ')[1]?.split('\n')[0] || '30 jours net' : '30 jours net',
       notes: data.notes?.split('Conditions:')[0]?.trim() || '',
-      lignes: data.lignes || [{ description: '', unite: '', quantite: 1, prixUnitaire: 0 }]
+      lignes: data.lignes || [{ description: '', unite: '', quantite: 1, prixUnitaire: 0 }],
+      regies: data.regies_manuelles || []
     };
     
     isEditing.value = true;
@@ -337,7 +394,8 @@ const sauvegarderFacture = async () => {
           lignes: lignesFiltered,
           montant_ht: totalHT.value,
           montant_ttc: totalHT.value * 1.081,
-          notes: notesComplete
+          notes: notesComplete,
+          regies_manuelles: facture.value.regies.length > 0 ? facture.value.regies : null
         })
         .eq('id', editingId.value);
       
@@ -363,6 +421,7 @@ const sauvegarderFacture = async () => {
           statut: 'emise',
           notes: notesComplete,
           date_echeance: calculateDateEcheance(facture.value.dateFacture, facture.value.conditionsPaiement),
+          regies_manuelles: facture.value.regies.length > 0 ? facture.value.regies : null,
           created_at: new Date().toISOString()
         }]);
       
@@ -380,17 +439,18 @@ const sauvegarderFacture = async () => {
 };
 
 const resetFacture = () => {
-  facture.value = {
-    clientId: '',
-    clientNom: '',
-    dateFacture: new Date().toISOString().split('T')[0],
-    chantierId: '',
-    conditionsPaiement: '30 jours net',
-    notes: '',
-    lignes: [
-      { description: '', unite: '', quantite: 1, prixUnitaire: 0 }
-    ]
-  };
+    facture.value = {
+      clientId: '',
+      clientNom: '',
+      dateFacture: new Date().toISOString().split('T')[0],
+      chantierId: '',
+      conditionsPaiement: '30 jours net',
+      notes: '',
+      lignes: [
+        { description: '', unite: '', quantite: 1, prixUnitaire: 0 }
+      ],
+      regies: []
+    };
 };
 
 onMounted(async () => {
