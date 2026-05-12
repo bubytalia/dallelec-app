@@ -213,9 +213,10 @@ const totalRegiesMontant = computed(() => {
 });
 
 const totalHT = computed(() => {
-  return facture.value.lignes.reduce((sum, ligne) => {
+  const totalLignes = facture.value.lignes.reduce((sum, ligne) => {
     return sum + (ligne.quantite * ligne.prixUnitaire);
   }, 0);
+  return totalLignes + totalRegiesMontant.value;
 });
 
 const factureValide = computed(() => {
