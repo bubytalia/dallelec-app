@@ -26,15 +26,7 @@
 
     <!-- Résumé -->
     <div class="row mb-4">
-      <div class="col-md-4">
-        <div class="card bg-success text-white">
-          <div class="card-body text-center">
-            <h5>Prime Totale</h5>
-            <h3>{{ formatCurrency(totalPrime) }}</h3>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
+      <div class="col-md-6">
         <div class="card bg-primary text-white">
           <div class="card-body text-center">
             <h5>Heures Gagnées</h5>
@@ -42,7 +34,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-6">
         <div class="card bg-warning text-white">
           <div class="card-body text-center">
             <h5>Heures Régies</h5>
@@ -55,13 +47,13 @@
     <!-- Détail par chantier -->
     <div v-for="chantier in chantiersFiltered" :key="chantier.chantierId" class="card mb-3">
       <div class="card-header d-flex justify-content-between align-items-center"
-           :class="chantier.primeTotale > 0 ? 'bg-light' : ''">
+           :class="chantier.heuresGagnees > 0 ? 'bg-light' : ''">
         <div>
           <strong>{{ chantier.chantierNom }}</strong>
           <small class="text-muted ms-2">{{ chantier.clientNom }}</small>
         </div>
-        <span class="badge" :class="chantier.primeTotale > 0 ? 'bg-success' : 'bg-secondary'">
-          {{ formatCurrency(chantier.primeTotale) }}
+        <span class="badge" :class="chantier.heuresGagnees > 0 ? 'bg-success' : 'bg-secondary'">
+          {{ chantier.heuresGagnees > 0 ? '+' : '' }}{{ chantier.heuresGagnees }}h
         </span>
       </div>
       <div class="card-body">
@@ -70,11 +62,7 @@
           <div class="col-md-6">
             <table class="table table-sm mb-0">
               <tr>
-                <td>Budget disponible (après % impresa)</td>
-                <td class="text-end"><strong>{{ formatCurrency(chantier.budgetDisponible) }}</strong></td>
-              </tr>
-              <tr>
-                <td>Heures prévues (budget / coût moyen)</td>
+                <td>Heures prévues</td>
                 <td class="text-end">{{ chantier.heuresPrevues }}h</td>
               </tr>
               <tr>
@@ -99,21 +87,17 @@
           <div class="col-md-6">
             <div v-if="chantier.primeTotale > 0" class="alert alert-success mb-0">
               <p v-if="chantier.payee" class="mb-1">
-                💰 <strong>Payé en {{ getMonthLabel(chantier.moisPaiement) }}</strong> (brut en fiche de paie)
+                💰 <strong>Payé en {{ getMonthLabel(chantier.moisPaiement) }}</strong>
               </p>
               <p v-if="chantier.primeEfficacite > 0" class="mb-1">
-                ✅ Prime efficacité: <strong>{{ formatCurrency(chantier.primeEfficacite) }}</strong>
-                <br><small>{{ chantier.heuresGagnees }}h gagnées × 26 CHF</small>
+                ✅ <strong>{{ chantier.heuresGagnees }}h gagnées</strong>
               </p>
               <p v-if="chantier.primeRegies > 0" class="mb-1">
-                ✅ Prime régies: <strong>{{ formatCurrency(chantier.primeRegies) }}</strong>
-                <br><small>{{ chantier.heuresRegies }}h × 5 CHF</small>
+                ✅ <strong>{{ chantier.heuresRegies }}h régies</strong>
               </p>
-              <hr class="my-2">
-              <p class="mb-0 fw-bold">Total: {{ formatCurrency(chantier.primeTotale) }}</p>
             </div>
             <div v-else class="alert alert-warning mb-0">
-              <p class="mb-1">❌ <strong>Pas de prime efficacité</strong></p>
+              <p class="mb-1">❌ <strong>Pas de prime</strong></p>
               <p class="mb-1 text-muted">
                 <small>
                   Heures employées ({{ chantier.heuresReelles }}h) supérieures aux heures prévues ({{ chantier.heuresPrevues }}h).
@@ -121,9 +105,8 @@
                 </small>
               </p>
               <p v-if="chantier.heuresRegies > 0" class="mb-0 text-muted">
-                <small>⚠️ {{ chantier.heuresRegies }}h régies non éligibles (chantier pas en attivo)</small>
+                <small>⚠️ {{ chantier.heuresRegies }}h régies non éligibles</small>
               </p>
-              <p v-else class="mb-0 text-muted"><small>Aucune heure régie enregistrée</small></p>
             </div>
           </div>
         </div>
