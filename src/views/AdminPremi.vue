@@ -403,10 +403,10 @@ const premesCalculated = computed(() => {
     const heuresTotales = heuresChef + heuresInterim + heuresOuvriers;
     const heuresReelles = heuresTotales - heuresRegies;
 
-    // Coût horaire moyen pondéré (sur heures hors régies)
+    // Coût horaire moyen pondéré (sur heures HORS régies)
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     const coutTotal = (heuresChef * tarifChef) + (heuresOuvriers * tarifOuvrier) + (heuresInterim * tarifInterim);
-    const costoOrarioMedio = heuresTotales > 0 ? coutTotal / heuresTotales : tarifChef;
+    const costoOrarioMedio = heuresReelles > 0 ? coutTotal / heuresTotales : tarifChef;
 
     // Heures prévues et gagnées
     const heuresPrevues = costoOrarioMedio > 0 ? budgetOreDisponibile / costoOrarioMedio : 0;
