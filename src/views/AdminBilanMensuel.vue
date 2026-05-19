@@ -322,15 +322,21 @@ const generatePDFIndividuel = async () => {
 
     // Chercher absence
     const abs = (absences || []).find(a => a.start_date <= dateStr && a.end_date >= dateStr);
+    const empData = employes.value.find(e => e.email === email);
+    const empPlanning = empData?.planning || { 1: 8.75, 2: 8.75, 3: 8.75, 4: 8.75, 5: 5 };
+    const heuresPlanningJour = Number(empPlanning[dow] || 0);
 
     let statut = '', rowClass = '', heures = '';
     if (isWeekend) {
       statut = '-'; rowClass = 'weekend'; heures = '-';
-    } else if (abs) {
+    } else if (heuresPlanningJour === 0 && !abs && totalH === 0) {
+      // Jour non travaillé selon planning (ex: mercredi/vendredi pour temps partiel)
+      statut = '-'; rowClass = 'weekend'; heures = '-';
+    } else if (abs && heuresPlanningJour > 0) {
       const types = { vacances:'Vacances', maladie:'Maladie', jour_ferie:'Jour férié', vacances_sans_solde:'Vac. sans solde', accident:'Accident', cours:'Cours' };
       statut = types[abs.type] || abs.type;
       rowClass = 'absence';
-      heures = abs.heures ? abs.heures.toFixed(2) : ((dow >= 1 && dow <= 4) ? '8.75' : '5.00');
+      heures = heuresPlanningJour.toFixed(2);
     } else if (totalH > 0) {
       statut = 'Travail';
       heures = totalH.toFixed(2);
