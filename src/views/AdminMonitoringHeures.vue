@@ -307,8 +307,20 @@ const saveEdit = async () => {
       for (const rec of editModal.value.existingRecords) {
         await supabase.from(rec.table).delete().eq('id', rec.id);
       }
-      // Supprimer absences du jour
+      // Supprimer absences du jour (single + multi-day)
       await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
+      const { data: multiAbs } = await supabase.from('absences').select('*').eq('user_id', employeEmail).lte('start_date', date).gte('end_date', date);
+      for (const abs of (multiAbs || [])) {
+        await supabase.from('absences').delete().eq('id', abs.id);
+        if (abs.start_date < date) {
+          const prev = new Date(date); prev.setDate(prev.getDate() - 1);
+          await supabase.from('absences').insert({ user_id: employeEmail, start_date: abs.start_date, end_date: prev.toISOString().split('T')[0], type: abs.type, status: 'approved', heures: abs.heures });
+        }
+        if (abs.end_date > date) {
+          const next = new Date(date); next.setDate(next.getDate() + 1);
+          await supabase.from('absences').insert({ user_id: employeEmail, start_date: next.toISOString().split('T')[0], end_date: abs.end_date, type: abs.type, status: 'approved', heures: abs.heures });
+        }
+      }
       
     } else if (action === 'heures') {
       if (!heures) { alert('Sélectionner les heures'); editModal.value.saving = false; return; }
@@ -316,8 +328,20 @@ const saveEdit = async () => {
       for (const rec of editModal.value.existingRecords) {
         await supabase.from(rec.table).delete().eq('id', rec.id);
       }
-      // Supprimer absence éventuelle
+      // Supprimer absence éventuelle (single + multi-day)
       await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
+      const { data: multiAbsH } = await supabase.from('absences').select('*').eq('user_id', employeEmail).lte('start_date', date).gte('end_date', date);
+      for (const abs of (multiAbsH || [])) {
+        await supabase.from('absences').delete().eq('id', abs.id);
+        if (abs.start_date < date) {
+          const prev = new Date(date); prev.setDate(prev.getDate() - 1);
+          await supabase.from('absences').insert({ user_id: employeEmail, start_date: abs.start_date, end_date: prev.toISOString().split('T')[0], type: abs.type, status: 'approved', heures: abs.heures });
+        }
+        if (abs.end_date > date) {
+          const next = new Date(date); next.setDate(next.getDate() + 1);
+          await supabase.from('absences').insert({ user_id: employeEmail, start_date: next.toISOString().split('T')[0], end_date: abs.end_date, type: abs.type, status: 'approved', heures: abs.heures });
+        }
+      }
       // Insérer nouvelles heures
       if (employeType === 'chef') {
         await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures });
@@ -331,8 +355,28 @@ const saveEdit = async () => {
       for (const rec of editModal.value.existingRecords) {
         await supabase.from(rec.table).delete().eq('id', rec.id);
       }
-      // Supprimer ancienne absence du jour
+      // Supprimer ancienne absence du jour (single day ou multi-day)
       await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
+      // Supprimer aussi si le jour fait partie d'une absence multi-jours
+      const { data: multiDayAbs } = await supabase.from('absences').select('*').eq('user_id', employeEmail).lte('start_date', date).gte('end_date', date);
+      for (const abs of (multiDayAbs || [])) {
+        await supabase.from('absences').delete().eq('id', abs.id);
+        // Re-creer les jours avant et apres si necessaire
+        if (abs.start_date < date) {
+          const newEnd = new Date(date); newEnd.setDate(newEnd.getDate() - 1);
+          const newEndStr = newEnd.toISOString().split('T')[0];
+          if (newEndStr >= abs.start_date) {
+            await supabase.from('absences').insert({ user_id: employeEmail, start_date: abs.start_date, end_date: newEndStr, type: abs.type, status: 'approved', heures: abs.heures });
+          }
+        }
+        if (abs.end_date > date) {
+          const newStart = new Date(date); newStart.setDate(newStart.getDate() + 1);
+          const newStartStr = newStart.toISOString().split('T')[0];
+          if (newStartStr <= abs.end_date) {
+            await supabase.from('absences').insert({ user_id: employeEmail, start_date: newStartStr, end_date: abs.end_date, type: abs.type, status: 'approved', heures: abs.heures });
+          }
+        }
+      }
       // Insérer absence avec heures
       await supabase.from('absences').insert({ user_id: employeEmail, start_date: date, end_date: date, type: action, status: 'approved', heures: editModal.value.heuresAbsence || 8.75 });
     }
