@@ -411,7 +411,8 @@ const loadMonitoringData = async () => {
   try {
     const [year, month] = selectedMonth.value.split('-');
     const startDate = `${year}-${month}-01`;
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
     
     // Carica dipendenti
     const { data: collaborateurs } = await supabase.from('collaborateurs').select('*');
