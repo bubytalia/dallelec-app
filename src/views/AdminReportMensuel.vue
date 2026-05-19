@@ -203,23 +203,23 @@ const exportToPDF = () => {
 
   let html = `<html><head><title>Report Commercialiste - ${monthLabel}</title>
   <style>
-    body{font-family:Arial,sans-serif;padding:8px 12px;margin:0;font-size:8px}
-    .page{page-break-after:always;padding:5px 0}
+    body{font-family:Arial,sans-serif;padding:10px 15px;margin:0;font-size:9px}
+    .page{page-break-after:always;padding:8px 0}
     .page:last-child{page-break-after:avoid}
-    .header{text-align:center;margin-bottom:6px;border-bottom:1.5px solid #333;padding-bottom:5px}
-    .header h1{font-size:12px;margin:0}
-    .header p{margin:1px 0;font-size:9px;color:#555}
-    .emp-title{font-size:10px;font-weight:bold;margin:6px 0 4px;padding:3px 5px;background:#f0f0f0;border-left:3px solid #333}
-    .two-cols{display:flex;gap:10px;margin-top:4px}
-    .col-box{flex:1;border:1.5px solid #333;padding:6px;border-radius:3px}
-    .col-box h3{font-size:9px;margin:0 0 4px;border-bottom:1px solid #ccc;padding-bottom:2px}
+    .header{text-align:center;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:6px}
+    .header h1{font-size:13px;margin:0}
+    .header p{margin:2px 0;font-size:9px;color:#555}
+    .emp-title{font-size:11px;font-weight:bold;margin:12px 0 6px;padding:4px 6px;background:#f0f0f0;border-left:4px solid #333}
+    .two-cols{display:flex;gap:12px;margin-top:5px}
+    .col-box{flex:1;border:2px solid #333;padding:8px;border-radius:4px}
+    .col-box h3{font-size:10px;margin:0 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px}
     .col-box table{width:100%;border-collapse:collapse}
-    .col-box td{padding:1.5px 0;font-size:8px}
+    .col-box td{padding:2.5px 0;font-size:9px}
     .col-box td:last-child{text-align:right;font-weight:bold}
-    .result{font-size:10px;font-weight:bold;margin-top:4px;padding-top:4px;border-top:1.5px solid #333}
+    .result{font-size:11px;font-weight:bold;margin-top:5px;padding-top:5px;border-top:2px solid #333}
     .pos{color:green}.neg{color:red}
-    .footer{text-align:center;font-size:7px;color:#999;margin-top:6px;border-top:1px solid #ddd;padding-top:3px}
-    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:6mm}.page{page-break-after:always}}
+    .footer{text-align:center;font-size:7px;color:#999;margin-top:8px;border-top:1px solid #ddd;padding-top:4px}
+    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
   </style></head><body>`;
 
   // 3 employés par page
