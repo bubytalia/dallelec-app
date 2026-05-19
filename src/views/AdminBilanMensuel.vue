@@ -174,9 +174,9 @@ const calculateSingleMonth = async (mois) => {
         const dateKey = d.toISOString().split('T')[0];
         if (dateKey > today) continue; // ignorer dates futures
         if (joursDejaComptes.has(dateKey)) continue; // anti-doublon
+        const hJour = Number(emp.planning[dow] || 0);
+        if (hJour === 0) continue; // jour non travaillé selon planning - TOUJOURS ignorer
         joursDejaComptes.add(dateKey);
-        const hJour = abs.heures || Number(emp.planning[dow] || 0);
-        if (hJour === 0) continue; // jour non travaillé selon planning
         if (abs.type === 'vacances_sans_solde') { absNonPayees += hJour; }
         else if (abs.type === 'jour_ferie') { joursFeries += hJour; absPayees += hJour; }
         else { absPayees += hJour; if (abs.type === 'vacances') vacPrises += hJour; }
@@ -279,6 +279,11 @@ const generatePDFIndividuel = async () => {
 
   const monthLabel = formatMonth(selectedMonth.value);
   const jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const empData = employes.value.find(e => e.email === email);
+  const empPlanning = empData?.planning || { 1: 8.75, 2: 8.75, 3: 8.75, 4: 8.75, 5: 5 };
+
+  // Totaux calculés depuis la tabella
+  let calcHeuresTravaillees = 0, calcAbsPayees = 0, calcAbsNonPayees = 0, calcJoursFeries = 0, calcVacPrises = 0, calcHeuresPrevues = 0;
 
   let html = `<html><head><title>Fiche ${nom} - ${monthLabel}</title>
   <style>
@@ -312,6 +317,9 @@ const generatePDFIndividuel = async () => {
     const dateFR = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     const isWeekend = dow === 0 || dow === 6;
 
+    const heuresPlanningJour = Number(empPlanning[dow] || 0);
+    if (!isWeekend && heuresPlanningJour > 0) calcHeuresPrevues += heuresPlanningJour;
+
     // Chercher heures
     const hChef = (heuresChef || []).filter(h => h.date === dateStr);
     const hInterim = (heuresInterim || []).filter(h => h.date === dateStr);
@@ -322,24 +330,24 @@ const generatePDFIndividuel = async () => {
 
     // Chercher absence
     const abs = (absences || []).find(a => a.start_date <= dateStr && a.end_date >= dateStr);
-    const empData = employes.value.find(e => e.email === email);
-    const empPlanning = empData?.planning || { 1: 8.75, 2: 8.75, 3: 8.75, 4: 8.75, 5: 5 };
-    const heuresPlanningJour = Number(empPlanning[dow] || 0);
 
     let statut = '', rowClass = '', heures = '';
     if (isWeekend) {
       statut = '-'; rowClass = 'weekend'; heures = '-';
-    } else if (heuresPlanningJour === 0 && !abs && totalH === 0) {
-      // Jour non travaillé selon planning (ex: mercredi/vendredi pour temps partiel)
+    } else if (heuresPlanningJour === 0 && totalH === 0) {
       statut = '-'; rowClass = 'weekend'; heures = '-';
-    } else if (abs && heuresPlanningJour > 0) {
+    } else if (abs && heuresPlanningJour > 0 && totalH === 0) {
       const types = { vacances:'Vacances', maladie:'Maladie', jour_ferie:'Jour férié', vacances_sans_solde:'Vac. sans solde', accident:'Accident', cours:'Cours' };
       statut = types[abs.type] || abs.type;
       rowClass = 'absence';
       heures = heuresPlanningJour.toFixed(2);
+      if (abs.type === 'vacances_sans_solde') { calcAbsNonPayees += heuresPlanningJour; }
+      else if (abs.type === 'jour_ferie') { calcJoursFeries += heuresPlanningJour; calcAbsPayees += heuresPlanningJour; }
+      else { calcAbsPayees += heuresPlanningJour; if (abs.type === 'vacances') calcVacPrises += heuresPlanningJour; }
     } else if (totalH > 0) {
       statut = 'Travail';
       heures = totalH.toFixed(2);
+      calcHeuresTravaillees += totalH;
     } else {
       statut = '-'; heures = '-';
     }
@@ -347,25 +355,30 @@ const generatePDFIndividuel = async () => {
     html += `<tr class="${rowClass}"><td>${jours[dow]}</td><td>${dateFR}</td><td>${statut}</td><td>${isWeekend ? '-' : chantier || '-'}</td><td style="text-align:right">${heures}</td></tr>`;
   }
 
+  // Totaux calculés depuis la tabella
+  const calcDelta = (calcHeuresTravaillees + calcAbsPayees) - (calcHeuresPrevues - calcAbsNonPayees);
+  const calcSoldeHeures = bilan.solde_precedent + calcDelta;
+  const calcVacNouveauSolde = (bilan.vac_solde_prec || 0) + (bilan.vac_acquises || 0) - calcVacPrises;
+
   html += `</tbody></table>
   <div class="recap">
     <div class="recap-box">
       <h4>📊 Bilan Heures</h4>
-      <p>Heures prévues: <strong>${bilan.heures_prevues.toFixed(2)}h</strong></p>
-      <p>Heures travaillées: <strong>${bilan.heures_travaillees.toFixed(2)}h</strong></p>
-      <p>Jours fériés payés: <strong>${(bilan.heures_jours_feries || 0).toFixed(2)}h</strong></p>
-      <p>Autres absences payées: <strong>${((bilan.heures_absences_payees || 0) - (bilan.heures_jours_feries || 0)).toFixed(2)}h</strong></p>
-      <p>Absences non payées: <strong>${bilan.heures_absences_non_payees.toFixed(2)}h</strong></p>
+      <p>Heures prévues: <strong>${calcHeuresPrevues.toFixed(2)}h</strong></p>
+      <p>Heures travaillées: <strong>${calcHeuresTravaillees.toFixed(2)}h</strong></p>
+      <p>Jours fériés payés: <strong>${calcJoursFeries.toFixed(2)}h</strong></p>
+      <p>Autres absences payées: <strong>${(calcAbsPayees - calcJoursFeries).toFixed(2)}h</strong></p>
+      <p>Absences non payées: <strong>${calcAbsNonPayees.toFixed(2)}h</strong></p>
       <p>Solde précédent: ${bilan.solde_precedent.toFixed(2)}h</p>
-      <p>Delta mois: <span class="${bilan.delta_mois >= 0 ? 'pos' : 'neg'}">${bilan.delta_mois >= 0?'+':''}${bilan.delta_mois.toFixed(2)}h</span></p>
-      <div class="result ${bilan.solde_final >= 0 ? 'pos' : 'neg'}">Solde heures: ${bilan.solde_final.toFixed(2)}h</div>
+      <p>Delta mois: <span class="${calcDelta >= 0 ? 'pos' : 'neg'}">${calcDelta >= 0?'+':''}${calcDelta.toFixed(2)}h</span></p>
+      <div class="result ${calcSoldeHeures >= 0 ? 'pos' : 'neg'}">Solde heures: ${calcSoldeHeures.toFixed(2)}h</div>
     </div>
     <div class="recap-box">
       <h4>🏖️ Bilan Vacances</h4>
       <p>Solde précédent: <strong>${(bilan.vac_solde_prec||0).toFixed(2)}h</strong></p>
       <p>Acquises ce mois: <span class="pos">+${(bilan.vac_acquises||0).toFixed(2)}h</span></p>
-      <p>Prises ce mois: <span class="neg">-${(bilan.vac_prises||0).toFixed(2)}h</span></p>
-      <div class="result">Nouveau solde: ${(bilan.vac_nouveau_solde||0).toFixed(2)}h</div>
+      <p>Prises ce mois: <span class="neg">-${calcVacPrises.toFixed(2)}h</span></p>
+      <div class="result">Nouveau solde: ${calcVacNouveauSolde.toFixed(2)}h</div>
     </div>
   </div>
   <div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} - DALLELEC Sàrl - À joindre au bulletin de salaire</div>
