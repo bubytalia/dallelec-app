@@ -2,163 +2,57 @@
   <div class="container py-5">
     <RetourButton to="/admin" />
     
-    <h2 class="text-center mb-4">Report Mensuel Aziendale - Commercialiste</h2>
+    <h2 class="text-center mb-4">Report Mensuel - Commercialiste</h2>
     
     <!-- Selezione mese -->
     <div class="row mb-4">
       <div class="col-md-6 mx-auto">
         <div class="card">
-          <div class="card-header">
-            <h5>Sélection du mois</h5>
-          </div>
+          <div class="card-header"><h5>Sélection du mois</h5></div>
           <div class="card-body">
             <div class="mb-3">
               <label>Mois:</label>
-              <input v-model="selectedMonth" type="month" class="form-control" @change="generateReport" />
+              <input v-model="selectedMonth" type="month" class="form-control" @change="loadData" />
             </div>
-            <button @click="generateReport" class="btn btn-primary">Générer le rapport</button>
-            <button @click="exportToPDF" class="btn btn-success ms-2" :disabled="!reportData">Exporter PDF</button>
+            <button @click="exportToPDF" class="btn btn-danger" :disabled="bilans.length === 0">📄 Exporter PDF (tous les employés)</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Report generato -->
-    <div v-if="reportData" class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header">
-            <h5>Rapport mensuel aziendale - {{ formatMonth(selectedMonth) }}</h5>
-          </div>
-          <div class="card-body">
-            <!-- Riepilogo generale aziendale -->
-            <div class="row mb-4">
-              <div class="col-md-12">
-                <h6>Résumé général de l'entreprise</h6>
-                <table class="table table-sm">
-                  <tbody>
-                    <tr>
-                      <td><strong>Période:</strong></td>
-                      <td>{{ formatMonth(selectedMonth) }}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Total heures travaillées:</strong></td>
-                      <td>{{ reportData.totalHeuresAzienda }} heures</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Nombre d'employés:</strong></td>
-                      <td>{{ reportData.nombreEmployes }} employés</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Jours d'absence total:</strong></td>
-                      <td>{{ reportData.totalJoursAbsence }} jours</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Report per dipendente -->
-            <div class="row mb-4">
-              <div class="col-md-12">
-                <h6>Rapport par employé</h6>
-                <div v-for="employe in reportData.employes" :key="employe.userId" class="card mb-3">
-                  <div class="card-header">
-                    <h6>{{ employe.nom }}</h6>
-                  </div>
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-md-6">
-                        <table class="table table-sm">
-                          <tbody>
-                            <tr>
-                              <td><strong>Heures travaillées:</strong></td>
-                              <td>{{ employe.totalHeures }} heures</td>
-                            </tr>
-                            <tr>
-                              <td><strong>Jours de travail:</strong></td>
-                              <td>{{ employe.joursTravail }} jours</td>
-                            </tr>
-                            <tr>
-                              <td><strong>Jours d'absence:</strong></td>
-                              <td>{{ employe.joursAbsence }} jours</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <div class="col-md-6">
-                        <h6>Détail des absences</h6>
-                        <table class="table table-sm">
-                          <thead>
-                            <tr>
-                              <th>Type</th>
-                              <th>Jours</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="(count, type) in employe.absencesResume" :key="type">
-                              <td>{{ getTypeLabel(type) }}</td>
-                              <td>{{ count }} jours</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Riepilogo assenze aziendali -->
-            <div class="row mb-4">
-              <div class="col-md-12">
-                <h6>Résumé des absences par type</h6>
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Type d'absence</th>
-                      <th>Nombre total de jours</th>
-                      <th>Nombre d'employés concernés</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(data, type) in reportData.absencesAziendali" :key="type">
-                      <td>{{ getTypeLabel(type) }}</td>
-                      <td>{{ data.totalJours }} jours</td>
-                      <td>{{ data.nombreEmployes }} employés</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Statistiche settimanali aziendali -->
-            <div class="row">
-              <div class="col-md-12">
-                <h6>Statistiques hebdomadaires de l'entreprise</h6>
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Semaine</th>
-                      <th>Heures travaillées</th>
-                      <th>Jours d'absence</th>
-                      <th>Employés actifs</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="semaine in reportData.semainesAziendali" :key="semaine.numero">
-                      <td>Semaine {{ semaine.numero }}</td>
-                      <td>{{ semaine.heures }}h</td>
-                      <td>{{ semaine.absences }} jours</td>
-                      <td>{{ semaine.employesActifs }} employés</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- Aperçu -->
+    <div v-if="bilans.length > 0" class="card">
+      <div class="card-header"><h5 class="mb-0">Aperçu - {{ formatMonth(selectedMonth) }} ({{ bilans.length }} employés)</h5></div>
+      <div class="card-body table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Employé</th>
+              <th class="text-end">H. prévues</th>
+              <th class="text-end">H. travaillées</th>
+              <th class="text-end">Abs. payées</th>
+              <th class="text-end">Delta</th>
+              <th class="text-end">Solde heures</th>
+              <th class="text-end">Vac. solde</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="b in bilans" :key="b.employee_email">
+              <td><strong>{{ getEmployeName(b.employee_email) }}</strong></td>
+              <td class="text-end">{{ b.heures_prevues.toFixed(2) }}</td>
+              <td class="text-end">{{ b.heures_travaillees.toFixed(2) }}</td>
+              <td class="text-end">{{ (b.heures_absences_payees || 0).toFixed(2) }}</td>
+              <td class="text-end" :class="b.delta_mois >= 0 ? 'text-success' : 'text-danger'">{{ b.delta_mois >= 0 ? '+' : '' }}{{ b.delta_mois.toFixed(2) }}</td>
+              <td class="text-end fw-bold" :class="b.solde_final >= 0 ? 'text-success' : 'text-danger'">{{ b.solde_final.toFixed(2) }}</td>
+              <td class="text-end fw-bold">{{ (b.vac_nouveau_solde || 0).toFixed(2) }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+    </div>
+
+    <div v-else-if="loaded" class="alert alert-info text-center">
+      Aucune donnée pour {{ formatMonth(selectedMonth) }}. Lancez d'abord le calcul depuis le Bilan Mensuel.
     </div>
   </div>
 </template>
@@ -169,414 +63,120 @@ import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
-const reportData = ref(null);
+const bilans = ref([]);
+const employes = ref([]);
+const loaded = ref(false);
 
-const generateReport = async () => {
-  try {
-    const [year, month] = selectedMonth.value.split('-');
-    const startDate = `${year}-${month}-01`;
-    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
-    
-    // Fetch tutti i dipendenti (chef + collaboratori)
-    const { data: collaborateurs } = await supabase.from('collaborateurs').select('*');
-    const { data: chefs } = await supabase.from('chefdechantiers').select('*');
-    
-    // Lista completa dipendenti (esclusi quelli marcati)
-    const employes = [
-      ...(chefs || []).filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'chef' })),
-      ...(collaborateurs || []).filter(c => !c.excludeFromReport).map(c => ({ userId: c.email, nom: `${c.nom} ${c.prenom}`, email: c.email, type: 'ouvrier' }))
-    ];
-    
-    // Fetch ore di tutti i dipendenti
-    const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*');
-    const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*');
-    const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*');
-    
-    // Fetch assenze
-    const { data: absences } = await supabase.from('absences').select('*');
-    
-    // Genera report per ogni dipendente
-    const employesReport = [];
-    let totalHeuresAzienda = 0;
-    let totalJoursAbsence = 0;
-    const absencesAziendali = {};
-    
-    for (const employe of employes) {
-      let heuresEmploye = [];
-      let heuresInterimEmploye = [];
-      
-      if (employe.type === 'chef') {
-        // Per il chef: ore proprie + ore interim
-        heuresEmploye = (heuresChef || []).filter(h => 
-          h.date >= startDate && 
-          h.date <= endDate && 
-          h.chef_id === employe.email
-        );
-        
-        heuresInterimEmploye = (heuresInterim || []).filter(h => 
-          h.date >= startDate && 
-          h.date <= endDate && 
-          h.chef_id === employe.email
-        );
-      } else {
-        // Per gli ouvriers: solo ore ouvriers
-        heuresEmploye = (heuresOuvriers || []).filter(h => 
-          h.date >= startDate && 
-          h.date <= endDate && 
-          h.ouvrier_id === employe.email
-        );
-      }
-      
-      // Assenze del dipendente
-      const absencesEmploye = (absences || []).filter(absence => 
-        absence.userId === employe.email &&
-        ((absence.startDate >= startDate && absence.startDate <= endDate) ||
-         (absence.endDate >= startDate && absence.endDate <= endDate) ||
-         (absence.startDate <= startDate && absence.endDate >= endDate))
-      );
-      
-      // Calcola totali
-      let totalHeures = 0;
-      
-      if (employe.type === 'chef') {
-        totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
-                     heuresInterimEmploye.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
-      } else {
-        totalHeures = heuresEmploye.reduce((sum, h) => sum + (h.heures || 0), 0);
-      }
-      
-      const joursTravail = new Set();
-      const joursAbsence = new Set();
-      const absencesResume = {};
-      
-      // Per ogni giorno del mese
-      const currentDate = new Date(startDate);
-      const endDateObj = new Date(endDate);
-      
-      while (currentDate <= endDateObj) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-        const heuresJour = heuresEmploye.filter(h => h.date === dateStr);
-        const heuresInterimJour = heuresInterimEmploye.filter(h => h.date === dateStr);
-        const absenceJour = absencesEmploye.find(a => 
-          a.startDate <= dateStr && a.endDate >= dateStr
-        );
-        
-        let totalHeuresJour = 0;
-        if (employe.type === 'chef') {
-          totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
-                           heuresInterimJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0);
-        } else {
-          totalHeuresJour = heuresJour.reduce((sum, h) => sum + (h.heures || 0), 0);
-        }
-        
-        if (absenceJour) {
-          joursAbsence.add(dateStr);
-          absencesResume[absenceJour.type] = (absencesResume[absenceJour.type] || 0) + 1;
-          
-          // Aggiorna statistiche aziendali
-          absencesAziendali[absenceJour.type] = absencesAziendali[absenceJour.type] || { totalJours: 0, employes: new Set() };
-          absencesAziendali[absenceJour.type].totalJours++;
-          absencesAziendali[absenceJour.type].employes.add(employe.email);
-        } else if (totalHeuresJour > 0) {
-          joursTravail.add(dateStr);
-        }
-        
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      
-      employesReport.push({
-        userId: employe.userId,
-        nom: employe.nom,
-        totalHeures,
-        joursTravail: joursTravail.size,
-        joursAbsence: joursAbsence.size,
-        absencesResume
-      });
-      
-      totalHeuresAzienda += totalHeures;
-      totalJoursAbsence += joursAbsence.size;
-    }
-    
-    // Calcola statistiche settimanali aziendali
-    const semainesAziendali = [];
-    let semaineCourante = 1;
-    let heuresSemaine = 0;
-    let absencesSemaine = 0;
-    let employesActifsSemaine = new Set();
-    
-    const currentDate = new Date(startDate);
-    const endDateObj = new Date(endDate);
-    
-    while (currentDate <= endDateObj) {
-      const dateStr = currentDate.toISOString().split('T')[0];
-      const jourSemaine = currentDate.getDay();
-      
-      // Conta ore e assenze per questo giorno
-      const heuresChefJour = (heuresChef || []).filter(h => h.date === dateStr);
-      const heuresInterimJour = (heuresInterim || []).filter(h => h.date === dateStr);
-      const heuresOuvriersJour = (heuresOuvriers || []).filter(h => h.date === dateStr);
-      const absencesJour = (absences || []).filter(a => 
-        a.startDate <= dateStr && a.endDate >= dateStr
-      );
-      
-      const totalHeuresJour = heuresChefJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
-                             heuresInterimJour.reduce((sum, h) => sum + (h.total_heures || h.heures_normales || 0), 0) +
-                             heuresOuvriersJour.reduce((sum, h) => sum + (h.heures || 0), 0);
-      
-      heuresSemaine += totalHeuresJour;
-      absencesSemaine += absencesJour.length;
-      
-      // Conta dipendenti attivi
-      const employesActifsJour = new Set();
-      heuresChefJour.forEach(h => employesActifsJour.add(h.chef_id));
-      heuresInterimJour.forEach(h => employesActifsJour.add(h.chef_id));
-      heuresOuvriersJour.forEach(h => employesActifsJour.add(h.ouvrier_id));
-      employesActifsJour.forEach(email => employesActifsSemaine.add(email));
-      
-      // Fine settimana (domenica) o fine mese
-      if (jourSemaine === 0 || currentDate.getTime() === endDateObj.getTime()) {
-        semainesAziendali.push({
-          numero: semaineCourante,
-          heures: heuresSemaine,
-          absences: absencesSemaine,
-          employesActifs: employesActifsSemaine.size
-        });
-        semaineCourante++;
-        heuresSemaine = 0;
-        absencesSemaine = 0;
-        employesActifsSemaine = new Set();
-      }
-      
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    
-    // Converti Set in numeri per le statistiche aziendali
-    const absencesAziendaliFormatted = {};
-    Object.keys(absencesAziendali).forEach(type => {
-      absencesAziendaliFormatted[type] = {
-        totalJours: absencesAziendali[type].totalJours,
-        nombreEmployes: absencesAziendali[type].employes.size
-      };
-    });
-    
-    // Debug: verifica dati caricati
-    console.log('=== DEBUG REPORT ===');
-    console.log('Période:', startDate, 'à', endDate);
-    console.log('Employés trouvés:', employes.length);
-    console.log('Heures chef:', heuresChef.length);
-    console.log('Heures interim:', heuresInterim.length);
-    console.log('Heures ouvriers:', heuresOuvriers.length);
-    console.log('Absences:', absences.length);
-    console.log('Employés avec données:', employesReport.filter(e => e.totalHeures > 0 || e.joursAbsence > 0).length);
-    
-    reportData.value = {
-      totalHeuresAzienda,
-      nombreEmployes: employes.length,
-      totalJoursAbsence,
-      employes: employesReport,
-      absencesAziendali: absencesAziendaliFormatted,
-      semainesAziendali
-    };
-    
-  } catch (error) {
-    console.error('Erreur lors de la génération du rapport:', error);
-  }
-};
-
-const formatMonth = (monthStr) => {
-  const [year, month] = monthStr.split('-');
-  const date = new Date(year, month - 1);
-  return date.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
-};
-
-const getTypeLabel = (type) => {
-  switch (type) {
-    case 'vacances': return 'Vacances';
-    case 'maladie': return 'Maladie';
-    case 'accident': return 'Accident';
-    case 'vacances_sans_solde': return 'Vacances sans solde';
-    case 'cours': return 'Cours';
-    default: return type;
-  }
-};
-
-const exportToPDF = async () => {
-  if (!reportData.value) return;
-  
-  const { jsPDF } = await import('jspdf');
-  const autoTable = (await import('jspdf-autotable')).default;
-  const logo = (await import('@/assets/logo.jpg')).default;
-  
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  
-  const drawHeader = (pageNum, totalPages) => {
-    // Logo aziendale
-    const logoW = 45;
-    const logoH = logoW / 5.32;
-    doc.addImage(logo, 'JPEG', 10, 10, logoW, logoH);
-    
-    // Dati aziendali a destra
-    doc.setFontSize(8);
-    doc.setFont('Helvetica', 'normal');
-    const companyInfo = [
-      'DALLELEC Sarl',
-      'Rue de Bourgogne 25',
-      '1203 Genève',
-      'contact@dallelec.ch'
-    ];
-    let y = 12;
-    const prevColor = doc.getTextColor();
-    doc.setTextColor(80);
-    companyInfo.forEach((line) => {
-      doc.text(line, 200, y, { align: 'right' });
-      y += 4;
-    });
-    doc.setTextColor(prevColor);
-    
-    // Titolo centrato
-    doc.setFontSize(16);
-    doc.setFont('Helvetica', 'bold');
-    doc.text('RAPPORT MENSUEL', 105, 35, { align: 'center' });
-    doc.setFontSize(12);
-    doc.setFont('Helvetica', 'normal');
-    doc.text(`Période: ${formatMonth(selectedMonth.value)}`, 105, 42, { align: 'center' });
-    
-    // Numero pagina
-    doc.setFontSize(8);
-    doc.text(`Page ${pageNum}/${totalPages}`, 200, 285, { align: 'right' });
-  };
-  
-  let currentPage = 1;
-  const totalPages = 3;
-  
-  // Page 1: Résumé général
-  drawHeader(currentPage, totalPages);
-  
-  doc.setFontSize(14);
-  doc.setFont('Helvetica', 'bold');
-  doc.text('Résumé Général de l\'Entreprise', 10, 55);
-  
-  const resumeData = [
-    ['Période', formatMonth(selectedMonth.value)],
-    ['Total heures travaillées', `${reportData.value.totalHeuresAzienda} heures`],
-    ['Nombre d\'employés', `${reportData.value.nombreEmployes} employés`],
-    ['Jours d\'absence total', `${reportData.value.totalJoursAbsence} jours`]
+const loadEmployes = async () => {
+  const { data: collaborateurs } = await supabase.from('collaborateurs').select('*');
+  const { data: chefs } = await supabase.from('chefdechantiers').select('*');
+  employes.value = [
+    ...(chefs || []).filter(c => !c.excludeFromReport && c.actif !== false).map(c => ({ email: c.email, nom: `${c.nom} ${c.prenom}` })),
+    ...(collaborateurs || []).filter(c => !c.excludeFromReport && c.actif !== false).map(c => ({ email: c.email, nom: `${c.nom} ${c.prenom}` }))
   ];
-  
-  autoTable(doc, {
-    body: resumeData,
-    startY: 60,
-    theme: 'grid',
-    headStyles: { fillColor: [230, 230, 230] },
-    columnStyles: {
-      0: { cellWidth: 80, fontStyle: 'bold' },
-      1: { cellWidth: 100 }
-    }
-  });
-  
-  // Statistiques hebdomadaires
-  let yPos = doc.lastAutoTable.finalY + 15;
-  doc.setFontSize(12);
-  doc.setFont('Helvetica', 'bold');
-  doc.text('Statistiques Hebdomadaires', 10, yPos);
-  
-  const semainesHead = [['Semaine', 'Heures', 'Absences', 'Employés Actifs']];
-  const semainesBody = reportData.value.semainesAziendali.map(s => [
-    `Semaine ${s.numero}`,
-    `${s.heures}h`,
-    `${s.absences} jours`,
-    `${s.employesActifs} employés`
-  ]);
-  
-  autoTable(doc, {
-    head: semainesHead,
-    body: semainesBody,
-    startY: yPos + 5,
-    theme: 'grid',
-    headStyles: { fillColor: [200, 200, 200] }
-  });
-  
-  // Page 2: Rapport par employé
-  doc.addPage();
-  currentPage++;
-  drawHeader(currentPage, totalPages);
-  
-  doc.setFontSize(14);
-  doc.setFont('Helvetica', 'bold');
-  doc.text('Rapport par Employé', 10, 55);
-  
-  const employesHead = [['Employé', 'Heures', 'Jours Travail', 'Jours Absence']];
-  const employesBody = reportData.value.employes.map(emp => [
-    emp.nom,
-    `${emp.totalHeures}h`,
-    `${emp.joursTravail} jours`,
-    `${emp.joursAbsence} jours`
-  ]);
-  
-  autoTable(doc, {
-    head: employesHead,
-    body: employesBody,
-    startY: 60,
-    theme: 'grid',
-    headStyles: { fillColor: [200, 200, 200] }
-  });
-  
-  // Page 3: Détail des absences
-  doc.addPage();
-  currentPage++;
-  drawHeader(currentPage, totalPages);
-  
-  doc.setFontSize(14);
-  doc.setFont('Helvetica', 'bold');
-  doc.text('Résumé des Absences par Type', 10, 55);
-  
-  const absencesHead = [['Type d\'Absence', 'Total Jours', 'Employés Concernés']];
-  const absencesBody = Object.entries(reportData.value.absencesAziendali).map(([type, data]) => [
-    getTypeLabel(type),
-    `${data.totalJours} jours`,
-    `${data.nombreEmployes} employés`
-  ]);
-  
-  autoTable(doc, {
-    head: absencesHead,
-    body: absencesBody,
-    startY: 60,
-    theme: 'grid',
-    headStyles: { fillColor: [200, 200, 200] }
-  });
-  
-  // Détail absences par employé
-  yPos = doc.lastAutoTable.finalY + 15;
-  doc.setFontSize(12);
-  doc.setFont('Helvetica', 'bold');
-  doc.text('Détail des Absences par Employé', 10, yPos);
-  
-  yPos += 10;
-  reportData.value.employes.forEach(emp => {
-    if (Object.keys(emp.absencesResume).length > 0) {
-      doc.setFontSize(10);
-      doc.setFont('Helvetica', 'bold');
-      doc.text(`${emp.nom}:`, 15, yPos);
-      yPos += 5;
-      
-      Object.entries(emp.absencesResume).forEach(([type, count]) => {
-        doc.setFont('Helvetica', 'normal');
-        doc.text(`  • ${getTypeLabel(type)}: ${count} jours`, 20, yPos);
-        yPos += 4;
-      });
-      yPos += 3;
-    }
-  });
-  
-  // Footer con data generazione
-  doc.setFontSize(8);
-  doc.setFont('Helvetica', 'italic');
-  doc.text(`Rapport généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 105, 285, { align: 'center' });
-  
-  doc.save(`rapport-mensuel-${selectedMonth.value}.pdf`);
 };
 
-onMounted(() => {
-  generateReport();
+const loadData = async () => {
+  loaded.value = false;
+  const { data } = await supabase.from('solde_heures').select('*').eq('mois', selectedMonth.value);
+  const { data: vacData } = await supabase.from('solde_vacances').select('*').eq('mois', selectedMonth.value);
+
+  bilans.value = (data || []).map(b => {
+    const vac = (vacData || []).find(v => v.employee_email === b.employee_email);
+    return {
+      ...b,
+      vac_solde_prec: vac?.solde_precedent || 0,
+      vac_acquises: vac?.heures_droit_mois || 0,
+      vac_prises: vac?.heures_prises || 0,
+      vac_nouveau_solde: vac?.solde_final || 0
+    };
+  });
+  loaded.value = true;
+};
+
+const getEmployeName = (email) => {
+  const emp = employes.value.find(e => e.email === email);
+  return emp ? emp.nom : email;
+};
+
+const formatMonth = (m) => {
+  if (!m) return '';
+  const [y, mo] = m.split('-');
+  return new Date(y, mo - 1).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
+};
+
+const exportToPDF = () => {
+  const monthLabel = formatMonth(selectedMonth.value);
+
+  let html = `<html><head><title>Report Commercialiste - ${monthLabel}</title>
+  <style>
+    body{font-family:Arial,sans-serif;padding:10px 15px;margin:0;font-size:9px}
+    .page{page-break-after:always;padding:10px 0}
+    .page:last-child{page-break-after:avoid}
+    .header{text-align:center;margin-bottom:10px;border-bottom:2px solid #333;padding-bottom:8px}
+    .header h1{font-size:14px;margin:0}
+    .header p{margin:2px 0;font-size:10px;color:#555}
+    .emp-title{font-size:12px;font-weight:bold;margin:10px 0 8px;padding:5px;background:#f0f0f0;border-left:4px solid #333}
+    .two-cols{display:flex;gap:15px;margin-top:8px}
+    .col-box{flex:1;border:2px solid #333;padding:10px;border-radius:4px}
+    .col-box h3{font-size:11px;margin:0 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}
+    .col-box table{width:100%;border-collapse:collapse}
+    .col-box td{padding:3px 0;font-size:9.5px}
+    .col-box td:last-child{text-align:right;font-weight:bold}
+    .result{font-size:12px;font-weight:bold;margin-top:6px;padding-top:6px;border-top:2px solid #333}
+    .pos{color:green}.neg{color:red}
+    .footer{text-align:center;font-size:8px;color:#999;margin-top:10px;border-top:1px solid #ddd;padding-top:5px}
+    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
+  </style></head><body>`;
+
+  // 2 employés par page
+  for (let i = 0; i < bilans.value.length; i += 2) {
+    html += `<div class="page">`;
+    html += `<div class="header"><h1>DALLELEC Sàrl - Rapport Mensuel</h1><p>${monthLabel} — Document pour le commercialiste</p></div>`;
+
+    for (let j = i; j < Math.min(i + 2, bilans.value.length); j++) {
+      const b = bilans.value[j];
+      const nom = getEmployeName(b.employee_email);
+      const deltaClass = b.delta_mois >= 0 ? 'pos' : 'neg';
+      const soldeClass = b.solde_final >= 0 ? 'pos' : 'neg';
+
+      html += `<div class="emp-title">👤 ${nom}</div>`;
+      html += `<div class="two-cols">`;
+
+      // Box Heures
+      html += `<div class="col-box"><h3>📊 Bilan Heures</h3><table>
+        <tr><td>Heures prévues</td><td>${b.heures_prevues.toFixed(2)}h</td></tr>
+        <tr><td>Heures travaillées</td><td>${b.heures_travaillees.toFixed(2)}h</td></tr>
+        <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
+        <tr><td>Autres absences payées</td><td>${((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2)}h</td></tr>
+        <tr><td>Absences non payées</td><td>${b.heures_absences_non_payees.toFixed(2)}h</td></tr>
+        <tr><td>Solde précédent</td><td>${b.solde_precedent.toFixed(2)}h</td></tr>
+        <tr><td>Delta mois</td><td class="${deltaClass}">${b.delta_mois >= 0 ? '+' : ''}${b.delta_mois.toFixed(2)}h</td></tr>
+      </table><div class="result ${soldeClass}">Solde heures: ${b.solde_final.toFixed(2)}h</div></div>`;
+
+      // Box Vacances
+      html += `<div class="col-box"><h3>🏖️ Bilan Vacances</h3><table>
+        <tr><td>Solde précédent</td><td>${(b.vac_solde_prec || 0).toFixed(2)}h</td></tr>
+        <tr><td>Acquises ce mois</td><td class="pos">+${(b.vac_acquises || 0).toFixed(2)}h</td></tr>
+        <tr><td>Prises ce mois</td><td class="neg">-${(b.vac_prises || 0).toFixed(2)}h</td></tr>
+      </table><div class="result">Nouveau solde: ${(b.vac_nouveau_solde || 0).toFixed(2)}h</div></div>`;
+
+      html += `</div>`; // two-cols
+    }
+
+    html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} — DALLELEC Sàrl — À joindre au bulletin de salaire</div>`;
+    html += `</div>`; // page
+  }
+
+  html += `</body></html>`;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.print();
+};
+
+onMounted(async () => {
+  await loadEmployes();
+  await loadData();
 });
 </script>
