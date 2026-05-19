@@ -119,12 +119,18 @@ const calculateSingleMonth = async (mois) => {
 
     let absPayees = 0, absNonPayees = 0, vacPrises = 0, joursFeries = 0;
     const empAbs = (absences || []).filter(a => a.user_id === emp.email);
+    const joursDejaComptes = new Set();
+    const today = new Date().toISOString().split('T')[0];
     for (const abs of empAbs) {
       const start = new Date(Math.max(new Date(abs.start_date), new Date(startDate)));
       const end = new Date(Math.min(new Date(abs.end_date), new Date(endDate)));
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const dow = d.getDay();
         if (dow === 0 || dow === 6) continue;
+        const dateKey = d.toISOString().split('T')[0];
+        if (dateKey > today) continue;
+        if (joursDejaComptes.has(dateKey)) continue;
+        joursDejaComptes.add(dateKey);
         const hJour = abs.heures || Number(emp.planning[dow] || 0);
         if (hJour === 0) continue;
         if (abs.type === 'vacances_sans_solde') { absNonPayees += hJour; }
