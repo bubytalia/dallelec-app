@@ -407,7 +407,7 @@ const getEmployeName = (email) => {
 };
 
 const formatMonth = (monthStr) => {
-  if (!monthStr) return '';
+  if (!monthStr || typeof monthStr !== 'string') return '';
   const [year, month] = monthStr.split('-');
   return new Date(year, month - 1).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
 };
