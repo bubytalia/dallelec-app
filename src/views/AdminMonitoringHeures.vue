@@ -125,6 +125,19 @@
             </select>
           </div>
 
+          <!-- Heures pour absences (vacances, maladie, etc.) -->
+          <div v-if="['vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(editModal.action)" class="mb-3">
+            <label class="form-label">Heures de la journée (pour calcul solde):</label>
+            <select v-model="editModal.heuresAbsence" class="form-control">
+              <option :value="8.75">8:45 (lundi-jeudi)</option>
+              <option :value="5">5:00 (vendredi)</option>
+              <option :value="8">8:00</option>
+              <option :value="4">4:00 (demi-journée)</option>
+              <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+            <small class="text-muted">Lun-Jeu: 8h45 | Ven: 5h</small>
+          </div>
+
           <!-- Détails existants -->
           <div v-if="editModal.existingRecords.length > 0" class="mb-3">
             <label class="form-label fw-bold">Enregistrements existants:</label>
@@ -238,6 +251,10 @@ const heuresOptions = (() => {
 })();
 
 const openEditModal = async (employe, jour) => {
+  // Déterminer heures par défaut selon le jour de la semaine
+  const dayOfWeek = new Date(jour.date).getDay();
+  const defaultHeuresAbsence = (dayOfWeek >= 1 && dayOfWeek <= 4) ? 8.75 : 5;
+  
   editModal.value = {
     show: true,
     employeEmail: employe.email,
@@ -247,6 +264,7 @@ const openEditModal = async (employe, jour) => {
     currentStatus: jour.status,
     action: ['heures','vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(jour.status) ? jour.status : 'heures',
     heures: jour.heures || '',
+    heuresAbsence: defaultHeuresAbsence,
     existingRecords: [],
     saving: false
   };
@@ -314,8 +332,8 @@ const saveEdit = async () => {
       }
       // Supprimer ancienne absence du jour
       await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
-      // Insérer absence
-      await supabase.from('absences').insert({ user_id: employeEmail, start_date: date, end_date: date, type: action, status: 'approved' });
+      // Insérer absence avec heures
+      await supabase.from('absences').insert({ user_id: employeEmail, start_date: date, end_date: date, type: action, status: 'approved', heures: editModal.value.heuresAbsence || 8.75 });
     }
     
     closeEditModal();

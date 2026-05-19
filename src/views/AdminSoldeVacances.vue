@@ -301,7 +301,7 @@ const calculateMonth = async () => {
     // Ore maturate
     const heuresDroit = emp.heures_droit_mois || 0;
 
-    // Vacanze prese nel mese (conta giorni lavorativi)
+    // Vacanze prese nel mese (usa le ore salvate nell'absence)
     let heuresPrises = 0;
     const empAbsences = (absences || []).filter(a => a.user_id === emp.email);
     for (const abs of empAbsences) {
@@ -310,7 +310,11 @@ const calculateMonth = async () => {
       let current = new Date(start);
       while (current <= end) {
         const dow = current.getDay();
-        if (dow !== 0 && dow !== 6) heuresPrises += 8; // 8h per giorno lavorativo
+        if (dow !== 0 && dow !== 6) {
+          // Utilise les heures sauvegardées ou calcule selon le jour
+          const heuresJour = abs.heures || ((dow >= 1 && dow <= 4) ? 8.75 : 5);
+          heuresPrises += heuresJour;
+        }
         current.setDate(current.getDate() + 1);
       }
     }
