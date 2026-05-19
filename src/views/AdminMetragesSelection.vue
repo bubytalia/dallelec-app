@@ -54,6 +54,7 @@ const fetchChantiers = async () => {
     const { data, error } = await supabase
       .from('chantiers')
       .select('*')
+      .neq('type', 'interne')
       .order('nom');
     
     if (error) throw error;

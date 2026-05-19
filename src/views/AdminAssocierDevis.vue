@@ -397,7 +397,7 @@ const associerDevisDirect = async (devisId) => {
 const fetchData = async () => {
   try {
     const [chantiersRes, devisRes, clientsRes] = await Promise.all([
-      supabase.from('chantiers').select('*'),
+      supabase.from('chantiers').select('*').neq('type', 'interne'),
       supabase.from('devis').select('*'),
       supabase.from('clients').select('*')
     ])

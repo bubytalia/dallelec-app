@@ -267,15 +267,12 @@ const openEditModal = async (employe, jour) => {
   const dayOfWeek = new Date(jour.date).getDay();
   const defaultHeuresAbsence = (dayOfWeek >= 1 && dayOfWeek <= 4) ? 8.75 : 5;
   
-  // Vérifier si l'employé a besoin d'un chantier (chef avec heures dans heures_chef_propres)
-  const { data: checkOuvrier } = await supabase.from('heures_ouvriers').select('id').eq('ouvrier_id', employe.email).limit(1);
-  const needsChantier = !(checkOuvrier && checkOuvrier.length > 0);
-  
-  // Charger chantiers si nécessaire
-  if (needsChantier && chantiersOuverts.value.length === 0) {
+  // Toujours charger les chantiers pour pouvoir modifier
+  if (chantiersOuverts.value.length === 0) {
     const { data } = await supabase.from('chantiers').select('id, nom');
     chantiersOuverts.value = data || [];
   }
+  const needsChantier = true;
   
   editModal.value = {
     show: true,
@@ -289,10 +286,11 @@ const openEditModal = async (employe, jour) => {
     heuresAbsence: defaultHeuresAbsence,
     needsChantier,
     chantierId: '',
+    existingChantierNom: '',
     existingRecords: [],
     saving: false
   };
-  // Carica record esistenti
+  // Carica record esistenti (setta anche chantierId)
   await loadExistingRecords(employe.email, jour.date);
 };
 

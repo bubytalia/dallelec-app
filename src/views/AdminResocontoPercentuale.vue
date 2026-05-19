@@ -242,7 +242,7 @@ const totalHeuresRegies = computed(() => regies.value.reduce((sum, r) => sum + r
 // Admin: carica TUTTI i cantieri
 const fetchChantiers = async () => {
   try {
-    const { data, error } = await supabase.from('chantiers').select('*').order('nom');
+    const { data, error } = await supabase.from('chantiers').select('*').neq('type', 'interne').order('nom');
     if (error) throw error;
     chantiers.value = data || [];
   } catch (error) {

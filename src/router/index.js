@@ -122,6 +122,7 @@ const routes = [
   { path: '/admin/absences', name: 'AdminAbsences', component: AdminAbsences },
   { path: '/admin/solde-vacances', name: 'AdminSoldeVacances', component: AdminSoldeVacances },
   { path: '/admin/bilan-mensuel', name: 'AdminBilanMensuel', component: AdminBilanMensuel },
+  { path: '/admin/couts-bureau', name: 'AdminCoutsBureau', component: () => import('@/views/AdminCoutsBureau.vue') },
   { path: '/admin/premi', name: 'AdminPremi', component: () => import('@/views/AdminPremi.vue') },
   { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },
   { path: '/admin/backup', name: 'AdminBackup', component: () => import('@/components/BackupSupabase.vue') },

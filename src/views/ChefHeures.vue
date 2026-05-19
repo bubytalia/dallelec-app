@@ -255,7 +255,8 @@ const fetchChantiers = async () => {
     const { data, error } = await supabase
       .from('chantiers')
       .select('*')
-      .eq('etat_insertion_heures', 'ouvert');
+      .eq('etat_insertion_heures', 'ouvert')
+      .neq('type', 'interne');
     
     if (error) throw error;
     chantiers.value = data || [];

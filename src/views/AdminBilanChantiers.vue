@@ -568,7 +568,7 @@ const setDefaultDates = () => {
 const fetchData = async () => {
   try {
     // Charger les chantiers
-    const { data: chantiersData } = await supabase.from('chantiers').select('*')
+    const { data: chantiersData } = await supabase.from('chantiers').select('*').neq('type', 'interne')
     chantiers.value = chantiersData || []
     console.log('DEBUG - Chantiers caricati:', chantiers.value.map(c => ({ id: c.id, nom: c.nom })))
 
