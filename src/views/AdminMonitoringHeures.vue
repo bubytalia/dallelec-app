@@ -329,8 +329,9 @@ const saveEdit = async () => {
         await supabase.from(rec.table).delete().eq('id', rec.id);
       }
       // Supprimer absence éventuelle (single + multi-day)
-      await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
+      const { data: delSingle, error: errSingle } = await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date).select();
       const { data: multiAbsH } = await supabase.from('absences').select('*').eq('user_id', employeEmail).lte('start_date', date).gte('end_date', date);
+      console.log('DEBUG heures - email:', employeEmail, 'date:', date, 'single deleted:', delSingle?.length, 'multi found:', multiAbsH?.length, multiAbsH);
       for (const abs of (multiAbsH || [])) {
         await supabase.from('absences').delete().eq('id', abs.id);
         if (abs.start_date < date) {
@@ -346,7 +347,8 @@ const saveEdit = async () => {
       if (employeType === 'chef') {
         await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures });
       } else {
-        await supabase.from('heures_ouvriers').insert({ ouvrier_id: employeEmail, date, heures: heures });
+        const { error: insertErr } = await supabase.from('heures_ouvriers').insert({ ouvrier_id: employeEmail, date, heures: heures });
+        if (insertErr) console.error('INSERT ERROR:', insertErr);
       }
       
     } else {
