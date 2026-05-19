@@ -263,8 +263,21 @@ const heuresOptions = (() => {
 })();
 
 const openEditModal = async (employe, jour) => {
-  // Déterminer heures par défaut selon le jour de la semaine
+  // Bloquer les dates futures (sauf vacances réservées visibles)
+  const today = new Date().toISOString().split('T')[0];
+  if (jour.date > today) {
+    alert('Impossible de modifier une date future. Seules les réservations de vacances sont possibles depuis la page Gestion Absences.');
+    return;
+  }
+
+  // Bloquer les weekends
   const dayOfWeek = new Date(jour.date).getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    alert('Impossible de modifier un weekend.');
+    return;
+  }
+
+  // Déterminer heures par défaut selon le jour de la semaine
   const defaultHeuresAbsence = (dayOfWeek >= 1 && dayOfWeek <= 4) ? 8.75 : 5;
   
   // Toujours charger les chantiers pour pouvoir modifier

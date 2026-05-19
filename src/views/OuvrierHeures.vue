@@ -161,17 +161,11 @@ const maxDate = computed(() => {
 
 // Controlla se data è bloccata - TEMPORANEO: nessun blocco
 const isDateBlocked = (date) => {
-  // TEMPORANEO: Nessun blocco - permette inserimento di qualsiasi data
-  return false;
-  
-  // ORIGINALE (da ripristinare): 
-  // if (!date) return false;
-  // const selectedDate = new Date(date);
-  // const today = new Date();
-  // const twoDaysAgo = new Date(today);
-  // twoDaysAgo.setDate(today.getDate() - 2);
-  // twoDaysAgo.setHours(0, 0, 0, 0);
-  // return selectedDate < twoDaysAgo && !adminOverride.value;
+  if (!date) return false;
+  const selectedDate = new Date(date);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  return selectedDate > today;
 };
 
 // Options heures avec format HH:MM (incrementi di 15 minuti)

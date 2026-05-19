@@ -301,6 +301,10 @@ const addHeurePropre = async () => {
   const userEmail = localStorage.getItem('userEmail');
   if (!newHeure.value.chantierId || !newHeure.value.date || !newHeure.value.heures || !userEmail) return;
   
+  // Bloquer dates futures
+  const today = new Date().toISOString().split('T')[0];
+  if (newHeure.value.date > today) { alert('Impossible de saisir des heures pour une date future.'); return; }
+  
   try {
     // Récupérer la tariffa attuale del chef
     const { data: chefData, error: chefError } = await supabase
@@ -339,6 +343,10 @@ const addHeurePropre = async () => {
 const addHeureInterim = async () => {
   const userEmail = localStorage.getItem('userEmail');
   if (!newHeureInterim.value.chantierId || !newHeureInterim.value.date || !newHeureInterim.value.interimaireId || !newHeureInterim.value.heures || !userEmail) return;
+  
+  // Bloquer dates futures
+  const today = new Date().toISOString().split('T')[0];
+  if (newHeureInterim.value.date > today) { alert('Impossible de saisir des heures pour une date future.'); return; }
   
   try {
     // Récupérer la tariffa attuale dell'intérimaire
