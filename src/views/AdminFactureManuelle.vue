@@ -220,8 +220,9 @@ const totalHT = computed(() => {
 });
 
 const factureValide = computed(() => {
-  return facture.value.clientId && 
-         facture.value.lignes.some(l => l.description && l.quantite > 0 && l.prixUnitaire > 0);
+  const hasLignes = facture.value.lignes.some(l => l.description && l.quantite > 0 && l.prixUnitaire > 0);
+  const hasRegies = facture.value.regies.some(r => r.heures > 0 && r.prixHeure > 0);
+  return facture.value.clientId && (hasLignes || hasRegies);
 });
 
 const onClientChange = () => {

@@ -73,6 +73,7 @@
                   :class="getJourClass(jour)"
                   :title="getJourTooltip(jour)"
                   class="calendar-day"
+                  @click="openEditModal(employe, jour)"
                 >
                   <div class="day-number">{{ jour.day }}</div>
                   <div v-if="jour.heures > 0" class="hours-number">{{ jour.heures }}h</div>
@@ -80,6 +81,60 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal édition jour -->
+    <div v-if="editModal.show" class="modal-overlay" @click.self="closeEditModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5>✏️ Modifier - {{ editModal.employeNom }}</h5>
+          <button @click="closeEditModal" class="btn-close"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Date:</strong> {{ formatDateFR(editModal.date) }}</p>
+          <p><strong>Status actuel:</strong> 
+            <span class="badge" :class="getStatusBadgeClass(editModal.currentStatus)">{{ getStatusLabel(editModal.currentStatus) }}</span>
+          </p>
+
+          <!-- Choix action -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Action:</label>
+            <select v-model="editModal.action" class="form-control">
+              <option value="heures">🟢 Saisir/Modifier heures</option>
+              <option value="vacances">🟦 Vacances</option>
+              <option value="maladie">🟥 Maladie</option>
+              <option value="absence">🟡 Autre absence</option>
+              <option value="supprimer">🗑️ Supprimer données du jour</option>
+            </select>
+          </div>
+
+          <!-- Heures -->
+          <div v-if="editModal.action === 'heures'" class="mb-3">
+            <label class="form-label">Heures:</label>
+            <select v-model="editModal.heures" class="form-control">
+              <option value="">Sélectionner</option>
+              <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+
+          <!-- Détails existants -->
+          <div v-if="editModal.existingRecords.length > 0" class="mb-3">
+            <label class="form-label fw-bold">Enregistrements existants:</label>
+            <ul class="list-group list-group-sm">
+              <li v-for="rec in editModal.existingRecords" :key="rec.id" class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ rec.table }} - {{ rec.heures }}h</span>
+                <button @click="deleteRecord(rec)" class="btn btn-sm btn-outline-danger">🗑</button>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="closeEditModal" class="btn btn-secondary">Annuler</button>
+          <button @click="saveEdit" class="btn btn-primary" :disabled="editModal.saving">
+            {{ editModal.saving ? 'Enregistrement...' : 'Enregistrer' }}
+          </button>
         </div>
       </div>
     </div>
@@ -145,9 +200,142 @@ import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
-const selectedMonth = ref('2025-10'); // Cambiato per vedere le ore di Tony
+const selectedMonth = ref('2025-10');
 const monitoringData = ref(null);
 const availableMonths = ref([]);
+
+// Modal edit
+const editModal = ref({
+  show: false,
+  employeEmail: '',
+  employeNom: '',
+  employeType: '',
+  date: '',
+  currentStatus: '',
+  action: 'heures',
+  heures: '',
+  existingRecords: [],
+  saving: false
+});
+
+// Options heures
+const heuresOptions = (() => {
+  const options = [];
+  for (let h = 0; h <= 12; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 0 && m === 0) continue;
+      if (h === 12 && m > 0) break;
+      options.push({ value: h + (m / 60), label: `${h}:${m.toString().padStart(2, '0')}` });
+    }
+  }
+  return options;
+})();
+
+const openEditModal = async (employe, jour) => {
+  editModal.value = {
+    show: true,
+    employeEmail: employe.email,
+    employeNom: employe.nom,
+    employeType: employe.type,
+    date: jour.date,
+    currentStatus: jour.status,
+    action: jour.status === 'heures' ? 'heures' : jour.status === 'vacances' ? 'vacances' : jour.status === 'maladie' ? 'maladie' : jour.status === 'absence' ? 'absence' : 'heures',
+    heures: jour.heures || '',
+    existingRecords: [],
+    saving: false
+  };
+  // Carica record esistenti
+  await loadExistingRecords(employe.email, jour.date);
+};
+
+const closeEditModal = () => {
+  editModal.value.show = false;
+};
+
+const loadExistingRecords = async (email, date) => {
+  const records = [];
+  const { data: chefRecs } = await supabase.from('heures_chef_propres').select('*').eq('chef_id', email).eq('date', date);
+  (chefRecs || []).forEach(r => records.push({ id: r.id, table: 'heures_chef_propres', heures: r.total_heures || r.heures_normales }));
+  
+  const { data: interimRecs } = await supabase.from('heures_chef_interim').select('*').eq('chef_id', email).eq('date', date);
+  (interimRecs || []).forEach(r => records.push({ id: r.id, table: 'heures_chef_interim', heures: r.total_heures || r.heures_normales }));
+  
+  const { data: ouvrierRecs } = await supabase.from('heures_ouvriers').select('*').eq('ouvrier_id', email).eq('date', date);
+  (ouvrierRecs || []).forEach(r => records.push({ id: r.id, table: 'heures_ouvriers', heures: r.heures }));
+  
+  editModal.value.existingRecords = records;
+};
+
+const deleteRecord = async (rec) => {
+  if (!confirm('Supprimer cet enregistrement ?')) return;
+  await supabase.from(rec.table).delete().eq('id', rec.id);
+  await loadExistingRecords(editModal.value.employeEmail, editModal.value.date);
+};
+
+const saveEdit = async () => {
+  editModal.value.saving = true;
+  const { employeEmail, employeType, date, action, heures } = editModal.value;
+  
+  try {
+    if (action === 'supprimer') {
+      // Supprimer toutes les heures du jour
+      for (const rec of editModal.value.existingRecords) {
+        await supabase.from(rec.table).delete().eq('id', rec.id);
+      }
+      // Supprimer absences du jour
+      await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
+      
+    } else if (action === 'heures') {
+      if (!heures) { alert('Sélectionner les heures'); editModal.value.saving = false; return; }
+      // Supprimer anciennes heures
+      for (const rec of editModal.value.existingRecords) {
+        await supabase.from(rec.table).delete().eq('id', rec.id);
+      }
+      // Supprimer absence éventuelle
+      await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
+      // Insérer nouvelles heures
+      if (employeType === 'chef') {
+        await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures });
+      } else {
+        await supabase.from('heures_ouvriers').insert({ ouvrier_id: employeEmail, date, heures: heures });
+      }
+      
+    } else {
+      // Vacances, maladie, absence
+      // Supprimer heures existantes
+      for (const rec of editModal.value.existingRecords) {
+        await supabase.from(rec.table).delete().eq('id', rec.id);
+      }
+      // Supprimer ancienne absence du jour
+      await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
+      // Insérer absence
+      await supabase.from('absences').insert({ user_id: employeEmail, start_date: date, end_date: date, type: action, status: 'approved' });
+    }
+    
+    closeEditModal();
+    await loadMonitoringData();
+  } catch (error) {
+    console.error('Erreur sauvegarde:', error);
+    alert('Erreur: ' + error.message);
+  } finally {
+    editModal.value.saving = false;
+  }
+};
+
+const formatDateFR = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const getStatusBadgeClass = (status) => {
+  const map = { heures: 'bg-success', manquant: 'bg-danger', vacances: 'bg-info', maladie: 'bg-dark', absence: 'bg-warning', weekend: 'bg-light text-dark', future: 'bg-secondary' };
+  return map[status] || 'bg-light';
+};
+
+const getStatusLabel = (status) => {
+  const map = { heures: 'Heures saisies', manquant: 'Pas d\'heures', vacances: 'Vacances', maladie: 'Maladie', absence: 'Absence', weekend: 'Weekend', future: 'Futur' };
+  return map[status] || status;
+};
 
 const alerts = computed(() => {
   if (!monitoringData.value) return [];
@@ -454,12 +642,54 @@ onMounted(() => {
   position: relative;
 }
 
-/* Stili specifici per vacanze e malattie */
 .calendar-day.bg-info {
   background: linear-gradient(135deg, #0dcaf0, #20c997) !important;
 }
 
 .calendar-day.bg-dark {
   background: linear-gradient(135deg, #6f42c1, #d63384) !important;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 10px;
+  width: 500px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 </style>
