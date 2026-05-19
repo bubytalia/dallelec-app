@@ -31,6 +31,7 @@
               <th>Employé</th>
               <th class="text-end">H. prévues</th>
               <th class="text-end">H. travaillées</th>
+              <th class="text-end">J. fériés</th>
               <th class="text-end">Abs. payées</th>
               <th class="text-end">Abs. non payées</th>
               <th class="text-end">Solde préc.</th>
@@ -47,7 +48,8 @@
               <td><strong>{{ getEmployeName(b.employee_email) }}</strong></td>
               <td class="text-end">{{ b.heures_prevues.toFixed(2) }}</td>
               <td class="text-end">{{ b.heures_travaillees.toFixed(2) }}</td>
-              <td class="text-end">{{ b.heures_absences_payees.toFixed(2) }}</td>
+              <td class="text-end">{{ (b.heures_jours_feries || 0).toFixed(2) }}</td>
+              <td class="text-end">{{ ((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2) }}</td>
               <td class="text-end text-muted">{{ b.heures_absences_non_payees.toFixed(2) }}</td>
               <td class="text-end">{{ b.solde_precedent.toFixed(2) }}</td>
               <td class="text-end fw-bold" :class="b.delta_mois >= 0 ? 'text-success' : 'text-danger'">{{ b.delta_mois >= 0 ? '+' : '' }}{{ b.delta_mois.toFixed(2) }}</td>
@@ -157,7 +159,7 @@ const calculateSingleMonth = async (mois) => {
     const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email).reduce((s, h) => s + (h.heures || 0), 0);
     const heuresTravaillees = oreChef + oreInterim + oreOuvrier;
 
-    let absPayees = 0, absNonPayees = 0, vacPrises = 0;
+    let absPayees = 0, absNonPayees = 0, vacPrises = 0, joursFeries = 0;
     const empAbs = (absences || []).filter(a => a.user_id === emp.email);
     for (const abs of empAbs) {
       const start = new Date(Math.max(new Date(abs.start_date), new Date(startDate)));
@@ -167,6 +169,7 @@ const calculateSingleMonth = async (mois) => {
         if (dow === 0 || dow === 6) continue;
         const h = abs.heures || ((dow >= 1 && dow <= 4) ? 8.75 : 5);
         if (abs.type === 'vacances_sans_solde') { absNonPayees += h; }
+        else if (abs.type === 'jour_ferie') { joursFeries += h; absPayees += h; }
         else { absPayees += h; if (abs.type === 'vacances') vacPrises += h; }
       }
     }
@@ -183,7 +186,7 @@ const calculateSingleMonth = async (mois) => {
 
     // Upsert solde_heures
     const { data: existing } = await supabase.from('solde_heures').select('id').eq('employee_email', emp.email).eq('mois', mois).single();
-    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
+    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
     if (existing) { await supabase.from('solde_heures').update(record).eq('id', existing.id); }
     else { await supabase.from('solde_heures').insert(record); }
 
@@ -334,7 +337,8 @@ const generatePDFIndividuel = async () => {
       <h4>📊 Bilan Heures</h4>
       <p>Heures prévues: <strong>${bilan.heures_prevues.toFixed(2)}h</strong></p>
       <p>Heures travaillées: <strong>${bilan.heures_travaillees.toFixed(2)}h</strong></p>
-      <p>Absences payées: <strong>${bilan.heures_absences_payees.toFixed(2)}h</strong></p>
+      <p>Jours fériés payés: <strong>${(bilan.heures_jours_feries || 0).toFixed(2)}h</strong></p>
+      <p>Autres absences payées: <strong>${((bilan.heures_absences_payees || 0) - (bilan.heures_jours_feries || 0)).toFixed(2)}h</strong></p>
       <p>Absences non payées: <strong>${bilan.heures_absences_non_payees.toFixed(2)}h</strong></p>
       <p>Solde précédent: ${bilan.solde_precedent.toFixed(2)}h</p>
       <p>Delta mois: <span class="${bilan.delta_mois >= 0 ? 'pos' : 'neg'}">${bilan.delta_mois >= 0?'+':''}${bilan.delta_mois.toFixed(2)}h</span></p>
