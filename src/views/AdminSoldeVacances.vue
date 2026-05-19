@@ -41,6 +41,7 @@
               <th>Employé</th>
               <th style="width:150px">Heures/mois (contrat)</th>
               <th style="width:150px">Solde initial (h)</th>
+              <th style="width:280px">Planning hebdo</th>
               <th style="width:100px">Actions</th>
             </tr>
           </thead>
@@ -52,6 +53,14 @@
               </td>
               <td>
                 <input v-model.number="emp.solde_initial" type="number" step="0.01" class="form-control form-control-sm" />
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <div v-for="(label, idx) in ['L','M','Me','J','V']" :key="idx" class="text-center" style="width:50px">
+                    <small class="d-block text-muted">{{ label }}</small>
+                    <input v-model.number="emp.planning[idx + 1]" type="number" step="0.25" class="form-control form-control-sm text-center p-0" style="font-size:11px" />
+                  </div>
+                </div>
               </td>
               <td>
                 <button @click="saveConfig(emp)" class="btn btn-sm btn-primary">💾</button>
@@ -245,10 +254,12 @@ const loadEmployes = async () => {
   
   employes.value = allEmployes.map(emp => {
     const cfg = (configs || []).find(c => c.employee_email === emp.email);
+    const defaultPlanning = { 1: 8.75, 2: 8.75, 3: 8.75, 4: 8.75, 5: 5 };
     return {
       ...emp,
       heures_droit_mois: cfg?.heures_droit_mois || 0,
-      solde_initial: cfg?.solde_initial || 0
+      solde_initial: cfg?.solde_initial || 0,
+      planning: cfg?.planning || { ...defaultPlanning }
     };
   });
 };
@@ -318,16 +329,18 @@ const saveConfig = async (emp) => {
     .eq('employee_email', emp.email)
     .single();
 
+  const payload = {
+    heures_droit_mois: emp.heures_droit_mois,
+    solde_initial: emp.solde_initial,
+    planning: emp.planning
+  };
+
   if (existing) {
-    await supabase.from('solde_vacances_config').update({
-      heures_droit_mois: emp.heures_droit_mois,
-      solde_initial: emp.solde_initial
-    }).eq('id', existing.id);
+    await supabase.from('solde_vacances_config').update(payload).eq('id', existing.id);
   } else {
     await supabase.from('solde_vacances_config').insert({
       employee_email: emp.email,
-      heures_droit_mois: emp.heures_droit_mois,
-      solde_initial: emp.solde_initial
+      ...payload
     });
   }
   alert('Configuration sauvegardée!');

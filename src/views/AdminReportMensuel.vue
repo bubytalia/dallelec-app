@@ -77,18 +77,20 @@ const loadEmployes = async () => {
     ...(collaborateurs || []).filter(c => !c.excludeFromReport && c.actif !== false).map(c => ({ email: c.email, nom: `${c.nom} ${c.prenom}`, type: 'ouvrier' }))
   ].map(emp => {
     const cfg = (configs || []).find(c => c.employee_email === emp.email);
-    return { ...emp, heures_droit_mois: cfg?.heures_droit_mois || 0, solde_initial_vac: cfg?.solde_initial || 0 };
+    const defaultPlanning = { 1: 8.75, 2: 8.75, 3: 8.75, 4: 8.75, 5: 5 };
+    return { ...emp, heures_droit_mois: cfg?.heures_droit_mois || 0, solde_initial_vac: cfg?.solde_initial || 0, planning: cfg?.planning || defaultPlanning };
   });
 };
 
-const getHeuresPrevuesMois = (mois) => {
+const getHeuresPrevuesMois = (mois, planning) => {
   const [year, month] = mois.split('-').map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
   let total = 0;
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = new Date(year, month - 1, d).getDay();
-    if (dow >= 1 && dow <= 4) total += 8.75;
-    else if (dow === 5) total += 5;
+    if (dow >= 1 && dow <= 5) {
+      total += Number(planning[dow] || 0);
+    }
   }
   return total;
 };
@@ -98,7 +100,6 @@ const calculateSingleMonth = async (mois) => {
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
-  const heuresPrevues = getHeuresPrevuesMois(mois);
 
   const prevDate = new Date(year, month - 2, 1);
   const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
@@ -110,6 +111,7 @@ const calculateSingleMonth = async (mois) => {
   const { data: prevVac } = await supabase.from('solde_vacances').select('*').eq('mois', prevMonth);
 
   for (const emp of employes.value) {
+    const heuresPrevues = getHeuresPrevuesMois(mois, emp.planning);
     const oreChef = (heuresChef || []).filter(h => h.chef_id === emp.email).reduce((s, h) => s + (h.total_heures || h.heures_normales || 0), 0);
     const oreInterim = (heuresInterim || []).filter(h => h.chef_id === emp.email).reduce((s, h) => s + (h.total_heures || 0), 0);
     const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email).reduce((s, h) => s + (h.heures || 0), 0);
@@ -123,10 +125,11 @@ const calculateSingleMonth = async (mois) => {
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const dow = d.getDay();
         if (dow === 0 || dow === 6) continue;
-        const h = abs.heures || ((dow >= 1 && dow <= 4) ? 8.75 : 5);
-        if (abs.type === 'vacances_sans_solde') { absNonPayees += h; }
-        else if (abs.type === 'jour_ferie') { joursFeries += h; absPayees += h; }
-        else { absPayees += h; if (abs.type === 'vacances') vacPrises += h; }
+        const hJour = abs.heures || Number(emp.planning[dow] || 0);
+        if (hJour === 0) continue;
+        if (abs.type === 'vacances_sans_solde') { absNonPayees += hJour; }
+        else if (abs.type === 'jour_ferie') { joursFeries += hJour; absPayees += hJour; }
+        else { absPayees += hJour; if (abs.type === 'vacances') vacPrises += hJour; }
       }
     }
 
