@@ -503,12 +503,13 @@ const loadMonitoringData = async () => {
       };
       
       // Genera giorni del mese
-      const currentDate = new Date(startDate);
-      const endDateObj = new Date(endDate);
+      const daysInMonth = new Date(year, month, 0).getDate();
       const today = new Date();
+      today.setHours(23, 59, 59);
       
-      while (currentDate <= endDateObj) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${month}-${String(day).padStart(2, '0')}`;
+        const currentDate = new Date(year, month - 1, day);
         const dayOfWeek = currentDate.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         const isFuture = currentDate > today;
@@ -567,14 +568,12 @@ const loadMonitoringData = async () => {
         
         employeData.jours.push({
           date: dateStr,
-          day: currentDate.getDate(),
+          day: day,
           status,
           heures: heuresJour,
           heuresAbsence: hasAbsence ? (absenceJour.heures || null) : null,
           absence: hasAbsence ? absenceJour.type : null
         });
-        
-        currentDate.setDate(currentDate.getDate() + 1);
       }
       
       // Formatta ultima data
