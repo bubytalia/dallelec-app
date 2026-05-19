@@ -6,11 +6,10 @@
     <div class="row mb-4">
       <div class="col-md-4">
         <label class="form-label fw-bold">Mois:</label>
-        <input v-model="selectedMonth" type="month" class="form-control" @change="loadData" />
+        <input v-model="selectedMonth" type="month" class="form-control" @change="calculateAndLoad" />
       </div>
       <div class="col-md-8 d-flex align-items-end gap-2">
-        <button @click="loadData" class="btn btn-primary">📊 Charger</button>
-        <button @click="calculateMonth" class="btn btn-success">⚙️ Calculer</button>
+        <button @click="calculateAndLoad" class="btn btn-success">⚙️ Recalculer depuis janvier</button>
         <div class="dropdown">
           <button class="btn btn-danger dropdown-toggle" type="button" data-bs-toggle="dropdown">📄 PDF</button>
           <ul class="dropdown-menu">
@@ -137,40 +136,29 @@ const getHeuresPrevuesMois = (mois) => {
   return total;
 };
 
-const calculateMonth = async () => {
-  const [year, month] = selectedMonth.value.split('-').map(Number);
+const calculateSingleMonth = async (mois) => {
+  const [year, month] = mois.split('-').map(Number);
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
-  const heuresPrevues = getHeuresPrevuesMois(selectedMonth.value);
+  const heuresPrevues = getHeuresPrevuesMois(mois);
 
-  // Mese precedente
   const prevDate = new Date(year, month - 2, 1);
   const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
   const { data: prevSoldes } = await supabase.from('solde_heures').select('*').eq('mois', prevMonth);
-
-  // Ore lavorate
   const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*').gte('date', startDate).lte('date', endDate);
   const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*').gte('date', startDate).lte('date', endDate);
   const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*').gte('date', startDate).lte('date', endDate);
-
-  // Assenze
   const { data: absences } = await supabase.from('absences').select('*').eq('status', 'approved').lte('start_date', endDate).gte('end_date', startDate);
-
-  // Solde vacances precedente
   const { data: prevVac } = await supabase.from('solde_vacances').select('*').eq('mois', prevMonth);
 
   for (const emp of employes.value) {
-    // Ore lavorate
     const oreChef = (heuresChef || []).filter(h => h.chef_id === emp.email).reduce((s, h) => s + (h.total_heures || h.heures_normales || 0), 0);
     const oreInterim = (heuresInterim || []).filter(h => h.chef_id === emp.email).reduce((s, h) => s + (h.total_heures || 0), 0);
     const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email).reduce((s, h) => s + (h.heures || 0), 0);
     const heuresTravaillees = oreChef + oreInterim + oreOuvrier;
 
-    // Assenze nel mese
-    let absPayees = 0;
-    let absNonPayees = 0;
-    let vacPrises = 0;
+    let absPayees = 0, absNonPayees = 0, vacPrises = 0;
     const empAbs = (absences || []).filter(a => a.user_id === emp.email);
     for (const abs of empAbs) {
       const start = new Date(Math.max(new Date(abs.start_date), new Date(startDate)));
@@ -179,48 +167,45 @@ const calculateMonth = async () => {
         const dow = d.getDay();
         if (dow === 0 || dow === 6) continue;
         const h = abs.heures || ((dow >= 1 && dow <= 4) ? 8.75 : 5);
-        if (abs.type === 'vacances_sans_solde') {
-          absNonPayees += h;
-        } else {
-          absPayees += h;
-          if (abs.type === 'vacances') vacPrises += h;
-        }
+        if (abs.type === 'vacances_sans_solde') { absNonPayees += h; }
+        else { absPayees += h; if (abs.type === 'vacances') vacPrises += h; }
       }
     }
 
-    // Saldo ore
     const prevSolde = (prevSoldes || []).find(s => s.employee_email === emp.email);
     const soldePrecedent = prevSolde ? prevSolde.solde_final : 0;
     const delta = (heuresTravaillees + absPayees) - (heuresPrevues - absNonPayees);
     const soldeFinal = soldePrecedent + delta;
 
-    // Saldo vacanze
     const prevVacSolde = (prevVac || []).find(v => v.employee_email === emp.email);
     const vacSoldePrecedent = prevVacSolde ? prevVacSolde.solde_final : emp.solde_initial_vac;
     const vacAcquises = emp.heures_droit_mois || 0;
     const vacNouveauSolde = vacSoldePrecedent + vacAcquises - vacPrises;
 
     // Upsert solde_heures
-    const { data: existing } = await supabase.from('solde_heures').select('id').eq('employee_email', emp.email).eq('mois', selectedMonth.value).single();
-    const record = { employee_email: emp.email, mois: selectedMonth.value, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
-    if (existing) {
-      await supabase.from('solde_heures').update(record).eq('id', existing.id);
-    } else {
-      await supabase.from('solde_heures').insert(record);
-    }
+    const { data: existing } = await supabase.from('solde_heures').select('id').eq('employee_email', emp.email).eq('mois', mois).single();
+    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
+    if (existing) { await supabase.from('solde_heures').update(record).eq('id', existing.id); }
+    else { await supabase.from('solde_heures').insert(record); }
 
     // Upsert solde_vacances
-    const { data: existingVac } = await supabase.from('solde_vacances').select('id').eq('employee_email', emp.email).eq('mois', selectedMonth.value).single();
-    const vacRecord = { employee_email: emp.email, user_id: emp.email, mois: selectedMonth.value, solde_precedent: vacSoldePrecedent, heures_droit_mois: vacAcquises, heures_prises: vacPrises, solde_final: vacNouveauSolde, updated_at: new Date().toISOString() };
-    if (existingVac) {
-      await supabase.from('solde_vacances').update(vacRecord).eq('id', existingVac.id);
-    } else {
-      await supabase.from('solde_vacances').insert(vacRecord);
-    }
+    const { data: existingVac } = await supabase.from('solde_vacances').select('id').eq('employee_email', emp.email).eq('mois', mois).single();
+    const vacRecord = { employee_email: emp.email, user_id: emp.email, mois, solde_precedent: vacSoldePrecedent, heures_droit_mois: vacAcquises, heures_prises: vacPrises, solde_final: vacNouveauSolde, updated_at: new Date().toISOString() };
+    if (existingVac) { await supabase.from('solde_vacances').update(vacRecord).eq('id', existingVac.id); }
+    else { await supabase.from('solde_vacances').insert(vacRecord); }
   }
+};
 
+const calculateAndLoad = async () => {
+  const [targetYear, targetMonth] = selectedMonth.value.split('-').map(Number);
+  
+  // Calcule depuis janvier jusqu'au mois sélectionné
+  for (let m = 1; m <= targetMonth; m++) {
+    const mois = `${targetYear}-${String(m).padStart(2, '0')}`;
+    await calculateSingleMonth(mois);
+  }
+  
   await loadData();
-  alert('Calcul terminé!');
 };
 
 const getEmployeName = (email) => {
@@ -373,7 +358,7 @@ const generatePDFIndividuel = async () => {
 
 onMounted(async () => {
   await loadEmployes();
-  await loadData();
+  await calculateAndLoad();
 });
 </script>
 
