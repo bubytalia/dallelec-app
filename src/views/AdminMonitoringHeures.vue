@@ -344,12 +344,18 @@ const saveEdit = async () => {
           await supabase.from('absences').insert({ user_id: employeEmail, start_date: next.toISOString().split('T')[0], end_date: abs.end_date, type: abs.type, status: 'approved', heures: abs.heures });
         }
       }
-      // Insérer nouvelles heures
-      if (employeType === 'chef') {
-        await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures });
+      // Insérer nouvelles heures - détecter la bonne table
+      // Vérifier où l'employé a déjà des heures
+      const { data: checkOuvrier } = await supabase.from('heures_ouvriers').select('id').eq('ouvrier_id', employeEmail).limit(1);
+      const { data: checkChef } = await supabase.from('heures_chef_propres').select('id').eq('chef_id', employeEmail).limit(1);
+      const useOuvrierTable = (checkOuvrier && checkOuvrier.length > 0) || (!checkChef || checkChef.length === 0 && employeType === 'ouvrier');
+      
+      if (!useOuvrierTable) {
+        const { error: insertErr } = await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures });
+        if (insertErr) console.error('INSERT ERROR chef:', insertErr);
       } else {
         const { error: insertErr } = await supabase.from('heures_ouvriers').insert({ ouvrier_id: employeEmail, date, heures: heures });
-        if (insertErr) console.error('INSERT ERROR:', insertErr);
+        if (insertErr) console.error('INSERT ERROR ouvrier:', insertErr);
       }
       
     } else {
