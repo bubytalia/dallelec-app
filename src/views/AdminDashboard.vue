@@ -76,6 +76,9 @@
       <div class="col-md-3 m-2">
         <router-link to="/admin/solde-vacances" class="btn btn-outline-warning w-100">🏖️ Solde Vacances</router-link>
       </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/bilan-mensuel" class="btn btn-outline-warning w-100">📋 Bilan Mensuel</router-link>
+      </div>
     </div>
 
     <!-- Section Administration -->
