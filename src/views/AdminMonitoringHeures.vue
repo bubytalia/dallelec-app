@@ -133,6 +133,7 @@
               <option value="">Sélectionner un chantier</option>
               <option v-for="ch in chantiersOuverts" :key="ch.id" :value="ch.id">{{ ch.nom }}</option>
             </select>
+            <small v-if="editModal.existingChantierNom" class="text-muted">🏗️ Chantier actuel: {{ editModal.existingChantierNom }}</small>
           </div>
 
           <!-- Heures pour absences (vacances, maladie, etc.) -->
@@ -272,7 +273,7 @@ const openEditModal = async (employe, jour) => {
   
   // Charger chantiers si nécessaire
   if (needsChantier && chantiersOuverts.value.length === 0) {
-    const { data } = await supabase.from('chantiers').select('id, nom').eq('etat_insertion_heures', 'ouvert');
+    const { data } = await supabase.from('chantiers').select('id, nom');
     chantiersOuverts.value = data || [];
   }
   
@@ -301,16 +302,37 @@ const closeEditModal = () => {
 
 const loadExistingRecords = async (email, date) => {
   const records = [];
+  let existingChantier = null;
+  let existingChantierNom = '';
+  
   const { data: chefRecs } = await supabase.from('heures_chef_propres').select('*').eq('chef_id', email).eq('date', date);
-  (chefRecs || []).forEach(r => records.push({ id: r.id, table: 'heures_chef_propres', heures: r.total_heures || r.heures_normales }));
+  (chefRecs || []).forEach(r => {
+    records.push({ id: r.id, table: 'heures_chef_propres', heures: r.total_heures || r.heures_normales });
+    if (r.chantier_id) existingChantier = r.chantier_id;
+  });
   
   const { data: interimRecs } = await supabase.from('heures_chef_interim').select('*').eq('chef_id', email).eq('date', date);
-  (interimRecs || []).forEach(r => records.push({ id: r.id, table: 'heures_chef_interim', heures: r.total_heures || r.heures_normales }));
+  (interimRecs || []).forEach(r => {
+    records.push({ id: r.id, table: 'heures_chef_interim', heures: r.total_heures || r.heures_normales });
+    if (r.chantier_id) existingChantier = r.chantier_id;
+  });
   
   const { data: ouvrierRecs } = await supabase.from('heures_ouvriers').select('*').eq('ouvrier_id', email).eq('date', date);
-  (ouvrierRecs || []).forEach(r => records.push({ id: r.id, table: 'heures_ouvriers', heures: r.heures }));
+  (ouvrierRecs || []).forEach(r => {
+    records.push({ id: r.id, table: 'heures_ouvriers', heures: r.heures });
+    if (r.chantier_id) existingChantier = r.chantier_id;
+  });
+  
+  // Récupérer le nom du chantier
+  if (existingChantier) {
+    const { data: ch } = await supabase.from('chantiers').select('nom').eq('id', existingChantier).single();
+    existingChantierNom = ch?.nom || '';
+  }
   
   editModal.value.existingRecords = records;
+  editModal.value.existingChantier = existingChantier;
+  editModal.value.existingChantierNom = existingChantierNom;
+  if (existingChantier) editModal.value.chantierId = existingChantier;
 };
 
 const deleteRecord = async (rec) => {
@@ -373,11 +395,14 @@ const saveEdit = async () => {
       const useOuvrierTable = (checkOuvrier && checkOuvrier.length > 0) || (!checkChef || checkChef.length === 0 && employeType === 'ouvrier');
       
       if (!useOuvrierTable) {
-        const chId = editModal.value.chantierId || null;
+        const chId = editModal.value.chantierId || editModal.value.existingChantier || null;
         const { error: insertErr } = await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures, chantier_id: chId });
         if (insertErr) console.error('INSERT ERROR chef:', insertErr);
       } else {
-        const { error: insertErr } = await supabase.from('heures_ouvriers').insert({ ouvrier_id: employeEmail, date, heures: heures });
+        const chId = editModal.value.chantierId || editModal.value.existingChantier || null;
+        const insertData = { ouvrier_id: employeEmail, date, heures: heures };
+        if (chId) insertData.chantier_id = chId;
+        const { error: insertErr } = await supabase.from('heures_ouvriers').insert(insertData);
         if (insertErr) console.error('INSERT ERROR ouvrier:', insertErr);
       }
       
