@@ -275,6 +275,7 @@ const generatePDFIndividuel = async () => {
 
   // Charger détail journalier
   const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*, chantiers(nom)').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
+  const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*, chantiers(nom)').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
   const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*, chantiers(nom)').eq('ouvrier_id', email).gte('date', startDate).lte('date', endDate);
   const { data: absences } = await supabase.from('absences').select('*').eq('user_id', email).eq('status', 'approved').lte('start_date', endDate).gte('end_date', startDate);
 
@@ -314,9 +315,10 @@ const generatePDFIndividuel = async () => {
 
     // Chercher heures
     const hChef = (heuresChef || []).filter(h => h.date === dateStr);
+    const hInterim = (heuresInterim || []).filter(h => h.date === dateStr);
     const hOuv = (heuresOuvriers || []).filter(h => h.date === dateStr);
-    const totalH = hChef.reduce((s,h) => s + (h.total_heures||h.heures_normales||0), 0) + hOuv.reduce((s,h) => s + (h.heures||0), 0);
-    const chantier = hChef[0]?.chantiers?.nom || hOuv[0]?.chantiers?.nom || '';
+    const totalH = hChef.reduce((s,h) => s + (h.total_heures||h.heures_normales||0), 0) + hInterim.reduce((s,h) => s + (h.total_heures||0), 0) + hOuv.reduce((s,h) => s + (h.heures||0), 0);
+    const chantier = hChef[0]?.chantiers?.nom || hInterim[0]?.chantiers?.nom || hOuv[0]?.chantiers?.nom || '';
 
     // Chercher absence
     const abs = (absences || []).find(a => a.start_date <= dateStr && a.end_date >= dateStr);
