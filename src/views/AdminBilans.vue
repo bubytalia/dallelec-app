@@ -504,7 +504,7 @@ const availableClients = computed(() => {
 const loadData = async () => {
   try {
     // Chantiers
-    const { data: chantiersData } = await supabase.from('chantiers').select('*');
+    const { data: chantiersData } = await supabase.from('chantiers').select('*').neq('type', 'interne');
     chantiers.value = chantiersData || [];
 
     // Devis
