@@ -273,14 +273,14 @@ const generatePDFIndividuel = async () => {
 
   let html = `<html><head><title>Fiche ${nom} - ${monthLabel}</title>
   <style>
-    body{font-family:Arial,sans-serif;padding:15px 20px;font-size:8px;margin:0}
+    body{font-family:Arial,sans-serif;padding:15px 20px;font-size:9.5px;margin:0}
     .header{text-align:center;margin-bottom:8px}
     .header h1{font-size:14px;margin:0}
     .header p{color:#666;margin:2px 0;font-size:9px}
     .emp-name{font-size:12px;font-weight:bold;margin:8px 0}
     table{width:100%;border-collapse:collapse;margin:5px 0}
-    th,td{border:1px solid #ccc;padding:2px 4px;font-size:8px}
-    th{background:#f5f5f5;font-size:7.5px}
+    th,td{border:1px solid #ccc;padding:3px 5px;font-size:9.5px}
+    th{background:#f5f5f5;font-size:9px}
     .weekend{background:#f0f0f0;color:#999}
     .absence{background:#fff3cd}
     .recap{margin-top:12px;display:flex;gap:20px}
