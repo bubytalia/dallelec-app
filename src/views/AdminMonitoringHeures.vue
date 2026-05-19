@@ -126,6 +126,15 @@
             </select>
           </div>
 
+          <!-- Chantier (pour chefs) -->
+          <div v-if="editModal.action === 'heures' && editModal.needsChantier" class="mb-3">
+            <label class="form-label">Chantier:</label>
+            <select v-model="editModal.chantierId" class="form-control">
+              <option value="">Sélectionner un chantier</option>
+              <option v-for="ch in chantiersOuverts" :key="ch.id" :value="ch.id">{{ ch.nom }}</option>
+            </select>
+          </div>
+
           <!-- Heures pour absences (vacances, maladie, etc.) -->
           <div v-if="['vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(editModal.action)" class="mb-3">
             <label class="form-label">Heures de la journée (pour calcul solde):</label>
@@ -223,6 +232,7 @@ import RetourButton from '@/components/RetourButton.vue';
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
 const monitoringData = ref(null);
 const availableMonths = ref([]);
+const chantiersOuverts = ref([]);
 
 // Modal edit
 const editModal = ref({
@@ -256,6 +266,16 @@ const openEditModal = async (employe, jour) => {
   const dayOfWeek = new Date(jour.date).getDay();
   const defaultHeuresAbsence = (dayOfWeek >= 1 && dayOfWeek <= 4) ? 8.75 : 5;
   
+  // Vérifier si l'employé a besoin d'un chantier (chef avec heures dans heures_chef_propres)
+  const { data: checkOuvrier } = await supabase.from('heures_ouvriers').select('id').eq('ouvrier_id', employe.email).limit(1);
+  const needsChantier = !(checkOuvrier && checkOuvrier.length > 0);
+  
+  // Charger chantiers si nécessaire
+  if (needsChantier && chantiersOuverts.value.length === 0) {
+    const { data } = await supabase.from('chantiers').select('id, nom').eq('etat_insertion_heures', 'ouvert');
+    chantiersOuverts.value = data || [];
+  }
+  
   editModal.value = {
     show: true,
     employeEmail: employe.email,
@@ -266,6 +286,8 @@ const openEditModal = async (employe, jour) => {
     action: ['heures','vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(jour.status) ? jour.status : 'heures',
     heures: jour.heures || '',
     heuresAbsence: defaultHeuresAbsence,
+    needsChantier,
+    chantierId: '',
     existingRecords: [],
     saving: false
   };
@@ -351,7 +373,8 @@ const saveEdit = async () => {
       const useOuvrierTable = (checkOuvrier && checkOuvrier.length > 0) || (!checkChef || checkChef.length === 0 && employeType === 'ouvrier');
       
       if (!useOuvrierTable) {
-        const { error: insertErr } = await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures });
+        const chId = editModal.value.chantierId || null;
+        const { error: insertErr } = await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures, chantier_id: chId });
         if (insertErr) console.error('INSERT ERROR chef:', insertErr);
       } else {
         const { error: insertErr } = await supabase.from('heures_ouvriers').insert({ ouvrier_id: employeEmail, date, heures: heures });
