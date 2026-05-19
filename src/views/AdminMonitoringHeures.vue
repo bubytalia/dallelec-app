@@ -219,7 +219,7 @@ import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
-const selectedMonth = ref('2025-10');
+const selectedMonth = ref(new Date().toISOString().slice(0, 7));
 const monitoringData = ref(null);
 const availableMonths = ref([]);
 
