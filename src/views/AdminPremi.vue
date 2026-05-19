@@ -296,7 +296,7 @@ const paiementForm = ref({ chantierId: null, capocantiere: '', montant: 0, moisP
 const loadData = async () => {
   try {
     const [ch, fa, me, hp, hi, ho, cdc] = await Promise.all([
-      supabase.from('chantiers').select('*'),
+      supabase.from('chantiers').select('*').neq('type', 'interne'),
       supabase.from('factures').select('*'),
       supabase.from('metrages').select('*'),
       supabase.from('heures_chef_propres').select('*'),

@@ -189,7 +189,7 @@ const totalRegies = computed(() => {
 // Admin: carica TUTTI i cantieri
 const loadChantiers = async () => {
   try {
-    const { data, error } = await supabase.from('chantiers').select('*').order('nom');
+    const { data, error } = await supabase.from('chantiers').select('*').neq('type', 'interne').order('nom');
     if (error) throw error;
     chantiers.value = data || [];
   } catch (error) {

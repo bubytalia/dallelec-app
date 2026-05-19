@@ -335,6 +335,7 @@ const fetchChantiers = async () => {
     const { data, error } = await supabase
       .from('chantiers')
       .select('*')
+      .neq('type', 'interne')
       .eq('capocantiere', userEmail);
     
     if (error) throw error;

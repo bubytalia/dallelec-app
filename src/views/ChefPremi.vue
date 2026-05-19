@@ -156,7 +156,7 @@ const loadData = async () => {
   currentUserEmail.value = user?.email || '';
 
   const [ch, fa, me, hp, hi, ho] = await Promise.all([
-    supabase.from('chantiers').select('*'),
+    supabase.from('chantiers').select('*').neq('type', 'interne'),
     supabase.from('factures').select('*'),
     supabase.from('metrages').select('*'),
     supabase.from('heures_chef_propres').select('*'),

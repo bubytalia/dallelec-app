@@ -261,6 +261,7 @@ const loadChantiers = async () => {
     const { data, error } = await supabase
       .from('chantiers')
       .select('*')
+      .neq('type', 'interne')
       .eq('capocantiere', userEmail)
       .order('nom');
     

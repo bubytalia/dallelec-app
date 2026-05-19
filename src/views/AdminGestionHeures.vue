@@ -155,7 +155,7 @@ const editingHeure = ref({})
 const exportSansPrix = ref(true)
 
 const fetchChantiers = async () => {
-  const { data } = await supabase.from('chantiers').select('*').order('nom')
+  const { data } = await supabase.from('chantiers').select('*').neq('type', 'interne').order('nom')
   chantiers.value = data || []
 }
 

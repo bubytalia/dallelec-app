@@ -311,7 +311,7 @@ const setDefaultDates = () => {
 };
 
 const fetchChantiers = async () => {
-  const { data } = await supabase.from('chantiers').select('*');
+  const { data } = await supabase.from('chantiers').select('*').neq('type', 'interne');
   chantiers.value = data || [];
 };
 

@@ -60,6 +60,7 @@ const fetchChantiers = async () => {
     const { data, error } = await supabase
       .from('chantiers')
       .select('*')
+      .neq('type', 'interne')
       .eq('capocantiere', chefEmail);
     
     if (error) throw error;
