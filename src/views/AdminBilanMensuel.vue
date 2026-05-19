@@ -9,7 +9,6 @@
         <input v-model="selectedMonth" type="month" class="form-control" @change="calculateAndLoad" />
       </div>
       <div class="col-md-8 d-flex align-items-end gap-2">
-        <button @click="calculateAndLoad" class="btn btn-success">⚙️ Recalculer depuis janvier</button>
         <div class="dropdown">
           <button class="btn btn-danger dropdown-toggle" type="button" data-bs-toggle="dropdown">📄 PDF</button>
           <ul class="dropdown-menu">
