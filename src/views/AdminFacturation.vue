@@ -2549,13 +2549,28 @@ const genererPDF = async (facture) => {
       // Aggiungi spazio dopo l'header
       startY += 20;
       
-      const tableData = facture.lignes.map(ligne => [
+      const tableData = facture.lignes.filter(l => l.description).map(ligne => [
         ligne.description,
         ligne.unite || 'pcs',
         ligne.quantite.toString(),
         `${ligne.prixUnitaire.toFixed(2)} CHF`,
         `${(ligne.quantite * ligne.prixUnitaire).toFixed(2)} CHF`
       ]);
+
+      // Ajouter les régies manuelles
+      if (facture.regies_manuelles?.length > 0) {
+        facture.regies_manuelles.forEach(regie => {
+          if (regie.heures > 0 && regie.prixHeure > 0) {
+            tableData.push([
+              `Régie: ${regie.description || 'Heures de régie'}`,
+              'h',
+              regie.heures.toString(),
+              `${Number(regie.prixHeure).toFixed(2)} CHF`,
+              `${(regie.heures * regie.prixHeure).toFixed(2)} CHF`
+            ]);
+          }
+        });
+      }
       
       autoTable(doc, {
         head: [['Description', 'Unité', 'Quantité', 'Prix unitaire', 'Total HT']],

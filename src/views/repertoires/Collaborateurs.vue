@@ -5,6 +5,12 @@
 
     <h2 class="text-center mb-4">Collaborateurs</h2>
     
+    <!-- Filtre actifs -->
+    <div class="form-check form-switch mb-3">
+      <input v-model="showOnlyActifs" type="checkbox" class="form-check-input" id="filterActifs" @change="updateFilter">
+      <label class="form-check-label" for="filterActifs">Afficher uniquement le personnel en activité</label>
+    </div>
+    
     <!-- Avviso integrità dati -->
     <div class="alert alert-info mb-4">
       <strong>📊 Integrità dati:</strong> Le modifiche ai costi orari non influenzeranno i cantieri già in corso. 
@@ -39,6 +45,10 @@
           <input v-model="newCollaborateur.excludefromreport" type="checkbox" class="form-check-input" id="excludeNew">
           <label class="form-check-label" for="excludeNew">Exclure du rapport mensuel</label>
         </div>
+        <div class="form-check mt-1">
+          <input v-model="newCollaborateur.actif" type="checkbox" class="form-check-input" id="actifNew">
+          <label class="form-check-label" for="actifNew">En activité</label>
+        </div>
       </div>
       <div class="col-12 text-end">
         <button type="submit" class="btn btn-primary">Ajouter</button>
@@ -55,11 +65,12 @@
           <th>État</th>
           <th>Coût horaire</th>
           <th>Exclu rapport</th>
+          <th>Actif</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="collab in collaborateurs" :key="collab.id">
+        <tr v-for="collab in filteredCollaborateurs" :key="collab.id">
           <template v-if="editId === collab.id">
             <td><input v-model="editCollaborateur.nom" class="form-control" /></td>
             <td><input v-model="editCollaborateur.prenom" class="form-control" /></td>
@@ -74,6 +85,9 @@
             <td><input v-model.number="editCollaborateur.cout_horaire" class="form-control" /></td>
             <td>
               <input v-model="editCollaborateur.excludefromreport" type="checkbox" class="form-check-input">
+            </td>
+            <td>
+              <input v-model="editCollaborateur.actif" type="checkbox" class="form-check-input">
             </td>
             <td>
               <button @click="updateCollaborateur(collab.id)" class="btn btn-success btn-sm">✔</button>
@@ -92,6 +106,10 @@
               <span v-else class="badge bg-success">✓ Inclus</span>
             </td>
             <td>
+              <span v-if="collab.actif === false" class="badge bg-secondary">❌ Inactif</span>
+              <span v-else class="badge bg-success">✓ Actif</span>
+            </td>
+            <td>
               <button @click="startEdit(collab)" class="btn btn-warning btn-sm">✎</button>
               <button @click="deleteCollaborateur(collab.id)" class="btn btn-danger btn-sm">🗑</button>
             </td>
@@ -104,7 +122,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 
@@ -116,11 +134,14 @@ export default {
   setup() {
     const collaborateurs = ref([]);
     const newCollaborateur = ref({
-      nom: '', prenom: '', telephone: '', email: '', etat: '', cout_horaire: null, excludefromreport: false
+      nom: '', prenom: '', telephone: '', email: '', etat: '', cout_horaire: null, excludefromreport: false, actif: true
     });
 
     const editId = ref(null);
     const editCollaborateur = ref({});
+    const showOnlyActifs = ref(true);
+
+    const filteredCollaborateurs = ref([]);
 
     const fetchCollaborateurs = async () => {
       console.log('🔍 Caricando collaborateurs...');
@@ -134,6 +155,7 @@ export default {
       
       if (!error && data) {
         collaborateurs.value = data;
+        updateFilter();
         console.log(`✅ Caricati ${data.length} collaborateurs`);
       } else {
         console.error('❌ Errore:', error);
@@ -146,7 +168,7 @@ export default {
         .insert([newCollaborateur.value]);
       
       if (!error) {
-        newCollaborateur.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', cout_horaire: null, excludefromreport: false };
+        newCollaborateur.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', cout_horaire: null, excludefromreport: false, actif: true };
         fetchCollaborateurs();
       }
     };
@@ -188,10 +210,21 @@ export default {
       }
     };
 
+    const updateFilter = () => {
+      if (showOnlyActifs.value) {
+        filteredCollaborateurs.value = collaborateurs.value.filter(c => c.actif !== false);
+      } else {
+        filteredCollaborateurs.value = collaborateurs.value;
+      }
+    };
+
     onMounted(fetchCollaborateurs);
 
     return {
       collaborateurs,
+      filteredCollaborateurs,
+      showOnlyActifs,
+      updateFilter,
       newCollaborateur,
       addCollaborateur,
       editId,

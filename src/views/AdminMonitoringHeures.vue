@@ -400,12 +400,12 @@ const loadMonitoringData = async () => {
     const { data: chefs } = await supabase.from('chefdechantiers').select('*');
     
     const employes = [
-      ...(chefs || []).filter(c => !c.excludeFromReport).map(c => ({ 
+      ...(chefs || []).filter(c => !c.excludeFromReport && c.actif !== false).map(c => ({ 
         email: c.email, 
         nom: `${c.nom} ${c.prenom}`, 
         type: 'chef' 
       })),
-      ...(collaborateurs || []).filter(c => !c.excludeFromReport).map(c => ({ 
+      ...(collaborateurs || []).filter(c => !c.excludeFromReport && c.actif !== false).map(c => ({ 
         email: c.email, 
         nom: `${c.nom} ${c.prenom}`, 
         type: 'ouvrier' 

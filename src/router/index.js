@@ -21,6 +21,7 @@ import AdminImportFatture from '@/views/AdminImportFatture.vue';
 import AdminMonitoringHeures from '@/views/AdminMonitoringHeures.vue';
 import AdminGestionHeures from '@/views/AdminGestionHeures.vue';
 import AdminAbsences from '@/views/AdminAbsences.vue';
+import AdminSoldeVacances from '@/views/AdminSoldeVacances.vue';
 
 // Chef pages
 import ChefHeures from '@/views/ChefHeures.vue';
@@ -118,6 +119,7 @@ const routes = [
   { path: '/admin/monitoring-heures', name: 'AdminMonitoringHeures', component: AdminMonitoringHeures },
   { path: '/admin/gestion-heures', name: 'AdminGestionHeures', component: AdminGestionHeures },
   { path: '/admin/absences', name: 'AdminAbsences', component: AdminAbsences },
+  { path: '/admin/solde-vacances', name: 'AdminSoldeVacances', component: AdminSoldeVacances },
   { path: '/admin/premi', name: 'AdminPremi', component: () => import('@/views/AdminPremi.vue') },
   { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },
   { path: '/admin/backup', name: 'AdminBackup', component: () => import('@/components/BackupSupabase.vue') },

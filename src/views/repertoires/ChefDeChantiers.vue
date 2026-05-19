@@ -5,6 +5,12 @@
 
     <h2 class="text-center mb-4">Chefs de Chantiers</h2>
 
+    <!-- Filtre actifs -->
+    <div class="form-check form-switch mb-3">
+      <input v-model="showOnlyActifs" type="checkbox" class="form-check-input" id="filterActifsChef" @change="updateFilter">
+      <label class="form-check-label" for="filterActifsChef">Afficher uniquement le personnel en activité</label>
+    </div>
+
     <form @submit.prevent="addChef" class="row g-3 mb-4">
       <div class="col-md-4">
         <input v-model="newChef.nom" type="text" class="form-control" placeholder="Nom" required />
@@ -33,6 +39,10 @@
           <input v-model="newChef.excludeFromReport" type="checkbox" class="form-check-input" id="excludeNewChef">
           <label class="form-check-label" for="excludeNewChef">Exclure du rapport mensuel</label>
         </div>
+        <div class="form-check mt-1">
+          <input v-model="newChef.actif" type="checkbox" class="form-check-input" id="actifNewChef">
+          <label class="form-check-label" for="actifNewChef">En activité</label>
+        </div>
       </div>
       <div class="col-12 text-end">
         <button type="submit" class="btn btn-primary">Ajouter</button>
@@ -49,11 +59,12 @@
           <th>État</th>
           <th>Coût horaire</th>
           <th>Exclu rapport</th>
+          <th>Actif</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="chef in chefs" :key="chef.id">
+        <tr v-for="chef in filteredChefs" :key="chef.id">
           <template v-if="editId === chef.id">
             <td><input v-model="editChef.nom" class="form-control" /></td>
             <td><input v-model="editChef.prenom" class="form-control" /></td>
@@ -70,6 +81,9 @@
               <input v-model="editChef.excludeFromReport" type="checkbox" class="form-check-input">
             </td>
             <td>
+              <input v-model="editChef.actif" type="checkbox" class="form-check-input">
+            </td>
+            <td>
               <button @click="updateChef(chef.id)" class="btn btn-success btn-sm">✔</button>
               <button @click="cancelEdit" class="btn btn-secondary btn-sm">✖</button>
             </td>
@@ -84,6 +98,10 @@
             <td>
               <span v-if="chef.exclude_from_report || chef.excludeFromReport" class="badge bg-warning">⚠️ Exclu</span>
               <span v-else class="badge bg-success">✓ Inclus</span>
+            </td>
+            <td>
+              <span v-if="chef.actif === false" class="badge bg-secondary">❌ Inactif</span>
+              <span v-else class="badge bg-success">✓ Actif</span>
             </td>
             <td>
               <button @click="startEdit(chef)" class="btn btn-warning btn-sm">✎</button>
@@ -116,15 +134,29 @@ export default {
       email: '',
       etat: '',
       coutHoraire: null,
-      excludeFromReport: false
+      excludeFromReport: false,
+      actif: true
     });
 
     const editId = ref(null);
     const editChef = ref({});
+    const showOnlyActifs = ref(true);
+    const filteredChefs = ref([]);
 
     const fetchChefs = async () => {
       const { data, error } = await supabase.from('chefdechantiers').select('*').order('nom');
-      if (!error) chefs.value = data || [];
+      if (!error) {
+        chefs.value = data || [];
+        updateFilter();
+      }
+    };
+
+    const updateFilter = () => {
+      if (showOnlyActifs.value) {
+        filteredChefs.value = chefs.value.filter(c => c.actif !== false);
+      } else {
+        filteredChefs.value = chefs.value;
+      }
     };
 
     const addChef = async () => {
@@ -135,10 +167,11 @@ export default {
         email: newChef.value.email,
         etat: newChef.value.etat,
         cout_horaire: newChef.value.coutHoraire,
-        exclude_from_report: newChef.value.excludeFromReport
+        exclude_from_report: newChef.value.excludeFromReport,
+        actif: newChef.value.actif
       }]);
       if (!error) {
-        newChef.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false };
+        newChef.value = { nom: '', prenom: '', telephone: '', email: '', etat: '', coutHoraire: null, excludeFromReport: false, actif: true };
         fetchChefs();
       }
     };
@@ -161,7 +194,8 @@ export default {
         email: editChef.value.email,
         etat: editChef.value.etat,
         cout_horaire: editChef.value.coutHoraire,
-        exclude_from_report: editChef.value.excludeFromReport
+        exclude_from_report: editChef.value.excludeFromReport,
+        actif: editChef.value.actif
       }).eq('id', id);
       if (!error) {
         cancelEdit();
@@ -180,6 +214,9 @@ export default {
 
     return {
       chefs,
+      filteredChefs,
+      showOnlyActifs,
+      updateFilter,
       newChef,
       addChef,
       editId,
