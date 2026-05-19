@@ -79,6 +79,7 @@
                 >
                   <div class="day-number">{{ jour.day }}</div>
                   <div v-if="jour.heures > 0" class="hours-number">{{ jour.heures }}h</div>
+                  <div v-else-if="jour.heuresAbsence" class="hours-number">{{ jour.heuresAbsence }}h</div>
                 </div>
               </div>
             </div>
@@ -539,6 +540,8 @@ const loadMonitoringData = async () => {
         let status = 'weekend';
         if (isFuture) {
           status = 'future';
+        } else if (isWeekend) {
+          status = 'weekend';
         } else if (hasAbsence) {
           // Distingui tipo di assenza
           if (absenceJour.type === 'vacances') {
@@ -557,7 +560,7 @@ const loadMonitoringData = async () => {
           employeData.joursTravailles++;
           employeData.totalHeures += heuresJour;
           employeData.derniereDate = dateStr;
-        } else if (!isWeekend) {
+        } else {
           status = 'manquant';
           employeData.joursManquants++;
         }
@@ -567,6 +570,7 @@ const loadMonitoringData = async () => {
           day: currentDate.getDate(),
           status,
           heures: heuresJour,
+          heuresAbsence: hasAbsence ? (absenceJour.heures || null) : null,
           absence: hasAbsence ? absenceJour.type : null
         });
         
