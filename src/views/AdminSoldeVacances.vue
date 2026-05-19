@@ -8,10 +8,7 @@
     <div class="row mb-4">
       <div class="col-md-4">
         <label class="form-label fw-bold">Mois:</label>
-        <input v-model="selectedMonth" type="month" class="form-control" @change="calculateAndLoad" />
-      </div>
-      <div class="col-md-4 d-flex align-items-end">
-        <button @click="calculateAndLoad" class="btn btn-success me-2">⚙️ Recalculer depuis janvier</button>
+        <input v-model="selectedMonth" type="month" class="form-control" @change="loadData" />
       </div>
       <div class="col-md-4 d-flex align-items-end">
         <div class="dropdown">
@@ -586,7 +583,7 @@ const generatePDFIndividuel = async () => {
 
 onMounted(async () => {
   await loadEmployes();
-  await calculateAndLoad();
+  await loadData();
 });
 </script>
 
