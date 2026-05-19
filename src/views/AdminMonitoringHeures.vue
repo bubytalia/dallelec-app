@@ -300,6 +300,7 @@ const deleteRecord = async (rec) => {
 const saveEdit = async () => {
   editModal.value.saving = true;
   const { employeEmail, employeType, date, action, heures } = editModal.value;
+  console.log('SAVE EDIT:', { employeEmail, employeType, date, action, heures, heuresAbsence: editModal.value.heuresAbsence });
   
   try {
     if (action === 'supprimer') {
