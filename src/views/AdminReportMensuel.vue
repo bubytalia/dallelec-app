@@ -203,31 +203,31 @@ const exportToPDF = () => {
 
   let html = `<html><head><title>Report Commercialiste - ${monthLabel}</title>
   <style>
-    body{font-family:Arial,sans-serif;padding:10px 15px;margin:0;font-size:9px}
-    .page{page-break-after:always;padding:10px 0}
+    body{font-family:Arial,sans-serif;padding:8px 12px;margin:0;font-size:8px}
+    .page{page-break-after:always;padding:5px 0}
     .page:last-child{page-break-after:avoid}
-    .header{text-align:center;margin-bottom:10px;border-bottom:2px solid #333;padding-bottom:8px}
-    .header h1{font-size:14px;margin:0}
-    .header p{margin:2px 0;font-size:10px;color:#555}
-    .emp-title{font-size:12px;font-weight:bold;margin:10px 0 8px;padding:5px;background:#f0f0f0;border-left:4px solid #333}
-    .two-cols{display:flex;gap:15px;margin-top:8px}
-    .col-box{flex:1;border:2px solid #333;padding:10px;border-radius:4px}
-    .col-box h3{font-size:11px;margin:0 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}
+    .header{text-align:center;margin-bottom:6px;border-bottom:1.5px solid #333;padding-bottom:5px}
+    .header h1{font-size:12px;margin:0}
+    .header p{margin:1px 0;font-size:9px;color:#555}
+    .emp-title{font-size:10px;font-weight:bold;margin:6px 0 4px;padding:3px 5px;background:#f0f0f0;border-left:3px solid #333}
+    .two-cols{display:flex;gap:10px;margin-top:4px}
+    .col-box{flex:1;border:1.5px solid #333;padding:6px;border-radius:3px}
+    .col-box h3{font-size:9px;margin:0 0 4px;border-bottom:1px solid #ccc;padding-bottom:2px}
     .col-box table{width:100%;border-collapse:collapse}
-    .col-box td{padding:3px 0;font-size:9.5px}
+    .col-box td{padding:1.5px 0;font-size:8px}
     .col-box td:last-child{text-align:right;font-weight:bold}
-    .result{font-size:12px;font-weight:bold;margin-top:6px;padding-top:6px;border-top:2px solid #333}
+    .result{font-size:10px;font-weight:bold;margin-top:4px;padding-top:4px;border-top:1.5px solid #333}
     .pos{color:green}.neg{color:red}
-    .footer{text-align:center;font-size:8px;color:#999;margin-top:10px;border-top:1px solid #ddd;padding-top:5px}
-    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
+    .footer{text-align:center;font-size:7px;color:#999;margin-top:6px;border-top:1px solid #ddd;padding-top:3px}
+    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:6mm}.page{page-break-after:always}}
   </style></head><body>`;
 
-  // 2 employés par page
-  for (let i = 0; i < bilans.value.length; i += 2) {
+  // 3 employés par page
+  for (let i = 0; i < bilans.value.length; i += 3) {
     html += `<div class="page">`;
     html += `<div class="header"><h1>DALLELEC Sàrl - Rapport Mensuel</h1><p>${monthLabel} — Document pour le commercialiste</p></div>`;
 
-    for (let j = i; j < Math.min(i + 2, bilans.value.length); j++) {
+    for (let j = i; j < Math.min(i + 3, bilans.value.length); j++) {
       const b = bilans.value[j];
       const nom = getEmployeName(b.employee_email);
       const deltaClass = b.delta_mois >= 0 ? 'pos' : 'neg';
