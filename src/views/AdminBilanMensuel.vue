@@ -211,7 +211,7 @@ const calculateMonth = async () => {
 
     // Upsert solde_vacances
     const { data: existingVac } = await supabase.from('solde_vacances').select('id').eq('employee_email', emp.email).eq('mois', selectedMonth.value).single();
-    const vacRecord = { employee_email: emp.email, mois: selectedMonth.value, solde_precedent: vacSoldePrecedent, heures_droit_mois: vacAcquises, heures_prises: vacPrises, solde_final: vacNouveauSolde, updated_at: new Date().toISOString() };
+    const vacRecord = { employee_email: emp.email, user_id: emp.email, mois: selectedMonth.value, solde_precedent: vacSoldePrecedent, heures_droit_mois: vacAcquises, heures_prises: vacPrises, solde_final: vacNouveauSolde, updated_at: new Date().toISOString() };
     if (existingVac) {
       await supabase.from('solde_vacances').update(vacRecord).eq('id', existingVac.id);
     } else {

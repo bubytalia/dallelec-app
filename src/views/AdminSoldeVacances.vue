@@ -12,7 +12,8 @@
       </div>
       <div class="col-md-4 d-flex align-items-end">
         <button @click="loadData" class="btn btn-primary me-2">📊 Charger</button>
-        <button @click="calculateMonth" class="btn btn-success me-2">⚙️ Calculer</button>
+        <button @click="calculateMonth" class="btn btn-success me-2">⚙️ Calculer mois</button>
+        <button @click="calculateYear" class="btn btn-warning me-2">📅 Calculer toute l'année</button>
       </div>
       <div class="col-md-4 d-flex align-items-end">
         <div class="dropdown">
@@ -334,6 +335,7 @@ const calculateMonth = async () => {
     } else {
       await supabase.from('solde_vacances').insert({
         employee_email: emp.email,
+        user_id: emp.email,
         mois: selectedMonth.value,
         solde_precedent: soldePrecedent,
         heures_droit_mois: heuresDroit,
