@@ -105,6 +105,7 @@
               <th>Chef Responsable</th>
               <th>Prix Régie/h</th>
               <th>% Impresa</th>
+              <th>Interne</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -177,6 +178,9 @@
                 <td>{{ getChefName(chantier.capocantiere) }}</td>
                 <td>{{ chantier.prix_regie || '-' }} CHF</td>
                 <td>{{ chantier.percentuale_impresa || 30 }}%</td>
+                <td>
+                  <input type="checkbox" class="form-check-input" :checked="chantier.type === 'interne'" @change="toggleInterne(chantier)">
+                </td>
                 <td>
                   <button class="btn btn-warning btn-sm" @click="startEdit(chantier)">✎</button>
                   <button class="btn btn-danger btn-sm" @click="deleteChantier(chantier.id)">🗑</button>
@@ -651,6 +655,12 @@ export default {
       }
     };
 
+    const toggleInterne = async (chantier) => {
+      const newType = chantier.type === 'interne' ? 'chantier' : 'interne';
+      await supabase.from('chantiers').update({ type: newType }).eq('id', chantier.id);
+      fetchChantiers();
+    };
+
     const getDevisName = (devisId) => {
       if (!devisId) return '-';
       const devisObj = devis.value.find(d => d.id === devisId);
@@ -787,7 +797,8 @@ export default {
       totalHeuresGeneral,
       resumeOeuvres,
       getChefName,
-      fetchPrixRegieDefault
+      fetchPrixRegieDefault,
+      toggleInterne
     };
   }
 };
