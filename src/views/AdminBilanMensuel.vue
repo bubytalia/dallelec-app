@@ -274,10 +274,12 @@ const generatePDFIndividuel = async () => {
   const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
   // Charger détail journalier
-  const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*, chantiers(nom)').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
-  const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*, chantiers(nom)').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
-  const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*, chantiers(nom)').eq('ouvrier_id', email).gte('date', startDate).lte('date', endDate);
+  const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
+  const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
+  const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*').eq('ouvrier_id', email).gte('date', startDate).lte('date', endDate);
   const { data: absences } = await supabase.from('absences').select('*').eq('user_id', email).eq('status', 'approved').lte('start_date', endDate).gte('end_date', startDate);
+  const { data: chantiersList } = await supabase.from('chantiers').select('id, nom');
+  const getChantierNom = (id) => { const c = (chantiersList||[]).find(ch => ch.id == id); return c ? c.nom : ''; };
 
   const monthLabel = formatMonth(selectedMonth.value);
   const jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
@@ -318,7 +320,8 @@ const generatePDFIndividuel = async () => {
     const hInterim = (heuresInterim || []).filter(h => h.date === dateStr);
     const hOuv = (heuresOuvriers || []).filter(h => h.date === dateStr);
     const totalH = hChef.reduce((s,h) => s + (h.total_heures||h.heures_normales||0), 0) + hInterim.reduce((s,h) => s + (h.total_heures||0), 0) + hOuv.reduce((s,h) => s + (h.heures||0), 0);
-    const chantier = hChef[0]?.chantiers?.nom || hInterim[0]?.chantiers?.nom || hOuv[0]?.chantiers?.nom || '';
+    const chantierRec = hChef[0] || hInterim[0] || hOuv[0];
+    const chantier = chantierRec ? getChantierNom(chantierRec.chantier_id) : '';
 
     // Chercher absence
     const abs = (absences || []).find(a => a.start_date <= dateStr && a.end_date >= dateStr);
