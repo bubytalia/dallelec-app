@@ -273,27 +273,28 @@ const generatePDFIndividuel = async () => {
 
   let html = `<html><head><title>Fiche ${nom} - ${monthLabel}</title>
   <style>
-    body{font-family:Arial,sans-serif;padding:30px;font-size:11px}
-    .header{text-align:center;margin-bottom:20px}
-    .header h1{font-size:18px;margin:0}
-    .header p{color:#666;margin:3px 0}
-    .emp-name{font-size:14px;font-weight:bold;margin:15px 0}
-    table{width:100%;border-collapse:collapse;margin:10px 0}
-    th,td{border:1px solid #ddd;padding:5px}
-    th{background:#f5f5f5}
+    body{font-family:Arial,sans-serif;padding:15px 20px;font-size:8px;margin:0}
+    .header{text-align:center;margin-bottom:8px}
+    .header h1{font-size:14px;margin:0}
+    .header p{color:#666;margin:2px 0;font-size:9px}
+    .emp-name{font-size:12px;font-weight:bold;margin:8px 0}
+    table{width:100%;border-collapse:collapse;margin:5px 0}
+    th,td{border:1px solid #ccc;padding:2px 4px;font-size:8px}
+    th{background:#f5f5f5;font-size:7.5px}
     .weekend{background:#f0f0f0;color:#999}
     .absence{background:#fff3cd}
-    .recap{margin-top:20px;display:flex;gap:30px}
-    .recap-box{flex:1;border:1px solid #ddd;padding:15px;border-radius:5px}
-    .recap-box h4{margin:0 0 10px;font-size:12px}
+    .recap{margin-top:12px;display:flex;gap:20px}
+    .recap-box{flex:1;border:2px solid #333;padding:12px;border-radius:5px}
+    .recap-box h4{margin:0 0 8px;font-size:12px}
+    .recap-box p{margin:3px 0;font-size:10px}
     .pos{color:green}.neg{color:red}
-    .result{font-size:14px;font-weight:bold;margin-top:10px;padding-top:8px;border-top:2px solid #333}
-    .footer{margin-top:30px;font-size:9px;color:#999;text-align:center}
-    @media print{body{margin:0}}
+    .result{font-size:13px;font-weight:bold;margin-top:8px;padding-top:6px;border-top:2px solid #333}
+    .footer{margin-top:12px;font-size:8px;color:#999;text-align:center}
+    @media print{body{margin:0;padding:10px 15px}@page{size:A4 portrait;margin:10mm}}
   </style></head><body>
   <div class="header"><h1>DALLELEC Sàrl</h1><p>Fiche mensuelle - ${monthLabel}</p></div>
   <div class="emp-name">👤 ${nom}</div>
-  <table><thead><tr><th style="width:80px">Jour</th><th style="width:90px">Date</th><th>Statut</th><th>Chantier</th><th style="width:60px">Heures</th></tr></thead><tbody>`;
+  <table><thead><tr><th style="width:55px">Jour</th><th style="width:45px">Date</th><th>Statut</th><th>Chantier</th><th style="width:45px">Heures</th></tr></thead><tbody>`;
 
   for (let d = 1; d <= lastDay; d++) {
     const date = new Date(year, month - 1, d);
