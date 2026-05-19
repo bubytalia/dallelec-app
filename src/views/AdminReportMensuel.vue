@@ -222,12 +222,12 @@ const exportToPDF = () => {
     @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
   </style></head><body>`;
 
-  // 3 employés par page
-  for (let i = 0; i < bilans.value.length; i += 3) {
+  // 4 employés par page
+  for (let i = 0; i < bilans.value.length; i += 4) {
     html += `<div class="page">`;
     html += `<div class="header"><h1>DALLELEC Sàrl - Rapport Mensuel</h1><p>${monthLabel} — Document pour le commercialiste</p></div>`;
 
-    for (let j = i; j < Math.min(i + 3, bilans.value.length); j++) {
+    for (let j = i; j < Math.min(i + 4, bilans.value.length); j++) {
       const b = bilans.value[j];
       const nom = getEmployeName(b.employee_email);
       const deltaClass = b.delta_mois >= 0 ? 'pos' : 'neg';
