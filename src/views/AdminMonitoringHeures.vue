@@ -50,7 +50,7 @@
           <div class="card-header">
             <h5>Vue d'ensemble - {{ formatMonth(selectedMonth) }}</h5>
             <small class="text-muted">
-              🟢 Heures saisies | 🔴 Pas d'heures | 🟦 Vacances | 🟥 Maladie | 🟡 Autres absences | ⚪ Weekend/Futur
+              🟢 Heures saisies | 🔴 Pas d'heures | 🟦 Vacances | 🟥 Maladie | 🔵 Jour férié | 🟠 Vacances sans solde | 🟡 Autres absences | ⚪ Weekend/Futur
             </small>
           </div>
           <div class="card-body">
@@ -60,6 +60,8 @@
               <span class="badge bg-danger me-2">{{ stats.joursSansHeures }} jours sans heures</span>
               <span class="badge bg-info me-2">{{ stats.joursVacances }} jours de vacances</span>
               <span class="badge bg-dark me-2">{{ stats.joursMaladie }} jours de maladie</span>
+              <span class="badge bg-primary me-2">{{ stats.joursFeries }} jours fériés</span>
+              <span class="badge bg-orange me-2">{{ stats.joursVacancesSansSolde }} vacances sans solde</span>
               <span class="badge bg-warning me-2">{{ stats.joursAutresAbsences }} autres absences</span>
             </div>
 
@@ -105,6 +107,10 @@
               <option value="heures">🟢 Saisir/Modifier heures</option>
               <option value="vacances">🟦 Vacances</option>
               <option value="maladie">🟥 Maladie</option>
+              <option value="jour_ferie">🔵 Jour férié</option>
+              <option value="vacances_sans_solde">🟠 Vacances sans solde</option>
+              <option value="accident">⚠️ Accident</option>
+              <option value="cours">📚 Cours</option>
               <option value="absence">🟡 Autre absence</option>
               <option value="supprimer">🗑️ Supprimer données du jour</option>
             </select>
@@ -239,7 +245,7 @@ const openEditModal = async (employe, jour) => {
     employeType: employe.type,
     date: jour.date,
     currentStatus: jour.status,
-    action: jour.status === 'heures' ? 'heures' : jour.status === 'vacances' ? 'vacances' : jour.status === 'maladie' ? 'maladie' : jour.status === 'absence' ? 'absence' : 'heures',
+    action: ['heures','vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(jour.status) ? jour.status : 'heures',
     heures: jour.heures || '',
     existingRecords: [],
     saving: false
@@ -328,12 +334,12 @@ const formatDateFR = (dateStr) => {
 };
 
 const getStatusBadgeClass = (status) => {
-  const map = { heures: 'bg-success', manquant: 'bg-danger', vacances: 'bg-info', maladie: 'bg-dark', absence: 'bg-warning', weekend: 'bg-light text-dark', future: 'bg-secondary' };
+  const map = { heures: 'bg-success', manquant: 'bg-danger', vacances: 'bg-info', maladie: 'bg-dark', jour_ferie: 'bg-primary', vacances_sans_solde: 'bg-orange', absence: 'bg-warning', weekend: 'bg-light text-dark', future: 'bg-secondary' };
   return map[status] || 'bg-light';
 };
 
 const getStatusLabel = (status) => {
-  const map = { heures: 'Heures saisies', manquant: 'Pas d\'heures', vacances: 'Vacances', maladie: 'Maladie', absence: 'Absence', weekend: 'Weekend', future: 'Futur' };
+  const map = { heures: 'Heures saisies', manquant: 'Pas d\'heures', vacances: 'Vacances', maladie: 'Maladie', jour_ferie: 'Jour férié', vacances_sans_solde: 'Vacances sans solde', absence: 'Absence', weekend: 'Weekend', future: 'Futur' };
   return map[status] || status;
 };
 
@@ -355,6 +361,8 @@ const stats = computed(() => {
     joursSansHeures: 0, 
     joursVacances: 0, 
     joursMaladie: 0, 
+    joursFeries: 0,
+    joursVacancesSansSolde: 0,
     joursAutresAbsences: 0 
   };
   
@@ -362,6 +370,8 @@ const stats = computed(() => {
   let joursSansHeures = 0;
   let joursVacances = 0;
   let joursMaladie = 0;
+  let joursFeries = 0;
+  let joursVacancesSansSolde = 0;
   let joursAutresAbsences = 0;
   
   monitoringData.value.forEach(emp => {
@@ -370,11 +380,13 @@ const stats = computed(() => {
       else if (jour.status === 'manquant') joursSansHeures++;
       else if (jour.status === 'vacances') joursVacances++;
       else if (jour.status === 'maladie') joursMaladie++;
+      else if (jour.status === 'jour_ferie') joursFeries++;
+      else if (jour.status === 'vacances_sans_solde') joursVacancesSansSolde++;
       else if (jour.status === 'absence') joursAutresAbsences++;
     });
   });
   
-  return { joursAvecHeures, joursSansHeures, joursVacances, joursMaladie, joursAutresAbsences };
+  return { joursAvecHeures, joursSansHeures, joursVacances, joursMaladie, joursFeries, joursVacancesSansSolde, joursAutresAbsences };
 });
 
 const loadMonitoringData = async () => {
@@ -514,6 +526,10 @@ const loadMonitoringData = async () => {
             status = 'vacances';
           } else if (absenceJour.type === 'maladie') {
             status = 'maladie';
+          } else if (absenceJour.type === 'jour_ferie') {
+            status = 'jour_ferie';
+          } else if (absenceJour.type === 'vacances_sans_solde') {
+            status = 'vacances_sans_solde';
           } else {
             status = 'absence';
           }
@@ -570,6 +586,8 @@ const getJourClass = (jour) => {
     case 'manquant': return `${baseClass} bg-danger text-white`;
     case 'vacances': return `${baseClass} bg-info text-white`;
     case 'maladie': return `${baseClass} bg-dark text-white`;
+    case 'jour_ferie': return `${baseClass} bg-primary text-white`;
+    case 'vacances_sans_solde': return `${baseClass} jour-ferie-sans-solde text-white`;
     case 'absence': return `${baseClass} bg-warning text-dark`;
     case 'weekend': return `${baseClass} bg-light text-muted`;
     case 'future': return `${baseClass} bg-secondary text-white`;
@@ -582,8 +600,10 @@ const getJourTooltip = (jour) => {
   switch (jour.status) {
     case 'heures': return `${date}: ${jour.heures}h travaillées`;
     case 'manquant': return `${date}: Aucune heure saisie`;
-    case 'vacances': return `${date}: Vacances (${jour.absence || 'approuvées'})`;
-    case 'maladie': return `${date}: Maladie (${jour.absence || 'approuvée'})`;
+    case 'vacances': return `${date}: Vacances`;
+    case 'maladie': return `${date}: Maladie`;
+    case 'jour_ferie': return `${date}: Jour férié`;
+    case 'vacances_sans_solde': return `${date}: Vacances sans solde`;
     case 'absence': return `${date}: Absence (${jour.absence || 'autre'})`;
     case 'weekend': return `${date}: Weekend`;
     case 'future': return `${date}: Date future`;
@@ -648,6 +668,15 @@ onMounted(() => {
 
 .calendar-day.bg-dark {
   background: linear-gradient(135deg, #6f42c1, #d63384) !important;
+}
+
+.calendar-day.jour-ferie-sans-solde {
+  background: #fd7e14 !important;
+}
+
+.badge.bg-orange {
+  background-color: #fd7e14 !important;
+  color: white;
 }
 
 /* Modal */

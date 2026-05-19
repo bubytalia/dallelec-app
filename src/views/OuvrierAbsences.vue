@@ -26,6 +26,7 @@
                     <option value="vacances">Vacances</option>
                     <option value="maladie">Maladie</option>
                     <option value="accident">Accident</option>
+                    <option value="jour_ferie">Jour férié</option>
                     <option value="vacances_sans_solde">Vacances sans solde</option>
                     <option value="cours">Cours</option>
                   </select>
@@ -295,6 +296,7 @@ const getTypeLabel = (type) => {
     case 'vacances': return 'Vacances';
     case 'maladie': return 'Maladie';
     case 'accident': return 'Accident';
+    case 'jour_ferie': return 'Jour férié';
     case 'vacances_sans_solde': return 'Vacances sans solde';
     case 'cours': return 'Cours';
     default: return type;
@@ -306,6 +308,7 @@ const getTypeClass = (type) => {
     case 'vacances': return 'badge bg-success';
     case 'maladie': return 'badge bg-danger';
     case 'accident': return 'badge bg-warning';
+    case 'jour_ferie': return 'badge bg-primary';
     case 'vacances_sans_solde': return 'badge bg-info';
     case 'cours': return 'badge bg-secondary';
     default: return 'badge bg-secondary';

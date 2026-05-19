@@ -75,6 +75,7 @@
           <option value="vacances">Vacances</option>
           <option value="maladie">Maladie</option>
           <option value="accident">Accident</option>
+          <option value="jour_ferie">Jour férié</option>
           <option value="vacances_sans_solde">Vacances sans solde</option>
           <option value="cours">Cours</option>
         </select>
@@ -328,6 +329,7 @@ const getTypeLabel = (type) => {
     vacances: 'Vacances',
     maladie: 'Maladie',
     accident: 'Accident',
+    jour_ferie: 'Jour férié',
     vacances_sans_solde: 'Vacances sans solde',
     cours: 'Cours'
   };
@@ -339,6 +341,7 @@ const getTypeClass = (type) => {
     vacances: 'badge bg-success',
     maladie: 'badge bg-danger',
     accident: 'badge bg-warning',
+    jour_ferie: 'badge bg-primary',
     vacances_sans_solde: 'badge bg-info',
     cours: 'badge bg-secondary'
   };
