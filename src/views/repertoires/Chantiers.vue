@@ -105,6 +105,7 @@
               <th>Chef Responsable</th>
               <th>Prix Régie/h</th>
               <th>% Impresa</th>
+              <th>État</th>
               <th>Interne</th>
               <th>Actions</th>
             </tr>
@@ -178,6 +179,17 @@
                 <td>{{ getChefName(chantier.capocantiere) }}</td>
                 <td>{{ chantier.prix_regie || '-' }} CHF</td>
                 <td>{{ chantier.percentuale_impresa || 30 }}%</td>
+                <td>
+                  <select 
+                    :value="chantier.stato_cantiere || 'a_commencer'" 
+                    class="form-select form-select-sm"
+                    @change="updateStatoCantiere(chantier, $event.target.value)"
+                  >
+                    <option value="a_commencer">À commencer</option>
+                    <option value="en_cours">En cours</option>
+                    <option value="ferme">Fermé</option>
+                  </select>
+                </td>
                 <td>
                   <input type="checkbox" class="form-check-input" :checked="chantier.type === 'interne'" @change="toggleInterne(chantier)">
                 </td>
@@ -655,6 +667,16 @@ export default {
       }
     };
 
+    const updateStatoCantiere = async (chantier, newValue) => {
+      const { error } = await supabase
+        .from('chantiers')
+        .update({ stato_cantiere: newValue })
+        .eq('id', chantier.id);
+      if (!error) {
+        chantier.stato_cantiere = newValue;
+      }
+    };
+
     const toggleInterne = async (chantier) => {
       const newType = chantier.type === 'interne' ? 'chantier' : 'interne';
       await supabase.from('chantiers').update({ type: newType }).eq('id', chantier.id);
@@ -798,7 +820,8 @@ export default {
       resumeOeuvres,
       getChefName,
       fetchPrixRegieDefault,
-      toggleInterne
+      toggleInterne,
+      updateStatoCantiere
     };
   }
 };
