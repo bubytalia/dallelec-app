@@ -144,7 +144,7 @@ const isWeekend = (day) => {
 }
 
 const chantiersActifs = computed(() => {
-  return chantiers.value.filter(c => c.statut !== 'Terminé')
+  return chantiers.value.filter(c => c.etat_insertion_heures !== 'ferme' && c.type !== 'interne')
 })
 
 const collaborateursActifs = computed(() => {
