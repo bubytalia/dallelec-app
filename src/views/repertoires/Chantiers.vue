@@ -188,9 +188,9 @@
                     {{ chantier.stato_cantiere === 'en_cours' ? 'En cours' : chantier.stato_cantiere === 'ferme' ? 'Fermé' : 'À commencer' }}
                   </span>
                   <select 
-                    :value="chantier.stato_cantiere || 'a_commencer'" 
+                    v-model="chantier.stato_cantiere"
                     class="form-select form-select-sm d-inline-block w-auto"
-                    @change="updateStatoCantiere(chantier, $event.target.value)"
+                    @change="updateStatoCantiere(chantier, chantier.stato_cantiere)"
                   >
                     <option value="a_commencer">À commencer</option>
                     <option value="en_cours">En cours</option>
