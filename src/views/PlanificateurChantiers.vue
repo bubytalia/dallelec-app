@@ -31,7 +31,7 @@
         </thead>
         <tbody>
           <tr v-for="(ch, idx) in chantiersActifs" :key="ch.id">
-            <td class="sticky-col fw-bold" :style="{ borderLeft: '4px solid ' + getColor(idx) }">
+            <td class="sticky-col fw-bold" :style="{ borderLeft: '4px solid ' + getColor(idx), fontSize: '0.75em' }">
               {{ ch.nom }}
             </td>
             <td
@@ -143,7 +143,7 @@ const isWeekend = (day) => {
 }
 
 const chantiersActifs = computed(() => {
-  return chantiers.value.filter(c => c.stato_cantiere !== 'ferme' && c.type !== 'interne')
+  return chantiers.value.filter(c => (c.stato_cantiere === 'a_commencer' || c.stato_cantiere === 'en_cours') && c.type !== 'interne')
 })
 
 const collaborateursActifs = computed(() => {
