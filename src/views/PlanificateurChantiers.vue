@@ -57,21 +57,6 @@
       </table>
     </div>
 
-    <!-- Panel collaborateurs (draggable) -->
-    <div class="card mt-4 p-3">
-      <h5>Collaborateurs disponibles <small class="text-muted">(glisser sur le calendrier)</small></h5>
-      <div class="d-flex flex-wrap gap-2">
-        <div
-          v-for="collab in collaborateursActifs"
-          :key="collab.id"
-          class="badge bg-primary p-2 draggable-collab"
-          draggable="true"
-          @dragstart="onDragStart($event, collab)"
-        >
-          {{ collab.nom }} {{ collab.prenom }}
-        </div>
-      </div>
-    </div>
 
     <!-- Modal assegnazione -->
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
