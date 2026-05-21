@@ -70,7 +70,6 @@
                 @keyup.escape="cancelEditZone"
                 @blur="confirmEditZone(index)"
                 class="zone-edit-input"
-                ref="zoneEditInput"
               />
             </template>
             <template v-else>
@@ -298,7 +297,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { supabase } from '../../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
@@ -350,6 +349,10 @@ const removeZone = (index) => {
 const startEditZone = (index) => {
   editingZoneIndex.value = index;
   editingZoneName.value = zones.value[index];
+  nextTick(() => {
+    const input = document.querySelector('.zone-edit-input');
+    if (input) input.focus();
+  });
 };
 
 const confirmEditZone = (index) => {
