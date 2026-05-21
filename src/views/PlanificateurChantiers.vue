@@ -124,6 +124,7 @@ const currentMonth = ref(new Date().getMonth())
 
 const chantiers = ref([])
 const collaborateurs = ref([])
+const chefDeChantiers = ref([])
 const planifications = ref([])
 
 const showModal = ref(false)
@@ -201,7 +202,9 @@ const chantiersActifs = computed(() => {
 })
 
 const collaborateursActifs = computed(() => {
-  return collaborateurs.value.filter(c => c.actif !== false)
+  const collabs = collaborateurs.value.filter(c => c.actif !== false).map(c => ({ ...c, role: 'collab' }))
+  const chefs = chefDeChantiers.value.map(c => ({ ...c, role: 'chef' }))
+  return [...chefs, ...collabs]
 })
 
 const getDateStr = (day) => {
@@ -217,10 +220,10 @@ const isCellActive = (chantierId, day) => {
 
 const getCellCollabs = (chantierId, day) => {
   const dateStr = getDateStr(day)
-  const collabIds = planifications.value
+  const personnelIds = planifications.value
     .filter(p => p.chantier_id === chantierId && p.date === dateStr)
-    .map(p => p.collaborateur_id)
-  return collaborateurs.value.filter(c => collabIds.includes(c.id))
+    .map(p => p.personnel_id)
+  return collaborateursActifs.value.filter(c => personnelIds.includes(c.id))
 }
 
 
@@ -260,13 +263,13 @@ const onDrop = async (event, chantierId, day) => {
 const addAssignment = async (chantierId, collabId, day) => {
   const dateStr = getDateStr(day)
   const exists = planifications.value.some(
-    p => p.chantier_id === chantierId && p.collaborateur_id === collabId && p.date === dateStr
+    p => p.chantier_id === chantierId && p.personnel_id === collabId && p.date === dateStr
   )
   if (exists) return
 
   const { data, error } = await supabase
     .from('planification')
-    .insert({ chantier_id: chantierId, collaborateur_id: collabId, date: dateStr })
+    .insert({ chantier_id: chantierId, personnel_id: collabId, date: dateStr })
     .select()
     .single()
 
@@ -283,12 +286,12 @@ const removeAssignment = async (collabId) => {
     .from('planification')
     .delete()
     .eq('chantier_id', chantierId)
-    .eq('collaborateur_id', collabId)
+    .eq('personnel_id', collabId)
     .eq('date', dateStr)
 
   if (!error) {
     planifications.value = planifications.value.filter(
-      p => !(p.chantier_id === chantierId && p.collaborateur_id === collabId && p.date === dateStr)
+      p => !(p.chantier_id === chantierId && p.personnel_id === collabId && p.date === dateStr)
     )
   }
 }
@@ -322,10 +325,10 @@ const addAssignmentRange = async () => {
     const dateStr = d.toISOString().split('T')[0]
     for (const collabId of selectedCollabs.value) {
       const exists = planifications.value.some(
-        p => p.chantier_id === modalChantier.value.id && p.collaborateur_id === collabId && p.date === dateStr
+        p => p.chantier_id === modalChantier.value.id && p.personnel_id === collabId && p.date === dateStr
       )
       if (!exists) {
-        inserts.push({ chantier_id: modalChantier.value.id, collaborateur_id: collabId, date: dateStr })
+        inserts.push({ chantier_id: modalChantier.value.id, personnel_id: collabId, date: dateStr })
       }
     }
   }
@@ -358,12 +361,12 @@ const removeAssignmentRange = async () => {
     .from('planification')
     .delete()
     .eq('chantier_id', modalChantier.value.id)
-    .in('collaborateur_id', selectedCollabs.value)
+    .in('personnel_id', selectedCollabs.value)
     .in('date', dates)
 
   if (!error) {
     planifications.value = planifications.value.filter(
-      p => !(p.chantier_id === modalChantier.value.id && selectedCollabs.value.includes(p.collaborateur_id) && dates.includes(p.date))
+      p => !(p.chantier_id === modalChantier.value.id && selectedCollabs.value.includes(p.personnel_id) && dates.includes(p.date))
     )
   }
   showModal.value = false
@@ -385,13 +388,15 @@ const loadPlanifications = async () => {
 }
 
 onMounted(async () => {
-  const [chRes, collRes] = await Promise.all([
+  const [chRes, collRes, chefRes] = await Promise.all([
     supabase.from('chantiers').select('*').order('nom'),
-    supabase.from('collaborateurs').select('*').order('nom')
+    supabase.from('collaborateurs').select('*').order('nom'),
+    supabase.from('chefdechantiers').select('*').order('nom')
   ])
 
   chantiers.value = chRes.data || []
   collaborateurs.value = collRes.data || []
+  chefDeChantiers.value = chefRes.data || []
 
   await loadPlanifications()
 })
