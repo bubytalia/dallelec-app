@@ -681,6 +681,7 @@ export default {
         .eq('id', chantier.id);
       if (!error) {
         chantier.stato_cantiere = newValue;
+        await fetchChantiers();
       }
     };
 
