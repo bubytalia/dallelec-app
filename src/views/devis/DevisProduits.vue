@@ -29,10 +29,9 @@
 </div>
 
 <!-- Résumé Chemin de Câble -->
-<div class="d-flex justify-content-center gap-3 mb-3">
+<div class="d-flex justify-content-center gap-3 mb-3" v-if="totalCDCSans > 0 || totalCDCAvec > 0">
   <div class="badge bg-secondary fs-6 p-2">🔌 CDC sans suppl.: <strong>{{ totalCDCSans.toFixed(2) }} m</strong></div>
   <div class="badge bg-dark fs-6 p-2">🔌 CDC avec suppl.: <strong>{{ totalCDCAvec.toFixed(2) }} m</strong></div>
-  <div class="badge bg-warning fs-6 p-2">DEBUG: {{ devisItems.length }} items, CDC: {{ cdcItems.length }}</div>
 </div>
 
 <!-- Pulsanti di navigazione e salvataggio -->
