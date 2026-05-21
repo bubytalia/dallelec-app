@@ -38,9 +38,11 @@
               v-for="day in daysInMonth"
               :key="day"
               class="text-center cell"
-              :class="{ 'bg-light': isWeekend(day), 'active-cell': isCellActive(ch.id, day) }"
+              :class="{ 'bg-light': isWeekend(day), 'active-cell': isCellActive(ch.id, day), 'selecting-cell': isSelecting(ch.id, day) }"
               :style="isCellActive(ch.id, day) ? { backgroundColor: getColor(idx) + '30' } : {}"
-              @click="openAssignment(ch, day)"
+              @mousedown="startSelect(ch, day)"
+              @mouseenter="moveSelect(ch.id, day)"
+              @mouseup="endSelect(ch, day)"
               @dragover.prevent
               @drop="onDrop($event, ch.id, day)"
             >
@@ -130,6 +132,46 @@ const modalDay = ref(null)
 const modalDateDebut = ref('')
 const modalDateFin = ref('')
 const selectedCollabs = ref([])
+
+// Cell selection (drag to select range)
+const selecting = ref(false)
+const selectChantierId = ref(null)
+const selectDayStart = ref(null)
+const selectDayEnd = ref(null)
+
+const startSelect = (chantier, day) => {
+  selecting.value = true
+  selectChantierId.value = chantier.id
+  selectDayStart.value = day
+  selectDayEnd.value = day
+  modalChantier.value = chantier
+}
+
+const moveSelect = (chantierId, day) => {
+  if (!selecting.value || chantierId !== selectChantierId.value) return
+  selectDayEnd.value = day
+}
+
+const endSelect = (chantier, day) => {
+  if (!selecting.value) return
+  selecting.value = false
+  const startDay = Math.min(selectDayStart.value, selectDayEnd.value)
+  const endDay = Math.max(selectDayStart.value, selectDayEnd.value)
+  modalDateDebut.value = getDateStr(startDay)
+  modalDateFin.value = getDateStr(endDay)
+  selectedCollabs.value = []
+  showModal.value = true
+  selectChantierId.value = null
+  selectDayStart.value = null
+  selectDayEnd.value = null
+}
+
+const isSelecting = (chantierId, day) => {
+  if (!selecting.value || chantierId !== selectChantierId.value) return false
+  const min = Math.min(selectDayStart.value, selectDayEnd.value)
+  const max = Math.max(selectDayStart.value, selectDayEnd.value)
+  return day >= min && day <= max
+}
 
 const colors = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', '#607D8B', '#E91E63', '#3F51B5']
 const getColor = (idx) => colors[idx % colors.length]
@@ -261,6 +303,7 @@ const openAssignment = (chantier, day) => {
   showModal.value = true
 }
 
+
 const getDaysCount = () => {
   if (!modalDateDebut.value || !modalDateFin.value) return 0
   const start = new Date(modalDateDebut.value)
@@ -391,6 +434,10 @@ onMounted(async () => {
 
 .cell:hover {
   background-color: #e3f2fd !important;
+}
+
+.selecting-cell {
+  background-color: #bbdefb !important;
 }
 
 .active-cell {
