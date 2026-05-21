@@ -679,9 +679,8 @@ export default {
         .from('chantiers')
         .update({ stato_cantiere: newValue })
         .eq('id', chantier.id);
-      if (!error) {
-        chantier.stato_cantiere = newValue;
-        await fetchChantiers();
+      if (error) {
+        console.error('Erreur mise à jour stato_cantiere:', error);
       }
     };
 
