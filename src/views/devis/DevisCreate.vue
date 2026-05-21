@@ -62,8 +62,21 @@
           </button>
         </div>
         <div>
-          <span v-for="(zone, index) in zones" :key="index" class="badge bg-primary me-2">
-            {{ zone }} <span class="ms-1 cursor-pointer" @click="removeZone(index)">&times;</span>
+          <span v-for="(zone, index) in zones" :key="index" class="badge bg-primary me-2 d-inline-flex align-items-center">
+            <template v-if="editingZoneIndex === index">
+              <input
+                v-model="editingZoneName"
+                @keyup.enter="confirmEditZone(index)"
+                @keyup.escape="cancelEditZone"
+                @blur="confirmEditZone(index)"
+                class="zone-edit-input"
+                ref="zoneEditInput"
+              />
+            </template>
+            <template v-else>
+              <span class="cursor-pointer" @dblclick="startEditZone(index)" title="Double-clic pour renommer">{{ zone }}</span>
+              <span class="ms-1 cursor-pointer" @click="removeZone(index)">&times;</span>
+            </template>
           </span>
         </div>
       </div>
@@ -320,6 +333,9 @@ const remiseSelection = ref({});
 const modalitaPrezzi = ref('scontistica'); // Ripristinato valore corretto
 const isDuplicateMode = ref(false);
 
+const editingZoneIndex = ref(null);
+const editingZoneName = ref('');
+
 const addZone = () => {
   if (newZone.value.trim()) {
     zones.value.push(newZone.value.trim());
@@ -329,6 +345,24 @@ const addZone = () => {
 
 const removeZone = (index) => {
   zones.value.splice(index, 1);
+};
+
+const startEditZone = (index) => {
+  editingZoneIndex.value = index;
+  editingZoneName.value = zones.value[index];
+};
+
+const confirmEditZone = (index) => {
+  if (editingZoneName.value.trim()) {
+    zones.value[index] = editingZoneName.value.trim();
+  }
+  editingZoneIndex.value = null;
+  editingZoneName.value = '';
+};
+
+const cancelEditZone = () => {
+  editingZoneIndex.value = null;
+  editingZoneName.value = '';
 };
 
 const filteredTechniciens = computed(() => {
@@ -953,5 +987,14 @@ watch(remiseSelection, (newRemises) => {
 <style scoped>
 .cursor-pointer {
   cursor: pointer;
+}
+.zone-edit-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid white;
+  color: white;
+  outline: none;
+  width: 120px;
+  font-size: 0.85em;
 }
 </style>
