@@ -33,7 +33,6 @@
           <tr v-for="(ch, idx) in chantiersActifs" :key="ch.id">
             <td class="sticky-col fw-bold" :style="{ borderLeft: '4px solid ' + getColor(idx) }">
               {{ ch.nom }}
-              <br><small class="text-muted">{{ ch.adresse }}</small>
             </td>
             <td
               v-for="day in daysInMonth"
