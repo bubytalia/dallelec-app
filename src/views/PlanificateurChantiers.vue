@@ -91,6 +91,14 @@
             </div>
           </div>
         </div>
+        <!-- Collaborateurs déjà assignés dans cette période -->
+        <div class="mb-3" v-if="assignedInPeriod.length > 0">
+          <strong>Déjà assignés:</strong>
+          <div v-for="collab in assignedInPeriod" :key="collab.id" class="d-flex align-items-center justify-content-between my-1">
+            <span>{{ collab.nom }} {{ collab.prenom }}</span>
+            <button class="btn btn-sm btn-danger" @click="removeOneFromPeriod(collab.id)">&times;</button>
+          </div>
+        </div>
         <div class="mb-3">
           <strong>Collaborateurs à assigner:</strong>
           <div class="mt-1">
@@ -103,9 +111,6 @@
         <div class="d-flex justify-content-between">
           <button class="btn btn-primary" @click="addAssignmentRange" :disabled="selectedCollabs.length === 0 || !modalDateDebut || !modalDateFin">
             Assigner ({{ getDaysCount() }} jours)
-          </button>
-          <button class="btn btn-outline-danger" @click="removeAssignmentRange" :disabled="selectedCollabs.length === 0 || !modalDateDebut || !modalDateFin">
-            Retirer
           </button>
           <button class="btn btn-secondary" @click="showModal = false">Fermer</button>
         </div>
@@ -312,6 +317,41 @@ const getDaysCount = () => {
   const start = new Date(modalDateDebut.value)
   const end = new Date(modalDateFin.value)
   return Math.max(0, Math.round((end - start) / 86400000) + 1)
+}
+
+const assignedInPeriod = computed(() => {
+  if (!modalChantier.value || !modalDateDebut.value || !modalDateFin.value) return []
+  const start = modalDateDebut.value
+  const end = modalDateFin.value
+  const personnelIds = [...new Set(
+    planifications.value
+      .filter(p => p.chantier_id === modalChantier.value.id && p.date >= start && p.date <= end)
+      .map(p => p.personnel_id)
+  )]
+  return collaborateursActifs.value.filter(c => personnelIds.includes(c.id))
+})
+
+const removeOneFromPeriod = async (collabId) => {
+  if (!modalChantier.value || !modalDateDebut.value || !modalDateFin.value) return
+  const start = new Date(modalDateDebut.value)
+  const end = new Date(modalDateFin.value)
+  const dates = []
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    dates.push(d.toISOString().split('T')[0])
+  }
+
+  const { error } = await supabase
+    .from('planification')
+    .delete()
+    .eq('chantier_id', modalChantier.value.id)
+    .eq('personnel_id', collabId)
+    .in('date', dates)
+
+  if (!error) {
+    planifications.value = planifications.value.filter(
+      p => !(p.chantier_id === modalChantier.value.id && p.personnel_id === collabId && dates.includes(p.date))
+    )
+  }
 }
 
 const addAssignmentRange = async () => {
