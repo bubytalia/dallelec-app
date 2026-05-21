@@ -733,7 +733,7 @@ const devisTotal = computed(() => {
 });
 
 // Totali Chemin de Câble
-const cdcItems = computed(() => devisItems.value.filter(i => (i.nom || '').toLowerCase().includes('chemin de câble')));
+const cdcItems = computed(() => devisItems.value.filter(i => (i.nom || '').toLowerCase().includes('chemin de c')));
 const totalCDCSans = computed(() => cdcItems.value.reduce((sum, i) => sum + (Number(i.ml) || 0), 0));
 const totalCDCAvec = computed(() => cdcItems.value.reduce((sum, i) => sum + (Number(i.totalML) || 0), 0));
 
