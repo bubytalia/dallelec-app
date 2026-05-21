@@ -180,9 +180,16 @@
                 <td>{{ chantier.prix_regie || '-' }} CHF</td>
                 <td>{{ chantier.percentuale_impresa || 30 }}%</td>
                 <td>
+                  <span class="badge me-1" :class="{
+                    'bg-warning': !chantier.stato_cantiere || chantier.stato_cantiere === 'a_commencer',
+                    'bg-success': chantier.stato_cantiere === 'en_cours',
+                    'bg-secondary': chantier.stato_cantiere === 'ferme'
+                  }">
+                    {{ chantier.stato_cantiere === 'en_cours' ? 'En cours' : chantier.stato_cantiere === 'ferme' ? 'Fermé' : 'À commencer' }}
+                  </span>
                   <select 
                     :value="chantier.stato_cantiere || 'a_commencer'" 
-                    class="form-select form-select-sm"
+                    class="form-select form-select-sm d-inline-block w-auto"
                     @change="updateStatoCantiere(chantier, $event.target.value)"
                   >
                     <option value="a_commencer">À commencer</option>
