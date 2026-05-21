@@ -74,27 +74,37 @@
     <!-- Modal assegnazione -->
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal-box">
-        <h5>{{ modalChantier?.nom }} — {{ modalDay }}/{{ currentMonth + 1 }}/{{ currentYear }}</h5>
+        <h5>{{ modalChantier?.nom }}</h5>
         <hr>
         <div class="mb-3">
-          <strong>Collaborateurs assignés:</strong>
-          <div v-if="modalCollabs.length === 0" class="text-muted">Aucun</div>
-          <div v-for="collab in modalCollabs" :key="collab.id" class="d-flex align-items-center justify-content-between my-1">
-            <span>{{ collab.nom }} {{ collab.prenom }}</span>
-            <button class="btn btn-sm btn-danger" @click="removeAssignment(collab.id)">&times;</button>
+          <strong>Période:</strong>
+          <div class="d-flex gap-2 mt-1">
+            <div>
+              <label class="form-label mb-0"><small>Du</small></label>
+              <input type="date" class="form-control form-control-sm" v-model="modalDateDebut" />
+            </div>
+            <div>
+              <label class="form-label mb-0"><small>Au</small></label>
+              <input type="date" class="form-control form-control-sm" v-model="modalDateFin" />
+            </div>
           </div>
         </div>
         <div class="mb-3">
-          <strong>Ajouter:</strong>
-          <select class="form-select mt-1" v-model="selectedCollabToAdd">
-            <option value="">Sélectionner...</option>
-            <option v-for="collab in availableCollabs" :key="collab.id" :value="collab.id">
-              {{ collab.nom }} {{ collab.prenom }}
-            </option>
-          </select>
-          <button class="btn btn-primary btn-sm mt-2" @click="addAssignmentFromModal" :disabled="!selectedCollabToAdd">Ajouter</button>
+          <strong>Collaborateurs à assigner:</strong>
+          <div class="mt-1">
+            <div v-for="collab in collaborateursActifs" :key="collab.id" class="form-check">
+              <input class="form-check-input" type="checkbox" :id="'collab-' + collab.id" :value="collab.id" v-model="selectedCollabs">
+              <label class="form-check-label" :for="'collab-' + collab.id">{{ collab.nom }} {{ collab.prenom }}</label>
+            </div>
+          </div>
         </div>
-        <div class="text-end">
+        <div class="d-flex justify-content-between">
+          <button class="btn btn-primary" @click="addAssignmentRange" :disabled="selectedCollabs.length === 0 || !modalDateDebut || !modalDateFin">
+            Assigner ({{ getDaysCount() }} jours)
+          </button>
+          <button class="btn btn-outline-danger" @click="removeAssignmentRange" :disabled="selectedCollabs.length === 0 || !modalDateDebut || !modalDateFin">
+            Retirer
+          </button>
           <button class="btn btn-secondary" @click="showModal = false">Fermer</button>
         </div>
       </div>
@@ -117,7 +127,9 @@ const planifications = ref([])
 const showModal = ref(false)
 const modalChantier = ref(null)
 const modalDay = ref(null)
-const selectedCollabToAdd = ref('')
+const modalDateDebut = ref('')
+const modalDateFin = ref('')
+const selectedCollabs = ref([])
 
 const colors = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', '#607D8B', '#E91E63', '#3F51B5']
 const getColor = (idx) => colors[idx % colors.length]
@@ -169,15 +181,6 @@ const getCellCollabs = (chantierId, day) => {
   return collaborateurs.value.filter(c => collabIds.includes(c.id))
 }
 
-const modalCollabs = computed(() => {
-  if (!modalChantier.value || !modalDay.value) return []
-  return getCellCollabs(modalChantier.value.id, modalDay.value)
-})
-
-const availableCollabs = computed(() => {
-  const assigned = modalCollabs.value.map(c => c.id)
-  return collaborateursActifs.value.filter(c => !assigned.includes(c.id))
-})
 
 // Navigation
 const prevMonth = () => {
@@ -251,14 +254,76 @@ const removeAssignment = async (collabId) => {
 const openAssignment = (chantier, day) => {
   modalChantier.value = chantier
   modalDay.value = day
-  selectedCollabToAdd.value = ''
+  const dateStr = getDateStr(day)
+  modalDateDebut.value = dateStr
+  modalDateFin.value = dateStr
+  selectedCollabs.value = []
   showModal.value = true
 }
 
-const addAssignmentFromModal = async () => {
-  if (!selectedCollabToAdd.value) return
-  await addAssignment(modalChantier.value.id, selectedCollabToAdd.value, modalDay.value)
-  selectedCollabToAdd.value = ''
+const getDaysCount = () => {
+  if (!modalDateDebut.value || !modalDateFin.value) return 0
+  const start = new Date(modalDateDebut.value)
+  const end = new Date(modalDateFin.value)
+  return Math.max(0, Math.round((end - start) / 86400000) + 1)
+}
+
+const addAssignmentRange = async () => {
+  if (!modalChantier.value || selectedCollabs.value.length === 0) return
+  const start = new Date(modalDateDebut.value)
+  const end = new Date(modalDateFin.value)
+  if (start > end) return
+
+  const inserts = []
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0]
+    for (const collabId of selectedCollabs.value) {
+      const exists = planifications.value.some(
+        p => p.chantier_id === modalChantier.value.id && p.collaborateur_id === collabId && p.date === dateStr
+      )
+      if (!exists) {
+        inserts.push({ chantier_id: modalChantier.value.id, collaborateur_id: collabId, date: dateStr })
+      }
+    }
+  }
+
+  if (inserts.length === 0) return
+
+  const { data, error } = await supabase
+    .from('planification')
+    .insert(inserts)
+    .select()
+
+  if (!error && data) {
+    planifications.value.push(...data)
+  }
+  showModal.value = false
+}
+
+const removeAssignmentRange = async () => {
+  if (!modalChantier.value || selectedCollabs.value.length === 0) return
+  const start = new Date(modalDateDebut.value)
+  const end = new Date(modalDateFin.value)
+  if (start > end) return
+
+  const dates = []
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    dates.push(d.toISOString().split('T')[0])
+  }
+
+  const { error } = await supabase
+    .from('planification')
+    .delete()
+    .eq('chantier_id', modalChantier.value.id)
+    .in('collaborateur_id', selectedCollabs.value)
+    .in('date', dates)
+
+  if (!error) {
+    planifications.value = planifications.value.filter(
+      p => !(p.chantier_id === modalChantier.value.id && selectedCollabs.value.includes(p.collaborateur_id) && dates.includes(p.date))
+    )
+  }
+  showModal.value = false
 }
 
 // Data loading
