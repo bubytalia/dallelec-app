@@ -28,6 +28,12 @@
   </div>
 </div>
 
+<!-- Résumé Chemin de Câble -->
+<div class="d-flex justify-content-center gap-3 mb-3" v-if="totalCDCSans > 0 || totalCDCAvec > 0">
+  <div class="badge bg-secondary fs-6 p-2">🔌 CDC sans suppl.: <strong>{{ totalCDCSans.toFixed(2) }} m</strong></div>
+  <div class="badge bg-dark fs-6 p-2">🔌 CDC avec suppl.: <strong>{{ totalCDCAvec.toFixed(2) }} m</strong></div>
+</div>
+
 <!-- Pulsanti di navigazione e salvataggio -->
 <div class="mb-3 d-flex justify-content-center">
   <!-- Salvataggio definitivo -->
@@ -721,10 +727,14 @@ const getModalityAlertClass = () => {
 const devisTotal = computed(() => {
   const subtotal = devisItems.value.reduce((sum, i) => sum + (i.informativo ? 0 : i.total), 0);
   const discount = Number(remiseSupplementaire.value) || 0;
-  // Assicuriamoci che lo sconto sia compreso tra 0 e 100
   const pct = Math.min(Math.max(discount, 0), 100);
   const totaleScontato = subtotal * (1 - pct / 100);
   return totaleScontato;
 });
+
+// Totali Chemin de Câble
+const cdcItems = computed(() => devisItems.value.filter(i => (i.nom || '').toLowerCase().includes('chemin de câble')));
+const totalCDCSans = computed(() => cdcItems.value.reduce((sum, i) => sum + (Number(i.ml) || 0), 0));
+const totalCDCAvec = computed(() => cdcItems.value.reduce((sum, i) => sum + (Number(i.totalML) || 0), 0));
 
 </script>
