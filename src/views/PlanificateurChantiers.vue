@@ -320,8 +320,8 @@ onMounted(async () => {
 .cell {
   cursor: pointer;
   vertical-align: top;
-  padding: 2px !important;
-  height: 60px;
+  padding: 1px !important;
+  height: 35px;
 }
 
 .cell:hover {
