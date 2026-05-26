@@ -63,6 +63,7 @@
                 <th>Technicien</th>
                 <th>Montant HT (CHF)</th>
                 <th>Remise</th>
+                <th>Type pose</th>
                 <th>État</th>
                 <th>Actions</th>
               </tr>
@@ -75,6 +76,15 @@
                 <td>{{ devis.technicien }}</td>
                 <td>{{ formatMontant(devis.total) }}</td>
                 <td>{{ calculerRemise(devis.remises, devis.modalita_prezzi) }}%</td>
+                <td>
+                  <select v-model="devis.type_pose" @change="updateDevisTypePose(devis.id, devis.type_pose)" class="form-select form-select-sm" style="min-width:100px">
+                    <option value="">-</option>
+                    <option value="chemin_de_cable">CDC</option>
+                    <option value="rail_energie">Rail</option>
+                    <option value="canaux_au_sol">Canaux</option>
+                    <option value="divers">Divers</option>
+                  </select>
+                </td>
                 <td>
                   <span v-if="devis.draft === true" class="badge bg-warning">Brouillon</span>
                   <select v-else v-model="devis.status" @change="updateDevisStatus(devis.id, devis.status)" class="form-select form-select-sm">
@@ -275,6 +285,26 @@ const voirDevis = (id) => {
   } else {
     // Devis détaillé completato → Pagina prodotti
     router.push(`/devis/produits/${id}`);
+  }
+};
+
+// Type de pose helpers
+const getTypePoseLabel = (type) => {
+  const labels = { chemin_de_cable: 'CDC', rail_energie: 'Rail', canaux_au_sol: 'Canaux', divers: 'Divers' };
+  return labels[type] || '-';
+};
+
+const getTypePoseBadge = (type) => {
+  const classes = { chemin_de_cable: 'bg-primary', rail_energie: 'bg-info', canaux_au_sol: 'bg-secondary', divers: 'bg-dark' };
+  return classes[type] || 'bg-light text-dark';
+};
+
+const updateDevisTypePose = async (id, newType) => {
+  try {
+    const { error } = await supabase.from('devis').update({ type_pose: newType || null }).eq('id', id);
+    if (error) throw error;
+  } catch (error) {
+    console.error('Erreur mise à jour type_pose:', error);
   }
 };
 

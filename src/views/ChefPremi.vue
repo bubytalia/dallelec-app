@@ -4,26 +4,6 @@
     
     <h2 class="text-center mb-4">Mes Primes</h2>
 
-    <!-- Filtres -->
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <label class="form-label">Mois</label>
-        <select v-model="selectedMonth" class="form-select">
-          <option value="">Tous les mois</option>
-          <option v-for="month in availableMonths" :key="month.value" :value="month.value">
-            {{ month.label }}
-          </option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Année</label>
-        <select v-model="selectedYear" class="form-select">
-          <option value="">Toutes les années</option>
-          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
-        </select>
-      </div>
-    </div>
-
     <!-- Résumé -->
     <div class="row mb-4">
       <div class="col-md-4">
@@ -52,19 +32,51 @@
       </div>
     </div>
 
+    <!-- Filtres -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <label class="form-label">Mois</label>
+        <select v-model="selectedMonth" class="form-select">
+          <option value="">Tous les mois</option>
+          <option v-for="month in availableMonths" :key="month.value" :value="month.value">
+            {{ month.label }}
+          </option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Année</label>
+        <select v-model="selectedYear" class="form-select">
+          <option value="">Toutes les années</option>
+          <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Détail par chantier -->
     <div v-for="chantier in chantiersFiltered" :key="chantier.chantierId" class="card mb-3">
-      <div class="card-header d-flex justify-content-between align-items-center"
+      <div class="card-header"
            :class="chantier.primeTotale > 0 ? 'bg-light' : ''">
-        <div>
-          <strong>{{ chantier.chantierNom }}</strong>
-          <small class="text-muted ms-2">{{ chantier.clientNom }}</small>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ chantier.chantierNom }}</strong>
+            <small class="text-muted ms-2">{{ chantier.clientNom }}</small>
+          </div>
+          <span class="badge" :class="chantier.primeTotale > 0 ? 'bg-success' : 'bg-secondary'">
+            {{ formatCurrency(chantier.primeTotale) }}
+          </span>
         </div>
-        <span class="badge" :class="chantier.primeTotale > 0 ? 'bg-success' : 'bg-secondary'">
-          {{ formatCurrency(chantier.primeTotale) }}
-        </span>
+        <div v-if="chantier.metresCDC > 0 || chantier.heuresPrevuesDevis > 0" class="d-flex gap-3 mt-2">
+          <template v-if="chantier.typePose === 'rail_energie' || chantier.typePose === 'canaux_au_sol'">
+            <small><strong>⏱ Heures MO prévues:</strong> {{ chantier.heuresPrevuesDevis.toFixed(1) }} h</small>
+          </template>
+          <template v-else>
+            <small><strong>📐 CDC (avec suppl.):</strong> {{ chantier.metresCDC.toFixed(1) }} m</small>
+            <small><strong>⏱ MO prévue:</strong> {{ chantier.heuresPrevuesDevis.toFixed(1) }} h</small>
+            <small><strong>📊 m/h:</strong> {{ chantier.metresParHeure.toFixed(2) }}</small>
+          </template>
+        </div>
       </div>
-      <div class="card-body">
+      <div class="card-body" v-if="!chantier.enCours">
         <div class="row">
           <!-- Colonne gauche: données -->
           <div class="col-md-6">
@@ -145,6 +157,7 @@ const primesPaiements = ref([]);
 const chantiers = ref([]);
 const factures = ref([]);
 const metrages = ref([]);
+const devisData = ref([]);
 const resocontiPercentuali = ref([]);
 const heuresPropres = ref([]);
 const heuresInterimData = ref([]);
@@ -155,18 +168,20 @@ const loadData = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   currentUserEmail.value = user?.email || '';
 
-  const [ch, fa, me, hp, hi, ho] = await Promise.all([
+  const [ch, fa, me, hp, hi, ho, dv] = await Promise.all([
     supabase.from('chantiers').select('*').neq('type', 'interne'),
     supabase.from('factures').select('*'),
     supabase.from('metrages').select('*'),
     supabase.from('heures_chef_propres').select('*'),
     supabase.from('heures_chef_interim').select('*'),
-    supabase.from('heures_ouvriers').select('*')
+    supabase.from('heures_ouvriers').select('*'),
+    supabase.from('devis').select('id,total,produits,discount,type_pose')
   ]);
 
   chantiers.value = ch.data || [];
   factures.value = fa.data || [];
   metrages.value = me.data || [];
+  devisData.value = dv.data || [];
   heuresPropres.value = hp.data || [];
   heuresInterimData.value = hi.data || [];
   heuresOuvriersData.value = ho.data || [];
@@ -221,13 +236,64 @@ const getRegiesData = (chantierId) => {
   return { heures, montant };
 };
 
+// Calcul CDC et heures prévues depuis le devis
+const getDevisIndicators = (chantier) => {
+  const devis = devisData.value.find(d => d.id == chantier.devis_id);
+  if (!devis || !devis.produits) return { metresCDC: 0, heuresPrevuesDevis: 0, metresParHeure: 0, typePose: '' };
+
+  const typePose = devis.type_pose || '';
+
+  // Metri: pour rail d'énergie, pas de suppléments (utilise ml), pour CDC utilise totalML
+  let metres = 0;
+  if (typePose === 'rail_energie' || typePose === 'canaux_au_sol') {
+    metres = devis.produits.reduce((sum, p) => sum + (Number(p.totalML) || Number(p.ml) || 0), 0);
+  } else {
+    metres = devis.produits
+      .filter(p => (p.nom || '').toLowerCase().includes('chemin de c'))
+      .reduce((sum, p) => sum + (Number(p.totalML) || 0), 0);
+  }
+
+  // Heures MO prévues
+  const totalDevis = Number(devis.total) || 0;
+  const percentualeImpresa = chantier.percentuale_impresa || 30;
+  const budgetMO = totalDevis * (1 - percentualeImpresa / 100);
+  const costoOrarioMedio = 45;
+  const heuresPrevuesDevis = costoOrarioMedio > 0 ? budgetMO / costoOrarioMedio : 0;
+
+  const metresParHeure = heuresPrevuesDevis > 0 ? metres / heuresPrevuesDevis : 0;
+
+  return { metresCDC: metres, heuresPrevuesDevis, metresParHeure, typePose };
+};
+
 // Calcul primes pour les chantiers du chef connecté
 const mesChantiersPrimes = computed(() => {
   const mesChantiers = chantiers.value.filter(c => c.capocantiere === currentUserEmail.value);
 
   return mesChantiers.map(chantier => {
     const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
-    if (facturesChantier.length === 0) return null;
+    
+    // Indicateurs devis
+    const indicators = getDevisIndicators(chantier);
+
+    // Cantiere sans factures: afficher seulement les indicateurs
+    if (facturesChantier.length === 0) {
+      if (indicators.metresCDC === 0 && indicators.heuresPrevuesDevis === 0) return null;
+      return {
+        chantierId: chantier.id,
+        chantierNom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
+        clientNom: chantier.client || 'N/A',
+        moisFacturation: new Date().getMonth() + 1,
+        anneeFacturation: new Date().getFullYear(),
+        enCours: true,
+        heuresPrevues: 0, heuresReelles: 0, heuresGagnees: 0, heuresRegies: 0,
+        primeEfficacite: 0, primeRegies: 0, primeTotale: 0,
+        enAttivo: false, payee: false, moisPaiement: '',
+        metresCDC: indicators.metresCDC,
+        heuresPrevuesDevis: indicators.heuresPrevuesDevis,
+        metresParHeure: indicators.metresParHeure,
+        typePose: indicators.typePose
+      };
+    }
 
     const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0), 0);
 
@@ -292,7 +358,11 @@ const mesChantiersPrimes = computed(() => {
       primeTotale: Math.round(primeTotale * 100) / 100,
       enAttivo,
       payee: !!paiement,
-      moisPaiement: paiement?.mois_paiement || ''
+      moisPaiement: paiement?.mois_paiement || '',
+      metresCDC: indicators.metresCDC,
+      heuresPrevuesDevis: indicators.heuresPrevuesDevis,
+      metresParHeure: indicators.metresParHeure,
+      typePose: indicators.typePose
     };
   }).filter(Boolean);
 });

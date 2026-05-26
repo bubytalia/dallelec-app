@@ -42,6 +42,19 @@
         </div>
       </div>
 
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label>Type de pose</label>
+          <select v-model="form.type_pose" class="form-select">
+            <option value="">Sélectionner le type de pose</option>
+            <option value="chemin_de_cable">Chemin de câble</option>
+            <option value="rail_energie">Rail d'énergie</option>
+            <option value="canaux_au_sol">Canaux au sol</option>
+            <option value="divers">Divers</option>
+          </select>
+        </div>
+      </div>
+
       <div>
         <label>Zones de chantier</label>
         <div class="input-group mb-2">
@@ -318,6 +331,7 @@ const form = ref({
   adresse: '',
   client: '',
   technicien: '',
+  type_pose: '',
   description_corps: '',
   montant_corps: 0
 });
@@ -455,6 +469,7 @@ const continuerVersDevis = async () => {
         adresse: form.value.adresse,
         client_id: form.value.client,
         technicien: form.value.technicien,
+        type_pose: form.value.type_pose || null,
         zones: zones.value,
         modalita_prezzi: modalitaPrezzi.value,
         remises: (modalitaPrezzi.value === 'aCorps' || modalitaPrezzi.value === 'railEnergie') ? {} : remiseSelection.value,
@@ -525,6 +540,7 @@ const continuerVersDevis = async () => {
       adresse: form.value.adresse,
       client_id: form.value.client,
       technicien: form.value.technicien,
+      type_pose: form.value.type_pose || null,
       zones: zones.value,
       modalita_prezzi: modalitaPrezzi.value,
       remises: (modalitaPrezzi.value === 'aCorps' || modalitaPrezzi.value === 'railEnergie') ? {} : remiseSelection.value,
@@ -779,6 +795,7 @@ onMounted(async () => {
           form.value.adresse = devisData.adresse || '';
           form.value.client = devisData.client_id || '';
           form.value.technicien = devisData.technicien || '';
+          form.value.type_pose = devisData.type_pose || '';
           form.value.description_corps = devisData.description_corps || '';
           form.value.montant_corps = devisData.montant_corps || 0;
           zones.value = Array.isArray(devisData.zones) ? [...devisData.zones] : [];
