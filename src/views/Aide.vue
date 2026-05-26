@@ -137,45 +137,45 @@
               <strong>⚠️ Délai d'enregistrement :</strong> Vous ne pouvez enregistrer des heures que pour <strong>les 2 derniers jours</strong>. Au-delà, contactez l'administrateur.
             </div>
 
-            <h5>📏 3. Métrages</h5>
+            <h5>💰 3. Formation des Primes</h5>
+            <p>Le système de primes récompense l'efficacité sur chantier. Voici comment elles sont calculées :</p>
+            
+            <h6><strong>A) Heures prévues</strong></h6>
+            <p>Pour chaque chantier facturé, le système calcule un <strong>budget d'heures disponibles</strong> basé sur le montant facturé (hors régies).</p>
+
+            <h6><strong>B) Heures gagnées</strong></h6>
+            <p>La différence entre les <strong>heures prévues</strong> et les <strong>heures réellement employées</strong> (hors régies) donne les heures gagnées :</p>
             <ul>
-              <li>Accédez à <strong>"Métrages"</strong></li>
-              <li>Sélectionnez le <strong>chantier</strong> assigné</li>
-              <li>Créez un <strong>"Nouveau Métrage"</strong> :</li>
-              <ul>
-                <li><strong>Période :</strong> Dates de début et fin</li>
-                <li><strong>Zones :</strong> Ajoutez les zones de travail</li>
-                <li><strong>Produits :</strong> Sélectionnez les produits utilisés</li>
-                <li><strong>Quantités :</strong> Indiquez les quantités précises</li>
-              </ul>
-              <li><strong>Sauvegardez</strong> régulièrement votre travail</li>
+              <li><span class="text-success fw-bold">Heures gagnées positives</span> = vous avez été plus rapide que prévu → <strong>prime d'efficacité</strong></li>
+              <li><span class="text-danger fw-bold">Heures gagnées négatives</span> = dépassement → pas de prime</li>
             </ul>
 
-            <h5>📊 4. Resoconti Percentuali</h5>
-            <ul>
-              <li>Créez des <strong>rapports d'avancement</strong></li>
-              <li>Indiquez le <strong>pourcentage d'avancement</strong> par zone</li>
-              <li>Ajoutez des <strong>commentaires</strong> si nécessaire</li>
-              <li>Validez le rapport avant envoi</li>
-            </ul>
+            <h6><strong>C) Prime d'efficacité</strong></h6>
+            <p>Chaque heure gagnée vaut <strong>26 CHF</strong>.</p>
 
-            <h5>✅ 5. Validation des Heures</h5>
-            <ul>
-              <li>Consultez les heures des <strong>ouvriers</strong> de votre équipe</li>
-              <li>Vérifiez la cohérence avec le travail effectué</li>
-              <li><strong>Approuvez</strong> ou <strong>rejetez</strong> les heures</li>
-              <li>Ajoutez des commentaires si nécessaire</li>
-            </ul>
+            <h6><strong>D) Prime régies</strong></h6>
+            <p>Si le chantier est en positif (heures gagnées > 0), chaque heure de régie effectuée rapporte <strong>5 CHF</strong> supplémentaires.</p>
 
-            <h5>📈 6. Suivi de Chantier</h5>
-            <ul>
-              <li>Consultez l'<strong>avancement global</strong> du chantier</li>
-              <li>Vérifiez les <strong>budgets</strong> et <strong>délais</strong></li>
-              <li>Générez des <strong>rapports</strong> pour l'administration</li>
-            </ul>
+            <div class="alert alert-success">
+              <strong>✅ Exemple :</strong><br>
+              Heures prévues : 500h | Heures réelles : 400h | Régies : 20h<br>
+              → Heures gagnées : +100h<br>
+              → Prime efficacité : 100 × 26 = <strong>2'600 CHF</strong><br>
+              → Prime régies : 20 × 5 = <strong>100 CHF</strong><br>
+              → <strong>Total : 2'700 CHF</strong>
+            </div>
 
-            <div class="alert alert-warning">
-              <strong>⚠️ Important :</strong> Validez les heures et métrages régulièrement pour assurer une facturation correcte !
+            <h5>🎯 4. Indicateurs de Performance</h5>
+            <p>Dans la page <strong>"Primes"</strong>, vous voyez pour chaque chantier :</p>
+            <ul>
+              <li><strong>📐 CDC (avec suppl.) :</strong> Mètres de chemin de câble prévus au devis (suppléments inclus)</li>
+              <li><strong>⏱ Heures MO prévues :</strong> Nombre d'heures de main-d'œuvre prévues</li>
+              <li><strong>📊 m/h :</strong> Objectif de mètres par heure à atteindre</li>
+            </ul>
+            <p>Ces indicateurs apparaissent dès que le chantier a un devis associé, même avant la facturation. Ils servent de <strong>référence pour optimiser votre productivité</strong>.</p>
+
+            <div class="alert alert-info">
+              <strong>💡 Conseil :</strong> Plus vous posez de mètres par heure, plus vos heures gagnées augmentent et donc votre prime !
             </div>
 
           </div>
