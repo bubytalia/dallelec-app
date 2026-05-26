@@ -107,13 +107,13 @@
           </div>
           <div class="col-md-8">
             <div class="row">
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <select v-model="filtreClient" class="form-select form-select-sm">
                   <option value="">Tous les clients</option>
                   <option v-for="client in clientsUniques" :key="client" :value="client">{{ client }}</option>
                 </select>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <select v-model="filtreStatut" class="form-select form-select-sm">
                   <option value="">Tous les statuts</option>
                   <option value="emise">Émise</option>
@@ -122,9 +122,14 @@
                   <option value="en_retard">En retard</option>
                 </select>
               </div>
-              <div class="col-md-4">
+              <div class="col-md-3">
                 <button @click="resetFiltres" class="btn btn-outline-secondary btn-sm">
                   🔄 Reset
+                </button>
+              </div>
+              <div class="col-md-3">
+                <button @click="genererPDFListe" class="btn btn-outline-info btn-sm">
+                  📄 PDF Liste
                 </button>
               </div>
             </div>
@@ -4432,6 +4437,46 @@ const calculateZoneMontantAnteprima = (zone, percentage, chantierId) => {
 const resetFiltres = () => {
   filtreClient.value = '';
   filtreStatut.value = '';
+};
+
+const genererPDFListe = () => {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+  
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('DALLELEC Sarl - Liste des Factures', 15, 15);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  const filtreInfo = [];
+  if (filtreClient.value) filtreInfo.push(`Client: ${filtreClient.value}`);
+  if (filtreStatut.value) filtreInfo.push(`Statut: ${filtreStatut.value}`);
+  doc.text(filtreInfo.length > 0 ? `Filtres: ${filtreInfo.join(' | ')}` : 'Toutes les factures', 15, 22);
+  doc.text(`G\u00e9n\u00e9r\u00e9 le ${new Date().toLocaleDateString('fr-CH')}`, 15, 27);
+  
+  const tableData = facturesFiltrees.value.map(f => [
+    f.numero,
+    getChantierName(f.chantier_id || f.chantierId),
+    f.client_nom || f.clientNom || getClientName(f.chantier_id || f.chantierId),
+    formatDate(f.date_facture || f.dateFacture),
+    `${calculateSoldeFinale(f).toFixed(2)} CHF`,
+    { emise: '\u00c9mise', envoyee: 'Envoy\u00e9e', payee: 'Pay\u00e9e', en_retard: 'En retard' }[f.statut] || f.statut
+  ]);
+  
+  const total = facturesFiltrees.value.reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
+  tableData.push(['', '', '', '', `${total.toFixed(2)} CHF`, '']);
+  
+  autoTable(doc, {
+    head: [['N\u00b0 Facture', 'Chantier', 'Client', 'Date', 'Montant TTC', 'Statut']],
+    body: tableData,
+    startY: 32,
+    theme: 'striped',
+    headStyles: { fillColor: [70, 130, 180], textColor: 255, fontSize: 9 },
+    bodyStyles: { fontSize: 8 },
+    footStyles: { fontStyle: 'bold' }
+  });
+  
+  doc.save(`Liste_Factures_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
 const getUltimaDataFactura = async () => {
