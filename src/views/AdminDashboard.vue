@@ -22,6 +22,12 @@
         <router-link to="/admin/listino-vip" class="btn btn-outline-warning w-100">⭐ Listino VIP</router-link>
       </div>
       <div class="col-md-3 m-2">
+        <router-link to="/admin/devis-vip" class="btn btn-outline-warning w-100 position-relative">
+          📨 Devis VIP
+          <span v-if="pendingVipDevis > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ pendingVipDevis }}</span>
+        </router-link>
+      </div>
+      <div class="col-md-3 m-2">
         <router-link to="/admin/associer-devis" class="btn btn-outline-primary w-100">Associer Devis</router-link>
       </div>
       <div class="col-md-3 m-2">
@@ -136,6 +142,7 @@ export default {
 
 const router = useRouter();
 const pendingAbsences = ref(0);
+const pendingVipDevis = ref(0);
 
 const loadPendingAbsences = async () => {
   const { count } = await supabase
@@ -143,6 +150,15 @@ const loadPendingAbsences = async () => {
     .select('*', { count: 'exact', head: true })
     .eq('status', 'pending');
   pendingAbsences.value = count || 0;
+};
+
+const loadPendingVipDevis = async () => {
+  const { count } = await supabase
+    .from('devis')
+    .select('*', { count: 'exact', head: true })
+    .eq('use_listino_vip', true)
+    .eq('status', 'En attente');
+  pendingVipDevis.value = count || 0;
 };
 
 const handleLogout = async () => {
@@ -159,11 +175,13 @@ const handleLogout = async () => {
 
 onMounted(() => {
   loadPendingAbsences();
+  loadPendingVipDevis();
 });
 
 return {
   handleLogout,
-  pendingAbsences
+  pendingAbsences,
+  pendingVipDevis
 };
 
   }

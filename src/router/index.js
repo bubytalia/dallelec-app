@@ -132,6 +132,7 @@ const routes = [
   { path: '/admin/couts-bureau', name: 'AdminCoutsBureau', component: () => import('@/views/AdminCoutsBureau.vue') },
   { path: '/admin/premi', name: 'AdminPremi', component: () => import('@/views/AdminPremi.vue') },
   { path: '/admin/listino-vip', name: 'AdminListinoVip', component: AdminListinoVip, beforeEnter: requireRole(['admin']) },
+  { path: '/admin/devis-vip', name: 'AdminDevisVip', component: () => import('@/views/AdminDevisVip.vue'), beforeEnter: requireRole(['admin']) },
   { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },
   { path: '/admin/backup', name: 'AdminBackup', component: () => import('@/components/BackupSupabase.vue') },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },
