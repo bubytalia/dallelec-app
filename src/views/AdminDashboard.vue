@@ -19,7 +19,7 @@
         <router-link to="/admin/devis" class="btn btn-outline-primary w-100">Devis</router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/admin/listino-vip" class="btn btn-outline-warning w-100">⭐ Listino VIP</router-link>
+        <router-link to="/admin/listino-vip" class="btn btn-outline-warning w-100">⭐ Tarifs VIP</router-link>
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/devis-vip" class="btn btn-outline-warning w-100 position-relative">
