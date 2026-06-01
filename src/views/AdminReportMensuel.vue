@@ -164,16 +164,11 @@ const calculateSingleMonth = async (mois) => {
 const loadData = async () => {
   loaded.value = false;
 
-  // Vérifier si les données existent déjà
-  const { data } = await supabase.from('solde_heures').select('*').eq('mois', selectedMonth.value);
-
-  // Si pas de données, calculer automatiquement depuis janvier
-  if (!data || data.length === 0) {
-    const [targetYear, targetMonth] = selectedMonth.value.split('-').map(Number);
-    for (let m = 1; m <= targetMonth; m++) {
-      const mois = `${targetYear}-${String(m).padStart(2, '0')}`;
-      await calculateSingleMonth(mois);
-    }
+  // Toujours recalculer pour avoir les données à jour
+  const [targetYear, targetMonth] = selectedMonth.value.split('-').map(Number);
+  for (let m = 1; m <= targetMonth; m++) {
+    const mois = `${targetYear}-${String(m).padStart(2, '0')}`;
+    await calculateSingleMonth(mois);
   }
 
   // Charger les données

@@ -35,6 +35,12 @@
         </select>
       </div>
     </div>
+    <div class="mb-3">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="showNonAcceptes" v-model="showNonAcceptes">
+        <label class="form-check-label" for="showNonAcceptes">Afficher les devis non acceptés</label>
+      </div>
+    </div>
 
     <!-- Tabella raggruppata per cantiere -->
     <div v-for="group in groupedDevis" :key="group.chantier" class="mb-4">
@@ -133,6 +139,7 @@ const filterClient = ref('');
 const filterTechnicien = ref('');
 const filterStatus = ref('');
 const sortBy = ref('date_desc');
+const showNonAcceptes = ref(false);
 
 const router = useRouter();
 const cantieri = ref([]);
@@ -180,6 +187,8 @@ const filteredDevis = computed(() => {
     const matchTech = !filterTechnicien.value || d.technicien === filterTechnicien.value;
     const state = getStatus(d);
     const matchStatus = !filterStatus.value || state === filterStatus.value;
+    // Cacher les "Non accepté" sauf si toggle activé ou filtre explicite
+    if (!showNonAcceptes.value && !filterStatus.value && state === 'Non accepté') return false;
     return matchClient && matchTech && matchStatus;
   });
   return list.slice().sort((a, b) => sortDevis(a, b, sortBy.value));
