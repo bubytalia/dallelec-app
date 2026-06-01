@@ -567,8 +567,10 @@ onMounted(async () => {
 
       // Charger listino VIP si nécessaire
       if (useListinoVip.value && devisData.client_id) {
-        const { data: vipData } = await supabase.from('listino_vip').select('*').eq('client_id', devisData.client_id);
+        const clientId = Number(devisData.client_id);
+        const { data: vipData } = await supabase.from('listino_vip').select('*').eq('client_id', clientId);
         listinoVip.value = vipData || [];
+        console.log('📋 Listino VIP chargé:', listinoVip.value.length, 'produits pour client', clientId);
       }
     
       // ✅ CARICA SEMPRE DAL DATABASE (priorità assoluta)
