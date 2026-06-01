@@ -124,8 +124,10 @@ const defaultPctDin = ref(0);
 const vipClients = computed(() => allClients.value.filter(c => c.vip));
 const nonVipClients = computed(() => allClients.value.filter(c => !c.vip));
 
-const catalogueWithPrices = computed(() => {
-  return produits.value.map(p => {
+const catalogueWithPrices = ref([]);
+
+const buildCatalogue = () => {
+  catalogueWithPrices.value = produits.value.map(p => {
     const vipItem = listino.value.find(l => l.article === p.article);
     return {
       article: p.article,
@@ -137,7 +139,7 @@ const catalogueWithPrices = computed(() => {
       vip_id: vipItem ? vipItem.id : null
     };
   });
-});
+};
 
 const filteredCatalogue = computed(() => {
   if (!searchFilter.value) return catalogueWithPrices.value;
@@ -176,10 +178,10 @@ onMounted(async () => {
 });
 
 const loadListino = async () => {
-  if (!selectedClient.value) { listino.value = []; return; }
+  if (!selectedClient.value) { listino.value = []; buildCatalogue(); return; }
   const { data } = await supabase.from('listino_vip').select('*').eq('client_id', selectedClient.value);
   listino.value = data || [];
-  // Charger les defaults sauvegardés
+  buildCatalogue();
   const client = allClients.value.find(c => c.id === selectedClient.value);
   defaultPctBeton.value = client?.vip_pct_beton || 0;
   defaultPctDin.value = client?.vip_pct_din || 0;
