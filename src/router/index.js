@@ -53,6 +53,10 @@ import DevisList from '@/views/devis/DevisList.vue';
 import DevisProduits from '@/views/devis/DevisProduits.vue'; // ✅ Import corretto
 import DevisConditions from '@/views/devis/DevisConditions.vue';
 
+// Client VIP
+import ClientVipDashboard from '@/views/ClientVipDashboard.vue';
+import ClientVipDevisCreate from '@/views/ClientVipDevisCreate.vue';
+
 // Répertoires
 import Repertoires from '@/views/Repertoires.vue';
 import Chantiers from '@/views/repertoires/Chantiers.vue';
@@ -149,6 +153,11 @@ const routes = [
   { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan },
   { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
   { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers },
+
+  // Client VIP routes
+  { path: '/client', name: 'ClientVipDashboard', component: ClientVipDashboard },
+  { path: '/client/devis/create', name: 'ClientVipDevisCreate', component: ClientVipDevisCreate },
+  { path: '/client/devis/:id', name: 'ClientVipDevisEdit', component: ClientVipDevisCreate },
 
   // Ouvrier routes
   { path: '/ouvrier', name: 'OuvrierDashboard', component: OuvrierDashboard, beforeEnter: requireRole(['ouvrier']) },

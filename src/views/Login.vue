@@ -135,6 +135,20 @@ export default {
               if (ouvrierData && !ouvrierError) {
                 role = 'ouvrier';
                 userName = `${ouvrierData.prenom} ${ouvrierData.nom}`;
+              } else {
+                // 4. Cerca in clients (VIP)
+                const { data: clientData, error: clientError } = await supabase
+                  .from('clients')
+                  .select('id, nom, email, vip')
+                  .eq('email', this.email)
+                  .eq('vip', true)
+                  .maybeSingle();
+                
+                if (clientData && !clientError) {
+                  role = 'client_vip';
+                  userName = clientData.nom;
+                  localStorage.setItem('clientVipId', clientData.id);
+                }
               }
             }
           }
@@ -169,6 +183,9 @@ export default {
             break;
           case 'chef':
             this.$router.push('/chef');
+            break;
+          case 'client_vip':
+            this.$router.push('/client');
             break;
           case 'ouvrier':
             this.$router.push('/ouvrier');
