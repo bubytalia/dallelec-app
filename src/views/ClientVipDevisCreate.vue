@@ -6,11 +6,28 @@
 
     <!-- Tutorial / Avertissement -->
     <div class="alert alert-warning mb-4">
-      <h6>📋 Information importante</h6>
+      <h6>⚠️ Information importante</h6>
       <p class="mb-1">Cet accès est destiné à la rédaction de devis de <strong>petite et moyenne taille</strong> dans des conditions de pose <strong>ordinaires</strong>.</p>
-      <p class="mb-1">Les devis de grande envergure ou avec des conditions de pose particulières doivent être demandés directement à <strong>DALLELEC Sàrl</strong>.</p>
-      <hr class="my-2">
-      <small><strong>Comment créer un devis:</strong> 1) Remplissez les informations du chantier et ajoutez les zones → 2) Sélectionnez les produits, quantités et suppléments pour chaque zone → 3) Sauvegardez.</small>
+      <p class="mb-0">Les devis de grande taille ou avec des conditions de pose particulières doivent être demandés directement à <strong>DALLELEC Sàrl</strong>.</p>
+    </div>
+
+    <div class="card mb-4" v-if="!hideTutorial">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">📖 Guide d'utilisation</h6>
+        <button class="btn btn-sm btn-outline-secondary" @click="hideTutorial = true">Masquer</button>
+      </div>
+      <div class="card-body" style="font-size:0.9em">
+        <ol class="mb-0">
+          <li class="mb-2"><strong>Étape 1 - Informations chantier:</strong> Renseignez le nom et l'adresse du chantier, choisissez le type de pose (Béton ou DIN), puis ajoutez les zones (ex: RDC, Étage 1, Parking). Vous pouvez renommer une zone en double-cliquant dessus.</li>
+          <li class="mb-2"><strong>Étape 2 - Produits:</strong> Pour chaque zone, recherchez un produit dans la barre de recherche (par code article ou description), sélectionnez la zone, indiquez la quantité en mètres linéaires, puis ajoutez les suppléments si nécessaire (virages, T, départs/arrivés, etc.) avec leur quantité.</li>
+          <li class="mb-2"><strong>Modifier une ligne:</strong> Cliquez sur le bouton ✎ à côté d'un produit pour le modifier. Confirmez avec ✓ ou annulez avec ✗.</li>
+          <li class="mb-2"><strong>Supprimer une ligne:</strong> Cliquez sur 🗑️ pour supprimer un produit du devis.</li>
+          <li class="mb-0"><strong>Sauvegarder:</strong> Une fois terminé, cliquez sur « Sauvegarder le devis ». Le devis sera envoyé à DALLELEC pour validation.</li>
+        </ol>
+      </div>
+    </div>
+    <div v-else class="mb-3">
+      <button class="btn btn-sm btn-outline-info" @click="hideTutorial = false">📖 Afficher le guide</button>
     </div>
 
     <!-- Step 1: Info chantier + type pose -->
@@ -216,6 +233,7 @@ const supplements = ref([]);
 const saving = ref(false);
 const searchText = ref('');
 const showDropdown = ref(false);
+const hideTutorial = ref(false);
 const newItem = ref({ article: '', zone: '', ml: 0, selectedSupplements: [], suppQty: {}, _produit: null });
 const editingItemIndex = ref(null);
 
