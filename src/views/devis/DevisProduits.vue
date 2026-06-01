@@ -52,6 +52,16 @@
   >
     {{ recalculating ? '⏳ Recalcul...' : '⚠️ Recalculer prix et remises (données actuelles)' }}
   </button>
+  <!-- Ricalcolo prezzi VIP -->
+  <button 
+    v-if="useListinoVip" 
+    class="btn btn-outline-danger me-2" 
+    style="border-width: 2px; font-weight: bold;" 
+    @click="recalculerPrixVip"
+    :disabled="recalculating"
+  >
+    {{ recalculating ? '⏳ Recalcul...' : '⭐ Recalculer prix VIP (listino actuel)' }}
+  </button>
   <!-- Abbandono del preventivo (solo per bozze) -->
   <button class="btn btn-danger me-2" @click="abandonnerDevis" v-if="isDraft">❌ Supprimer brouillon</button>
   <!-- Passa alla pagina delle condizioni (terza pagina) -->
@@ -342,6 +352,67 @@ const recalculerPrix = async () => {
     alert(msg2);
   } catch (error) {
     console.error('Erreur recalcul prix:', error);
+    alert('Erreur: ' + error.message);
+  } finally {
+    recalculating.value = false;
+  }
+};
+
+/**
+ * Ricalcola tutti i prezzi del devis VIP usando il listino VIP attuale.
+ */
+const recalculerPrixVip = async () => {
+  const msg = '⚠️ ATTENTION: Cette opération va recalculer TOUS les prix du devis '
+    + 'en utilisant le listino VIP actuel.\n\n'
+    + 'Les prix existants seront écrasés.\n\n'
+    + 'Voulez-vous continuer?';
+  if (!confirm(msg)) return;
+
+  recalculating.value = true;
+  try {
+    let updated = 0;
+    let notFound = [];
+    let prixChanges = [];
+
+    devisItems.value = devisItems.value.map(item => {
+      const vipItem = listinoVip.value.find(v => v.article === item.article);
+      if (!vipItem) {
+        notFound.push(item.article);
+        return item;
+      }
+
+      const oldPrix = item.prix;
+      const newPrix = vipTypePose.value === 'din' ? vipItem.prix_din : vipItem.prix_beton;
+      if (newPrix <= 0) {
+        notFound.push(item.article + ' (prix 0)');
+        return item;
+      }
+
+      const newTotal = item.informativo ? 0 : item.totalML * newPrix;
+      if (Math.abs(oldPrix - newPrix) > 0.001) {
+        prixChanges.push(`${item.article}: ${oldPrix.toFixed(2)} → ${newPrix.toFixed(2)}`);
+      }
+      updated++;
+      return { ...item, prix: newPrix, total: newTotal };
+    });
+
+    let msg2 = `✅ Recalcul VIP terminé!\n\n`
+      + `Type pose: ${vipTypePose.value}\n`
+      + `Produits mis à jour: ${updated}/${devisItems.value.length}\n`;
+    if (prixChanges.length > 0) {
+      msg2 += `\n📊 Prix modifiés (${prixChanges.length}):\n`
+        + prixChanges.slice(0, 10).join('\n');
+      if (prixChanges.length > 10) msg2 += `\n... et ${prixChanges.length - 10} autres`;
+    } else {
+      msg2 += `\nAucun changement de prix détecté.`;
+    }
+    if (notFound.length > 0) {
+      msg2 += `\n\n⚠️ Articles non trouvés dans le listino VIP: ${notFound.join(', ')}`;
+    }
+    msg2 += `\n\n⚠️ N'oubliez pas de SAUVEGARDER le devis.`;
+    alert(msg2);
+  } catch (error) {
+    console.error('Erreur recalcul prix VIP:', error);
     alert('Erreur: ' + error.message);
   } finally {
     recalculating.value = false;
