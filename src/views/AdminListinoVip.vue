@@ -69,17 +69,19 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredCatalogue" :key="item.article" :class="{'table-success': item.pct_beton > 0 || item.pct_din > 0}">
+            <tr v-for="item in filteredCatalogue" :key="item.article" :class="{'table-success': item.pct_beton > 0 || item.pct_din > 0, 'table-secondary': item.prezzo_netto}">
               <td><strong>{{ item.article }}</strong></td>
-              <td>{{ item.description }}</td>
+              <td>{{ item.description }} <span v-if="item.prezzo_netto" class="badge bg-warning text-dark">Prix net</span></td>
               <td>{{ item.taille }}</td>
               <td class="text-end text-muted">{{ item.prix_catalogue.toFixed(2) }}</td>
               <td class="text-end">
-                <input v-model.number="item.pct_beton" type="number" step="0.5" min="0" max="100" class="form-control form-control-sm text-end" style="width:70px;display:inline" />
+                <input v-if="!item.prezzo_netto" v-model.number="item.pct_beton" type="number" step="0.5" min="0" max="100" class="form-control form-control-sm text-end" style="width:70px;display:inline" />
+                <span v-else class="text-muted">-</span>
               </td>
               <td class="text-end fw-bold">{{ getPrixBeton(item).toFixed(2) }}</td>
               <td class="text-end">
-                <input v-model.number="item.pct_din" type="number" step="0.5" min="0" max="100" class="form-control form-control-sm text-end" style="width:70px;display:inline" />
+                <input v-if="!item.prezzo_netto" v-model.number="item.pct_din" type="number" step="0.5" min="0" max="100" class="form-control form-control-sm text-end" style="width:70px;display:inline" />
+                <span v-else class="text-muted">-</span>
               </td>
               <td class="text-end fw-bold">{{ getPrixDin(item).toFixed(2) }}</td>
             </tr>
@@ -134,6 +136,7 @@ const buildCatalogue = () => {
       description: p.description || p.nom || '',
       taille: p.taille || '',
       prix_catalogue: Number(p.prix) || 0,
+      prezzo_netto: p.prezzo_netto || false,
       pct_beton: vipItem ? vipItem.pct_beton : 0,
       pct_din: vipItem ? vipItem.pct_din : 0,
       vip_id: vipItem ? vipItem.id : null
@@ -152,19 +155,23 @@ const filteredCatalogue = computed(() => {
 });
 
 const getPrixBeton = (item) => {
+  if (item.prezzo_netto) return item.prix_catalogue;
   if (item.pct_beton <= 0) return 0;
   return item.prix_catalogue * (1 - item.pct_beton / 100);
 };
 
 const getPrixDin = (item) => {
+  if (item.prezzo_netto) return item.prix_catalogue;
   if (item.pct_din <= 0) return 0;
   return item.prix_catalogue * (1 - item.pct_din / 100);
 };
 
 const applyDefaultToAll = () => {
   catalogueWithPrices.value.forEach(item => {
-    item.pct_beton = defaultPctBeton.value;
-    item.pct_din = defaultPctDin.value;
+    if (!item.prezzo_netto) {
+      item.pct_beton = defaultPctBeton.value;
+      item.pct_din = defaultPctDin.value;
+    }
   });
 };
 
