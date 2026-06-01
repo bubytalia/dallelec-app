@@ -22,7 +22,7 @@
           <li class="mb-2"><strong>Étape 2 - Produits:</strong> Pour chaque zone, recherchez un produit dans la barre de recherche (par code article ou description), sélectionnez la zone, indiquez la quantité en mètres linéaires, puis ajoutez les suppléments si nécessaire (virages, T, départs/arrivés, etc.) avec leur quantité.</li>
           <li class="mb-2"><strong>Modifier une ligne:</strong> Cliquez sur le bouton ✎ à côté d'un produit pour le modifier. Confirmez avec ✓ ou annulez avec ✗.</li>
           <li class="mb-2"><strong>Supprimer une ligne:</strong> Cliquez sur 🗑️ pour supprimer un produit du devis.</li>
-          <li class="mb-0"><strong>Sauvegarder:</strong> Une fois terminé, cliquez sur « Sauvegarder le devis ». Le devis sera envoyé à DALLELEC pour validation.</li>
+          <li class="mb-0"><strong>Sauvegarder / Envoyer:</strong> Cliquez sur « Sauvegarder » pour garder le devis en brouillon (vous pourrez le modifier plus tard). Quand le devis est prêt, cliquez sur « Envoyer à DALLELEC » pour le soumettre à validation.</li>
         </ol>
       </div>
     </div>
@@ -204,8 +204,11 @@
 
       <div class="d-flex gap-2">
         <button class="btn btn-secondary" @click="step = 1">← Retour infos chantier</button>
-        <button class="btn btn-success" @click="saveDevis" :disabled="devisItems.length === 0 || saving">
-          {{ saving ? 'Sauvegarde...' : '💾 Sauvegarder le devis' }}
+        <button class="btn btn-primary" @click="saveDevis(false)" :disabled="devisItems.length === 0 || saving">
+          {{ saving ? 'Sauvegarde...' : '💾 Sauvegarder (brouillon)' }}
+        </button>
+        <button class="btn btn-success" @click="saveDevis(true)" :disabled="devisItems.length === 0 || saving">
+          📨 Envoyer à DALLELEC
         </button>
       </div>
     </div>
@@ -385,7 +388,7 @@ const resetForm = () => {
   editingItemIndex.value = null;
 };
 
-const saveDevis = async () => {
+const saveDevis = async (envoyer = false) => {
   saving.value = true;
   try {
     const devisData = {
@@ -399,8 +402,8 @@ const saveDevis = async () => {
       vip_type_pose: form.value.typePose,
       produits: JSON.parse(JSON.stringify(devisItems.value)),
       total: totalDevis.value,
-      status: 'En attente',
-      draft: false,
+      status: envoyer ? 'En attente' : 'Brouillon',
+      draft: !envoyer,
       created_by: localStorage.getItem('userEmail') || '',
       updated_at: new Date().toISOString()
     };
@@ -415,7 +418,7 @@ const saveDevis = async () => {
       if (error) throw error;
     }
 
-    alert('Devis sauvegardé avec succès!');
+    alert(envoyer ? 'Devis envoyé à DALLELEC pour validation!' : 'Brouillon sauvegardé.');
     router.push('/client');
   } catch (error) {
     alert('Erreur: ' + error.message);
