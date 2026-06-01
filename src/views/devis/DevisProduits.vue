@@ -362,12 +362,8 @@ const recalculerPrix = async () => {
  * Ricalcola tutti i prezzi del devis VIP usando il listino VIP attuale.
  */
 const recalculerPrixVip = async () => {
-  const msg = '⚠️ ATTENTION: Cette opération va recalculer TOUS les prix du devis '
-    + 'en utilisant le listino VIP actuel.\n\n'
-    + 'Les prix existants seront écrasés.\n\n'
-    + 'Voulez-vous continuer?';
-  if (!confirm(msg)) return;
-
+  console.log('⭐ recalculerPrixVip appelé, listinoVip:', listinoVip.value.length);
+  
   recalculating.value = true;
   try {
     let updated = 0;
@@ -382,6 +378,7 @@ const recalculerPrixVip = async () => {
       }
 
       const vipItem = listinoVip.value.find(v => v.article === item.article);
+      console.log('🔍 Match VIP:', item.article, '->', vipItem ? `beton:${vipItem.prix_beton} din:${vipItem.prix_din}` : 'NON TROUVÉ');
       if (!vipItem) {
         notFound.push(item.article);
         return item;
@@ -564,6 +561,7 @@ onMounted(async () => {
       isDraft.value = devisData.draft !== false;
       useListinoVip.value = devisData.use_listino_vip || false;
       vipTypePose.value = devisData.vip_type_pose || 'beton';
+      console.log('🔍 VIP check:', { useListinoVip: useListinoVip.value, clientId: devisData.client_id, vipTypePose: vipTypePose.value });
 
       // Charger listino VIP si nécessaire
       if (useListinoVip.value && devisData.client_id) {
