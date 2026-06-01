@@ -136,18 +136,18 @@ export default {
                 role = 'ouvrier';
                 userName = `${ouvrierData.prenom} ${ouvrierData.nom}`;
               } else {
-                // 4. Cerca in clients (VIP)
-                const { data: clientData, error: clientError } = await supabase
-                  .from('clients')
-                  .select('id, nom, email, vip')
+                // 4. Cerca in accessi_vip
+                const { data: vipData, error: vipError } = await supabase
+                  .from('accessi_vip')
+                  .select('id, nom, prenom, email, client_id')
                   .eq('email', this.email)
-                  .eq('vip', true)
+                  .eq('actif', true)
                   .maybeSingle();
                 
-                if (clientData && !clientError) {
+                if (vipData && !vipError) {
                   role = 'client_vip';
-                  userName = clientData.nom;
-                  localStorage.setItem('clientVipId', clientData.id);
+                  userName = vipData.prenom ? `${vipData.prenom} ${vipData.nom}` : vipData.nom;
+                  localStorage.setItem('clientVipId', vipData.client_id);
                 }
               }
             }
