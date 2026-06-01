@@ -345,6 +345,8 @@ const sousfamilles = ref([]);
 const remiseSelection = ref({});
 const modalitaPrezzi = ref('scontistica'); // Ripristinato valore corretto
 const isDuplicateMode = ref(false);
+const useListinoVip = ref(false);
+const vipTypePose = ref('beton'); // 'beton' o 'din'
 
 const editingZoneIndex = ref(null);
 const editingZoneName = ref('');
@@ -388,6 +390,26 @@ const filteredTechniciens = computed(() => {
   return techniciens.value.filter(t => {
     return t.client_id == form.value.client;
   });
+});
+
+// Watch client selection pour détecter VIP
+watch(() => form.value.client, (newClientId) => {
+  if (!newClientId) return;
+  const client = clients.value.find(c => c.id == newClientId);
+  if (client && client.vip) {
+    const use = confirm(`${client.nom} est un client VIP avec un listino réservé.\n\nVoulez-vous utiliser les prix réservés pour ce devis?\n\nOK = Prix VIP\nAnnuler = Remise standard`);
+    if (use) {
+      useListinoVip.value = true;
+      const type = prompt('Type de pose pour ce devis:\n\n1 = Béton\n2 = DIN\n\n(Entrez 1 ou 2)', '1');
+      vipTypePose.value = type === '2' ? 'din' : 'beton';
+      modalitaPrezzi.value = 'prezziFissi';
+    } else {
+      useListinoVip.value = false;
+      vipTypePose.value = 'beton';
+    }
+  } else {
+    useListinoVip.value = false;
+  }
 });
 
 const getRemisePourcentage = (familleId) => {
@@ -475,6 +497,8 @@ const continuerVersDevis = async () => {
         remises: (modalitaPrezzi.value === 'aCorps' || modalitaPrezzi.value === 'railEnergie') ? {} : remiseSelection.value,
         description_corps: form.value.description_corps || null,
         montant_corps: form.value.montant_corps || null,
+        use_listino_vip: useListinoVip.value || false,
+        vip_type_pose: useListinoVip.value ? vipTypePose.value : null,
         updated_at: new Date().toISOString()
       };
       
@@ -546,6 +570,8 @@ const continuerVersDevis = async () => {
       remises: (modalitaPrezzi.value === 'aCorps' || modalitaPrezzi.value === 'railEnergie') ? {} : remiseSelection.value,
       description_corps: form.value.description_corps || null,
       montant_corps: form.value.montant_corps || null,
+      use_listino_vip: useListinoVip.value || false,
+      vip_type_pose: useListinoVip.value ? vipTypePose.value : null,
       created_at: new Date().toISOString(),
       // Dati dalla duplicazione o default
       produits: extraData.produits || [],

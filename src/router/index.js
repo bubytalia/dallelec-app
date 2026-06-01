@@ -19,6 +19,7 @@ import AdminFactureManuelle from '@/views/AdminFactureManuelle.vue';
 import AdminScadenziario from '@/views/AdminScadenziario.vue';
 import AdminImportFatture from '@/views/AdminImportFatture.vue';
 import AdminMonitoringHeures from '@/views/AdminMonitoringHeures.vue';
+import AdminListinoVip from '@/views/AdminListinoVip.vue';
 import AdminGestionHeures from '@/views/AdminGestionHeures.vue';
 import AdminAbsences from '@/views/AdminAbsences.vue';
 import AdminSoldeVacances from '@/views/AdminSoldeVacances.vue';
@@ -126,6 +127,7 @@ const routes = [
   { path: '/admin/planificateur', name: 'PlanificateurChantiers', component: PlanificateurChantiers, beforeEnter: requireRole(['admin']) },
   { path: '/admin/couts-bureau', name: 'AdminCoutsBureau', component: () => import('@/views/AdminCoutsBureau.vue') },
   { path: '/admin/premi', name: 'AdminPremi', component: () => import('@/views/AdminPremi.vue') },
+  { path: '/admin/listino-vip', name: 'AdminListinoVip', component: AdminListinoVip, beforeEnter: requireRole(['admin']) },
   { path: '/admin/security', name: 'AdminSecurity', component: () => import('@/components/SecurityDashboard.vue') },
   { path: '/admin/backup', name: 'AdminBackup', component: () => import('@/components/BackupSupabase.vue') },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },

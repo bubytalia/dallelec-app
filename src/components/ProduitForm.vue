@@ -96,7 +96,9 @@ const props = defineProps({
   discountFamille: { type: Number, default: 0 },
   modalitaPrezzi: { type: String, default: 'scontistica' },
   produits: { type: Array, default: () => [] },
-  supplements: { type: Array, default: () => [] }
+  supplements: { type: Array, default: () => [] },
+  listinoVip: { type: Array, default: () => [] },
+  vipTypePose: { type: String, default: 'beton' }
 });
 
 // Uso direttamente props.zones per mantenere la reattività
@@ -183,16 +185,26 @@ const filteredProduits = computed(() => {
 });
 
 const selectProduit = (produit) => {
-  // Verifica se il prodotto ha un prezzo valido
-  const prix = Number(produit.prix);
-  if (!prix || prix <= 0) {
-    alert(`⚠️ ATTENTION: L'article ${produit.article} n'a pas de prix défini.\nVeuillez contacter l'administrateur pour corriger le prix de cet article.`);
-    return;
+  // Verifica se il prodotto ha un prezzo valido (sauf VIP qui a son propre listino)
+  if (props.listinoVip.length === 0) {
+    const prix = Number(produit.prix);
+    if (!prix || prix <= 0) {
+      alert(`⚠️ ATTENTION: L'article ${produit.article} n'a pas de prix défini.\nVeuillez contacter l'administrateur pour corriger le prix de cet article.`);
+      return;
+    }
   }
   
   selectedProduitId.value = produit.id;
   searchText.value = `${produit.article} - ${produit.description} (${produit.taille})`;
   showDropdown.value = false;
+
+  // Si listino VIP, pré-remplir le prix
+  if (props.listinoVip.length > 0) {
+    const vipItem = props.listinoVip.find(v => v.article === produit.article);
+    if (vipItem) {
+      prezzoManuale.value = props.vipTypePose === 'din' ? vipItem.prix_din : vipItem.prix_beton;
+    }
+  }
 };
 
 const hideDropdown = () => {

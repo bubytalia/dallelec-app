@@ -72,6 +72,8 @@
       :modalitaPrezzi="modalitaPrezzi"
       :produits="produits"
       :supplements="supplements"
+      :listinoVip="listinoVip"
+      :vipTypePose="vipTypePose"
       @update-item="handleUpdateItem"
     />
 
@@ -166,6 +168,9 @@ const modalitaPrezzi = ref('scontistica');
 const isDraft = ref(true);
 const originalDevisItems = ref([]);
 const recalculating = ref(false);
+const useListinoVip = ref(false);
+const vipTypePose = ref('beton');
+const listinoVip = ref([]);
 
 /**
  * Salva il devis su Supabase.
@@ -479,7 +484,15 @@ onMounted(async () => {
       nomChantier.value = devisData.adresse || '';
       zones.value = devisData.zones || [];
       modalitaPrezzi.value = devisData.modalita_prezzi || 'scontistica';
-      isDraft.value = devisData.draft !== false; // true se draft è true o undefined
+      isDraft.value = devisData.draft !== false;
+      useListinoVip.value = devisData.use_listino_vip || false;
+      vipTypePose.value = devisData.vip_type_pose || 'beton';
+
+      // Charger listino VIP si nécessaire
+      if (useListinoVip.value && devisData.client_id) {
+        const { data: vipData } = await supabase.from('listino_vip').select('*').eq('client_id', devisData.client_id);
+        listinoVip.value = vipData || [];
+      }
     
       // ✅ CARICA SEMPRE DAL DATABASE (priorità assoluta)
       if (Array.isArray(devisData.produits) && devisData.produits.length > 0) {
