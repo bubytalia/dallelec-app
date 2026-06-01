@@ -22,73 +22,43 @@
       </div>
     </div>
 
-    <!-- Ajout produit au listino -->
-    <div v-if="selectedClient" class="card mb-4">
-      <div class="card-header"><h5>Ajouter un produit au listino</h5></div>
-      <div class="card-body">
-        <div class="row g-2 align-items-end">
-          <div class="col-md-4">
-            <label class="form-label">Produit</label>
-            <select v-model="newItem.article" class="form-select" @change="onProduitSelect">
-              <option value="">Sélectionner...</option>
-              <option v-for="p in availableProduits" :key="p.article" :value="p.article">
-                {{ p.article }} - {{ p.description || p.nom }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Prix Béton (CHF)</label>
-            <input v-model.number="newItem.prix_beton" type="number" step="0.01" class="form-control" />
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Prix DIN (CHF)</label>
-            <input v-model.number="newItem.prix_din" type="number" step="0.01" class="form-control" />
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-primary w-100" @click="addItem" :disabled="!newItem.article">Ajouter</button>
-          </div>
+    <!-- Tabella completa catalogo con prezzi VIP -->
+    <div v-if="selectedClient" class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Catalogue complet ({{ catalogueWithPrices.length }} produits)</h5>
+        <div class="d-flex gap-2 align-items-center">
+          <input v-model="searchFilter" type="text" class="form-control form-control-sm" placeholder="Rechercher..." style="width:200px" />
+          <button class="btn btn-sm btn-success" @click="saveAll" :disabled="saving">{{ saving ? 'Sauvegarde...' : '💾 Sauvegarder tout' }}</button>
         </div>
       </div>
-    </div>
-
-    <!-- Tabella listino -->
-    <div v-if="selectedClient && listino.length > 0" class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Listino ({{ listino.length }} produits)</h5>
-        <button class="btn btn-sm btn-outline-secondary" @click="importFromCatalogue">📥 Importer tout le catalogue</button>
-      </div>
-      <div class="card-body table-responsive">
-        <table class="table table-sm">
-          <thead>
+      <div class="card-body table-responsive" style="max-height:70vh;overflow-y:auto">
+        <table class="table table-sm table-hover">
+          <thead class="table-light sticky-top">
             <tr>
               <th>Article</th>
               <th>Description</th>
+              <th>Taille</th>
+              <th class="text-end">Prix catalogue</th>
               <th class="text-end">Prix Béton</th>
               <th class="text-end">Prix DIN</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in listino" :key="item.id">
-              <td>{{ item.article }}</td>
+            <tr v-for="item in filteredCatalogue" :key="item.article" :class="{'table-success': item.prix_beton > 0 || item.prix_din > 0}">
+              <td><strong>{{ item.article }}</strong></td>
               <td>{{ item.description }}</td>
+              <td>{{ item.taille }}</td>
+              <td class="text-end text-muted">{{ item.prix_catalogue.toFixed(2) }}</td>
               <td class="text-end">
-                <input v-model.number="item.prix_beton" type="number" step="0.01" class="form-control form-control-sm text-end" style="width:100px;display:inline" @change="updateItem(item)" />
+                <input v-model.number="item.prix_beton" type="number" step="0.01" min="0" class="form-control form-control-sm text-end" style="width:100px;display:inline" />
               </td>
               <td class="text-end">
-                <input v-model.number="item.prix_din" type="number" step="0.01" class="form-control form-control-sm text-end" style="width:100px;display:inline" @change="updateItem(item)" />
-              </td>
-              <td>
-                <button class="btn btn-sm btn-outline-danger" @click="deleteItem(item)">🗑</button>
+                <input v-model.number="item.prix_din" type="number" step="0.01" min="0" class="form-control form-control-sm text-end" style="width:100px;display:inline" />
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
-
-    <div v-else-if="selectedClient && listino.length === 0" class="alert alert-info text-center">
-      Aucun produit dans le listino pour ce client.
     </div>
 
     <!-- Modal ajout client VIP -->
@@ -119,19 +89,42 @@ const selectedClient = ref('');
 const listino = ref([]);
 const showAddVipModal = ref(false);
 const newVipClientId = ref('');
-const newItem = ref({ article: '', description: '', prix_beton: 0, prix_din: 0 });
+const searchFilter = ref('');
+const saving = ref(false);
 
 const vipClients = computed(() => allClients.value.filter(c => c.vip));
 const nonVipClients = computed(() => allClients.value.filter(c => !c.vip));
-const availableProduits = computed(() => {
-  const existing = listino.value.map(l => l.article);
-  return produits.value.filter(p => !existing.includes(p.article));
+
+// Catalogo completo con prezzi VIP mergiati
+const catalogueWithPrices = computed(() => {
+  return produits.value.map(p => {
+    const vipItem = listino.value.find(l => l.article === p.article);
+    return {
+      article: p.article,
+      description: p.description || p.nom || '',
+      taille: p.taille || '',
+      prix_catalogue: Number(p.prix) || 0,
+      prix_beton: vipItem ? vipItem.prix_beton : 0,
+      prix_din: vipItem ? vipItem.prix_din : 0,
+      vip_id: vipItem ? vipItem.id : null
+    };
+  });
+});
+
+const filteredCatalogue = computed(() => {
+  if (!searchFilter.value) return catalogueWithPrices.value;
+  const s = searchFilter.value.toLowerCase();
+  return catalogueWithPrices.value.filter(p =>
+    p.article.toLowerCase().includes(s) ||
+    p.description.toLowerCase().includes(s) ||
+    p.taille.toLowerCase().includes(s)
+  );
 });
 
 onMounted(async () => {
   const [clientsRes, produitsRes] = await Promise.all([
     supabase.from('clients').select('*'),
-    supabase.from('produits').select('*')
+    supabase.from('produits').select('*').order('article')
   ]);
   allClients.value = clientsRes.data || [];
   produits.value = (produitsRes.data || []).map(p => ({ ...p, description: p.description || p.nom || '' }));
@@ -139,53 +132,47 @@ onMounted(async () => {
 
 const loadListino = async () => {
   if (!selectedClient.value) { listino.value = []; return; }
-  const { data } = await supabase.from('listino_vip').select('*').eq('client_id', selectedClient.value).order('article');
+  const { data } = await supabase.from('listino_vip').select('*').eq('client_id', selectedClient.value);
   listino.value = data || [];
 };
 
-const onProduitSelect = () => {
-  const p = produits.value.find(pr => pr.article === newItem.value.article);
-  if (p) newItem.value.description = p.description || p.nom || '';
-};
+const saveAll = async () => {
+  saving.value = true;
+  try {
+    const toUpsert = catalogueWithPrices.value.filter(p => p.prix_beton > 0 || p.prix_din > 0);
+    const toDelete = catalogueWithPrices.value.filter(p => p.vip_id && p.prix_beton === 0 && p.prix_din === 0);
 
-const addItem = async () => {
-  const { error } = await supabase.from('listino_vip').insert({
-    client_id: selectedClient.value,
-    article: newItem.value.article,
-    description: newItem.value.description,
-    prix_beton: newItem.value.prix_beton,
-    prix_din: newItem.value.prix_din
-  });
-  if (error) { alert('Erreur: ' + error.message); return; }
-  newItem.value = { article: '', description: '', prix_beton: 0, prix_din: 0 };
-  await loadListino();
-};
+    // Delete items with both prices at 0
+    for (const item of toDelete) {
+      await supabase.from('listino_vip').delete().eq('id', item.vip_id);
+    }
 
-const updateItem = async (item) => {
-  await supabase.from('listino_vip').update({ prix_beton: item.prix_beton, prix_din: item.prix_din, updated_at: new Date().toISOString() }).eq('id', item.id);
-};
-};
+    // Upsert items with prices
+    for (const item of toUpsert) {
+      if (item.vip_id) {
+        await supabase.from('listino_vip').update({
+          prix_beton: item.prix_beton,
+          prix_din: item.prix_din,
+          updated_at: new Date().toISOString()
+        }).eq('id', item.vip_id);
+      } else {
+        await supabase.from('listino_vip').insert({
+          client_id: selectedClient.value,
+          article: item.article,
+          description: item.description,
+          prix_beton: item.prix_beton,
+          prix_din: item.prix_din
+        });
+      }
+    }
 
-const deleteItem = async (item) => {
-  if (!confirm('Supprimer ce produit du listino?')) return;
-  await supabase.from('listino_vip').delete().eq('id', item.id);
-  await loadListino();
-};
-
-const importFromCatalogue = async () => {
-  if (!confirm(`Importer ${availableProduits.value.length} produits du catalogue avec prix à 0? Vous pourrez ensuite modifier les prix.`)) return;
-  const items = availableProduits.value.map(p => ({
-    client_id: selectedClient.value,
-    article: p.article,
-    description: p.description || p.nom || '',
-    prix_beton: 0,
-    prix_din: 0
-  }));
-  if (items.length > 0) {
-    const { error } = await supabase.from('listino_vip').insert(items);
-    if (error) { alert('Erreur: ' + error.message); return; }
+    await loadListino();
+    alert(`Sauvegardé! ${toUpsert.length} produits avec prix, ${toDelete.length} supprimés.`);
+  } catch (error) {
+    alert('Erreur: ' + error.message);
+  } finally {
+    saving.value = false;
   }
-  await loadListino();
 };
 
 const addVipClient = async () => {
@@ -213,5 +200,8 @@ const removeVipFlag = async () => {
 }
 .modal-box {
   background: white; border-radius: 10px; padding: 20px; width: 400px; max-width: 90vw;
+}
+.sticky-top {
+  position: sticky; top: 0; z-index: 1;
 }
 </style>
