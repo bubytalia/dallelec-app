@@ -70,11 +70,13 @@ onMounted(async () => {
 });
 
 const loadDevis = async () => {
+  const userEmail = localStorage.getItem('userEmail') || '';
   const { data } = await supabase
     .from('devis')
     .select('*')
     .eq('client_id', clientId.value)
     .eq('use_listino_vip', true)
+    .eq('created_by', userEmail)
     .order('created_at', { ascending: false });
   devisList.value = data || [];
 };

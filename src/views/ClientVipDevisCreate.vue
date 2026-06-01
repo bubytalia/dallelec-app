@@ -259,6 +259,7 @@ const saveDevis = async () => {
       total: totalDevis.value,
       status: 'En attente',
       draft: false,
+      created_by: localStorage.getItem('userEmail') || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
