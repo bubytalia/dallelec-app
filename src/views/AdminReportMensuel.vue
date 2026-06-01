@@ -30,6 +30,7 @@
               <th>Employé</th>
               <th class="text-end">H. prévues</th>
               <th class="text-end">H. travaillées</th>
+              <th class="text-end">Jours (paniers)</th>
               <th class="text-end">Abs. payées</th>
               <th class="text-end">Delta</th>
               <th class="text-end">Solde heures</th>
@@ -41,6 +42,7 @@
               <td><strong>{{ getEmployeName(b.employee_email) }}</strong></td>
               <td class="text-end">{{ b.heures_prevues.toFixed(2) }}</td>
               <td class="text-end">{{ b.heures_travaillees.toFixed(2) }}</td>
+              <td class="text-end">{{ b.jours_travailles || 0 }}</td>
               <td class="text-end">{{ (b.heures_absences_payees || 0).toFixed(2) }}</td>
               <td class="text-end" :class="b.delta_mois >= 0 ? 'text-success' : 'text-danger'">{{ b.delta_mois >= 0 ? '+' : '' }}{{ b.delta_mois.toFixed(2) }}</td>
               <td class="text-end fw-bold" :class="b.solde_final >= 0 ? 'text-success' : 'text-danger'">{{ b.solde_final.toFixed(2) }}</td>
@@ -117,6 +119,13 @@ const calculateSingleMonth = async (mois) => {
     const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email).reduce((s, h) => s + (h.heures || 0), 0);
     const heuresTravaillees = oreChef + oreInterim + oreOuvrier;
 
+    // Compter les jours effectivement travaillés (jours uniques avec heures > 0)
+    const joursSet = new Set();
+    (heuresChef || []).filter(h => h.chef_id === emp.email && (h.total_heures || h.heures_normales || 0) > 0).forEach(h => joursSet.add(h.date));
+    (heuresInterim || []).filter(h => h.chef_id === emp.email && (h.total_heures || 0) > 0).forEach(h => joursSet.add(h.date));
+    (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email && (h.heures || 0) > 0).forEach(h => joursSet.add(h.date));
+    const joursTravailles = joursSet.size;
+
     let absPayees = 0, absNonPayees = 0, vacPrises = 0, joursFeries = 0;
     const empAbs = (absences || []).filter(a => a.user_id === emp.email);
     const joursDejaComptes = new Set();
@@ -150,7 +159,7 @@ const calculateSingleMonth = async (mois) => {
     const vacNouveauSolde = vacSoldePrecedent + vacAcquises - vacPrises;
 
     const { data: existing } = await supabase.from('solde_heures').select('id').eq('employee_email', emp.email).eq('mois', mois).single();
-    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
+    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, jours_travailles: joursTravailles, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
     if (existing) { await supabase.from('solde_heures').update(record).eq('id', existing.id); }
     else { await supabase.from('solde_heures').insert(record); }
 
@@ -241,7 +250,7 @@ const exportToPDF = () => {
       html += `<div class="col-box"><h3>📊 Bilan Heures</h3><table>
         <tr><td>Heures prévues</td><td>${b.heures_prevues.toFixed(2)}h</td></tr>
         <tr><td>Heures travaillées</td><td>${b.heures_travaillees.toFixed(2)}h</td></tr>
-        <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
+        <tr><td>Jours travaillés (paniers)</td><td>${b.jours_travailles || 0} j</td></tr>        <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
         <tr><td>Autres absences payées</td><td>${((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2)}h</td></tr>
         <tr><td>Absences non payées</td><td>${b.heures_absences_non_payees.toFixed(2)}h</td></tr>
         <tr><td>Solde précédent</td><td>${b.solde_precedent.toFixed(2)}h</td></tr>
