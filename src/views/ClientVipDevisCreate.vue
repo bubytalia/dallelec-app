@@ -7,7 +7,7 @@
     <!-- Tutorial / Avertissement -->
     <div class="alert alert-warning mb-4">
       <h6>📋 Information importante</h6>
-      <p class="mb-1">Cet accès est destiné à la rédaction de devis de <strong>petite et moyenne envergure</strong> dans des conditions de pose <strong>ordinaires</strong>.</p>
+      <p class="mb-1">Cet accès est destiné à la rédaction de devis de <strong>petite et moyenne taille</strong> dans des conditions de pose <strong>ordinaires</strong>.</p>
       <p class="mb-1">Les devis de grande envergure ou avec des conditions de pose particulières doivent être demandés directement à <strong>DALLELEC Sàrl</strong>.</p>
       <hr class="my-2">
       <small><strong>Comment créer un devis:</strong> 1) Remplissez les informations du chantier et ajoutez les zones → 2) Sélectionnez les produits, quantités et suppléments pour chaque zone → 3) Sauvegardez.</small>
