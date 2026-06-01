@@ -375,6 +375,12 @@ const recalculerPrixVip = async () => {
     let prixChanges = [];
 
     devisItems.value = devisItems.value.map(item => {
+      // Vérifier si c'est un produit à prix net
+      const catalogProd = produits.value.find(p => (p.article || '').trim().toLowerCase() === (item.article || '').trim().toLowerCase());
+      if (catalogProd && catalogProd.prezzo_netto) {
+        return item; // Ne pas toucher aux prix nets
+      }
+
       const vipItem = listinoVip.value.find(v => v.article === item.article);
       if (!vipItem) {
         notFound.push(item.article);

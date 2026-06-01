@@ -198,11 +198,15 @@ const selectProduit = (produit) => {
   searchText.value = `${produit.article} - ${produit.description} (${produit.taille})`;
   showDropdown.value = false;
 
-  // Si listino VIP, pré-remplir le prix
+  // Si listino VIP, pré-remplir le prix (sauf prezzo_netto)
   if (props.listinoVip.length > 0) {
-    const vipItem = props.listinoVip.find(v => v.article === produit.article);
-    if (vipItem) {
-      prezzoManuale.value = props.vipTypePose === 'din' ? vipItem.prix_din : vipItem.prix_beton;
+    if (produit.prezzo_netto) {
+      prezzoManuale.value = Number(produit.prix) || 0;
+    } else {
+      const vipItem = props.listinoVip.find(v => v.article === produit.article);
+      if (vipItem) {
+        prezzoManuale.value = props.vipTypePose === 'din' ? vipItem.prix_din : vipItem.prix_beton;
+      }
     }
   }
 };
