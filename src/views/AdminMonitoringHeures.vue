@@ -117,23 +117,39 @@
             </select>
           </div>
 
-          <!-- Heures -->
-          <div v-if="editModal.action === 'heures'" class="mb-3">
-            <label class="form-label">Heures:</label>
-            <select v-model="editModal.heures" class="form-control">
-              <option value="">Sélectionner</option>
-              <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-          </div>
+          <!-- Mode Heures: gestion multi-chantiers -->
+          <div v-if="editModal.action === 'heures'">
+            <!-- Enregistrements existants -->
+            <div v-if="editModal.existingRecords.length > 0" class="mb-3">
+              <label class="form-label fw-bold">Enregistrements existants:</label>
+              <div v-for="(rec, idx) in editModal.existingRecords" :key="rec.id" class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
+                <select v-model="rec.chantier_id" class="form-select form-select-sm" style="flex:2">
+                  <option value="">Sans chantier</option>
+                  <option v-for="ch in chantiersOuverts" :key="ch.id" :value="ch.id">{{ ch.nom }}</option>
+                </select>
+                <select v-model="rec.heures" class="form-select form-select-sm" style="flex:1">
+                  <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+                <span class="text-muted">h</span>
+                <button @click="deleteRecord(rec)" class="btn btn-sm btn-outline-danger">🗑</button>
+              </div>
+            </div>
 
-          <!-- Chantier (pour chefs) -->
-          <div v-if="editModal.action === 'heures' && editModal.needsChantier" class="mb-3">
-            <label class="form-label">Chantier:</label>
-            <select v-model="editModal.chantierId" class="form-control">
-              <option value="">Sélectionner un chantier</option>
-              <option v-for="ch in chantiersOuverts" :key="ch.id" :value="ch.id">{{ ch.nom }}</option>
-            </select>
-            <small v-if="editModal.existingChantierNom" class="text-muted">🏗️ Chantier actuel: {{ editModal.existingChantierNom }}</small>
+            <!-- Ajouter un nouveau record -->
+            <div class="mb-3 p-2 border rounded bg-light">
+              <label class="form-label fw-bold">Ajouter des heures:</label>
+              <div class="d-flex align-items-center gap-2">
+                <select v-model="editModal.newChantierId" class="form-select form-select-sm" style="flex:2">
+                  <option value="">Chantier...</option>
+                  <option v-for="ch in chantiersOuverts" :key="ch.id" :value="ch.id">{{ ch.nom }}</option>
+                </select>
+                <select v-model="editModal.newHeures" class="form-select form-select-sm" style="flex:1">
+                  <option value="">Heures...</option>
+                  <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+                <button @click="addNewRecord" class="btn btn-sm btn-success" :disabled="!editModal.newHeures">+</button>
+              </div>
+            </div>
           </div>
 
           <!-- Heures pour absences (vacances, maladie, etc.) -->
@@ -147,17 +163,6 @@
               <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </select>
             <small class="text-muted">Lun-Jeu: 8h45 | Ven: 5h</small>
-          </div>
-
-          <!-- Détails existants -->
-          <div v-if="editModal.existingRecords.length > 0" class="mb-3">
-            <label class="form-label fw-bold">Enregistrements existants:</label>
-            <ul class="list-group list-group-sm">
-              <li v-for="rec in editModal.existingRecords" :key="rec.id" class="list-group-item d-flex justify-content-between align-items-center">
-                <span>{{ rec.table }} - {{ rec.heures }}h</span>
-                <button @click="deleteRecord(rec)" class="btn btn-sm btn-outline-danger">🗑</button>
-              </li>
-            </ul>
           </div>
         </div>
         <div class="modal-footer">
@@ -297,9 +302,9 @@ const openEditModal = async (employe, jour) => {
     action: ['heures','vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(jour.status) ? jour.status : 'heures',
     heures: jour.heures || '',
     heuresAbsence: defaultHeuresAbsence,
-    needsChantier,
-    chantierId: '',
-    existingChantierNom: '',
+    needsChantier: true,
+    newChantierId: '',
+    newHeures: '',
     existingRecords: [],
     saving: false
   };
@@ -313,37 +318,23 @@ const closeEditModal = () => {
 
 const loadExistingRecords = async (email, date) => {
   const records = [];
-  let existingChantier = null;
-  let existingChantierNom = '';
   
   const { data: chefRecs } = await supabase.from('heures_chef_propres').select('*').eq('chef_id', email).eq('date', date);
   (chefRecs || []).forEach(r => {
-    records.push({ id: r.id, table: 'heures_chef_propres', heures: r.total_heures || r.heures_normales });
-    if (r.chantier_id) existingChantier = r.chantier_id;
+    records.push({ id: r.id, table: 'heures_chef_propres', heures: r.total_heures || r.heures_normales, chantier_id: r.chantier_id || '' });
   });
   
   const { data: interimRecs } = await supabase.from('heures_chef_interim').select('*').eq('chef_id', email).eq('date', date);
   (interimRecs || []).forEach(r => {
-    records.push({ id: r.id, table: 'heures_chef_interim', heures: r.total_heures || r.heures_normales });
-    if (r.chantier_id) existingChantier = r.chantier_id;
+    records.push({ id: r.id, table: 'heures_chef_interim', heures: r.total_heures || r.heures_normales, chantier_id: r.chantier_id || '' });
   });
   
   const { data: ouvrierRecs } = await supabase.from('heures_ouvriers').select('*').eq('ouvrier_id', email).eq('date', date);
   (ouvrierRecs || []).forEach(r => {
-    records.push({ id: r.id, table: 'heures_ouvriers', heures: r.heures });
-    if (r.chantier_id) existingChantier = r.chantier_id;
+    records.push({ id: r.id, table: 'heures_ouvriers', heures: r.heures, chantier_id: r.chantier_id || '' });
   });
   
-  // Récupérer le nom du chantier
-  if (existingChantier) {
-    const { data: ch } = await supabase.from('chantiers').select('nom').eq('id', existingChantier).single();
-    existingChantierNom = ch?.nom || '';
-  }
-  
   editModal.value.existingRecords = records;
-  editModal.value.existingChantier = existingChantier;
-  editModal.value.existingChantierNom = existingChantierNom;
-  if (existingChantier) editModal.value.chantierId = existingChantier;
 };
 
 const deleteRecord = async (rec) => {
@@ -352,10 +343,31 @@ const deleteRecord = async (rec) => {
   await loadExistingRecords(editModal.value.employeEmail, editModal.value.date);
 };
 
+const addNewRecord = async () => {
+  const { employeEmail, employeType, date, newHeures, newChantierId } = editModal.value;
+  if (!newHeures) return;
+
+  // Détecter la bonne table
+  const { data: checkOuvrier } = await supabase.from('heures_ouvriers').select('id').eq('ouvrier_id', employeEmail).limit(1);
+  const { data: checkChef } = await supabase.from('heures_chef_propres').select('id').eq('chef_id', employeEmail).limit(1);
+  const useOuvrierTable = (checkOuvrier && checkOuvrier.length > 0) || (!checkChef || checkChef.length === 0 && employeType === 'ouvrier');
+
+  if (!useOuvrierTable) {
+    await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: newHeures, total_heures: newHeures, chantier_id: newChantierId || null });
+  } else {
+    const insertData = { ouvrier_id: employeEmail, date, heures: newHeures };
+    if (newChantierId) insertData.chantier_id = newChantierId;
+    await supabase.from('heures_ouvriers').insert(insertData);
+  }
+
+  editModal.value.newHeures = '';
+  editModal.value.newChantierId = '';
+  await loadExistingRecords(employeEmail, date);
+};
+
 const saveEdit = async () => {
   editModal.value.saving = true;
-  const { employeEmail, employeType, date, action, heures } = editModal.value;
-  console.log('SAVE EDIT:', { employeEmail, employeType, date, action, heures, heuresAbsence: editModal.value.heuresAbsence });
+  const { employeEmail, employeType, date, action } = editModal.value;
   
   try {
     if (action === 'supprimer') {
@@ -363,7 +375,7 @@ const saveEdit = async () => {
       for (const rec of editModal.value.existingRecords) {
         await supabase.from(rec.table).delete().eq('id', rec.id);
       }
-      // Supprimer absences du jour (single + multi-day)
+      // Supprimer absences du jour
       await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
       const { data: multiAbs } = await supabase.from('absences').select('*').eq('user_id', employeEmail).lte('start_date', date).gte('end_date', date);
       for (const abs of (multiAbs || [])) {
@@ -379,15 +391,19 @@ const saveEdit = async () => {
       }
       
     } else if (action === 'heures') {
-      if (!heures) { alert('Sélectionner les heures'); editModal.value.saving = false; return; }
-      // Supprimer anciennes heures
+      // Mettre à jour les records existants (heures + chantier modifiés inline)
       for (const rec of editModal.value.existingRecords) {
-        await supabase.from(rec.table).delete().eq('id', rec.id);
+        if (rec.table === 'heures_chef_propres') {
+          await supabase.from(rec.table).update({ total_heures: rec.heures, heures_normales: rec.heures, chantier_id: rec.chantier_id || null }).eq('id', rec.id);
+        } else if (rec.table === 'heures_chef_interim') {
+          await supabase.from(rec.table).update({ total_heures: rec.heures, chantier_id: rec.chantier_id || null }).eq('id', rec.id);
+        } else {
+          await supabase.from(rec.table).update({ heures: rec.heures, chantier_id: rec.chantier_id || null }).eq('id', rec.id);
+        }
       }
-      // Supprimer absence éventuelle (single + multi-day)
-      const { data: delSingle, error: errSingle } = await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date).select();
+      // Supprimer absence éventuelle du jour
+      await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
       const { data: multiAbsH } = await supabase.from('absences').select('*').eq('user_id', employeEmail).lte('start_date', date).gte('end_date', date);
-      console.log('DEBUG heures - email:', employeEmail, 'date:', date, 'single deleted:', delSingle?.length, 'multi found:', multiAbsH?.length, multiAbsH);
       for (const abs of (multiAbsH || [])) {
         await supabase.from('absences').delete().eq('id', abs.id);
         if (abs.start_date < date) {
@@ -399,37 +415,17 @@ const saveEdit = async () => {
           await supabase.from('absences').insert({ user_id: employeEmail, start_date: next.toISOString().split('T')[0], end_date: abs.end_date, type: abs.type, status: 'approved', heures: abs.heures });
         }
       }
-      // Insérer nouvelles heures - détecter la bonne table
-      // Vérifier où l'employé a déjà des heures
-      const { data: checkOuvrier } = await supabase.from('heures_ouvriers').select('id').eq('ouvrier_id', employeEmail).limit(1);
-      const { data: checkChef } = await supabase.from('heures_chef_propres').select('id').eq('chef_id', employeEmail).limit(1);
-      const useOuvrierTable = (checkOuvrier && checkOuvrier.length > 0) || (!checkChef || checkChef.length === 0 && employeType === 'ouvrier');
-      
-      if (!useOuvrierTable) {
-        const chId = editModal.value.chantierId || editModal.value.existingChantier || null;
-        const { error: insertErr } = await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: heures, total_heures: heures, chantier_id: chId });
-        if (insertErr) console.error('INSERT ERROR chef:', insertErr);
-      } else {
-        const chId = editModal.value.chantierId || editModal.value.existingChantier || null;
-        const insertData = { ouvrier_id: employeEmail, date, heures: heures };
-        if (chId) insertData.chantier_id = chId;
-        const { error: insertErr } = await supabase.from('heures_ouvriers').insert(insertData);
-        if (insertErr) console.error('INSERT ERROR ouvrier:', insertErr);
-      }
       
     } else {
-      // Vacances, maladie, absence
-      // Supprimer heures existantes
+      // Vacances, maladie, absence - supprimer heures existantes
       for (const rec of editModal.value.existingRecords) {
         await supabase.from(rec.table).delete().eq('id', rec.id);
       }
-      // Supprimer ancienne absence du jour (single day ou multi-day)
+      // Supprimer ancienne absence du jour
       await supabase.from('absences').delete().eq('user_id', employeEmail).eq('start_date', date).eq('end_date', date);
-      // Supprimer aussi si le jour fait partie d'une absence multi-jours
       const { data: multiDayAbs } = await supabase.from('absences').select('*').eq('user_id', employeEmail).lte('start_date', date).gte('end_date', date);
       for (const abs of (multiDayAbs || [])) {
         await supabase.from('absences').delete().eq('id', abs.id);
-        // Re-creer les jours avant et apres si necessaire
         if (abs.start_date < date) {
           const newEnd = new Date(date); newEnd.setDate(newEnd.getDate() - 1);
           const newEndStr = newEnd.toISOString().split('T')[0];
@@ -445,7 +441,7 @@ const saveEdit = async () => {
           }
         }
       }
-      // Insérer absence avec heures
+      // Insérer absence
       await supabase.from('absences').insert({ user_id: employeEmail, start_date: date, end_date: date, type: action, status: 'approved', heures: editModal.value.heuresAbsence || 8.75 });
     }
     
