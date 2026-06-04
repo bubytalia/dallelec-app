@@ -173,8 +173,9 @@
                 <th>Devis HT</th>
                 <th>Facturé HT</th>
                 <th>Coût Heures</th>
+                <th>Primes</th>
                 <th>Marge</th>
-                <th>% de réalisation</th>
+                <th>% Marge</th>
                 <th>Nb Chantiers</th>
               </tr>
             </thead>
@@ -184,12 +185,13 @@
                 <td>{{ formatCurrency(bilan.devis) }}</td>
                 <td>{{ formatCurrency(bilan.facture) }}</td>
                 <td>{{ formatCurrency(bilan.coutsHeures) }}</td>
+                <td>{{ formatCurrency(bilan.primes) }}</td>
                 <td :class="bilan.marge >= 0 ? 'text-success' : 'text-danger'">
                   {{ formatCurrency(bilan.marge) }}
                 </td>
                 <td>
-                  <span :class="getRealisationClass(bilan.pourcentageRealisation)">
-                    {{ bilan.pourcentageRealisation }}%
+                  <span :class="getMargeClass(bilan.margePourcentage)">
+                    {{ bilan.margePourcentage }}%
                   </span>
                 </td>
                 <td>{{ bilan.nbChantiers }}</td>
@@ -199,10 +201,11 @@
                 <td>{{ formatCurrency(totauxMensuels.devis) }}</td>
                 <td>{{ formatCurrency(totauxMensuels.facture) }}</td>
                 <td>{{ formatCurrency(totauxMensuels.couts) }}</td>
+                <td>{{ formatCurrency(totauxMensuels.primes) }}</td>
                 <td :class="totauxMensuels.marge >= 0 ? 'text-success' : 'text-danger'">
                   {{ formatCurrency(totauxMensuels.marge) }}
                 </td>
-                <td>{{ totauxMensuels.pourcentageRealisation }}%</td>
+                <td>{{ totauxMensuels.margePourcentage }}%</td>
                 <td>{{ totauxMensuels.nbChantiers }}</td>
               </tr>
             </tbody>
@@ -445,6 +448,7 @@ const interimaires = ref([]);
 const heuresChef = ref([]);
 const heuresOuvriers = ref([]);
 const heuresInterim = ref([]);
+const primesPaiements = ref([]);
 
 // KPIs
 const kpis = ref({
@@ -540,6 +544,10 @@ const loadData = async () => {
 
     const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*');
     heuresInterim.value = heuresInterimData || [];
+
+    // Primes payées
+    const { data: primesData } = await supabase.from('primes_paiements').select('*');
+    primesPaiements.value = primesData || [];
 
     calculateKPIs();
     calculateBilansChantiers();
@@ -711,7 +719,13 @@ const loadBilansMensuels = () => {
     ].reduce((sum, cost) => sum + cost, 0);
 
     const marge = factureTotal - coutsHeuresMonth;
-    const pourcentageRealisation = devisTotal > 0 ? Math.round((factureTotal / devisTotal) * 100) : 0;
+    const margePourcentage = factureTotal > 0 ? Math.round((marge / factureTotal) * 100) : 0;
+
+    // Primes payées ce mois
+    const moisStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const primesMois = primesPaiements.value
+      .filter(p => p.mois_paiement === moisStr)
+      .reduce((sum, p) => sum + (parseFloat(p.montant) || 0), 0);
 
     months.push({
       mois: month,
@@ -719,8 +733,9 @@ const loadBilansMensuels = () => {
       devis: devisTotal,
       facture: factureTotal,
       coutsHeures: coutsHeuresMonth,
-      marge,
-      pourcentageRealisation,
+      primes: primesMois,
+      marge: marge - primesMois,
+      margePourcentage: factureTotal > 0 ? Math.round(((marge - primesMois) / factureTotal) * 100) : 0,
       nbChantiers: monthDevis.length
     });
   }
@@ -728,13 +743,15 @@ const loadBilansMensuels = () => {
   bilansMensuels.value = months;
   
   // Calcola totali mensuels
+  const totalFactureMens = months.reduce((sum, m) => sum + m.facture, 0);
+  const totalMargeMens = months.reduce((sum, m) => sum + m.marge, 0);
   totauxMensuels.value = {
     devis: months.reduce((sum, m) => sum + m.devis, 0),
-    facture: months.reduce((sum, m) => sum + m.facture, 0),
+    facture: totalFactureMens,
     couts: months.reduce((sum, m) => sum + m.coutsHeures, 0),
-    marge: months.reduce((sum, m) => sum + m.marge, 0),
-    pourcentageRealisation: months.length > 0 ? 
-      Math.round(months.reduce((sum, m) => sum + m.pourcentageRealisation, 0) / months.length) : 0,
+    primes: months.reduce((sum, m) => sum + m.primes, 0),
+    marge: totalMargeMens,
+    margePourcentage: totalFactureMens > 0 ? Math.round((totalMargeMens / totalFactureMens) * 100) : 0,
     nbChantiers: months.reduce((sum, m) => sum + m.nbChantiers, 0)
   };
 };
