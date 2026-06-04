@@ -819,7 +819,7 @@ onMounted(() => {
 }
 
 .calendar-day.conge-paternite {
-  background: #20c997 !important;
+  background: #6f42c1 !important;
 }
 
 .calendar-day.conge-deces {
