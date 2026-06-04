@@ -598,10 +598,7 @@ const sauvegarderMetree = async (asBrouillon = false) => {
     periode_debut: periodeDebut.value,
     periode_fin: periodeFin.value,
     draft: asBrouillon,
-    status: asBrouillon ? 'draft' : 'approved',
-    has_hors_devis: produitsHorsDevis.value.length > 0,
-    hors_devis_alert: !isDevisDetaille.value && hdNonPrices.value.length > 0,
-    updated_at: new Date().toISOString()
+    status: asBrouillon ? 'draft' : 'approved'
   }
 
   try {
