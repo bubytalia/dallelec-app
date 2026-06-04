@@ -50,7 +50,7 @@
           <div class="card-header">
             <h5>Vue d'ensemble - {{ formatMonth(selectedMonth) }}</h5>
             <small class="text-muted">
-              🟢 Heures saisies | 🔴 Pas d'heures | 🟦 Vacances | 🟥 Maladie | 🔵 Jour férié | 🟠 Vacances sans solde | 🟡 Autres absences | ⚪ Weekend/Futur
+              🟢 Heures saisies | 🔴 Pas d'heures | 🟦 Vacances | 🟥 Maladie | 🔵 Jour férié | 🟠 Vacances sans solde | 🪷 Congé pat. | 🟣 Congé déc. | 🟡 Autres absences | ⚪ Weekend/Futur
             </small>
           </div>
           <div class="card-body">
@@ -62,6 +62,8 @@
               <span class="badge bg-dark me-2">{{ stats.joursMaladie }} jours de maladie</span>
               <span class="badge bg-primary me-2">{{ stats.joursFeries }} jours fériés</span>
               <span class="badge bg-orange me-2">{{ stats.joursVacancesSansSolde }} vacances sans solde</span>
+              <span class="badge conge-pat-badge me-2">{{ stats.joursCongePaternite }} congé paternité</span>
+              <span class="badge conge-dec-badge me-2">{{ stats.joursCongeDeces }} congé décès</span>
               <span class="badge bg-warning me-2">{{ stats.joursAutresAbsences }} autres absences</span>
             </div>
 
@@ -492,6 +494,8 @@ const stats = computed(() => {
     joursMaladie: 0, 
     joursFeries: 0,
     joursVacancesSansSolde: 0,
+    joursCongePaternite: 0,
+    joursCongeDeces: 0,
     joursAutresAbsences: 0 
   };
   
@@ -501,6 +505,8 @@ const stats = computed(() => {
   let joursMaladie = 0;
   let joursFeries = 0;
   let joursVacancesSansSolde = 0;
+  let joursCongePaternite = 0;
+  let joursCongeDeces = 0;
   let joursAutresAbsences = 0;
   
   monitoringData.value.forEach(emp => {
@@ -511,11 +517,13 @@ const stats = computed(() => {
       else if (jour.status === 'maladie') joursMaladie++;
       else if (jour.status === 'jour_ferie') joursFeries++;
       else if (jour.status === 'vacances_sans_solde') joursVacancesSansSolde++;
+      else if (jour.status === 'conge_paternite') joursCongePaternite++;
+      else if (jour.status === 'conge_deces') joursCongeDeces++;
       else if (jour.status === 'absence') joursAutresAbsences++;
     });
   });
   
-  return { joursAvecHeures, joursSansHeures, joursVacances, joursMaladie, joursFeries, joursVacancesSansSolde, joursAutresAbsences };
+  return { joursAvecHeures, joursSansHeures, joursVacances, joursMaladie, joursFeries, joursVacancesSansSolde, joursCongePaternite, joursCongeDeces, joursAutresAbsences };
 });
 
 const loadMonitoringData = async () => {
@@ -828,6 +836,16 @@ onMounted(() => {
 
 .badge.bg-orange {
   background-color: #fd7e14 !important;
+  color: white;
+}
+
+.badge.conge-pat-badge {
+  background-color: #e83e8c !important;
+  color: white;
+}
+
+.badge.conge-dec-badge {
+  background-color: #6f42c1 !important;
   color: white;
 }
 
