@@ -28,9 +28,6 @@
         </router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/admin/associer-devis" class="btn btn-outline-primary w-100">Associer Devis</router-link>
-      </div>
-      <div class="col-md-3 m-2">
         <router-link to="/admin/repertoires" class="btn btn-outline-primary w-100">Répertoires</router-link>
       </div>
     </div>
