@@ -15,8 +15,12 @@
               <input v-model="selectedMonth" type="month" class="form-control" @change="loadData" />
             </div>
             <div class="d-flex gap-2 flex-wrap">
-              <button @click="exportToPDF" class="btn btn-danger" :disabled="bilans.length === 0">📄 PDF Commercialiste</button>
-              <button @click="exportToutesFiches" class="btn btn-primary" :disabled="bilans.length === 0">📄 Toutes les fiches individuelles</button>
+              <button @click="exportToPDF" class="btn btn-danger" :disabled="bilans.length === 0 || loading">📄 PDF Commercialiste</button>
+              <button @click="exportToutesFiches" class="btn btn-primary" :disabled="bilans.length === 0 || loading">📄 Toutes les fiches individuelles</button>
+            </div>
+            <div v-if="loading" class="mt-2 text-center">
+              <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+              <small class="ms-2">Calcul en cours...</small>
             </div>
           </div>
         </div>
@@ -79,6 +83,7 @@ const bilans = ref([]);
 const employes = ref([]);
 const primesMois = ref([]);
 const loaded = ref(false);
+const loading = ref(false);
 
 const loadEmployes = async () => {
   const { data: collaborateurs } = await supabase.from('collaborateurs').select('*');
@@ -183,8 +188,9 @@ const calculateSingleMonth = async (mois) => {
 
 const loadData = async () => {
   loaded.value = false;
+  loading.value = true;
 
-  // Toujours recalculer pour avoir les données à jour
+  // Recalculer tous les mois jusqu'au mois cible
   const [targetYear, targetMonth] = selectedMonth.value.split('-').map(Number);
   for (let m = 1; m <= targetMonth; m++) {
     const mois = `${targetYear}-${String(m).padStart(2, '0')}`;
@@ -210,6 +216,7 @@ const loadData = async () => {
     };
   });
   loaded.value = true;
+  loading.value = false;
 };
 
 const getEmployeName = (email) => {
@@ -337,9 +344,10 @@ const exportToPDF = () => {
 
   html += `</body></html>`;
   const w = window.open('', '_blank');
+  if (!w) { alert('Veuillez autoriser les popups pour ce site.'); return; }
   w.document.write(html);
   w.document.close();
-  w.print();
+  setTimeout(() => w.print(), 500);
 };
 
 const exportFicheIndividuelle = (bilan) => {
@@ -355,9 +363,10 @@ const exportFicheIndividuelle = (bilan) => {
   html += `</div>`;
   html += `</body></html>`;
   const w = window.open('', '_blank');
+  if (!w) { alert('Veuillez autoriser les popups pour ce site.'); return; }
   w.document.write(html);
   w.document.close();
-  w.print();
+  setTimeout(() => w.print(), 500);
 };
 
 const exportToutesFiches = () => {
@@ -377,9 +386,10 @@ const exportToutesFiches = () => {
 
   html += `</body></html>`;
   const w = window.open('', '_blank');
+  if (!w) { alert('Veuillez autoriser les popups pour ce site.'); return; }
   w.document.write(html);
   w.document.close();
-  w.print();
+  setTimeout(() => w.print(), 500);
 };
 
 onMounted(async () => {
