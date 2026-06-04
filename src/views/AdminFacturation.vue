@@ -2354,6 +2354,10 @@ const loadPaiements = async () => {
 const calculateDateEcheance = (dateFacture, methodePaiement = '30 jours net') => {
   const date = new Date(dateFacture);
   const metodo = paiements.value.find(p => p.nom === methodePaiement);
+  // Virement bancaire = à vue (0 jours)
+  if (methodePaiement && methodePaiement.toLowerCase().includes('virement')) {
+    return date.toISOString().split('T')[0];
+  }
   const jours = metodo?.giorni_calcolo || 30;
   date.setDate(date.getDate() + jours);
   return date.toISOString().split('T')[0];

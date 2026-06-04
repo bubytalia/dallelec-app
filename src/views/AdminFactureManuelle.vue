@@ -298,6 +298,11 @@ const calculerTotal = (index) => {
 const calculateDateEcheance = (dateFacture, conditionsPaiement) => {
   const date = new Date(dateFacture);
   
+  // Virement bancaire = à vue (0 jours)
+  if (conditionsPaiement && conditionsPaiement.toLowerCase().includes('virement')) {
+    return date.toISOString().split('T')[0];
+  }
+  
   // Estrai i giorni dalle condizioni di pagamento
   const match = conditionsPaiement.match(/(\d+)\s*jours?/i);
   const giorni = match ? parseInt(match[1]) : 30; // Default 30 giorni
