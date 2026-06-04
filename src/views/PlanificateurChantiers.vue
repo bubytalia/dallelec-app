@@ -484,9 +484,12 @@ onMounted(async () => {
   position: sticky;
   left: 0;
   background: white;
-  z-index: 1;
-  min-width: 150px;
-  max-width: 150px;
+  z-index: 2;
+  min-width: 180px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chantier-name {
