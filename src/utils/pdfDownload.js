@@ -136,7 +136,7 @@ export const generateFicheIndividuellePDF = (data) => {
     if (y > 250) { doc.addPage(); y = margin; }
     doc.setDrawColor(200, 150, 0);
     doc.setLineWidth(0.5);
-    const bonusH = 8 + primes.length * 5 + 6;
+    const bonusH = 12 + primes.length * 5 + 8;
     doc.rect(margin, y, W - margin * 2, bonusH);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
