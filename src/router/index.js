@@ -22,7 +22,6 @@ import AdminListinoVip from '@/views/AdminListinoVip.vue';
 import AdminGestionHeures from '@/views/AdminGestionHeures.vue';
 import AdminAbsences from '@/views/AdminAbsences.vue';
 import AdminSoldeVacances from '@/views/AdminSoldeVacances.vue';
-import AdminBilanMensuel from '@/views/AdminBilanMensuel.vue';
 import PlanificateurChantiers from '@/views/PlanificateurChantiers.vue';
 
 // Chef pages
@@ -126,7 +125,7 @@ const routes = [
   { path: '/admin/gestion-heures', name: 'AdminGestionHeures', component: AdminGestionHeures },
   { path: '/admin/absences', name: 'AdminAbsences', component: AdminAbsences },
   { path: '/admin/solde-vacances', name: 'AdminSoldeVacances', component: AdminSoldeVacances },
-  { path: '/admin/bilan-mensuel', name: 'AdminBilanMensuel', component: AdminBilanMensuel },
+  { path: '/admin/bilan-mensuel', name: 'AdminBilanMensuel', component: () => import('@/views/AdminBilanMensuel.vue') },
   { path: '/admin/planificateur', name: 'PlanificateurChantiers', component: PlanificateurChantiers, beforeEnter: requireRole(['admin']) },
   { path: '/admin/couts-bureau', name: 'AdminCoutsBureau', component: () => import('@/views/AdminCoutsBureau.vue') },
   { path: '/admin/premi', name: 'AdminPremi', component: () => import('@/views/AdminPremi.vue') },
