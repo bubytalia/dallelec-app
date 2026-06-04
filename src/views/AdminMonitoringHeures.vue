@@ -814,6 +814,10 @@ onMounted(() => {
   background: #fd7e14 !important;
 }
 
+.calendar-day.bg-teal {
+  background: #20c997 !important;
+}
+
 .badge.bg-orange {
   background-color: #fd7e14 !important;
   color: white;
