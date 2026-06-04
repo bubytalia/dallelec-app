@@ -343,7 +343,7 @@ const generatePDFIndividuel = async () => {
   const empPlanning = empData?.planning || { 1: 8.75, 2: 8.75, 3: 8.75, 4: 8.75, 5: 5 };
 
   // Totaux calculés depuis la tabella
-  let calcHeuresTravaillees = 0, calcAbsPayees = 0, calcAbsNonPayees = 0, calcJoursFeries = 0, calcVacPrises = 0, calcHeuresPrevues = 0;
+  let calcHeuresTravaillees = 0, calcAbsPayees = 0, calcAbsNonPayees = 0, calcJoursFeries = 0, calcVacPrises = 0, calcHeuresPrevues = 0, calcJoursTravailles = 0;
 
   let html = `<html><head><title>Fiche ${nom} - ${monthLabel}</title>
   <style>
@@ -408,6 +408,7 @@ const generatePDFIndividuel = async () => {
       statut = 'Travail';
       heures = totalH.toFixed(2);
       calcHeuresTravaillees += totalH;
+      calcJoursTravailles++;
     } else {
       statut = '-'; heures = '-';
     }
@@ -426,6 +427,7 @@ const generatePDFIndividuel = async () => {
       <h4>📊 Bilan Heures</h4>
       <p>Heures prévues: <strong>${calcHeuresPrevues.toFixed(2)}h</strong></p>
       <p>Heures travaillées: <strong>${calcHeuresTravaillees.toFixed(2)}h</strong></p>
+      <p>Jours travaillés (paniers): <strong>${calcJoursTravailles} j</strong></p>
       <p>Jours fériés payés: <strong>${calcJoursFeries.toFixed(2)}h</strong></p>
       <p>Autres absences payées: <strong>${(calcAbsPayees - calcJoursFeries).toFixed(2)}h</strong></p>
       <p>Absences non payées: <strong>${calcAbsNonPayees.toFixed(2)}h</strong></p>
