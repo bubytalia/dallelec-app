@@ -1,6 +1,6 @@
 <template>
   <div class="container py-4">
-    <RetourButton to="/admin" />
+    <RetourButton :to="retourPath" />
     
     <h2 class="text-center mb-4">Gestion Facturation</h2>
 
@@ -11,7 +11,7 @@
           <h5>Rapports et Métrages en attente</h5>
           <small class="text-muted">Rapports percentuels à approuver et métrages prêts pour facturation</small>
         </div>
-        <div>
+        <div v-if="!isReadOnly">
           <router-link to="/admin/facture-manuelle" class="btn btn-sm btn-success">
             📝 Facture Manuelle
           </router-link>
@@ -51,20 +51,20 @@
                     👁
                   </button>
                   <button 
-                    v-if="resoconto.status === 'approved'"
+                    v-if="resoconto.status === 'approved' && !isReadOnly"
                     @click="generarFactureResoconto(resoconto)" 
                     class="btn btn-sm btn-warning me-1"
                   >
                     💰 Générer Facture
                   </button>
                   <button 
-                    v-else
+                    v-if="!isReadOnly"
                     @click="approuverResoconto(resoconto)" 
                     class="btn btn-sm btn-success me-1"
                   >
                     ✅
                   </button>
-                  <button @click="eliminarResoconto(resoconto)" class="btn btn-sm btn-danger">
+                  <button v-if="!isReadOnly" @click="eliminarResoconto(resoconto)" class="btn btn-sm btn-danger">
                     🗑
                   </button>
                 </td>
@@ -82,12 +82,12 @@
                     👁
                   </button>
                   <button 
-                    @click="autoriserFacturation(metrage)" 
+                    v-if="!isReadOnly" @click="autoriserFacturation(metrage)" 
                     class="btn btn-sm btn-warning me-1"
                   >
                     💰 Générer Facture
                   </button>
-                  <button @click="eliminarMetrage(metrage)" class="btn btn-sm btn-danger">
+                  <button v-if="!isReadOnly" @click="eliminarMetrage(metrage)" class="btn btn-sm btn-danger">
                     🗑
                   </button>
                 </td>
@@ -170,7 +170,7 @@
                 <td>
                   <select 
                     v-model="facture.statut" 
-                    @change="updateStatut(facture)"
+                    @change="updateStatut(facture)" :disabled="isReadOnly"
                     class="form-select form-select-sm"
                     :class="getStatutSelectClass(facture.statut)"
                   >
@@ -184,19 +184,19 @@
                   <button @click="voirAnteprimaFacture(facture)" class="btn btn-sm btn-success me-1" title="Anteprima rapida">
                     👁️
                   </button>
-                  <button @click="modifierFacture(facture)" class="btn btn-sm btn-primary me-1">
+                  <button v-if="!isReadOnly" @click="modifierFacture(facture)" class="btn btn-sm btn-primary me-1">
                     ✏️
                   </button>
                   <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-1">
                     📄 PDF
                   </button>
-                  <button v-if="facture.resoconto_id" @click="riaprireResoconto(facture)" class="btn btn-sm btn-warning me-1" title="Riapri per correzione">
+                  <button v-if="facture.resoconto_id && !isReadOnly" @click="riaprireResoconto(facture)" class="btn btn-sm btn-warning me-1" title="Riapri per correzione">
                     🔄
                   </button>
-                  <button v-if="(facture.montant_ttc || facture.montantTTC || 0) === 0" @click="corrigerFacture(facture)" class="btn btn-sm btn-warning me-1" title="Corriger montant">
+                  <button v-if="(facture.montant_ttc || facture.montantTTC || 0) === 0 && !isReadOnly" @click="corrigerFacture(facture)" class="btn btn-sm btn-warning me-1" title="Corriger montant">
                     🔧
                   </button>
-                  <button @click="supprimerFacture(facture)" class="btn btn-sm btn-danger" title="Supprimer (test)">
+                  <button v-if="!isReadOnly" @click="supprimerFacture(facture)" class="btn btn-sm btn-danger" title="Supprimer (test)">
                     🗑
                   </button>
                 </td>
@@ -481,10 +481,10 @@
               </div>
             </div>
             <div class="mt-3">
-              <button @click="approuverResoconto(detailResoconto)" class="btn btn-success me-2">
+              <button v-if="!isReadOnly" @click="approuverResoconto(detailResoconto)" class="btn btn-success me-2">
                 ✅ Approuver
               </button>
-              <button @click="refuserResoconto(detailResoconto)" class="btn btn-danger me-2">
+              <button v-if="!isReadOnly" @click="refuserResoconto(detailResoconto)" class="btn btn-danger me-2">
                 ❌ Refuser
               </button>
               <button @click="showDetailResoconto = false" class="btn btn-secondary">
@@ -918,6 +918,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
+
+const props = defineProps({
+  readOnly: { type: Boolean, default: false },
+  retourPath: { type: String, default: '/admin' }
+});
+const isReadOnly = computed(() => props.readOnly);
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 

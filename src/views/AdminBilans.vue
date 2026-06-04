@@ -1,6 +1,6 @@
 <template>
   <div class="container py-4">
-    <RetourButton to="/admin" />
+    <RetourButton :to="retourPath" />
     
     <h2 class="text-center mb-4">Bilans Financiers</h2>
 
@@ -422,6 +422,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+
+const props = defineProps({
+  readOnly: { type: Boolean, default: false },
+  retourPath: { type: String, default: '/admin' }
+});
+const isReadOnly = computed(() => props.readOnly);
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 

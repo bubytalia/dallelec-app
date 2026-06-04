@@ -1,6 +1,6 @@
 <template>
   <div class="container py-4">
-    <RetourButton to="/admin" />
+    <RetourButton :to="retourPath" />
     
     <h2 class="text-center mb-4">Échéancier Factures</h2>
 
@@ -121,7 +121,7 @@
                 <td>
                   <select 
                     v-model="facture.statut" 
-                    @change="updateStatut(facture)"
+                    @change="updateStatut(facture)" :disabled="isReadOnly"
                     class="form-select form-select-sm"
                     :class="getStatutSelectClass(facture.statut)"
                   >
@@ -135,7 +135,7 @@
                   <button @click="genererPDF(facture)" class="btn btn-sm btn-info me-1" title="Générer PDF">
                     📄
                   </button>
-                  <button @click="inviaPromemoria(facture)" class="btn btn-sm btn-warning" title="Envoyer rappel">
+                  <button v-if="!isReadOnly" @click="inviaPromemoria(facture)" class="btn btn-sm btn-warning" title="Envoyer rappel">
                     📧
                   </button>
                 </td>
@@ -150,6 +150,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+
+const props = defineProps({
+  readOnly: { type: Boolean, default: false },
+  retourPath: { type: String, default: '/admin' }
+});
+const isReadOnly = computed(() => props.readOnly);
 import { supabase } from '../supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
 

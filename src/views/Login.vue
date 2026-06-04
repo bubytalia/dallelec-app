@@ -136,18 +136,44 @@ export default {
                 role = 'ouvrier';
                 userName = `${ouvrierData.prenom} ${ouvrierData.nom}`;
               } else {
-                // 4. Cerca in accessi_vip
-                const { data: vipData, error: vipError } = await supabase
-                  .from('accessi_vip')
-                  .select('id, nom, prenom, email, client_id')
+                // 4. Cerca in comptables
+                const { data: comptableData, error: comptableError } = await supabase
+                  .from('comptables')
+                  .select('nom, prenom, email')
                   .eq('email', this.email)
-                  .eq('actif', true)
                   .maybeSingle();
                 
-                if (vipData && !vipError) {
-                  role = 'client_vip';
-                  userName = vipData.prenom ? `${vipData.prenom} ${vipData.nom}` : vipData.nom;
-                  localStorage.setItem('clientVipId', vipData.client_id);
+                if (comptableData && !comptableError) {
+                  role = 'comptable';
+                  userName = comptableData.prenom ? `${comptableData.prenom} ${comptableData.nom}` : comptableData.nom;
+                } else {
+                  // 5. Cerca in clients_vip O accessi_vip
+                  const { data: vipData, error: vipError } = await supabase
+                    .from('clients_vip')
+                    .select('id, nom, prenom, email, client_id, actif')
+                    .eq('email', this.email)
+                    .eq('actif', true)
+                    .maybeSingle();
+                  
+                  if (vipData && !vipError) {
+                    role = 'client_vip';
+                    userName = vipData.prenom ? `${vipData.prenom} ${vipData.nom}` : vipData.nom;
+                    localStorage.setItem('clientVipId', vipData.client_id);
+                  } else {
+                    // Fallback: cerca nella vecchia tabella accessi_vip
+                    const { data: vipOldData, error: vipOldError } = await supabase
+                      .from('accessi_vip')
+                      .select('id, nom, prenom, email, client_id')
+                      .eq('email', this.email)
+                      .eq('actif', true)
+                      .maybeSingle();
+                    
+                    if (vipOldData && !vipOldError) {
+                      role = 'client_vip';
+                      userName = vipOldData.prenom ? `${vipOldData.prenom} ${vipOldData.nom}` : vipOldData.nom;
+                      localStorage.setItem('clientVipId', vipOldData.client_id);
+                    }
+                  }
                 }
               }
             }
@@ -183,6 +209,9 @@ export default {
             break;
           case 'chef':
             this.$router.push('/chef');
+            break;
+          case 'comptable':
+            this.$router.push('/comptable');
             break;
           case 'client_vip':
             this.$router.push('/client');

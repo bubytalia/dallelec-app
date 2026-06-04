@@ -55,6 +55,12 @@ import DevisConditions from '@/views/devis/DevisConditions.vue';
 import ClientVipDashboard from '@/views/ClientVipDashboard.vue';
 import ClientVipDevisCreate from '@/views/ClientVipDevisCreate.vue';
 
+// Comptable
+import ComptableDashboard from '@/views/ComptableDashboard.vue';
+import ComptableFacturation from '@/views/ComptableFacturation.vue';
+import ComptableScadenziario from '@/views/ComptableScadenziario.vue';
+import ComptableBilans from '@/views/ComptableBilans.vue';
+
 // Répertoires
 import Repertoires from '@/views/Repertoires.vue';
 import Chantiers from '@/views/repertoires/Chantiers.vue';
@@ -72,6 +78,8 @@ import Interimaires from '@/views/repertoires/Interimaires.vue';
 import Factures from '@/views/repertoires/Factures.vue';
 import Regies from '@/views/repertoires/Regies.vue';
 import Admins from '@/views/repertoires/Admins.vue';
+import Comptables from '@/views/repertoires/Comptables.vue';
+import ClientsVip from '@/views/repertoires/ClientsVip.vue';
 import DevisRepertoire from '@/views/repertoires/Devis.vue';
 
 
@@ -110,6 +118,8 @@ const routes = [
   { path: '/admin/repertoires/factures', name: 'Factures', component: Factures },
   { path: '/admin/repertoires/regies', name: 'Regies', component: Regies },
   { path: '/admin/repertoires/admins', name: 'Admins', component: Admins },
+  { path: '/admin/repertoires/comptables', name: 'Comptables', component: Comptables },
+  { path: '/admin/repertoires/clientsvip', name: 'ClientsVip', component: ClientsVip },
 
   { path: '/admin/bilans', name: 'AdminBilans', component: AdminBilans },
   { path: '/admin/report-mensuel', redirect: '/admin/bilan-mensuel' },
@@ -152,6 +162,12 @@ const routes = [
   { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan },
   { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
   { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers },
+
+  // Comptable routes
+  { path: '/comptable', name: 'ComptableDashboard', component: ComptableDashboard, beforeEnter: requireRole(['comptable']) },
+  { path: '/comptable/facturation', name: 'ComptableFacturation', component: ComptableFacturation, beforeEnter: requireRole(['comptable']) },
+  { path: '/comptable/scadenziario', name: 'ComptableScadenziario', component: ComptableScadenziario, beforeEnter: requireRole(['comptable']) },
+  { path: '/comptable/bilans', name: 'ComptableBilans', component: ComptableBilans, beforeEnter: requireRole(['comptable']) },
 
   // Client VIP routes
   { path: '/client', name: 'ClientVipDashboard', component: ClientVipDashboard },

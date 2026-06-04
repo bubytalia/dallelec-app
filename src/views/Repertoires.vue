@@ -42,6 +42,8 @@ export default {
         { name: 'supplements', label: 'Suppléments', path: '/admin/repertoires/supplements' },
         { name: 'regies', label: '⏰ Régies', path: '/admin/repertoires/regies' },
         { name: 'admins', label: '🔑 Administrateurs', path: '/admin/repertoires/admins' },
+        { name: 'comptables', label: '📊 Comptables', path: '/admin/repertoires/comptables' },
+        { name: 'clientsvip', label: '⭐ Clients VIP', path: '/admin/repertoires/clientsvip' },
         { name: 'conditions', label: 'Conditions de vente', path: '/admin/repertoires/conditions' }
       ]
     };
