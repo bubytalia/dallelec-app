@@ -483,10 +483,16 @@ onMounted(async () => {
 .sticky-col {
   position: sticky;
   left: 0;
-  background: white;
-  z-index: 2;
+  background: white !important;
+  z-index: 3;
   min-width: 180px;
   max-width: 180px;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+}
+
+thead .sticky-col {
+  z-index: 4;
+  background: #f8f9fa !important;
 }
 
 .chantier-name {
