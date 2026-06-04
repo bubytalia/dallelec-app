@@ -507,47 +507,33 @@ const availableClients = computed(() => {
 // Chargement données
 const loadData = async () => {
   try {
-    // Chantiers
-    const { data: chantiersData } = await supabase.from('chantiers').select('*').neq('type', 'interne');
-    chantiers.value = chantiersData || [];
+    const [chantiersRes, devisRes, clientsRes, techniciensRes, chefdechantiersRes, collaborateursRes, interimairesRes, facturesRes, heuresChefRes, heuresOuvriersRes, heuresInterimRes, primesRes] = await Promise.all([
+      supabase.from('chantiers').select('*').neq('type', 'interne'),
+      supabase.from('devis').select('*'),
+      supabase.from('clients').select('*'),
+      supabase.from('techniciens').select('*'),
+      supabase.from('chefdechantiers').select('*'),
+      supabase.from('collaborateurs').select('*'),
+      supabase.from('interimaires').select('*'),
+      supabase.from('factures').select('*'),
+      supabase.from('heures_chef_propres').select('*'),
+      supabase.from('heures_ouvriers').select('*'),
+      supabase.from('heures_chef_interim').select('*'),
+      supabase.from('primes_paiements').select('*')
+    ]);
 
-    // Devis
-    const { data: devisData } = await supabase.from('devis').select('*');
-    devis.value = devisData || [];
-
-    // Clients
-    const { data: clientsData } = await supabase.from('clients').select('*');
-    clients.value = clientsData || [];
-
-    // Repertoires avec tarifs
-    const { data: techniciensData } = await supabase.from('techniciens').select('*');
-    techniciens.value = techniciensData || [];
-
-    const { data: chefdechantiersData } = await supabase.from('chefdechantiers').select('*');
-    chefdechantiers.value = chefdechantiersData || [];
-
-    const { data: collaborateursData } = await supabase.from('collaborateurs').select('*');
-    collaborateurs.value = collaborateursData || [];
-
-    const { data: interimairesData } = await supabase.from('interimaires').select('*');
-    interimaires.value = interimairesData || [];
-
-    // Factures
-    const { data: facturesData } = await supabase.from('factures').select('*');
-    factures.value = facturesData || [];
-
-    // Heures
-    const { data: heuresChefData } = await supabase.from('heures_chef_propres').select('*');
-    heuresChef.value = heuresChefData || [];
-    const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*');
-    heuresOuvriers.value = heuresOuvriersData || [];
-
-    const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*');
-    heuresInterim.value = heuresInterimData || [];
-
-    // Primes payées
-    const { data: primesData } = await supabase.from('primes_paiements').select('*');
-    primesPaiements.value = primesData || [];
+    chantiers.value = chantiersRes.data || [];
+    devis.value = devisRes.data || [];
+    clients.value = clientsRes.data || [];
+    techniciens.value = techniciensRes.data || [];
+    chefdechantiers.value = chefdechantiersRes.data || [];
+    collaborateurs.value = collaborateursRes.data || [];
+    interimaires.value = interimairesRes.data || [];
+    factures.value = facturesRes.data || [];
+    heuresChef.value = heuresChefRes.data || [];
+    heuresOuvriers.value = heuresOuvriersRes.data || [];
+    heuresInterim.value = heuresInterimRes.data || [];
+    primesPaiements.value = primesRes.data || [];
 
     calculateKPIs();
     calculateBilansChantiers();

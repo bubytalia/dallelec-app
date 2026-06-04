@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
 
@@ -223,6 +223,7 @@ const calculateAndLoad = async () => {
   for (let m = 1; m <= targetMonth; m++) {
     const mois = `${targetYear}-${String(m).padStart(2, '0')}`;
     await calculateSingleMonth(mois);
+    await nextTick(); // Libérer le thread pour garder l'UI réactive
   }
   
   await loadData();
