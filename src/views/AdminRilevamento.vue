@@ -2,7 +2,7 @@
   <div class="container-fluid py-2">
     <RetourButton to="/admin" />
 
-    <h4 class="text-center mb-3">📋 Rilevamento Cantiere</h4>
+    <h4 class="text-center mb-3">📋 Relevé Chantier</h4>
 
     <!-- Selezione cantiere -->
     <div v-if="!selectedChantierId" class="card mb-3">
