@@ -20,60 +20,50 @@
 
 
     <!-- Calendrier -->
-    <div class="calendar-wrapper d-flex">
-      <!-- Colonna nomi fissa -->
-      <div class="chantiers-col">
-        <table class="table table-bordered table-sm mb-0">
-          <thead><tr><th style="height:52px">Chantier</th></tr></thead>
-          <tbody>
-            <tr v-for="(ch, idx) in chantiersActifs" :key="ch.id">
-              <td class="fw-bold chantier-name" style="height:35px" :style="{ borderLeft: '4px solid ' + getColor(idx) }">{{ ch.nom }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!-- Calendario scrollabile -->
-      <div class="calendar-scroll">
-        <table class="table table-bordered table-sm calendar-table mb-0">
-          <thead>
-            <tr>
-              <template v-for="(monthData, mIdx) in allDays" :key="mIdx">
-                <th
-                  v-for="(day, dIdx) in monthData.days"
-                  :key="day.dateStr"
-                  class="text-center day-col"
-                  :class="{ 'bg-light': day.isWeekend, 'month-separator': dIdx === 0 && mIdx > 0 }"
-                >
-                  <div class="day-header" :class="{ 'fw-bold': dIdx === 0 }">{{ day.label }}</div>
-                  <small :class="{ 'fw-bold': dIdx === 0 }">{{ dIdx === 0 ? day.monthShort + ' ' + day.num : day.num }}</small>
-                </th>
-              </template>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(ch, idx) in chantiersActifs" :key="ch.id">
-              <template v-for="(monthData, mIdx) in allDays" :key="mIdx">
-                <td
-                  v-for="(day, dIdx) in monthData.days"
-                  :key="day.dateStr"
-                  class="text-center cell"
-                  :class="{ 'bg-light': day.isWeekend, 'active-cell': isCellActiveDate(ch.id, day.dateStr), 'selecting-cell': isSelectingDate(ch.id, day.dateStr), 'month-separator': dIdx === 0 && mIdx > 0 }"
-                  :style="isCellActiveDate(ch.id, day.dateStr) ? { backgroundColor: getColor(idx) + '30' } : {}"
-                  @mousedown="startSelectDate(ch, day.dateStr)"
-                  @mouseenter="moveSelectDate(ch.id, day.dateStr)"
-                  @mouseup="endSelectDate(ch, day.dateStr)"
-                >
-                  <div v-if="isCellActiveDate(ch.id, day.dateStr)" class="cell-content">
-                    <small v-for="collab in getCellCollabsDate(ch.id, day.dateStr)" :key="collab.id" class="d-block badge bg-white text-dark border mb-1" style="font-size: 0.65em;">
-                      {{ collab.prenom }}
-                    </small>
-                  </div>
-                </td>
-              </template>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="calendar-wrapper">
+      <table class="table table-bordered table-sm calendar-table">
+        <thead>
+          <tr>
+            <th class="sticky-col" style="min-width:170px;max-width:170px">Chantier</th>
+            <template v-for="(monthData, mIdx) in allDays" :key="mIdx">
+              <th
+                v-for="(day, dIdx) in monthData.days"
+                :key="day.dateStr"
+                class="text-center day-col"
+                :class="{ 'bg-light': day.isWeekend, 'month-separator': dIdx === 0 && mIdx > 0 }"
+              >
+                <div class="day-header" :class="{ 'fw-bold': dIdx === 0 }">{{ day.label }}</div>
+                <small :class="{ 'fw-bold': dIdx === 0 }">{{ dIdx === 0 ? day.monthShort + ' ' + day.num : day.num }}</small>
+              </th>
+            </template>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(ch, idx) in chantiersActifs" :key="ch.id">
+            <td class="sticky-col fw-bold chantier-name" style="min-width:170px;max-width:170px;font-size:0.7em;line-height:1.3" :style="{ borderLeft: '4px solid ' + getColor(idx) }">
+              {{ ch.nom }}
+            </td>
+            <template v-for="(monthData, mIdx) in allDays" :key="mIdx">
+              <td
+                v-for="(day, dIdx) in monthData.days"
+                :key="day.dateStr"
+                class="text-center cell"
+                :class="{ 'bg-light': day.isWeekend, 'active-cell': isCellActiveDate(ch.id, day.dateStr), 'selecting-cell': isSelectingDate(ch.id, day.dateStr), 'month-separator': dIdx === 0 && mIdx > 0 }"
+                :style="isCellActiveDate(ch.id, day.dateStr) ? { backgroundColor: getColor(idx) + '30' } : {}"
+                @mousedown="startSelectDate(ch, day.dateStr)"
+                @mouseenter="moveSelectDate(ch.id, day.dateStr)"
+                @mouseup="endSelectDate(ch, day.dateStr)"
+              >
+                <div v-if="isCellActiveDate(ch.id, day.dateStr)" class="cell-content">
+                  <small v-for="collab in getCellCollabsDate(ch.id, day.dateStr)" :key="collab.id" class="d-block badge bg-white text-dark border mb-1" style="font-size: 0.65em;">
+                    {{ collab.prenom }}
+                  </small>
+                </div>
+              </td>
+            </template>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
 
@@ -477,31 +467,41 @@ onMounted(async () => {
 
 <style scoped>
 .calendar-wrapper {
-  overflow: hidden;
-}
-
-.chantiers-col {
-  flex-shrink: 0;
-  width: 180px;
-  min-width: 180px;
-  border-right: 2px solid #333;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-  z-index: 2;
-  background: white;
-}
-
-.calendar-scroll {
   overflow-x: auto;
-  flex: 1;
+  position: relative;
 }
 
 .calendar-table {
   min-width: max-content;
-  table-layout: fixed;
+}
+
+.calendar-table .sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: 250px;
+  max-width: 250px;
+  background-color: #ffffff;
+  box-shadow: 3px 0 6px rgba(0,0,0,0.15);
+}
+
+.calendar-table thead .sticky-col {
+  z-index: 4;
+  background-color: #f8f9fa;
+}
+
+/* Force opaque background - override Bootstrap */
+.calendar-table td.sticky-col {
+  background-color: #ffffff !important;
+}
+
+.calendar-table th.sticky-col {
+  background-color: #f8f9fa !important;
 }
 
 .chantier-name {
-  font-size: 0.75em;
+  font-size: 0.65em;
+  line-height: 1.2;
 }
 
 .day-col {
