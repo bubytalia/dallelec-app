@@ -93,6 +93,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
+import { downloadPDF } from '@/utils/pdfDownload.js';
 
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
 const employes = ref([]);
@@ -243,7 +244,7 @@ const formatMonth = (m) => {
   return new Date(y, mo - 1).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
 };
 
-const generatePDFGlobal = () => {
+const generatePDFGlobal = async () => {
   const monthLabel = formatMonth(selectedMonth.value);
   let html = `<html><head><title>Bilan Mensuel - ${monthLabel}</title>
   <style>
@@ -314,9 +315,10 @@ const generatePDFGlobal = () => {
   }
 
   html += `</body></html>`;
-  const w = window.open('', '_blank');
-  if (!w) { alert('Veuillez autoriser les popups.'); return; }
-  w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
+  const bodyContent = html.replace(/<html>.*<body>/s, '').replace(/<\/body><\/html>/, '');
+  const styles = html.match(/<style>(.*?)<\/style>/s)?.[1] || '';
+  const styledContent = `<style>${styles}</style>${bodyContent}`;
+  await downloadPDF(styledContent, `rapport-mensuel-${selectedMonth.value}`);
 };
 
 const generatePDFIndividuel = async () => {
@@ -466,9 +468,10 @@ const generatePDFIndividuel = async () => {
   html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} - DALLELEC Sàrl - À joindre au bulletin de salaire</div>
   </body></html>`;
 
-  const w = window.open('', '_blank');
-  if (!w) { alert('Veuillez autoriser les popups.'); return; }
-  w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
+  const bodyContent = html.replace(/<html>.*<body>/s, '').replace(/<\/body><\/html>/, '');
+  const styles = html.match(/<style>(.*?)<\/style>/s)?.[1] || '';
+  const styledContent = `<style>${styles}</style>${bodyContent}`;
+  await downloadPDF(styledContent, `fiche-${nom.replace(/\s+/g, '-')}-${selectedMonth.value}`);
   showPDFModal.value = false;
 };
 
