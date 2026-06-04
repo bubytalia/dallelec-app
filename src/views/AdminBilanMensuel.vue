@@ -93,7 +93,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
-import { downloadPDF } from '@/utils/pdfDownload.js';
+import { downloadPDF, generateFicheIndividuellePDF, generateGlobalPDF } from '@/utils/pdfDownload.js';
 
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
 const employes = ref([]);
@@ -245,80 +245,13 @@ const formatMonth = (m) => {
 };
 
 const generatePDFGlobal = async () => {
-  const monthLabel = formatMonth(selectedMonth.value);
-  let html = `<html><head><title>Bilan Mensuel - ${monthLabel}</title>
-  <style>
-    body{font-family:Arial,sans-serif;padding:15px 20px;font-size:9px;margin:0}
-    .page{page-break-after:always;padding:8px 0}
-    .page:last-child{page-break-after:avoid}
-    .header{text-align:center;margin-bottom:10px;border-bottom:2px solid #333;padding-bottom:6px}
-    .header h1{font-size:14px;margin:0}
-    .header p{margin:2px 0;font-size:9px;color:#555}
-    .emp-title{font-size:11px;font-weight:bold;margin:12px 0 6px;padding:4px 6px;background:#f0f0f0;border-left:4px solid #333}
-    .two-cols{display:flex;gap:12px;margin-top:5px}
-    .col-box{flex:1;border:2px solid #333;padding:8px;border-radius:4px}
-    .col-box h3{font-size:10px;margin:0 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px}
-    .col-box table{width:100%;border-collapse:collapse}
-    .col-box td{padding:2.5px 0;font-size:9px}
-    .col-box td:last-child{text-align:right;font-weight:bold}
-    .result{font-size:11px;font-weight:bold;margin-top:5px;padding-top:5px;border-top:2px solid #333}
-    .pos{color:green}.neg{color:red}
-    .bonus-line{margin-top:6px;padding:4px 8px;background:#d4edda;border-left:4px solid #28a745;font-weight:bold;font-size:10px}
-    .footer{text-align:center;font-size:7px;color:#999;margin-top:8px;border-top:1px solid #ddd;padding-top:4px}
-    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
-  </style></head><body>`;
-
-  // 4 employés par page
-  for (let i = 0; i < bilans.value.length; i += 4) {
-    html += `<div class="page">`;
-    html += `<div class="header"><h1>DALLELEC Sàrl - Rapport Mensuel</h1><p>${monthLabel} — Document pour le commercialiste</p></div>`;
-
-    for (let j = i; j < Math.min(i + 4, bilans.value.length); j++) {
-      const b = bilans.value[j];
-      const nom = getEmployeName(b.employee_email);
-      const deltaClass = b.delta_mois >= 0 ? 'pos' : 'neg';
-      const soldeClass = b.solde_final >= 0 ? 'pos' : 'neg';
-      const bonus = getTotalBonusMois(b.employee_email);
-
-      html += `<div class="emp-title">👤 ${nom}</div>`;
-      html += `<div class="two-cols">`;
-
-      // Box Heures
-      html += `<div class="col-box"><h3>📊 Bilan Heures</h3><table>
-        <tr><td>Heures prévues</td><td>${b.heures_prevues.toFixed(2)}h</td></tr>
-        <tr><td>Heures travaillées</td><td>${b.heures_travaillees.toFixed(2)}h</td></tr>
-        <tr><td>Jours travaillés (paniers)</td><td>${b.jours_travailles || 0} j</td></tr>
-        <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
-        <tr><td>Autres absences payées</td><td>${((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2)}h</td></tr>
-        <tr><td>Absences non payées</td><td>${b.heures_absences_non_payees.toFixed(2)}h</td></tr>
-        <tr><td>Solde précédent</td><td>${b.solde_precedent.toFixed(2)}h</td></tr>
-        <tr><td>Delta mois</td><td class="${deltaClass}">${b.delta_mois >= 0 ? '+' : ''}${b.delta_mois.toFixed(2)}h</td></tr>
-      </table><div class="result ${soldeClass}">Solde heures: ${b.solde_final.toFixed(2)}h</div></div>`;
-
-      // Box Vacances
-      html += `<div class="col-box"><h3>🏖️ Bilan Vacances</h3><table>
-        <tr><td>Solde précédent</td><td>${(b.vac_solde_prec || 0).toFixed(2)}h</td></tr>
-        <tr><td>Acquises ce mois</td><td class="pos">+${(b.vac_acquises || 0).toFixed(2)}h</td></tr>
-        <tr><td>Prises ce mois</td><td class="neg">-${(b.vac_prises || 0).toFixed(2)}h</td></tr>
-      </table><div class="result">Nouveau solde: ${(b.vac_nouveau_solde || 0).toFixed(2)}h</div></div>`;
-
-      html += `</div>`; // two-cols
-
-      // Bonus line
-      if (bonus > 0) {
-        html += `<div class="bonus-line">💰 Bonus: ${bonus.toFixed(2)} CHF</div>`;
-      }
-    }
-
-    html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} — DALLELEC Sàrl — À joindre au bulletin de salaire</div>`;
-    html += `</div>`; // page
-  }
-
-  html += `</body></html>`;
-  const bodyContent = html.replace(/<html>.*<body>/s, '').replace(/<\/body><\/html>/, '');
-  const styles = html.match(/<style>(.*?)<\/style>/s)?.[1] || '';
-  const styledContent = `<style>${styles}</style>${bodyContent}`;
-  await downloadPDF(styledContent, `rapport-mensuel-${selectedMonth.value}`);
+  generateGlobalPDF({
+    bilans: bilans.value,
+    monthLabel: formatMonth(selectedMonth.value),
+    selectedMonth: selectedMonth.value,
+    getEmployeName,
+    getTotalBonusMois
+  });
 };
 
 const generatePDFIndividuel = async () => {
@@ -332,7 +265,6 @@ const generatePDFIndividuel = async () => {
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
-  // Charger détail journalier
   const { data: heuresChef } = await supabase.from('heures_chef_propres').select('*').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
   const { data: heuresInterim } = await supabase.from('heures_chef_interim').select('*').eq('chef_id', email).gte('date', startDate).lte('date', endDate);
   const { data: heuresOuvriers } = await supabase.from('heures_ouvriers').select('*').eq('ouvrier_id', email).gte('date', startDate).lte('date', endDate);
@@ -340,38 +272,12 @@ const generatePDFIndividuel = async () => {
   const { data: chantiersList } = await supabase.from('chantiers').select('id, nom');
   const getChantierNom = (id) => { const c = (chantiersList||[]).find(ch => ch.id == id); return c ? c.nom : ''; };
 
-  const monthLabel = formatMonth(selectedMonth.value);
-  const jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const joursNoms = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
   const empData = employes.value.find(e => e.email === email);
   const empPlanning = empData?.planning || { 1: 8.75, 2: 8.75, 3: 8.75, 4: 8.75, 5: 5 };
 
-  // Totaux calculés depuis la tabella
   let calcHeuresTravaillees = 0, calcAbsPayees = 0, calcAbsNonPayees = 0, calcJoursFeries = 0, calcVacPrises = 0, calcHeuresPrevues = 0, calcJoursTravailles = 0;
-
-  let html = `<html><head><title>Fiche ${nom} - ${monthLabel}</title>
-  <style>
-    body{font-family:Arial,sans-serif;padding:15px 20px;font-size:9.5px;margin:0}
-    .header{text-align:center;margin-bottom:8px}
-    .header h1{font-size:14px;margin:0}
-    .header p{color:#666;margin:2px 0;font-size:9px}
-    .emp-name{font-size:12px;font-weight:bold;margin:8px 0}
-    table{width:100%;border-collapse:collapse;margin:5px 0}
-    th,td{border:1px solid #ccc;padding:3px 5px;font-size:9.5px}
-    th{background:#f5f5f5;font-size:9px}
-    .weekend{background:#f0f0f0;color:#999}
-    .absence{background:#fff3cd}
-    .recap{margin-top:12px;display:flex;gap:20px}
-    .recap-box{flex:1;border:2px solid #333;padding:12px;border-radius:5px}
-    .recap-box h4{margin:0 0 8px;font-size:12px}
-    .recap-box p{margin:3px 0;font-size:10px}
-    .pos{color:green}.neg{color:red}
-    .result{font-size:13px;font-weight:bold;margin-top:8px;padding-top:6px;border-top:2px solid #333}
-    .footer{margin-top:12px;font-size:8px;color:#999;text-align:center}
-    @media print{body{margin:0;padding:10px 15px}@page{size:A4 portrait;margin:10mm}}
-  </style></head><body>
-  <div class="header"><h1>DALLELEC Sàrl</h1><p>Fiche mensuelle - ${monthLabel}</p></div>
-  <div class="emp-name">👤 ${nom}</div>
-  <table><thead><tr><th style="width:55px">Jour</th><th style="width:45px">Date</th><th>Statut</th><th>Chantier</th><th style="width:45px">Heures</th></tr></thead><tbody>`;
+  const joursData = [];
 
   for (let d = 1; d <= lastDay; d++) {
     const date = new Date(year, month - 1, d);
@@ -379,32 +285,28 @@ const generatePDFIndividuel = async () => {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const dateFR = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
     const isWeekend = dow === 0 || dow === 6;
-
     const heuresPlanningJour = Number(empPlanning[dow] || 0);
     if (!isWeekend && heuresPlanningJour > 0) calcHeuresPrevues += heuresPlanningJour;
 
-    // Chercher heures
     const hChef = (heuresChef || []).filter(h => h.date === dateStr);
-    const hInterim = (heuresInterim || []).filter(h => h.date === dateStr);
+    const hInt = (heuresInterim || []).filter(h => h.date === dateStr);
     const hOuv = (heuresOuvriers || []).filter(h => h.date === dateStr);
-    const totalH = hChef.reduce((s,h) => s + (h.total_heures||h.heures_normales||0), 0) + hInterim.reduce((s,h) => s + (h.total_heures||0), 0) + hOuv.reduce((s,h) => s + (h.heures||0), 0);
-    const chantierRec = hChef[0] || hInterim[0] || hOuv[0];
+    const totalH = hChef.reduce((s,h) => s + (h.total_heures||h.heures_normales||0), 0) + hInt.reduce((s,h) => s + (h.total_heures||0), 0) + hOuv.reduce((s,h) => s + (h.heures||0), 0);
+    const chantierRec = hChef[0] || hInt[0] || hOuv[0];
     const chantier = chantierRec ? getChantierNom(chantierRec.chantier_id) : '';
-
-    // Chercher absence
     const abs = (absences || []).find(a => a.start_date <= dateStr && a.end_date >= dateStr);
 
-    let statut = '', rowClass = '', heures = '';
+    let statut = '-', heures = '-', isAbsence = false;
     if (isWeekend) {
-      statut = '-'; rowClass = 'weekend'; heures = '-';
+      // weekend
     } else if (heuresPlanningJour === 0 && totalH === 0) {
-      statut = '-'; rowClass = 'weekend'; heures = '-';
+      // jour off
     } else if (abs && heuresPlanningJour > 0 && totalH === 0) {
-      const types = { vacances:'Vacances', maladie:'Maladie', jour_ferie:'Jour férié', vacances_sans_solde:'Vac. sans solde', accident:'Accident', cours:'Cours' };
+      const types = { vacances:'Vacances', maladie:'Maladie', jour_ferie:'Jour férié', vacances_sans_solde:'Vac.s.solde', accident:'Accident', cours:'Cours' };
       statut = types[abs.type] || abs.type;
-      rowClass = 'absence';
       heures = heuresPlanningJour.toFixed(2);
-      if (abs.type === 'vacances_sans_solde') { calcAbsNonPayees += heuresPlanningJour; }
+      isAbsence = true;
+      if (abs.type === 'vacances_sans_solde') calcAbsNonPayees += heuresPlanningJour;
       else if (abs.type === 'jour_ferie') { calcJoursFeries += heuresPlanningJour; calcAbsPayees += heuresPlanningJour; }
       else { calcAbsPayees += heuresPlanningJour; if (abs.type === 'vacances') calcVacPrises += heuresPlanningJour; }
     } else if (totalH > 0) {
@@ -412,66 +314,44 @@ const generatePDFIndividuel = async () => {
       heures = totalH.toFixed(2);
       calcHeuresTravaillees += totalH;
       calcJoursTravailles++;
-    } else {
-      statut = '-'; heures = '-';
     }
 
-    html += `<tr class="${rowClass}"><td>${jours[dow]}</td><td>${dateFR}</td><td>${statut}</td><td>${isWeekend ? '-' : chantier || '-'}</td><td style="text-align:right">${heures}</td></tr>`;
+    joursData.push({ jour: joursNoms[dow], date: dateFR, statut, chantier: isWeekend ? '-' : (chantier || '-'), heures, isWeekend, isAbsence });
   }
 
-  // Totaux calculés depuis la tabella
   const calcDelta = (calcHeuresTravaillees + calcAbsPayees) - (calcHeuresPrevues - calcAbsNonPayees);
   const calcSoldeHeures = bilan.solde_precedent + calcDelta;
-  const calcVacNouveauSolde = (bilan.vac_solde_prec || 0) + (bilan.vac_acquises || 0) - calcVacPrises;
+  const calcVacNouveau = (bilan.vac_solde_prec || 0) + (bilan.vac_acquises || 0) - calcVacPrises;
 
-  html += `</tbody></table>
-  <div class="recap">
-    <div class="recap-box">
-      <h4>📊 Bilan Heures</h4>
-      <p>Heures prévues: <strong>${calcHeuresPrevues.toFixed(2)}h</strong></p>
-      <p>Heures travaillées: <strong>${calcHeuresTravaillees.toFixed(2)}h</strong></p>
-      <p>Jours travaillés (paniers): <strong>${calcJoursTravailles} j</strong></p>
-      <p>Jours fériés payés: <strong>${calcJoursFeries.toFixed(2)}h</strong></p>
-      <p>Autres absences payées: <strong>${(calcAbsPayees - calcJoursFeries).toFixed(2)}h</strong></p>
-      <p>Absences non payées: <strong>${calcAbsNonPayees.toFixed(2)}h</strong></p>
-      <p>Solde précédent: ${bilan.solde_precedent.toFixed(2)}h</p>
-      <p>Delta mois: <span class="${calcDelta >= 0 ? 'pos' : 'neg'}">${calcDelta >= 0?'+':''}${calcDelta.toFixed(2)}h</span></p>
-      <div class="result ${calcSoldeHeures >= 0 ? 'pos' : 'neg'}">Solde heures: ${calcSoldeHeures.toFixed(2)}h</div>
-    </div>
-    <div class="recap-box">
-      <h4>🏖️ Bilan Vacances</h4>
-      <p>Solde précédent: <strong>${(bilan.vac_solde_prec||0).toFixed(2)}h</strong></p>
-      <p>Acquises ce mois: <span class="pos">+${(bilan.vac_acquises||0).toFixed(2)}h</span></p>
-      <p>Prises ce mois: <span class="neg">-${calcVacPrises.toFixed(2)}h</span></p>
-      <div class="result">Nouveau solde: ${calcVacNouveauSolde.toFixed(2)}h</div>
-    </div>
-  </div>`;
+  const primesEmp = getPrimesForEmployee(email).map(p => ({
+    chantierNom: p.chantier_nom || 'Chantier ' + p.chantier_id,
+    eff: parseFloat(p.prime_efficacite) || 0,
+    reg: parseFloat(p.prime_regies) || 0,
+    total: parseFloat(p.montant) || 0
+  }));
 
-  // Section BONUS
-  const primes = getPrimesForEmployee(email);
-  if (primes.length > 0) {
-    html += `<div style="margin-top:12px;border:2px solid #ffc107;padding:10px;border-radius:5px">
-      <h4 style="margin:0 0 8px;font-size:11px;color:#856404">💰 BONUS</h4>
-      <table style="border:none"><thead><tr><th style="text-align:left">Chantier</th><th>Prime Efficacité</th><th>Prime Régies</th><th>Total</th></tr></thead><tbody>`;
-    let totalBonus = 0;
-    primes.forEach(p => {
-      const eff = parseFloat(p.prime_efficacite) || 0;
-      const reg = parseFloat(p.prime_regies) || 0;
-      const tot = parseFloat(p.montant) || 0;
-      totalBonus += tot;
-      html += `<tr><td style="text-align:left">${p.chantier_nom || 'Chantier ' + p.chantier_id}</td><td>${eff.toFixed(2)} CHF</td><td>${reg.toFixed(2)} CHF</td><td><strong>${tot.toFixed(2)} CHF</strong></td></tr>`;
-    });
-    html += `<tr style="border-top:2px solid #333"><td style="text-align:left"><strong>TOTAL</strong></td><td></td><td></td><td><strong>${totalBonus.toFixed(2)} CHF</strong></td></tr>`;
-    html += `</tbody></table></div>`;
-  }
-
-  html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} - DALLELEC Sàrl - À joindre au bulletin de salaire</div>
-  </body></html>`;
-
-  const bodyContent = html.replace(/<html>.*<body>/s, '').replace(/<\/body><\/html>/, '');
-  const styles = html.match(/<style>(.*?)<\/style>/s)?.[1] || '';
-  const styledContent = `<style>${styles}</style>${bodyContent}`;
-  await downloadPDF(styledContent, `fiche-${nom.replace(/\s+/g, '-')}-${selectedMonth.value}`);
+  generateFicheIndividuellePDF({
+    nom,
+    monthLabel: formatMonth(selectedMonth.value),
+    jours: joursData,
+    bilan: {
+      heuresPrevues: calcHeuresPrevues.toFixed(2),
+      heuresTravaillees: calcHeuresTravaillees.toFixed(2),
+      joursTravailles: calcJoursTravailles,
+      joursFeries: calcJoursFeries.toFixed(2),
+      absPayees: (calcAbsPayees - calcJoursFeries).toFixed(2),
+      absNonPayees: calcAbsNonPayees.toFixed(2),
+      soldePrecedent: bilan.solde_precedent.toFixed(2),
+      delta: calcDelta.toFixed(2),
+      soldeHeures: calcSoldeHeures.toFixed(2),
+      vacSoldPrec: (bilan.vac_solde_prec || 0).toFixed(2),
+      vacAcquises: (bilan.vac_acquises || 0).toFixed(2),
+      vacPrises: calcVacPrises.toFixed(2),
+      vacNouveau: calcVacNouveau.toFixed(2)
+    },
+    primes: primesEmp,
+    selectedMonth: selectedMonth.value
+  });
   showPDFModal.value = false;
 };
 
