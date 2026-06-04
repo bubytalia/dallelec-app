@@ -72,23 +72,21 @@
         <router-link to="/admin/gestion-heures" class="btn btn-outline-warning w-100">✏️ Gestion Heures</router-link>
       </div>
       <div class="col-md-3 m-2">
-      </div>
-      <div class="col-md-3 m-2">
         <router-link to="/admin/absences" class="btn btn-outline-warning w-100 position-relative">
-          🏖️ Gestion Absences & Congés
+          🏖️ Absences & Congés
           <span v-if="pendingAbsences > 0" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
             {{ pendingAbsences }}
           </span>
         </router-link>
       </div>
       <div class="col-md-3 m-2">
-        <router-link to="/admin/premi" class="btn btn-outline-warning w-100">🎯 Gestion Primes</router-link>
-      </div>
-      <div class="col-md-3 m-2">
         <router-link to="/admin/solde-vacances" class="btn btn-outline-warning w-100">🏖️ Solde Vacances</router-link>
       </div>
       <div class="col-md-3 m-2">
         <router-link to="/admin/bilan-mensuel" class="btn btn-outline-warning w-100">📋 Bilan Mensuel</router-link>
+      </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/premi" class="btn btn-outline-warning w-100">🎯 Gestion Primes</router-link>
       </div>
     </div>
 
