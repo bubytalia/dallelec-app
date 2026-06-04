@@ -163,6 +163,13 @@ const calculateSingleMonth = async (mois) => {
     const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email).reduce((s, h) => s + (h.heures || 0), 0);
     const heuresTravaillees = oreChef + oreInterim + oreOuvrier;
 
+    // Compter les jours effectivement travaillés
+    const joursSet = new Set();
+    (heuresChef || []).filter(h => h.chef_id === emp.email && (h.total_heures || h.heures_normales || 0) > 0).forEach(h => joursSet.add(h.date));
+    (heuresInterim || []).filter(h => h.chef_id === emp.email && (h.total_heures || 0) > 0).forEach(h => joursSet.add(h.date));
+    (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email && (h.heures || 0) > 0).forEach(h => joursSet.add(h.date));
+    const joursTravailles = joursSet.size;
+
     let absPayees = 0, absNonPayees = 0, vacPrises = 0, joursFeries = 0;
     const empAbs = (absences || []).filter(a => a.user_id === emp.email);
     const joursDejaComptes = new Set(); // anti-doublons
@@ -197,7 +204,7 @@ const calculateSingleMonth = async (mois) => {
 
     // Upsert solde_heures
     const { data: existing } = await supabase.from('solde_heures').select('id').eq('employee_email', emp.email).eq('mois', mois).single();
-    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
+    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, jours_travailles: joursTravailles, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
     if (existing) { await supabase.from('solde_heures').update(record).eq('id', existing.id); }
     else { await supabase.from('solde_heures').insert(record); }
 
@@ -239,28 +246,73 @@ const generatePDFGlobal = () => {
   const monthLabel = formatMonth(selectedMonth.value);
   let html = `<html><head><title>Bilan Mensuel - ${monthLabel}</title>
   <style>
-    body{font-family:Arial,sans-serif;padding:20px;font-size:11px}
-    .header{text-align:center;margin-bottom:20px}
-    .header h2{margin:0;font-size:16px}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{border:1px solid #ddd;padding:5px;text-align:right}
-    th{background:#f5f5f5;font-size:10px}
-    td:first-child,th:first-child{text-align:left}
+    body{font-family:Arial,sans-serif;padding:15px 20px;font-size:9px;margin:0}
+    .page{page-break-after:always;padding:8px 0}
+    .page:last-child{page-break-after:avoid}
+    .header{text-align:center;margin-bottom:10px;border-bottom:2px solid #333;padding-bottom:6px}
+    .header h1{font-size:14px;margin:0}
+    .header p{margin:2px 0;font-size:9px;color:#555}
+    .emp-title{font-size:11px;font-weight:bold;margin:12px 0 6px;padding:4px 6px;background:#f0f0f0;border-left:4px solid #333}
+    .two-cols{display:flex;gap:12px;margin-top:5px}
+    .col-box{flex:1;border:2px solid #333;padding:8px;border-radius:4px}
+    .col-box h3{font-size:10px;margin:0 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px}
+    .col-box table{width:100%;border-collapse:collapse}
+    .col-box td{padding:2.5px 0;font-size:9px}
+    .col-box td:last-child{text-align:right;font-weight:bold}
+    .result{font-size:11px;font-weight:bold;margin-top:5px;padding-top:5px;border-top:2px solid #333}
     .pos{color:green}.neg{color:red}
-    .footer{margin-top:20px;font-size:9px;color:#999;text-align:center}
-    @media print{body{margin:0}}
-  </style></head><body>
-  <div class="header"><h2>DALLELEC Sàrl</h2><p>Bilan Mensuel Personnel - ${monthLabel}</p></div>
-  <table><thead><tr>
-    <th>Employé</th><th>H.prévues</th><th>H.travaillées</th><th>Abs.payées</th><th>Abs.non payées</th><th>Solde préc.</th><th>Delta</th><th>Solde heures</th><th>Vac.solde</th><th>Bonus</th>
-  </tr></thead><tbody>`;
-  for (const b of bilans.value) {
-    const dCls = b.delta_mois >= 0 ? 'pos' : 'neg';
-    const sCls = b.solde_final >= 0 ? 'pos' : 'neg';
-    const bonus = getTotalBonusMois(b.employee_email);
-    html += `<tr><td>${getEmployeName(b.employee_email)}</td><td>${b.heures_prevues.toFixed(2)}</td><td>${b.heures_travaillees.toFixed(2)}</td><td>${b.heures_absences_payees.toFixed(2)}</td><td>${b.heures_absences_non_payees.toFixed(2)}</td><td>${b.solde_precedent.toFixed(2)}</td><td class="${dCls}">${b.delta_mois >= 0?'+':''}${b.delta_mois.toFixed(2)}</td><td class="${sCls}"><strong>${b.solde_final.toFixed(2)}</strong></td><td><strong>${(b.vac_nouveau_solde||0).toFixed(2)}</strong></td><td>${bonus > 0 ? bonus.toFixed(2) + ' CHF' : '-'}</td></tr>`;
+    .bonus-line{margin-top:6px;padding:4px 8px;background:#d4edda;border-left:4px solid #28a745;font-weight:bold;font-size:10px}
+    .footer{text-align:center;font-size:7px;color:#999;margin-top:8px;border-top:1px solid #ddd;padding-top:4px}
+    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
+  </style></head><body>`;
+
+  // 4 employés par page
+  for (let i = 0; i < bilans.value.length; i += 4) {
+    html += `<div class="page">`;
+    html += `<div class="header"><h1>DALLELEC Sàrl - Rapport Mensuel</h1><p>${monthLabel} — Document pour le commercialiste</p></div>`;
+
+    for (let j = i; j < Math.min(i + 4, bilans.value.length); j++) {
+      const b = bilans.value[j];
+      const nom = getEmployeName(b.employee_email);
+      const deltaClass = b.delta_mois >= 0 ? 'pos' : 'neg';
+      const soldeClass = b.solde_final >= 0 ? 'pos' : 'neg';
+      const bonus = getTotalBonusMois(b.employee_email);
+
+      html += `<div class="emp-title">👤 ${nom}</div>`;
+      html += `<div class="two-cols">`;
+
+      // Box Heures
+      html += `<div class="col-box"><h3>📊 Bilan Heures</h3><table>
+        <tr><td>Heures prévues</td><td>${b.heures_prevues.toFixed(2)}h</td></tr>
+        <tr><td>Heures travaillées</td><td>${b.heures_travaillees.toFixed(2)}h</td></tr>
+        <tr><td>Jours travaillés (paniers)</td><td>${b.jours_travailles || 0} j</td></tr>
+        <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
+        <tr><td>Autres absences payées</td><td>${((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2)}h</td></tr>
+        <tr><td>Absences non payées</td><td>${b.heures_absences_non_payees.toFixed(2)}h</td></tr>
+        <tr><td>Solde précédent</td><td>${b.solde_precedent.toFixed(2)}h</td></tr>
+        <tr><td>Delta mois</td><td class="${deltaClass}">${b.delta_mois >= 0 ? '+' : ''}${b.delta_mois.toFixed(2)}h</td></tr>
+      </table><div class="result ${soldeClass}">Solde heures: ${b.solde_final.toFixed(2)}h</div></div>`;
+
+      // Box Vacances
+      html += `<div class="col-box"><h3>🏖️ Bilan Vacances</h3><table>
+        <tr><td>Solde précédent</td><td>${(b.vac_solde_prec || 0).toFixed(2)}h</td></tr>
+        <tr><td>Acquises ce mois</td><td class="pos">+${(b.vac_acquises || 0).toFixed(2)}h</td></tr>
+        <tr><td>Prises ce mois</td><td class="neg">-${(b.vac_prises || 0).toFixed(2)}h</td></tr>
+      </table><div class="result">Nouveau solde: ${(b.vac_nouveau_solde || 0).toFixed(2)}h</div></div>`;
+
+      html += `</div>`; // two-cols
+
+      // Bonus line
+      if (bonus > 0) {
+        html += `<div class="bonus-line">💰 Bonus: ${bonus.toFixed(2)} CHF</div>`;
+      }
+    }
+
+    html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} — DALLELEC Sàrl — À joindre au bulletin de salaire</div>`;
+    html += `</div>`; // page
   }
-  html += `</tbody></table><div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} - DALLELEC Sàrl</div></body></html>`;
+
+  html += `</body></html>`;
   const w = window.open('', '_blank');
   if (!w) { alert('Veuillez autoriser les popups.'); return; }
   w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
