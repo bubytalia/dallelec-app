@@ -647,12 +647,10 @@ const loadMonitoringData = async () => {
         
         // Determina status
         let status = 'weekend';
-        if (isFuture) {
-          status = 'future';
-        } else if (isWeekend) {
+        if (isWeekend) {
           status = 'weekend';
         } else if (hasAbsence) {
-          // Distingui tipo di assenza
+          // Distingui tipo di assenza (anche futura)
           if (absenceJour.type === 'vacances') {
             status = 'vacances';
           } else if (absenceJour.type === 'maladie') {
@@ -664,6 +662,8 @@ const loadMonitoringData = async () => {
           } else {
             status = 'absence';
           }
+        } else if (isFuture) {
+          status = 'future';
         } else if (heuresJour > 0) {
           status = 'heures';
           employeData.joursTravailles++;
