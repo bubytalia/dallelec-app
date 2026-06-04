@@ -93,7 +93,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { supabase } from '@/supabase';
 import RetourButton from '@/components/RetourButton.vue';
-import { downloadPDF, generateFicheIndividuellePDF, generateGlobalPDF } from '@/utils/pdfDownload.js';
+import { generateFicheIndividuellePDF, generateGlobalPDF } from '@/utils/pdfDownload.js';
 
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
 const employes = ref([]);
