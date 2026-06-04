@@ -722,8 +722,8 @@ const getJourClass = (jour) => {
     case 'manquant': return `${baseClass} bg-danger text-white`;
     case 'vacances': return `${baseClass} bg-info text-white`;
     case 'maladie': return `${baseClass} bg-dark text-white`;
-    case 'conge_paternite': return `${baseClass} bg-teal text-white`;
-    case 'conge_deces': return `${baseClass} bg-dark text-white`;
+    case 'conge_paternite': return `${baseClass} conge-paternite text-white`;
+    case 'conge_deces': return `${baseClass} conge-deces text-white`;
     case 'jour_ferie': return `${baseClass} bg-primary text-white`;
     case 'vacances_sans_solde': return `${baseClass} jour-ferie-sans-solde text-white`;
     case 'absence': return `${baseClass} bg-warning text-dark`;
@@ -816,6 +816,14 @@ onMounted(() => {
 
 .calendar-day.bg-teal {
   background: #20c997 !important;
+}
+
+.calendar-day.conge-paternite {
+  background: #20c997 !important;
+}
+
+.calendar-day.conge-deces {
+  background: #343a40 !important;
 }
 
 .badge.bg-orange {
