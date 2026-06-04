@@ -487,9 +487,6 @@ onMounted(async () => {
   z-index: 2;
   min-width: 180px;
   max-width: 180px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .chantier-name {
