@@ -302,7 +302,7 @@ const generatePDFIndividuel = async () => {
     } else if (heuresPlanningJour === 0 && totalH === 0) {
       // jour off
     } else if (abs && heuresPlanningJour > 0 && totalH === 0) {
-      const types = { vacances:'Vacances', maladie:'Maladie', jour_ferie:'Jour férié', vacances_sans_solde:'Vac.s.solde', accident:'Accident', cours:'Cours' };
+      const types = { vacances:'Vacances', maladie:'Maladie', jour_ferie:'Jour férié', vacances_sans_solde:'Vac.s.solde', accident:'Accident', cours:'Cours', conge_paternite:'Congé pat.', conge_deces:'Congé déc.' };
       statut = types[abs.type] || abs.type;
       heures = heuresPlanningJour.toFixed(2);
       isAbsence = true;

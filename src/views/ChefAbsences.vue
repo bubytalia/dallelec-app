@@ -23,6 +23,8 @@
                     <option value="accident">Accident</option>
                     <option value="jour_ferie">Jour férié</option>
                     <option value="vacances_sans_solde">Vacances sans solde</option>
+                    <option value="conge_paternite">Congé paternité</option>
+                    <option value="conge_deces">Congé décès</option>
                     <option value="cours">Cours</option>
                   </select>
                 </div>

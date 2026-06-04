@@ -77,6 +77,8 @@
           <option value="accident">Accident</option>
           <option value="jour_ferie">Jour férié</option>
           <option value="vacances_sans_solde">Vacances sans solde</option>
+          <option value="conge_paternite">Congé paternité</option>
+          <option value="conge_deces">Congé décès</option>
           <option value="cours">Cours</option>
         </select>
       </div>
@@ -331,6 +333,8 @@ const getTypeLabel = (type) => {
     accident: 'Accident',
     jour_ferie: 'Jour férié',
     vacances_sans_solde: 'Vacances sans solde',
+    conge_paternite: 'Congé paternité',
+    conge_deces: 'Congé décès',
     cours: 'Cours'
   };
   return labels[type] || type;
@@ -343,6 +347,8 @@ const getTypeClass = (type) => {
     accident: 'badge bg-warning',
     jour_ferie: 'badge bg-primary',
     vacances_sans_solde: 'badge bg-info',
+    conge_paternite: 'badge bg-success',
+    conge_deces: 'badge bg-dark',
     cours: 'badge bg-secondary'
   };
   return classes[type] || 'badge bg-secondary';

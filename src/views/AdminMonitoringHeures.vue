@@ -112,6 +112,8 @@
               <option value="vacances_sans_solde">🟠 Vacances sans solde</option>
               <option value="accident">⚠️ Accident</option>
               <option value="cours">📚 Cours</option>
+              <option value="conge_paternite">👶 Congé paternité</option>
+              <option value="conge_deces">🕊️ Congé décès</option>
               <option value="absence">🟡 Autre absence</option>
               <option value="supprimer">🗑️ Supprimer données du jour</option>
             </select>
@@ -153,7 +155,7 @@
           </div>
 
           <!-- Heures pour absences (vacances, maladie, etc.) -->
-          <div v-if="['vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(editModal.action)" class="mb-3">
+          <div v-if="['vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','conge_paternite','conge_deces','absence'].includes(editModal.action)" class="mb-3">
             <label class="form-label">Heures de la journée (pour calcul solde):</label>
             <select v-model="editModal.heuresAbsence" class="form-control">
               <option :value="8.75">8:45 (lundi-jeudi)</option>
@@ -299,7 +301,7 @@ const openEditModal = async (employe, jour) => {
     employeType: employe.type,
     date: jour.date,
     currentStatus: jour.status,
-    action: ['heures','vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','absence'].includes(jour.status) ? jour.status : 'heures',
+    action: ['heures','vacances','maladie','jour_ferie','vacances_sans_solde','accident','cours','conge_paternite','conge_deces','absence'].includes(jour.status) ? jour.status : 'heures',
     heures: jour.heures || '',
     heuresAbsence: defaultHeuresAbsence,
     needsChantier: true,
@@ -461,12 +463,12 @@ const formatDateFR = (dateStr) => {
 };
 
 const getStatusBadgeClass = (status) => {
-  const map = { heures: 'bg-success', manquant: 'bg-danger', vacances: 'bg-info', maladie: 'bg-dark', jour_ferie: 'bg-primary', vacances_sans_solde: 'bg-orange', absence: 'bg-warning', weekend: 'bg-light text-dark', future: 'bg-secondary' };
+  const map = { heures: 'bg-success', manquant: 'bg-danger', vacances: 'bg-info', maladie: 'bg-dark', jour_ferie: 'bg-primary', vacances_sans_solde: 'bg-orange', conge_paternite: 'bg-teal', conge_deces: 'bg-dark', absence: 'bg-warning', weekend: 'bg-light text-dark', future: 'bg-secondary' };
   return map[status] || 'bg-light';
 };
 
 const getStatusLabel = (status) => {
-  const map = { heures: 'Heures saisies', manquant: 'Pas d\'heures', vacances: 'Vacances', maladie: 'Maladie', jour_ferie: 'Jour férié', vacances_sans_solde: 'Vacances sans solde', absence: 'Absence', weekend: 'Weekend', future: 'Futur' };
+  const map = { heures: 'Heures saisies', manquant: 'Pas d\'heures', vacances: 'Vacances', maladie: 'Maladie', jour_ferie: 'Jour férié', vacances_sans_solde: 'Vacances sans solde', conge_paternite: 'Congé paternité', conge_deces: 'Congé décès', absence: 'Absence', weekend: 'Weekend', future: 'Futur' };
   return map[status] || status;
 };
 
@@ -659,6 +661,10 @@ const loadMonitoringData = async () => {
             status = 'jour_ferie';
           } else if (absenceJour.type === 'vacances_sans_solde') {
             status = 'vacances_sans_solde';
+          } else if (absenceJour.type === 'conge_paternite') {
+            status = 'conge_paternite';
+          } else if (absenceJour.type === 'conge_deces') {
+            status = 'conge_deces';
           } else {
             status = 'absence';
           }
@@ -716,6 +722,8 @@ const getJourClass = (jour) => {
     case 'manquant': return `${baseClass} bg-danger text-white`;
     case 'vacances': return `${baseClass} bg-info text-white`;
     case 'maladie': return `${baseClass} bg-dark text-white`;
+    case 'conge_paternite': return `${baseClass} bg-teal text-white`;
+    case 'conge_deces': return `${baseClass} bg-dark text-white`;
     case 'jour_ferie': return `${baseClass} bg-primary text-white`;
     case 'vacances_sans_solde': return `${baseClass} jour-ferie-sans-solde text-white`;
     case 'absence': return `${baseClass} bg-warning text-dark`;
@@ -732,6 +740,8 @@ const getJourTooltip = (jour) => {
     case 'manquant': return `${date}: Aucune heure saisie`;
     case 'vacances': return `${date}: Vacances`;
     case 'maladie': return `${date}: Maladie`;
+    case 'conge_paternite': return `${date}: Congé paternité`;
+    case 'conge_deces': return `${date}: Congé décès`;
     case 'jour_ferie': return `${date}: Jour férié`;
     case 'vacances_sans_solde': return `${date}: Vacances sans solde`;
     case 'absence': return `${date}: Absence (${jour.absence || 'autre'})`;
