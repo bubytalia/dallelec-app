@@ -14,7 +14,10 @@
               <label>Mois:</label>
               <input v-model="selectedMonth" type="month" class="form-control" @change="loadData" />
             </div>
-            <button @click="exportToPDF" class="btn btn-danger" :disabled="bilans.length === 0">📄 Exporter PDF (tous les employés)</button>
+            <div class="d-flex gap-2 flex-wrap">
+              <button @click="exportToPDF" class="btn btn-danger" :disabled="bilans.length === 0">📄 PDF Commercialiste</button>
+              <button @click="exportToutesFiches" class="btn btn-primary" :disabled="bilans.length === 0">📄 Toutes les fiches individuelles</button>
+            </div>
           </div>
         </div>
       </div>
@@ -35,6 +38,8 @@
               <th class="text-end">Delta</th>
               <th class="text-end">Solde heures</th>
               <th class="text-end">Vac. solde</th>
+              <th class="text-end">Bonus</th>
+              <th>Fiche</th>
             </tr>
           </thead>
           <tbody>
@@ -47,6 +52,11 @@
               <td class="text-end" :class="b.delta_mois >= 0 ? 'text-success' : 'text-danger'">{{ b.delta_mois >= 0 ? '+' : '' }}{{ b.delta_mois.toFixed(2) }}</td>
               <td class="text-end fw-bold" :class="b.solde_final >= 0 ? 'text-success' : 'text-danger'">{{ b.solde_final.toFixed(2) }}</td>
               <td class="text-end fw-bold">{{ (b.vac_nouveau_solde || 0).toFixed(2) }}</td>
+              <td class="text-end">
+                <span v-if="getTotalBonusMois(b.employee_email) > 0" class="badge bg-success">{{ getTotalBonusMois(b.employee_email).toFixed(2) }} CHF</span>
+                <span v-else class="text-muted">-</span>
+              </td>
+              <td><button @click="exportFicheIndividuelle(b)" class="btn btn-sm btn-outline-primary">📄</button></td>
             </tr>
           </tbody>
         </table>
@@ -67,6 +77,7 @@ import RetourButton from '@/components/RetourButton.vue';
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
 const bilans = ref([]);
 const employes = ref([]);
+const primesMois = ref([]);
 const loaded = ref(false);
 
 const loadEmployes = async () => {
@@ -184,6 +195,10 @@ const loadData = async () => {
   const { data: finalData } = await supabase.from('solde_heures').select('*').eq('mois', selectedMonth.value);
   const { data: vacData } = await supabase.from('solde_vacances').select('*').eq('mois', selectedMonth.value);
 
+  // Charger primes payées ce mois
+  const { data: primesData } = await supabase.from('primes_paiements').select('*').eq('mois_paiement', selectedMonth.value);
+  primesMois.value = primesData || [];
+
   bilans.value = (finalData || []).map(b => {
     const vac = (vacData || []).find(v => v.employee_email === b.employee_email);
     return {
@@ -202,35 +217,108 @@ const getEmployeName = (email) => {
   return emp ? emp.nom : email;
 };
 
+const getPrimesForEmployee = (email) => {
+  return primesMois.value.filter(p => p.capocantiere === email);
+};
+
+const getTotalBonusMois = (email) => {
+  return getPrimesForEmployee(email).reduce((sum, p) => sum + (parseFloat(p.montant) || 0), 0);
+};
+
 const formatMonth = (m) => {
   if (!m) return '';
   const [y, mo] = m.split('-');
   return new Date(y, mo - 1).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' });
 };
 
+const buildEmployeBlock = (b, nom, showBonus = false) => {
+  const deltaClass = b.delta_mois >= 0 ? 'pos' : 'neg';
+  const soldeClass = b.solde_final >= 0 ? 'pos' : 'neg';
+  const bonus = getTotalBonusMois(b.employee_email);
+
+  let html = `<div class="emp-title">👤 ${nom}</div>`;
+  html += `<div class="two-cols">`;
+
+  // Box Heures
+  html += `<div class="col-box"><h3>📊 Bilan Heures</h3><table>
+    <tr><td>Heures prévues</td><td>${b.heures_prevues.toFixed(2)}h</td></tr>
+    <tr><td>Heures travaillées</td><td>${b.heures_travaillees.toFixed(2)}h</td></tr>
+    <tr><td>Jours travaillés (paniers)</td><td>${b.jours_travailles || 0} j</td></tr>
+    <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
+    <tr><td>Autres absences payées</td><td>${((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2)}h</td></tr>
+    <tr><td>Absences non payées</td><td>${b.heures_absences_non_payees.toFixed(2)}h</td></tr>
+    <tr><td>Solde précédent</td><td>${b.solde_precedent.toFixed(2)}h</td></tr>
+    <tr><td>Delta mois</td><td class="${deltaClass}">${b.delta_mois >= 0 ? '+' : ''}${b.delta_mois.toFixed(2)}h</td></tr>
+  </table><div class="result ${soldeClass}">Solde heures: ${b.solde_final.toFixed(2)}h</div></div>`;
+
+  // Box Vacances
+  html += `<div class="col-box"><h3>🏖️ Bilan Vacances</h3><table>
+    <tr><td>Solde précédent</td><td>${(b.vac_solde_prec || 0).toFixed(2)}h</td></tr>
+    <tr><td>Acquises ce mois</td><td class="pos">+${(b.vac_acquises || 0).toFixed(2)}h</td></tr>
+    <tr><td>Prises ce mois</td><td class="neg">-${(b.vac_prises || 0).toFixed(2)}h</td></tr>
+  </table><div class="result">Nouveau solde: ${(b.vac_nouveau_solde || 0).toFixed(2)}h</div></div>`;
+
+  html += `</div>`; // two-cols
+
+  // Bonus line (pour commercialista)
+  if (bonus > 0 && !showBonus) {
+    html += `<div class="bonus-line">💰 Bonus: CHF ${bonus.toFixed(2)}</div>`;
+  }
+
+  // Section BONUS analytique (pour fiche individuelle)
+  if (showBonus) {
+    const primes = getPrimesForEmployee(b.employee_email);
+    if (primes.length > 0) {
+      html += `<div class="bonus-section"><h3>💰 BONUS</h3><table class="bonus-table">
+        <tr><th>Chantier</th><th>Prime Efficacité</th><th>Prime Régies</th><th>Total</th></tr>`;
+      let totalBonus = 0;
+      primes.forEach(p => {
+        const eff = parseFloat(p.prime_efficacite) || 0;
+        const reg = parseFloat(p.prime_regies) || 0;
+        const tot = parseFloat(p.montant) || 0;
+        totalBonus += tot;
+        html += `<tr><td>${p.chantier_nom || 'Chantier ' + p.chantier_id}</td><td>CHF ${eff.toFixed(2)}</td><td>CHF ${reg.toFixed(2)}</td><td><strong>CHF ${tot.toFixed(2)}</strong></td></tr>`;
+      });
+      html += `<tr class="total-row"><td><strong>TOTAL</strong></td><td></td><td></td><td><strong>CHF ${totalBonus.toFixed(2)}</strong></td></tr>`;
+      html += `</table></div>`;
+    }
+  }
+
+  return html;
+};
+
+const getPdfStyles = () => `
+  body{font-family:Arial,sans-serif;padding:10px 15px;margin:0;font-size:9px}
+  .page{page-break-after:always;padding:8px 0}
+  .page:last-child{page-break-after:avoid}
+  .header{text-align:center;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:6px}
+  .header h1{font-size:13px;margin:0}
+  .header p{margin:2px 0;font-size:9px;color:#555}
+  .emp-title{font-size:11px;font-weight:bold;margin:12px 0 6px;padding:4px 6px;background:#f0f0f0;border-left:4px solid #333}
+  .two-cols{display:flex;gap:12px;margin-top:5px}
+  .col-box{flex:1;border:2px solid #333;padding:8px;border-radius:4px}
+  .col-box h3{font-size:10px;margin:0 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px}
+  .col-box table{width:100%;border-collapse:collapse}
+  .col-box td{padding:2.5px 0;font-size:9px}
+  .col-box td:last-child{text-align:right;font-weight:bold}
+  .result{font-size:11px;font-weight:bold;margin-top:5px;padding-top:5px;border-top:2px solid #333}
+  .pos{color:green}.neg{color:red}
+  .bonus-line{margin-top:6px;padding:4px 8px;background:#d4edda;border-left:4px solid #28a745;font-weight:bold;font-size:10px}
+  .bonus-section{margin-top:10px;border:2px solid #ffc107;padding:8px;border-radius:4px}
+  .bonus-section h3{font-size:10px;margin:0 0 6px;color:#856404}
+  .bonus-table{width:100%;border-collapse:collapse;font-size:9px}
+  .bonus-table th{background:#fff3cd;padding:3px 5px;text-align:left;border-bottom:1px solid #ccc}
+  .bonus-table td{padding:3px 5px;border-bottom:1px solid #eee}
+  .bonus-table .total-row td{border-top:2px solid #333;font-weight:bold}
+  .footer{text-align:center;font-size:7px;color:#999;margin-top:8px;border-top:1px solid #ddd;padding-top:4px}
+  @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
+`;
+
 const exportToPDF = () => {
   const monthLabel = formatMonth(selectedMonth.value);
 
   let html = `<html><head><title>Report Commercialiste - ${monthLabel}</title>
-  <style>
-    body{font-family:Arial,sans-serif;padding:10px 15px;margin:0;font-size:9px}
-    .page{page-break-after:always;padding:8px 0}
-    .page:last-child{page-break-after:avoid}
-    .header{text-align:center;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:6px}
-    .header h1{font-size:13px;margin:0}
-    .header p{margin:2px 0;font-size:9px;color:#555}
-    .emp-title{font-size:11px;font-weight:bold;margin:12px 0 6px;padding:4px 6px;background:#f0f0f0;border-left:4px solid #333}
-    .two-cols{display:flex;gap:12px;margin-top:5px}
-    .col-box{flex:1;border:2px solid #333;padding:8px;border-radius:4px}
-    .col-box h3{font-size:10px;margin:0 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px}
-    .col-box table{width:100%;border-collapse:collapse}
-    .col-box td{padding:2.5px 0;font-size:9px}
-    .col-box td:last-child{text-align:right;font-weight:bold}
-    .result{font-size:11px;font-weight:bold;margin-top:5px;padding-top:5px;border-top:2px solid #333}
-    .pos{color:green}.neg{color:red}
-    .footer{text-align:center;font-size:7px;color:#999;margin-top:8px;border-top:1px solid #ddd;padding-top:4px}
-    @media print{body{margin:0;padding:5mm}@page{size:A4 portrait;margin:8mm}.page{page-break-after:always}}
-  </style></head><body>`;
+  <style>${getPdfStyles()}</style></head><body>`;
 
   // 4 employés par page
   for (let i = 0; i < bilans.value.length; i += 4) {
@@ -240,36 +328,52 @@ const exportToPDF = () => {
     for (let j = i; j < Math.min(i + 4, bilans.value.length); j++) {
       const b = bilans.value[j];
       const nom = getEmployeName(b.employee_email);
-      const deltaClass = b.delta_mois >= 0 ? 'pos' : 'neg';
-      const soldeClass = b.solde_final >= 0 ? 'pos' : 'neg';
-
-      html += `<div class="emp-title">👤 ${nom}</div>`;
-      html += `<div class="two-cols">`;
-
-      // Box Heures
-      html += `<div class="col-box"><h3>📊 Bilan Heures</h3><table>
-        <tr><td>Heures prévues</td><td>${b.heures_prevues.toFixed(2)}h</td></tr>
-        <tr><td>Heures travaillées</td><td>${b.heures_travaillees.toFixed(2)}h</td></tr>
-        <tr><td>Jours travaillés (paniers)</td><td>${b.jours_travailles || 0} j</td></tr>        <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
-        <tr><td>Autres absences payées</td><td>${((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2)}h</td></tr>
-        <tr><td>Absences non payées</td><td>${b.heures_absences_non_payees.toFixed(2)}h</td></tr>
-        <tr><td>Solde précédent</td><td>${b.solde_precedent.toFixed(2)}h</td></tr>
-        <tr><td>Delta mois</td><td class="${deltaClass}">${b.delta_mois >= 0 ? '+' : ''}${b.delta_mois.toFixed(2)}h</td></tr>
-      </table><div class="result ${soldeClass}">Solde heures: ${b.solde_final.toFixed(2)}h</div></div>`;
-
-      // Box Vacances
-      html += `<div class="col-box"><h3>🏖️ Bilan Vacances</h3><table>
-        <tr><td>Solde précédent</td><td>${(b.vac_solde_prec || 0).toFixed(2)}h</td></tr>
-        <tr><td>Acquises ce mois</td><td class="pos">+${(b.vac_acquises || 0).toFixed(2)}h</td></tr>
-        <tr><td>Prises ce mois</td><td class="neg">-${(b.vac_prises || 0).toFixed(2)}h</td></tr>
-      </table><div class="result">Nouveau solde: ${(b.vac_nouveau_solde || 0).toFixed(2)}h</div></div>`;
-
-      html += `</div>`; // two-cols
+      html += buildEmployeBlock(b, nom, false);
     }
 
     html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} — DALLELEC Sàrl — À joindre au bulletin de salaire</div>`;
     html += `</div>`; // page
   }
+
+  html += `</body></html>`;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.print();
+};
+
+const exportFicheIndividuelle = (bilan) => {
+  const monthLabel = formatMonth(selectedMonth.value);
+  const nom = getEmployeName(bilan.employee_email);
+
+  let html = `<html><head><title>Fiche ${nom} - ${monthLabel}</title>
+  <style>${getPdfStyles()}</style></head><body>`;
+  html += `<div class="page">`;
+  html += `<div class="header"><h1>DALLELEC Sàrl - Fiche Individuelle</h1><p>${nom} — ${monthLabel}</p></div>`;
+  html += buildEmployeBlock(bilan, nom, true);
+  html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} — DALLELEC Sàrl — Document confidentiel</div>`;
+  html += `</div>`;
+  html += `</body></html>`;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+  w.print();
+};
+
+const exportToutesFiches = () => {
+  const monthLabel = formatMonth(selectedMonth.value);
+
+  let html = `<html><head><title>Fiches Individuelles - ${monthLabel}</title>
+  <style>${getPdfStyles()}</style></head><body>`;
+
+  bilans.value.forEach(b => {
+    const nom = getEmployeName(b.employee_email);
+    html += `<div class="page">`;
+    html += `<div class="header"><h1>DALLELEC Sàrl - Fiche Individuelle</h1><p>${nom} — ${monthLabel}</p></div>`;
+    html += buildEmployeBlock(b, nom, true);
+    html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} — DALLELEC Sàrl — Document confidentiel</div>`;
+    html += `</div>`;
+  });
 
   html += `</body></html>`;
   const w = window.open('', '_blank');

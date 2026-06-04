@@ -55,6 +55,12 @@
               </div>
               <div class="col-md-2">
                 <div class="text-center">
+                  <h4 class="text-warning">{{ totalPrimes.toFixed(2) }} CHF</h4>
+                  <p>Primes payées</p>
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="text-center">
                   <h4 class="text-success">{{ totalRicavi.toFixed(2) }} CHF</h4>
                   <p>Revenus totaux HT</p>
                 </div>
@@ -102,6 +108,8 @@
                     <th>Coût Collaborateurs</th>
                     <th>Total Heures</th>
                     <th>Total Coût</th>
+                    <th>Primes payées</th>
+                    <th>Coût Total + Primes</th>
                     <th>Revenus HT</th>
                     <th>Marge</th>
                     <th>Rentabilité %</th>
@@ -119,6 +127,8 @@
                     <td>{{ bilan.coutCollaborateurs.toFixed(2) }} CHF</td>
                     <td>{{ bilan.totalHeures.toFixed(2) }}</td>
                     <td>{{ bilan.totalCout.toFixed(2) }} CHF</td>
+                    <td>{{ bilan.primesPayees.toFixed(2) }} CHF</td>
+                    <td>{{ (bilan.totalCout + bilan.primesPayees).toFixed(2) }} CHF</td>
                     <td>{{ bilan.ricavi.toFixed(2) }} CHF</td>
                     <td :class="bilan.margine >= 0 ? 'text-success' : 'text-danger'">
                       <strong>{{ bilan.margine.toFixed(2) }} CHF</strong>
@@ -259,6 +269,7 @@ const chefs = ref([])
 const heuresPropres = ref([])
 const heuresInterim = ref([])
 const factures = ref([])
+const primesPaiements = ref([])
 const dateDebut = ref('')
 const dateFin = ref('')
 const selectedChantierId = ref('')
@@ -361,6 +372,7 @@ const availableYears = computed(() => {
 
 const totalRicavi = ref(0)
 const totalMargine = ref(0)
+const totalPrimes = ref(0)
 
 // Fonctions de calcul
 const calculerBilans = async () => {
@@ -441,6 +453,7 @@ const calculerBilans = async () => {
         totalHeures: 0,
         totalCout: 0,
         coutHoraire: 0,
+        primesPayees: 0,
         ricavi: 0,
         margine: 0,
         redditivita: 0
@@ -467,14 +480,19 @@ const calculerBilans = async () => {
     const facturesChantier = facturesFiltrees.filter(f => String(f.chantier_id) === String(bilan.chantierId))
     bilan.ricavi = facturesChantier.reduce((sum, f) => sum + ((parseFloat(f.montant_ttc) || 0) / 1.081), 0)
     
-    bilan.margine = bilan.ricavi - bilan.totalCout
+    // Primes payées pour ce chantier
+    const primesChantier = primesPaiements.value.filter(p => String(p.chantier_id) === String(bilan.chantierId))
+    bilan.primesPayees = primesChantier.reduce((sum, p) => sum + (parseFloat(p.montant) || 0), 0)
+    
+    bilan.margine = bilan.ricavi - bilan.totalCout - bilan.primesPayees
     bilan.redditivita = bilan.ricavi > 0 ? (bilan.margine / bilan.ricavi) * 100 : 0
   })
 
   bilansParChantier.value = Object.values(bilans)
   
-  // Calcola totali ricavi e margine
+  // Calcola totali ricavi, primes e margine
   totalRicavi.value = bilansParChantier.value.reduce((sum, b) => sum + b.ricavi, 0)
+  totalPrimes.value = bilansParChantier.value.reduce((sum, b) => sum + b.primesPayees, 0)
   totalMargine.value = bilansParChantier.value.reduce((sum, b) => sum + b.margine, 0)
 
   // Calculer le rapport mensuel
@@ -591,6 +609,10 @@ const fetchData = async () => {
     // Charger les heures intérimaires  
     const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*')
     heuresInterim.value = heuresInterimData || []
+
+    // Charger les primes payées
+    const { data: primesData } = await supabase.from('primes_paiements').select('*')
+    primesPaiements.value = primesData || []
     
     // Charger aussi les heures ouvriers
     const { data: heuresOuvriersData } = await supabase.from('heures_ouvriers').select('*')

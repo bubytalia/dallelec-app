@@ -544,11 +544,16 @@ const enregistrerPaiement = async () => {
   const { chantierId, capocantiere, montant, moisPaiement } = paiementForm.value;
   if (!moisPaiement) return;
 
+  // Trouver le détail de la prime pour sauvegarder efficacité et régies
+  const primeDetail = premesCalculated.value.find(p => p.chantierId === chantierId && p.capocantiere === capocantiere);
   await supabase.from('primes_paiements').upsert({
     chantier_id: chantierId,
     capocantiere,
     montant,
-    mois_paiement: moisPaiement
+    mois_paiement: moisPaiement,
+    prime_efficacite: primeDetail?.primeEfficacite || 0,
+    prime_regies: primeDetail?.primeRegies || 0,
+    chantier_nom: primeDetail?.chantierNom || ''
   }, { onConflict: 'chantier_id,capocantiere' });
 
   // Reload paiements
