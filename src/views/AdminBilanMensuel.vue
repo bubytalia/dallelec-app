@@ -97,6 +97,7 @@ import RetourButton from '@/components/RetourButton.vue';
 const selectedMonth = ref(new Date().toISOString().slice(0, 7));
 const employes = ref([]);
 const bilans = ref([]);
+const primesMois = ref([]);
 const showPDFModal = ref(false);
 const pdfEmploye = ref('');
 
@@ -117,8 +118,9 @@ const loadEmployes = async () => {
 
 const loadData = async () => {
   const { data } = await supabase.from('solde_heures').select('*').eq('mois', selectedMonth.value);
-  // Charger aussi solde vacances
   const { data: vacData } = await supabase.from('solde_vacances').select('*').eq('mois', selectedMonth.value);
+  const { data: primesData } = await supabase.from('primes_paiements').select('*').eq('mois_paiement', selectedMonth.value);
+  primesMois.value = primesData || [];
   
   bilans.value = (data || []).map(b => {
     const vac = (vacData || []).find(v => v.employee_email === b.employee_email);
@@ -219,6 +221,9 @@ const calculateAndLoad = async () => {
   await loadData();
 };
 
+const getPrimesForEmployee = (email) => primesMois.value.filter(p => p.capocantiere === email);
+const getTotalBonusMois = (email) => getPrimesForEmployee(email).reduce((sum, p) => sum + (parseFloat(p.montant) || 0), 0);
+
 const getEmployeName = (email) => {
   const emp = employes.value.find(e => e.email === email);
   return emp ? emp.nom : email;
@@ -247,15 +252,18 @@ const generatePDFGlobal = () => {
   </style></head><body>
   <div class="header"><h2>DALLELEC Sàrl</h2><p>Bilan Mensuel Personnel - ${monthLabel}</p></div>
   <table><thead><tr>
-    <th>Employé</th><th>H.prévues</th><th>H.travaillées</th><th>Abs.payées</th><th>Abs.non payées</th><th>Solde préc.</th><th>Delta</th><th>Solde heures</th><th>Vac.préc.</th><th>Vac.acq.</th><th>Vac.prises</th><th>Vac.solde</th>
+    <th>Employé</th><th>H.prévues</th><th>H.travaillées</th><th>Abs.payées</th><th>Abs.non payées</th><th>Solde préc.</th><th>Delta</th><th>Solde heures</th><th>Vac.solde</th><th>Bonus</th>
   </tr></thead><tbody>`;
   for (const b of bilans.value) {
     const dCls = b.delta_mois >= 0 ? 'pos' : 'neg';
     const sCls = b.solde_final >= 0 ? 'pos' : 'neg';
-    html += `<tr><td>${getEmployeName(b.employee_email)}</td><td>${b.heures_prevues.toFixed(2)}</td><td>${b.heures_travaillees.toFixed(2)}</td><td>${b.heures_absences_payees.toFixed(2)}</td><td>${b.heures_absences_non_payees.toFixed(2)}</td><td>${b.solde_precedent.toFixed(2)}</td><td class="${dCls}">${b.delta_mois >= 0?'+':''}${b.delta_mois.toFixed(2)}</td><td class="${sCls}"><strong>${b.solde_final.toFixed(2)}</strong></td><td>${(b.vac_solde_prec||0).toFixed(2)}</td><td class="pos">+${(b.vac_acquises||0).toFixed(2)}</td><td class="neg">-${(b.vac_prises||0).toFixed(2)}</td><td><strong>${(b.vac_nouveau_solde||0).toFixed(2)}</strong></td></tr>`;
+    const bonus = getTotalBonusMois(b.employee_email);
+    html += `<tr><td>${getEmployeName(b.employee_email)}</td><td>${b.heures_prevues.toFixed(2)}</td><td>${b.heures_travaillees.toFixed(2)}</td><td>${b.heures_absences_payees.toFixed(2)}</td><td>${b.heures_absences_non_payees.toFixed(2)}</td><td>${b.solde_precedent.toFixed(2)}</td><td class="${dCls}">${b.delta_mois >= 0?'+':''}${b.delta_mois.toFixed(2)}</td><td class="${sCls}"><strong>${b.solde_final.toFixed(2)}</strong></td><td><strong>${(b.vac_nouveau_solde||0).toFixed(2)}</strong></td><td>${bonus > 0 ? bonus.toFixed(2) + ' CHF' : '-'}</td></tr>`;
   }
   html += `</tbody></table><div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} - DALLELEC Sàrl</div></body></html>`;
-  const w = window.open('', '_blank'); w.document.write(html); w.document.close(); w.print();
+  const w = window.open('', '_blank');
+  if (!w) { alert('Veuillez autoriser les popups.'); return; }
+  w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
 };
 
 const generatePDFIndividuel = async () => {
@@ -380,11 +388,32 @@ const generatePDFIndividuel = async () => {
       <p>Prises ce mois: <span class="neg">-${calcVacPrises.toFixed(2)}h</span></p>
       <div class="result">Nouveau solde: ${calcVacNouveauSolde.toFixed(2)}h</div>
     </div>
-  </div>
-  <div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} - DALLELEC Sàrl - À joindre au bulletin de salaire</div>
+  </div>`;
+
+  // Section BONUS
+  const primes = getPrimesForEmployee(email);
+  if (primes.length > 0) {
+    html += `<div style="margin-top:12px;border:2px solid #ffc107;padding:10px;border-radius:5px">
+      <h4 style="margin:0 0 8px;font-size:11px;color:#856404">💰 BONUS</h4>
+      <table style="border:none"><thead><tr><th style="text-align:left">Chantier</th><th>Prime Efficacité</th><th>Prime Régies</th><th>Total</th></tr></thead><tbody>`;
+    let totalBonus = 0;
+    primes.forEach(p => {
+      const eff = parseFloat(p.prime_efficacite) || 0;
+      const reg = parseFloat(p.prime_regies) || 0;
+      const tot = parseFloat(p.montant) || 0;
+      totalBonus += tot;
+      html += `<tr><td style="text-align:left">${p.chantier_nom || 'Chantier ' + p.chantier_id}</td><td>${eff.toFixed(2)} CHF</td><td>${reg.toFixed(2)} CHF</td><td><strong>${tot.toFixed(2)} CHF</strong></td></tr>`;
+    });
+    html += `<tr style="border-top:2px solid #333"><td style="text-align:left"><strong>TOTAL</strong></td><td></td><td></td><td><strong>${totalBonus.toFixed(2)} CHF</strong></td></tr>`;
+    html += `</tbody></table></div>`;
+  }
+
+  html += `<div class="footer">Document généré le ${new Date().toLocaleDateString('fr-FR')} - DALLELEC Sàrl - À joindre au bulletin de salaire</div>
   </body></html>`;
 
-  const w = window.open('', '_blank'); w.document.write(html); w.document.close(); w.print();
+  const w = window.open('', '_blank');
+  if (!w) { alert('Veuillez autoriser les popups.'); return; }
+  w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
   showPDFModal.value = false;
 };
 
