@@ -8,6 +8,13 @@
       <button class="btn btn-outline-secondary" @click="prevMonth">&larr;</button>
       <h4 class="mx-4 mb-0">{{ monthLabel }}</h4>
       <button class="btn btn-outline-secondary" @click="nextMonth">&rarr;</button>
+      <div class="ms-3">
+        <select v-model="visibleMonths" class="form-select form-select-sm" style="width:auto">
+          <option :value="1">1 mois</option>
+          <option :value="2">2 mois</option>
+          <option :value="3">3 mois</option>
+        </select>
+      </div>
     </div>
 
     <!-- Légende couleurs -->
@@ -23,10 +30,17 @@
         <thead>
           <tr>
             <th class="sticky-col">Chantier</th>
-            <th v-for="day in daysInMonth" :key="day" class="text-center day-col" :class="{ 'bg-light': isWeekend(day) }">
-              <div>{{ dayLabel(day) }}</div>
-              <small>{{ day }}</small>
-            </th>
+            <template v-for="(monthData, mIdx) in allDays" :key="mIdx">
+              <th
+                v-for="(day, dIdx) in monthData.days"
+                :key="day.dateStr"
+                class="text-center day-col"
+                :class="{ 'bg-light': day.isWeekend, 'month-separator': dIdx === 0 && mIdx > 0 }"
+              >
+                <div class="day-header" :class="{ 'fw-bold': dIdx === 0 }">{{ day.label }}</div>
+                <small :class="{ 'fw-bold': dIdx === 0 }">{{ dIdx === 0 ? day.monthShort + ' ' + day.num : day.num }}</small>
+              </th>
+            </template>
           </tr>
         </thead>
         <tbody>
@@ -34,24 +48,24 @@
             <td class="sticky-col fw-bold chantier-name" :style="{ borderLeft: '4px solid ' + getColor(idx) }">
               {{ ch.nom }}
             </td>
-            <td
-              v-for="day in daysInMonth"
-              :key="day"
-              class="text-center cell"
-              :class="{ 'bg-light': isWeekend(day), 'active-cell': isCellActive(ch.id, day), 'selecting-cell': isSelecting(ch.id, day) }"
-              :style="isCellActive(ch.id, day) ? { backgroundColor: getColor(idx) + '30' } : {}"
-              @mousedown="startSelect(ch, day)"
-              @mouseenter="moveSelect(ch.id, day)"
-              @mouseup="endSelect(ch, day)"
-              @dragover.prevent
-              @drop="onDrop($event, ch.id, day)"
-            >
-              <div v-if="isCellActive(ch.id, day)" class="cell-content">
-                <small v-for="collab in getCellCollabs(ch.id, day)" :key="collab.id" class="d-block badge bg-white text-dark border mb-1" style="font-size: 0.65em;">
-                  {{ collab.prenom }}
-                </small>
-              </div>
-            </td>
+            <template v-for="(monthData, mIdx) in allDays" :key="mIdx">
+              <td
+                v-for="(day, dIdx) in monthData.days"
+                :key="day.dateStr"
+                class="text-center cell"
+                :class="{ 'bg-light': day.isWeekend, 'active-cell': isCellActiveDate(ch.id, day.dateStr), 'selecting-cell': isSelectingDate(ch.id, day.dateStr), 'month-separator': dIdx === 0 && mIdx > 0 }"
+                :style="isCellActiveDate(ch.id, day.dateStr) ? { backgroundColor: getColor(idx) + '30' } : {}"
+                @mousedown="startSelectDate(ch, day.dateStr)"
+                @mouseenter="moveSelectDate(ch.id, day.dateStr)"
+                @mouseup="endSelectDate(ch, day.dateStr)"
+              >
+                <div v-if="isCellActiveDate(ch.id, day.dateStr)" class="cell-content">
+                  <small v-for="collab in getCellCollabsDate(ch.id, day.dateStr)" :key="collab.id" class="d-block badge bg-white text-dark border mb-1" style="font-size: 0.65em;">
+                    {{ collab.prenom }}
+                  </small>
+                </div>
+              </td>
+            </template>
           </tr>
         </tbody>
       </table>
@@ -111,6 +125,7 @@ import RetourButton from '@/components/RetourButton.vue'
 
 const currentYear = ref(new Date().getFullYear())
 const currentMonth = ref(new Date().getMonth())
+const visibleMonths = ref(2)
 
 const chantiers = ref([])
 const collaborateurs = ref([])
@@ -124,44 +139,44 @@ const modalDateDebut = ref('')
 const modalDateFin = ref('')
 const selectedCollabs = ref([])
 
-// Cell selection (drag to select range)
+// Cell selection (drag to select range) - date-based
 const selecting = ref(false)
 const selectChantierId = ref(null)
-const selectDayStart = ref(null)
-const selectDayEnd = ref(null)
+const selectDateStart = ref(null)
+const selectDateEnd = ref(null)
 
-const startSelect = (chantier, day) => {
+const startSelectDate = (chantier, dateStr) => {
   selecting.value = true
   selectChantierId.value = chantier.id
-  selectDayStart.value = day
-  selectDayEnd.value = day
+  selectDateStart.value = dateStr
+  selectDateEnd.value = dateStr
   modalChantier.value = chantier
 }
 
-const moveSelect = (chantierId, day) => {
+const moveSelectDate = (chantierId, dateStr) => {
   if (!selecting.value || chantierId !== selectChantierId.value) return
-  selectDayEnd.value = day
+  selectDateEnd.value = dateStr
 }
 
-const endSelect = (chantier, day) => {
+const endSelectDate = (chantier, dateStr) => {
   if (!selecting.value) return
   selecting.value = false
-  const startDay = Math.min(selectDayStart.value, selectDayEnd.value)
-  const endDay = Math.max(selectDayStart.value, selectDayEnd.value)
-  modalDateDebut.value = getDateStr(startDay)
-  modalDateFin.value = getDateStr(endDay)
+  const start = selectDateStart.value < selectDateEnd.value ? selectDateStart.value : selectDateEnd.value
+  const end = selectDateStart.value < selectDateEnd.value ? selectDateEnd.value : selectDateStart.value
+  modalDateDebut.value = start
+  modalDateFin.value = end
   selectedCollabs.value = []
   showModal.value = true
   selectChantierId.value = null
-  selectDayStart.value = null
-  selectDayEnd.value = null
+  selectDateStart.value = null
+  selectDateEnd.value = null
 }
 
-const isSelecting = (chantierId, day) => {
+const isSelectingDate = (chantierId, dateStr) => {
   if (!selecting.value || chantierId !== selectChantierId.value) return false
-  const min = Math.min(selectDayStart.value, selectDayEnd.value)
-  const max = Math.max(selectDayStart.value, selectDayEnd.value)
-  return day >= min && day <= max
+  const min = selectDateStart.value < selectDateEnd.value ? selectDateStart.value : selectDateEnd.value
+  const max = selectDateStart.value < selectDateEnd.value ? selectDateEnd.value : selectDateStart.value
+  return dateStr >= min && dateStr <= max
 }
 
 const colors = ['#2196F3', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548', '#607D8B', '#E91E63', '#3F51B5']
@@ -169,22 +184,47 @@ const getColor = (idx) => colors[idx % colors.length]
 
 const monthLabel = computed(() => {
   const date = new Date(currentYear.value, currentMonth.value)
-  return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  if (visibleMonths.value === 1) {
+    return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  }
+  const endDate = new Date(currentYear.value, currentMonth.value + visibleMonths.value - 1)
+  return `${date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} — ${endDate.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}`
 })
 
-const daysInMonth = computed(() => {
-  const count = new Date(currentYear.value, currentMonth.value + 1, 0).getDate()
-  return Array.from({ length: count }, (_, i) => i + 1)
+// Generate all days for visible months
+const allDays = computed(() => {
+  const months = []
+  for (let m = 0; m < visibleMonths.value; m++) {
+    let yr = currentYear.value
+    let mo = currentMonth.value + m
+    if (mo > 11) { mo -= 12; yr++ }
+    const count = new Date(yr, mo + 1, 0).getDate()
+    const days = []
+    for (let d = 1; d <= count; d++) {
+      const date = new Date(yr, mo, d)
+      const dateStr = `${yr}-${String(mo + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      days.push({
+        num: d,
+        dateStr,
+        label: date.toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0, 2),
+        monthShort: date.toLocaleDateString('fr-FR', { month: 'short' }).slice(0, 3),
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
+      })
+    }
+    months.push({ year: yr, month: mo, days })
+  }
+  return months
 })
 
-const dayLabel = (day) => {
-  const date = new Date(currentYear.value, currentMonth.value, day)
-  return date.toLocaleDateString('fr-FR', { weekday: 'short' }).slice(0, 2)
+const isCellActiveDate = (chantierId, dateStr) => {
+  return planifications.value.some(p => p.chantier_id === chantierId && p.date === dateStr)
 }
 
-const isWeekend = (day) => {
-  const date = new Date(currentYear.value, currentMonth.value, day)
-  return date.getDay() === 0 || date.getDay() === 6
+const getCellCollabsDate = (chantierId, dateStr) => {
+  const personnelIds = planifications.value
+    .filter(p => p.chantier_id === chantierId && p.date === dateStr)
+    .map(p => p.personnel_id)
+  return collaborateursActifs.value.filter(c => personnelIds.includes(c.id))
 }
 
 const chantiersActifs = computed(() => {
@@ -215,7 +255,6 @@ const getCellCollabs = (chantierId, day) => {
     .map(p => p.personnel_id)
   return collaborateursActifs.value.filter(c => personnelIds.includes(c.id))
 }
-
 
 // Navigation
 const prevMonth = () => {
@@ -399,9 +438,13 @@ const removeAssignmentRange = async () => {
 
 // Data loading
 const loadPlanifications = async () => {
+  // Carica per tutti i mesi visibili
   const startDate = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}-01`
-  const endDay = new Date(currentYear.value, currentMonth.value + 1, 0).getDate()
-  const endDate = `${currentYear.value}-${String(currentMonth.value + 1).padStart(2, '0')}-${endDay}`
+  let endYear = currentYear.value
+  let endMonth = currentMonth.value + visibleMonths.value
+  if (endMonth > 12) { endMonth -= 12; endYear++ }
+  const endDay = new Date(endYear, endMonth, 0).getDate()
+  const endDate = `${endYear}-${String(endMonth).padStart(2, '0')}-${endDay}`
 
   const { data, error } = await supabase
     .from('planification')
@@ -472,6 +515,10 @@ onMounted(async () => {
 
 .active-cell {
   border: 1px solid #1976D2;
+}
+
+.month-separator {
+  border-left: 3px solid #333 !important;
 }
 
 .cell-content {
