@@ -124,6 +124,42 @@ export default {
             if (chefData && !chefError) {
               role = 'chef';
               userName = `${chefData.prenom} ${chefData.nom}`;
+              
+              // Migration automatique: si l'utilisateur a des heures en tant qu'ouvrier, les migrer vers chef
+              try {
+                const { data: oldHours } = await supabase
+                  .from('heures_ouvriers')
+                  .select('*')
+                  .eq('ouvrier_id', this.email);
+                
+                if (oldHours && oldHours.length > 0) {
+                  const migratedRows = oldHours.map(h => ({
+                    chantier_id: h.chantier_id,
+                    date: h.date,
+                    heures_normales: h.heures,
+                    total_heures: h.heures,
+                    chef_id: this.email,
+                    tarif_utilise: h.tarif_utilise,
+                    created_at: h.created_at
+                  }));
+                  
+                  // Vérifier qu'il n'y a pas déjà ces heures en tant que chef
+                  const { data: existingChef } = await supabase
+                    .from('heures_chef_propres')
+                    .select('date')
+                    .eq('chef_id', this.email);
+                  
+                  const existingDates = new Set((existingChef || []).map(h => h.date));
+                  const toMigrate = migratedRows.filter(h => !existingDates.has(h.date));
+                  
+                  if (toMigrate.length > 0) {
+                    await supabase.from('heures_chef_propres').insert(toMigrate);
+                    await supabase.from('heures_ouvriers').delete().eq('ouvrier_id', this.email);
+                  }
+                }
+              } catch (migErr) {
+                console.error('Migration heures ouvrier->chef:', migErr);
+              }
             } else {
               // 3. Cerca in collaborateurs
               const { data: ouvrierData, error: ouvrierError } = await supabase
