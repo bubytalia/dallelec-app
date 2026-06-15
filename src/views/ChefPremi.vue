@@ -249,7 +249,10 @@ const getDevisIndicators = (chantier) => {
     metres = devis.produits.reduce((sum, p) => sum + (Number(p.totalML) || Number(p.ml) || 0), 0);
   } else {
     metres = devis.produits
-      .filter(p => (p.nom || '').toLowerCase().includes('chemin de c'))
+      .filter(p => {
+        const nom = (p.nom || '').toLowerCase();
+        return nom.includes('chemin de c') || nom.includes('echelle') || nom.includes('échelle') || nom.includes('canale a grille') || nom.includes('canal g');
+      })
       .reduce((sum, p) => sum + (Number(p.totalML) || 0), 0);
   }
 
