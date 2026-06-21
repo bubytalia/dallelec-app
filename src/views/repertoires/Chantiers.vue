@@ -86,6 +86,14 @@
             <label>% Impresa</label>
             <input v-model.number="newChantier.percentualeImpresa" placeholder="30" class="form-control" type="number" step="1" min="0" max="100" />
           </div>
+          <div class="col-md-2">
+            <label>Acconto (CHF)</label>
+            <input v-model.number="newChantier.accontoMontant" class="form-control" type="number" step="0.01" placeholder="0" />
+          </div>
+          <div class="col-md-2">
+            <label>% Détraction</label>
+            <input v-model.number="newChantier.accontoPourcentage" class="form-control" type="number" step="1" min="0" max="100" placeholder="0" />
+          </div>
           <div class="col-12 text-end">
             <button type="submit" class="btn btn-primary">Ajouter</button>
           </div>
@@ -105,6 +113,7 @@
               <th>Chef Responsable</th>
               <th>Prix Régie/h</th>
               <th>% Impresa</th>
+              <th>Acconto</th>
               <th>État</th>
               <th>Interne</th>
               <th>Actions</th>
@@ -156,6 +165,10 @@
                   <input v-model.number="editChantier.percentualeImpresa" class="form-control" type="number" step="1" min="0" max="100" placeholder="30">
                 </td>
                 <td>
+                  <input v-model.number="editChantier.accontoMontant" class="form-control" type="number" step="0.01" placeholder="0" style="width:80px;display:inline-block">
+                  <input v-model.number="editChantier.accontoPourcentage" class="form-control" type="number" step="1" placeholder="%" style="width:60px;display:inline-block">
+                </td>
+                <td>
                   <button class="btn btn-success btn-sm" @click="updateChantier(chantier.id)">✔</button>
                   <button class="btn btn-secondary btn-sm" @click="cancelEdit">✖</button>
                 </td>
@@ -179,6 +192,12 @@
                 <td>{{ getChefName(chantier.capocantiere) }}</td>
                 <td>{{ chantier.prix_regie || '-' }} CHF</td>
                 <td>{{ chantier.percentuale_impresa || 30 }}%</td>
+                <td>
+                  <span v-if="chantier.acconto_montant > 0">
+                    {{ chantier.acconto_montant }} CHF ({{ chantier.acconto_pourcentage }}%)
+                  </span>
+                  <span v-else>-</span>
+                </td>
                 <td>
                   <span class="badge me-1" :class="{
                     'bg-warning': !chantier.stato_cantiere || chantier.stato_cantiere === 'a_commencer',
@@ -396,7 +415,9 @@ export default {
       modalitaResoconto: 'metrages',
       capocantiere: '',
       prixRegie: 75,
-      percentualeImpresa: 30
+      percentualeImpresa: 30,
+      accontoMontant: 0,
+      accontoPourcentage: 0
     });
 
     const newHeure = ref({
@@ -549,7 +570,9 @@ export default {
         type_metrage: typeMetrage,
         capocantiere: newChantier.value.capocantiere,
         prix_regie: newChantier.value.prixRegie,
-        percentuale_impresa: newChantier.value.percentualeImpresa
+        percentuale_impresa: newChantier.value.percentualeImpresa,
+        acconto_montant: newChantier.value.accontoMontant || 0,
+        acconto_pourcentage: newChantier.value.accontoPourcentage || 0
       }]);
       if (!error) {
         await fetchPrixRegieDefault();
@@ -564,7 +587,9 @@ export default {
           modalitaResoconto: 'metrages', 
           capocantiere: '', 
           prixRegie: newChantier.value.prixRegie, 
-          percentualeImpresa: 30 
+          percentualeImpresa: 30,
+          accontoMontant: 0,
+          accontoPourcentage: 0
         };
         fetchChantiers();
       }
@@ -611,7 +636,11 @@ export default {
 
     const startEdit = (chantier) => {
       editId.value = chantier.id;
-      editChantier.value = { ...chantier };
+      editChantier.value = { 
+        ...chantier,
+        accontoMontant: chantier.acconto_montant || 0,
+        accontoPourcentage: chantier.acconto_pourcentage || 0
+      };
     };
 
     const cancelEdit = () => {
@@ -635,7 +664,9 @@ export default {
         type_metrage: typeMetrage,
         capocantiere: editChantier.value.capocantiere,
         prix_regie: editChantier.value.prixRegie,
-        percentuale_impresa: editChantier.value.percentualeImpresa
+        percentuale_impresa: editChantier.value.percentualeImpresa,
+        acconto_montant: editChantier.value.accontoMontant || 0,
+        acconto_pourcentage: editChantier.value.accontoPourcentage || 0
       }).eq('id', id);
       if (!error) {
         cancelEdit();

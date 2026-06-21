@@ -369,11 +369,11 @@ const getRegiesData = (chantierId) => {
 // Calcul primes par chantier
 const premesCalculated = computed(() => {
   return chantiers.value.map(chantier => {
-    const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
+    const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id) && !f.is_acconto);
     if (facturesChantier.length === 0) return null;
 
-    // Fatturato totale TTC
-    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0), 0);
+    // Fatturato: usa montant_ht_brut (imponibile reale prima della detrazione) se disponibile
+    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ht_brut) || parseFloat(f.montant_ttc) || 0), 0);
 
     // Régies: heures et montant facturé
     const regiesData = getRegiesData(chantier.id);

@@ -273,7 +273,7 @@ const mesChantiersPrimes = computed(() => {
   const mesChantiers = chantiers.value.filter(c => c.capocantiere === currentUserEmail.value);
 
   return mesChantiers.map(chantier => {
-    const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id));
+    const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id) && !f.is_acconto);
     
     // Indicateurs devis
     const indicators = getDevisIndicators(chantier);
@@ -298,7 +298,7 @@ const mesChantiersPrimes = computed(() => {
       };
     }
 
-    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ttc) || 0), 0);
+    const importoTotaleFatturato = facturesChantier.reduce((sum, f) => sum + (parseFloat(f.montant_ht_brut) || parseFloat(f.montant_ttc) || 0), 0);
 
     // Régies: heures et montant facturé
     const regiesData = getRegiesData(chantier.id);

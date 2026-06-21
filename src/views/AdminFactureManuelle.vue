@@ -36,6 +36,27 @@
           </div>
         </div>
 
+        <!-- Checkbox Acconto -->
+        <div class="row mb-4" v-if="facture.chantierId">
+          <div class="col-md-4">
+            <div class="form-check">
+              <input v-model="facture.isAcconto" type="checkbox" class="form-check-input" id="isAcconto">
+              <label class="form-check-label" for="isAcconto">
+                <strong>💰 Facture d'acompte</strong>
+              </label>
+            </div>
+            <small class="text-muted">Si coché, cette facture ne sera pas prise en compte dans le calcul des primes</small>
+          </div>
+          <div class="col-md-8" v-if="selectedChantierAcconto > 0 && !facture.isAcconto">
+            <div class="alert alert-info py-2 mb-0">
+              <small>
+                <strong>ℹ️ Acompte actif:</strong> {{ selectedChantierAcconto.toFixed(2) }} CHF reçu — 
+                Détraction {{ selectedChantierPourcentage }}% appliquée automatiquement
+              </small>
+            </div>
+          </div>
+        </div>
+
         <!-- Lignes de facturation -->
         <h6>Lignes de facturation</h6>
         <table class="table">
@@ -128,13 +149,21 @@
                   <td><strong>Sous-total HT:</strong></td>
                   <td><strong>{{ totalHT.toFixed(2) }} CHF</strong></td>
                 </tr>
+                <tr v-if="detractionAcconto > 0 && !facture.isAcconto">
+                  <td class="text-warning"><strong>Détraction acompte ({{ selectedChantierPourcentage }}%):</strong></td>
+                  <td class="text-warning"><strong>-{{ detractionAcconto.toFixed(2) }} CHF</strong></td>
+                </tr>
+                <tr v-if="detractionAcconto > 0 && !facture.isAcconto">
+                  <td><strong>Net après détraction:</strong></td>
+                  <td><strong>{{ netApresDetraction.toFixed(2) }} CHF</strong></td>
+                </tr>
                 <tr>
                   <td>TVA (8.1%):</td>
-                  <td>{{ (totalHT * 0.081).toFixed(2) }} CHF</td>
+                  <td>{{ (montantFacturable * 0.081).toFixed(2) }} CHF</td>
                 </tr>
                 <tr class="table-primary">
                   <td><strong>Total TTC:</strong></td>
-                  <td><strong>{{ (totalHT * 1.081).toFixed(2) }} CHF</strong></td>
+                  <td><strong>{{ (montantFacturable * 1.081).toFixed(2) }} CHF</strong></td>
                 </tr>
               </tbody>
             </table>
@@ -192,10 +221,39 @@ const facture = ref({
   chantierId: '',
   conditionsPaiement: '30 jours net',
   notes: '',
+  isAcconto: false,
   lignes: [
     { description: '', unite: '', quantite: 1, prixUnitaire: 0 }
   ],
   regies: []
+});
+
+const selectedChantierAcconto = computed(() => {
+  if (!facture.value.chantierId) return 0;
+  const ch = chantiers.value.find(c => c.id === facture.value.chantierId || String(c.id) === String(facture.value.chantierId));
+  return ch?.acconto_montant || 0;
+});
+
+const selectedChantierPourcentage = computed(() => {
+  if (!facture.value.chantierId) return 0;
+  const ch = chantiers.value.find(c => c.id === facture.value.chantierId || String(c.id) === String(facture.value.chantierId));
+  return ch?.acconto_pourcentage || 0;
+});
+
+const detractionAcconto = computed(() => {
+  if (facture.value.isAcconto || selectedChantierPourcentage.value === 0) return 0;
+  return totalHT.value * (selectedChantierPourcentage.value / 100);
+});
+
+const netApresDetraction = computed(() => {
+  return totalHT.value - detractionAcconto.value;
+});
+
+const montantFacturable = computed(() => {
+  if (detractionAcconto.value > 0 && !facture.value.isAcconto) {
+    return netApresDetraction.value;
+  }
+  return totalHT.value;
 });
 
 const selectedChantierPrixRegie = computed(() => {
@@ -367,6 +425,7 @@ const loadFactureForEdit = async (factureId) => {
       conditionsPaiement: data.notes?.includes('Conditions:') ? 
         data.notes.split('Conditions: ')[1]?.split('\n')[0] || '30 jours net' : '30 jours net',
       notes: data.notes?.split('Conditions:')[0]?.trim() || '',
+      isAcconto: data.is_acconto || false,
       lignes: data.lignes || [{ description: '', unite: '', quantite: 1, prixUnitaire: 0 }],
       regies: data.regies_manuelles || []
     };
@@ -400,10 +459,14 @@ const sauvegarderFacture = async () => {
           date_facture: facture.value.dateFacture,
           date_echeance: calculateDateEcheance(facture.value.dateFacture, facture.value.conditionsPaiement),
           lignes: lignesFiltered,
-          montant_ht: totalHT.value,
-          montant_ttc: totalHT.value * 1.081,
+          montant_ht: montantFacturable.value,
+          montant_ht_brut: totalHT.value,
+          montant_ttc: montantFacturable.value * 1.081,
           notes: notesComplete,
-          regies_manuelles: facture.value.regies.length > 0 ? facture.value.regies : null
+          regies_manuelles: facture.value.regies.length > 0 ? facture.value.regies : null,
+          is_acconto: facture.value.isAcconto,
+          detraction_pourcentage: !facture.value.isAcconto ? selectedChantierPourcentage.value : 0,
+          detraction_montant: !facture.value.isAcconto ? detractionAcconto.value : 0
         })
         .eq('id', editingId.value);
       
@@ -423,13 +486,17 @@ const sauvegarderFacture = async () => {
           chantier_id: facture.value.chantierId || null,
           date_facture: facture.value.dateFacture,
           lignes: lignesFiltered,
-          montant_ht: totalHT.value,
+          montant_ht: montantFacturable.value,
+          montant_ht_brut: totalHT.value,
           taux_tva: 8.1,
-          montant_ttc: totalHT.value * 1.081,
+          montant_ttc: montantFacturable.value * 1.081,
           statut: 'emise',
           notes: notesComplete,
           date_echeance: calculateDateEcheance(facture.value.dateFacture, facture.value.conditionsPaiement),
           regies_manuelles: facture.value.regies.length > 0 ? facture.value.regies : null,
+          is_acconto: facture.value.isAcconto,
+          detraction_pourcentage: !facture.value.isAcconto ? selectedChantierPourcentage.value : 0,
+          detraction_montant: !facture.value.isAcconto ? detractionAcconto.value : 0,
           created_at: new Date().toISOString()
         }]);
       
