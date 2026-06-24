@@ -66,6 +66,13 @@
         </label>
         <div class="form-text">Cochez cette case pour générer un devis sans prix (utile pour les devis informatifs).</div>
       </div>
+      <div class="form-check mt-3">
+        <input class="form-check-input" type="checkbox" id="hideZones" v-model="hideZones" />
+        <label class="form-check-label" for="hideZones">
+          Regrouper tous les produits (sans séparation par zones)
+        </label>
+        <div class="form-text">Cochez cette case pour afficher tous les produits dans une seule liste, sans les titres de zone.</div>
+      </div>
     </div>
 
     <!-- Boutons de navigation -->
@@ -79,7 +86,7 @@
     <DevisPdf
       v-if="devisData?.modalita_prezzi !== 'aCorps'"
       ref="pdfRef"
-      :devisParZone="devisParZone"
+      :devisParZone="devisParZonePdf"
       :supplementParZone="supplementParZone"
       :nomClient="nomClient"
       :nomChantier="nomChantier"
@@ -161,6 +168,9 @@ const hideSupplementsList = ref(false);
 // Opzione per nascondere i prezzi nel PDF
 const hidePrices = ref(false);
 
+// Opzione per raggruppare tutti i prodotti senza zone
+const hideZones = ref(false);
+
 // Références aux composants PDF
 const pdfRef = ref(null);
 const pdfCorpsRef = ref(null);
@@ -204,6 +214,29 @@ const supplementParZone = computed(() => {
     }
   });
   return Object.entries(grouped).map(([nom, supplements]) => ({ nom, supplements }));
+});
+
+// Computed pour le PDF: si hideZones, regroupe et somme les produits identiques
+const devisParZonePdf = computed(() => {
+  if (!hideZones.value) return devisParZone.value;
+  
+  // Raggruppamento per article + taille
+  const merged = {};
+  devisParZone.value.forEach(zone => {
+    (zone.produits || []).forEach(p => {
+      const key = `${p.article}||${p.taille}`;
+      if (!merged[key]) {
+        merged[key] = { ...p, ml: Number(p.ml) || 0, totalML: Number(p.totalML) || 0, total: p.informativo ? 0 : (Number(p.total) || 0) };
+      } else {
+        merged[key].ml += Number(p.ml) || 0;
+        merged[key].totalML += Number(p.totalML) || 0;
+        if (!p.informativo) merged[key].total += Number(p.total) || 0;
+      }
+    });
+  });
+  
+  const produits = Object.values(merged).sort((a, b) => (a.article || '').localeCompare(b.article || ''));
+  return [{ nom: 'Tous les produits', produits }];
 });
 
 // Computed property che trova il paiement corretto
@@ -398,6 +431,11 @@ onMounted(async () => {
         hidePrices.value = data.hide_prices;
       }
       
+      // Carica opzione raggruppare zone
+      if (data.hide_zones !== undefined) {
+        hideZones.value = data.hide_zones;
+      }
+      
       // Imposta selectedPaiement DOPO aver caricato paiements
       if (data.paiement) {
         selectedPaiement.value = data.paiement;
@@ -444,6 +482,7 @@ const sauvegarder = async (asDraft) => {
         notes: notes.value,
         hide_supplements_list: hideSupplementsList.value,
         hide_prices: hidePrices.value,
+        hide_zones: hideZones.value,
         updated_at: new Date().toISOString(),
       })
       .eq('id', devisId);
