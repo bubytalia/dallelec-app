@@ -34,16 +34,31 @@ async function scanAllTables() {
     console.log('⚠️ Scanner SQL non disponibile, uso metodo alternativo...')
   }
   
-  // Fallback: testa tabelle conosciute + prova tabelle comuni
+  // Fallback: lista COMPLETA di tutte le tabelle esistenti (aggiornata 27/06/2026)
   const knownTables = [
-    'clients', 'chantiers', 'devis', 'produits', 'supplements', 
-    'familles', 'sousfamilles', 'techniciens', 'conditions', 'paiements',
-    'admins', 'chefdechantiers', 'collaborateurs', 'interimaires',
-    'factures', 'metrages', 'absences', 'configuration', 
-    'resoconti_percentuali', 'zone_convertite',
-    // Tabelle ore
+    // Anagrafiche
+    'clients', 'chantiers', 'admins', 'chefdechantiers', 
+    'collaborateurs', 'interimaires', 'techniciens',
+    'comptables', 'clients_vip',
+    // Preventivi e listino
+    'devis', 'produits', 'produits_vip', 'supplements', 
+    'familles', 'sousfamilles', 'conditions',
+    // Fatturazione
+    'factures', 'paiements', 'configurazione_fatture',
+    // Ore e presenze
     'heures_ouvriers', 'heures_chef_propres', 'heures_chef_interim',
-    // Altre possibili tabelle
+    'absences', 'solde_vacances',
+    // Metrages e resoconti
+    'metrages', 'resoconti_percentuali', 'zone_convertite',
+    // Pianificazione e premi
+    'planification', 'primes_paiements',
+    // Configurazione
+    'configuration', 'regies_manuelles',
+    // Modulo Materiali
+    'mat_fornitori', 'mat_articoli_fornitore', 'mat_distinte',
+    'mat_maggiorazioni', 'mat_offerte', 'mat_offerte_prezzi',
+    'mat_preventivi', 'mat_preventivi_righe', 'mat_distinte_supplements',
+    // Sistema (potrebbero essere vuote/protette)
     'users', 'profiles', 'settings', 'logs', 'audit_log'
   ]
   

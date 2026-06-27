@@ -109,6 +109,16 @@
       </div>
     </div>
 
+    <!-- Section Matériaux -->
+    <div class="row justify-content-center mt-4">
+      <div class="col-12">
+        <h5 class="text-purple mb-3" style="color: #7c3aed">📦 Matériaux</h5>
+      </div>
+      <div class="col-md-3 m-2">
+        <router-link to="/admin/materiali" class="btn btn-outline-dark w-100" style="border-color: #7c3aed; color: #7c3aed">📦 Gestion Matériaux</router-link>
+      </div>
+    </div>
+
     <!-- Section Administration -->
     <div class="row justify-content-center mt-4">
       <div class="col-12">

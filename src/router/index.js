@@ -145,6 +145,16 @@ const routes = [
   { path: '/admin/backup', name: 'AdminBackup', component: () => import('@/components/BackupSupabase.vue') },
   { path: '/aide', name: 'Aide', component: () => import('@/views/Aide.vue') },
 
+  // Modulo Materiali (isolato)
+  { path: '/admin/materiali', name: 'MateriaDashboard', component: () => import('@/views/materiali/MateriaDashboard.vue'), beforeEnter: requireRole(['admin']) },
+  { path: '/admin/materiali/fornitori', name: 'MateriaFornitori', component: () => import('@/views/materiali/MateriaFornitori.vue'), beforeEnter: requireRole(['admin']) },
+  { path: '/admin/materiali/fornitori/:fornitoreId/articoli', name: 'MateriaArticoliFornitore', component: () => import('@/views/materiali/MateriaArticoliFornitore.vue'), beforeEnter: requireRole(['admin']) },
+  { path: '/admin/materiali/distinte', name: 'MateriaDistinte', component: () => import('@/views/materiali/MateriaDistinte.vue'), beforeEnter: requireRole(['admin']) },
+
+
+  { path: '/admin/materiali/preventivi', name: 'MateriaPreventivi', component: () => import('@/views/materiali/MateriaPreventivi.vue'), beforeEnter: requireRole(['admin']) },
+  { path: '/admin/materiali/supplements', name: 'MateriaSupplements', component: () => import('@/views/materiali/MateriaSupplements.vue'), beforeEnter: requireRole(['admin']) },
+
 
   // Admin Métrages routes
   { path: '/admin/metrages', name: 'AdminMetragesSelection', component: AdminMetragesSelection, beforeEnter: requireRole(['admin']) },
