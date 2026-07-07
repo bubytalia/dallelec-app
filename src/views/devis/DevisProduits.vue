@@ -52,6 +52,16 @@
   >
     {{ recalculating ? '⏳ Recalcul...' : '⚠️ Recalculer prix et remises (données actuelles)' }}
   </button>
+  <!-- Ricalcolo prezzi Rail d'Énergie / Canaux au Sol -->
+  <button 
+    v-if="modalitaPrezzi === 'railEnergie'" 
+    class="btn btn-outline-danger me-2" 
+    style="border-width: 2px; font-weight: bold;" 
+    @click="recalculerPrixRail"
+    :disabled="recalculating"
+  >
+    {{ recalculating ? '⏳ Recalcul...' : '⚠️ Recalculer prix (catalogue actuel)' }}
+  </button>
   <!-- Ricalcolo prezzi VIP -->
   <button 
     v-if="useListinoVip" 
@@ -352,6 +362,71 @@ const recalculerPrix = async () => {
     alert(msg2);
   } catch (error) {
     console.error('Erreur recalcul prix:', error);
+    alert('Erreur: ' + error.message);
+  } finally {
+    recalculating.value = false;
+  }
+};
+
+/**
+ * Ricalcola tutti i prezzi del devis Rail d'Énergie / Canaux au Sol usando i prezzi catalogo attuali (senza remises).
+ */
+const recalculerPrixRail = async () => {
+  const msg = '⚠️ ATTENTION: Cette opération va recalculer TOUS les prix du devis '
+    + 'en utilisant les PRIX DE BASE actuels du catalogue produits.\n\n'
+    + 'Aucune remise ne sera appliquée (mode Rail d\'Énergie).\n\n'
+    + 'Les prix existants seront écrasés.\n\n'
+    + 'Voulez-vous continuer?';
+  if (!confirm(msg)) return;
+
+  recalculating.value = true;
+  try {
+    const { data: catalogueProduits, error: pErr } = await supabase
+      .from('produits')
+      .select('*');
+    if (pErr) throw pErr;
+
+    let updated = 0;
+    let notFound = [];
+    let prixChanges = [];
+
+    devisItems.value = devisItems.value.map(item => {
+      const itemArt = (item.article || '').trim().toLowerCase();
+      const catalogProd = catalogueProduits.find(p => 
+        (p.article || '').trim().toLowerCase() === itemArt
+      );
+      if (!catalogProd) {
+        notFound.push(item.article);
+        return item;
+      }
+
+      const oldPrix = item.prix;
+      const newPrix = Number(catalogProd.prix) || 0;
+      const newTotal = item.informativo ? 0 : item.totalML * newPrix;
+
+      if (Math.abs(oldPrix - newPrix) > 0.001) {
+        prixChanges.push(`${item.article}: ${oldPrix.toFixed(2)} → ${newPrix.toFixed(2)}`);
+      }
+      updated++;
+      return { ...item, prix: newPrix, total: newTotal };
+    });
+
+    let msg2 = `✅ Recalcul terminé (Rail d'Énergie)!\n\n`
+      + `Produits mis à jour: ${updated}/${devisItems.value.length}\n`;
+    if (prixChanges.length > 0) {
+      msg2 += `\n📊 Prix modifiés (${prixChanges.length}):\n`
+        + prixChanges.slice(0, 10).join('\n');
+      if (prixChanges.length > 10) msg2 += `\n... et ${prixChanges.length - 10} autres`;
+    } else {
+      msg2 += `\nAucun changement de prix détecté.`;
+    }
+    if (notFound.length > 0) {
+      msg2 += `\n\n⚠️ Articles non trouvés dans le catalogue: ${notFound.join(', ')}`;
+    }
+    msg2 += `\n\n⚠️ N'oubliez pas de SAUVEGARDER le devis.`;
+    alert(msg2);
+  } catch (error) {
+    console.error('Erreur recalcul prix rail:', error);
     alert('Erreur: ' + error.message);
   } finally {
     recalculating.value = false;
