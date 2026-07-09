@@ -178,6 +178,7 @@
                     <option value="envoyee">Envoyée</option>
                     <option value="payee">Payée</option>
                     <option value="en_retard">En retard</option>
+                    <option value="annulee">Annulée (NC)</option>
                   </select>
                 </td>
                 <td>
@@ -195,6 +196,9 @@
                   </button>
                   <button v-if="(facture.montant_ttc || facture.montantTTC || 0) === 0 && !isReadOnly" @click="corrigerFacture(facture)" class="btn btn-sm btn-warning me-1" title="Corriger montant">
                     🔧
+                  </button>
+                  <button v-if="!isReadOnly" @click="creerNoteCredit(facture)" class="btn btn-sm btn-outline-dark me-1" title="Note de crédit">
+                    📋 NC
                   </button>
                   <button v-if="!isReadOnly" @click="supprimerFacture(facture)" class="btn btn-sm btn-danger" title="Supprimer (test)">
                     🗑
@@ -877,6 +881,48 @@
       </div>
     </div>
 
+    <!-- Modal Note de Crédit -->
+    <div v-if="showNoteCreditModal" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5>📋 Créer Note de Crédit</h5>
+            <button @click="showNoteCreditModal = false" class="btn-close btn-close-white"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label>N° Facture concernée:</label>
+              <input v-model="noteCreditData.facture_numero" class="form-control" placeholder="F2026-038">
+            </div>
+            <div class="mb-3">
+              <label>Client:</label>
+              <input v-model="noteCreditData.client_nom" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label>Chantier:</label>
+              <input v-model="noteCreditData.chantier_nom" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label>Montant HT à créditer:</label>
+              <div class="input-group">
+                <input v-model.number="noteCreditData.montant_ht" type="number" step="0.01" class="form-control">
+                <span class="input-group-text">CHF</span>
+              </div>
+              <small class="text-muted">TTC calculé: {{ (noteCreditData.montant_ht * 1.081).toFixed(2) }} CHF</small>
+            </div>
+            <div class="mb-3">
+              <label>Motif:</label>
+              <textarea v-model="noteCreditData.motif" class="form-control" rows="2" placeholder="Annulation facture..."></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="confirmerNoteCredit" class="btn btn-dark">📋 Générer Note de Crédit</button>
+            <button @click="showNoteCreditModal = false" class="btn btn-secondary">Annuler</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Date Personnalisée -->
     <div v-if="showDatePersonnalisee" class="modal d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog">
@@ -961,6 +1007,11 @@ const filtreClient = ref('');
 const filtreStatut = ref('');
 const dateFacturePersonnalisee = ref('');
 const showDatePersonnalisee = ref(false);
+
+// Note di credito
+const notesCredit = ref([]);
+const showNoteCreditModal = ref(false);
+const noteCreditData = ref({ facture_numero: '', client_nom: '', chantier_nom: '', montant_ht: 0, motif: '' });
 
 // Resoconti percentuali en attente d'approbation
 const resocontiEnAttente = computed(() => {
@@ -2304,7 +2355,8 @@ const getStatutLabel = (statut) => {
     emise: 'Émise',
     envoyee: 'Envoyée', 
     payee: 'Payée',
-    en_retard: 'En retard'
+    en_retard: 'En retard',
+    annulee: 'Annulée (NC)'
   };
   return labels[statut] || statut;
 };
@@ -2314,7 +2366,8 @@ const getStatutClass = (statut) => {
     emise: 'badge bg-secondary',
     envoyee: 'badge bg-info',
     payee: 'badge bg-success',
-    en_retard: 'badge bg-danger'
+    en_retard: 'badge bg-danger',
+    annulee: 'badge bg-dark'
   };
   return classes[statut] || 'badge bg-secondary';
 };
@@ -2324,7 +2377,8 @@ const getStatutSelectClass = (statut) => {
     emise: 'text-secondary',
     envoyee: 'text-info',
     payee: 'text-success',
-    en_retard: 'text-danger'
+    en_retard: 'text-danger',
+    annulee: 'text-dark'
   };
   return classes[statut] || 'text-secondary';
 };
@@ -4554,6 +4608,166 @@ const confermaRiapertura = async () => {
     console.error('Errore riapertura:', error);
     alert('Errore: ' + error.message);
   }
+};
+
+// === NOTE DE CRÉDIT ===
+const creerNoteCredit = (facture) => {
+  const chantier = chantiers.value.find(c => c.id == (facture.chantier_id || facture.chantierId));
+  noteCreditData.value = {
+    facture_numero: facture.numero,
+    facture_id: facture.id,
+    client_nom: facture.client_nom || facture.clientNom || '',
+    chantier_nom: chantier ? (chantier.numero_cantiere ? 'N ' + chantier.numero_cantiere + ' - ' : '') + chantier.nom : '',
+    chantier_id: facture.chantier_id || facture.chantierId,
+    montant_ht: Number(facture.montant_ht || 0),
+    motif: 'Annulation facture ' + facture.numero,
+    resoconto_id: facture.resoconto_id || null,
+    metrage_id: facture.metrage_id || null
+  };
+  showNoteCreditModal.value = true;
+};
+
+const confirmerNoteCredit = async () => {
+  if (!noteCreditData.value.montant_ht || noteCreditData.value.montant_ht <= 0) {
+    alert('Veuillez indiquer un montant HT valide');
+    return;
+  }
+  if (!confirm('Creer Note de Credit de ' + noteCreditData.value.montant_ht.toFixed(2) + ' CHF HT? Cela annulera la facture.')) return;
+
+  try {
+    const anno = new Date().getFullYear();
+    const { data: ncExistantes } = await supabase.from('notes_credit').select('numero').like('numero', 'NC' + anno + '-%');
+    let ultimoNum = 0;
+    (ncExistantes || []).forEach(nc => {
+      const match = nc.numero.match(/NC\d{4}-(\d+)/);
+      if (match) ultimoNum = Math.max(ultimoNum, parseInt(match[1]));
+    });
+    const numeroNC = 'NC' + anno + '-' + String(ultimoNum + 1).padStart(3, '0');
+    const montantHT = Number(noteCreditData.value.montant_ht);
+    const montantTTC = montantHT * 1.081;
+
+    const { error: ncError } = await supabase.from('notes_credit').insert([{
+      numero: numeroNC,
+      facture_numero: noteCreditData.value.facture_numero,
+      facture_id: noteCreditData.value.facture_id,
+      chantier_id: noteCreditData.value.chantier_id,
+      client_nom: noteCreditData.value.client_nom,
+      date_emission: new Date().toISOString().split('T')[0],
+      montant_ht: montantHT,
+      taux_tva: 8.1,
+      montant_ttc: montantTTC,
+      motif: noteCreditData.value.motif,
+      created_at: new Date().toISOString()
+    }]);
+    if (ncError) throw ncError;
+
+    await supabase.from('factures').update({ statut: 'annulee' }).eq('id', noteCreditData.value.facture_id);
+
+    if (noteCreditData.value.resoconto_id) {
+      await supabase.from('resoconti_percentuali').update({ status: 'pending_approval' }).eq('id', noteCreditData.value.resoconto_id);
+    }
+    if (noteCreditData.value.metrage_id) {
+      await supabase.from('metrages').update({ status: 'en_attente', facture: false, facture_numero: null, facture_date: null }).eq('id', noteCreditData.value.metrage_id);
+    }
+
+    await genererPDFNoteCredit(numeroNC, noteCreditData.value, montantHT, montantTTC);
+    alert('Note de Credit ' + numeroNC + ' creee! Facture ' + noteCreditData.value.facture_numero + ' annulee.');
+    showNoteCreditModal.value = false;
+    await loadData();
+  } catch (error) {
+    console.error('Erreur creation note de credit:', error);
+    alert('Erreur: ' + error.message);
+  }
+};
+
+const genererPDFNoteCredit = async (numero, data, montantHT, montantTTC) => {
+  let logo;
+  try { const m = await import('@/assets/logo.jpg'); logo = m.default; } catch (e) {}
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const chantier = chantiers.value.find(c => c.id == data.chantier_id);
+  const clientData = clients.value.find(c => c.nom === data.client_nom);
+
+  if (logo) doc.addImage(logo, 'JPEG', 15, 20, 70, 15);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('DALLELEC Sarl - CHE-280.028.822', 195, 22, { align: 'right' });
+  doc.text('Rue de Bourgogne 25', 195, 28, { align: 'right' });
+  doc.text('1203 Geneve', 195, 34, { align: 'right' });
+  doc.text('IBAN: CH09 0027 9279 3507 4901 H', 195, 40, { align: 'right' });
+
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(200, 0, 0);
+  doc.text('NOTE DE CREDIT N. ' + numero, 15, 50);
+  doc.setTextColor(0, 0, 0);
+  doc.setLineWidth(0.5);
+  doc.line(15, 55, 195, 55);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  let y = 65;
+  doc.text('Date: ' + new Date().toLocaleDateString('fr-FR'), 15, y);
+  y += 8;
+  doc.text('Facture annulee: ' + data.facture_numero, 15, y);
+  y += 12;
+  doc.setFont('helvetica', 'bold');
+  doc.text('CLIENT:', 15, y);
+  y += 6;
+  doc.setFontSize(11);
+  doc.text(data.client_nom, 15, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  y += 5;
+  if (clientData && clientData.adresse) { doc.text(clientData.adresse, 15, y); y += 5; }
+  if (clientData && clientData.ville) { doc.text(clientData.ville, 15, y); y += 5; }
+
+  if (chantier) {
+    doc.setFont('helvetica', 'bold');
+    doc.text('CHANTIER N. ' + (chantier.numero_cantiere || 'N/A'), 115, 67);
+    doc.setFont('helvetica', 'normal');
+    doc.text(chantier.nom, 115, 73);
+  }
+
+  y += 15;
+  doc.setFont('helvetica', 'bold');
+  doc.text('MOTIF:', 15, y);
+  y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.text(data.motif || 'Annulation facture', 15, y);
+
+  y += 20;
+  autoTable(doc, {
+    head: [['Description', 'Montant']],
+    body: [['Annulation facture ' + data.facture_numero, montantHT.toFixed(2) + ' CHF']],
+    startY: y,
+    theme: 'grid',
+    headStyles: { fillColor: [180, 0, 0], textColor: 255, fontSize: 10 },
+    bodyStyles: { fontSize: 10 }
+  });
+
+  y = doc.lastAutoTable.finalY + 15;
+  const tva = montantHT * 0.081;
+  doc.setFillColor(245, 245, 245);
+  doc.rect(115, y - 5, 85, 30, 'F');
+  doc.setDrawColor(200, 200, 200);
+  doc.rect(115, y - 5, 85, 30);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+  doc.text('Total HT:', 120, y + 2);
+  doc.text(montantHT.toFixed(2) + ' CHF', 195, y + 2, { align: 'right' });
+  doc.text('TVA (8.1%):', 120, y + 9);
+  doc.text(tva.toFixed(2) + ' CHF', 195, y + 9, { align: 'right' });
+  doc.setLineWidth(0.5);
+  doc.line(120, y + 13, 195, y + 13);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(200, 0, 0);
+  doc.text('TOTAL CREDIT TTC:', 120, y + 20);
+  doc.text(montantTTC.toFixed(2) + ' CHF', 195, y + 20, { align: 'right' });
+
+  const clientName = (data.client_nom || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+  doc.save(numero + '_' + clientName + '.pdf');
 };
 
 onMounted(() => {
