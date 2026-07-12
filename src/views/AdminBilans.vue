@@ -105,7 +105,6 @@
               <tr>
                 <th>Chantier</th>
                 <th>Client</th>
-                <th>Devis HT</th>
                 <th>Facturé HT</th>
                 <th>Coût Heures</th>
                 <th>Marge</th>
@@ -117,7 +116,6 @@
               <tr v-for="bilan in bilansChantiers" :key="bilan.chantierId">
                 <td>{{ bilan.chantierNom }}</td>
                 <td>{{ bilan.clientNom }}</td>
-                <td>{{ formatCurrency(bilan.devisTotal) }}</td>
                 <td>{{ formatCurrency(bilan.facture) }}</td>
                 <td>{{ formatCurrency(bilan.coutsHeures) }}</td>
                 <td :class="bilan.marge >= 0 ? 'text-success' : 'text-danger'">
@@ -139,7 +137,6 @@
               </tr>
               <tr class="table-secondary fw-bold">
                 <td colspan="2">TOTAUX</td>
-                <td>{{ formatCurrency(totauxChantiers.devis) }}</td>
                 <td>{{ formatCurrency(totauxChantiers.facture) }}</td>
                 <td>{{ formatCurrency(totauxChantiers.couts) }}</td>
                 <td :class="totauxChantiers.marge >= 0 ? 'text-success' : 'text-danger'">
@@ -170,7 +167,6 @@
             <thead>
               <tr>
                 <th>Mois</th>
-                <th>Devis HT</th>
                 <th>Facturé HT</th>
                 <th>Coût Heures</th>
                 <th>Primes</th>
@@ -182,7 +178,6 @@
             <tbody>
               <tr v-for="bilan in bilansMensuels" :key="bilan.mois">
                 <td>{{ bilan.moisNom }}</td>
-                <td>{{ formatCurrency(bilan.devis) }}</td>
                 <td>{{ formatCurrency(bilan.facture) }}</td>
                 <td>{{ formatCurrency(bilan.coutsHeures) }}</td>
                 <td>{{ formatCurrency(bilan.primes) }}</td>
@@ -198,7 +193,6 @@
               </tr>
               <tr class="table-secondary fw-bold">
                 <td>TOTAUX</td>
-                <td>{{ formatCurrency(totauxMensuels.devis) }}</td>
                 <td>{{ formatCurrency(totauxMensuels.facture) }}</td>
                 <td>{{ formatCurrency(totauxMensuels.couts) }}</td>
                 <td>{{ formatCurrency(totauxMensuels.primes) }}</td>
@@ -230,7 +224,6 @@
               <tr>
                 <th>Client</th>
                 <th>Nb Chantiers</th>
-                <th>Devis HT</th>
                 <th>Facturé HT</th>
                 <th>Coût Heures</th>
                 <th>Marge</th>
@@ -242,7 +235,6 @@
               <tr v-for="bilan in bilansClients" :key="bilan.clientId">
                 <td>{{ bilan.clientNom }}</td>
                 <td>{{ bilan.nbChantiers }}</td>
-                <td>{{ formatCurrency(bilan.devis) }}</td>
                 <td>{{ formatCurrency(bilan.facture) }}</td>
                 <td>{{ formatCurrency(bilan.coutsHeures) }}</td>
                 <td :class="bilan.marge >= 0 ? 'text-success' : 'text-danger'">
@@ -258,7 +250,6 @@
               <tr class="table-secondary fw-bold">
                 <td>TOTAUX</td>
                 <td>{{ totauxClients.nbChantiers }}</td>
-                <td>{{ formatCurrency(totauxClients.devis) }}</td>
                 <td>{{ formatCurrency(totauxClients.facture) }}</td>
                 <td>{{ formatCurrency(totauxClients.couts) }}</td>
                 <td :class="totauxClients.marge >= 0 ? 'text-success' : 'text-danger'">
