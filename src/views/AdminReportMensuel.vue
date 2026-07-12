@@ -135,6 +135,14 @@ const calculateSingleMonth = async (mois) => {
     const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email).reduce((s, h) => s + (h.heures || 0), 0);
     const heuresTravaillees = oreChef + oreInterim + oreOuvrier;
 
+    // Calcul heures nuit par employé
+    const heuresNuit50_chef = (heuresChef || []).filter(h => h.chef_id === emp.email && h.supplement_pourcentage === 50).reduce((s, h) => s + (h.total_heures || 0), 0);
+    const heuresNuit100_chef = (heuresChef || []).filter(h => h.chef_id === emp.email && h.supplement_pourcentage === 100).reduce((s, h) => s + (h.total_heures || 0), 0);
+    const heuresNuit50_ouvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email && h.supplement_pourcentage === 50).reduce((s, h) => s + (h.heures || 0), 0);
+    const heuresNuit100_ouvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email && h.supplement_pourcentage === 100).reduce((s, h) => s + (h.heures || 0), 0);
+    const heuresNuit50 = heuresNuit50_chef + heuresNuit50_ouvrier;
+    const heuresNuit100 = heuresNuit100_chef + heuresNuit100_ouvrier;
+
     // Compter les jours effectivement travaillés (jours uniques avec heures > 0)
     const joursSet = new Set();
     (heuresChef || []).filter(h => h.chef_id === emp.email && (h.total_heures || h.heures_normales || 0) > 0).forEach(h => joursSet.add(h.date));
@@ -175,7 +183,7 @@ const calculateSingleMonth = async (mois) => {
     const vacNouveauSolde = vacSoldePrecedent + vacAcquises - vacPrises;
 
     const { data: existing } = await supabase.from('solde_heures').select('id').eq('employee_email', emp.email).eq('mois', mois).single();
-    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, jours_travailles: joursTravailles, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
+    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, jours_travailles: joursTravailles, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, heures_nuit_50: heuresNuit50, heures_nuit_100: heuresNuit100, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
     if (existing) { await supabase.from('solde_heures').update(record).eq('id', existing.id); }
     else { await supabase.from('solde_heures').insert(record); }
 
@@ -250,8 +258,10 @@ const buildEmployeBlock = (b, nom, showBonus = false) => {
   html += `<div class="col-box"><h3>📊 Bilan Heures</h3><table>
     <tr><td>Heures prévues</td><td>${b.heures_prevues.toFixed(2)}h</td></tr>
     <tr><td>Heures travaillées</td><td>${b.heures_travaillees.toFixed(2)}h</td></tr>
-    <tr><td>Jours travaillés (paniers)</td><td>${b.jours_travailles || 0} j</td></tr>
-    <tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
+    <tr><td>Jours travaillés (paniers)</td><td>${b.jours_travailles || 0} j</td></tr>`;
+  if ((b.heures_nuit_50 || 0) > 0) html += `<tr><td>🌙 Heures nuit +50%</td><td class="text-warning">${(b.heures_nuit_50).toFixed(2)}h</td></tr>`;
+  if ((b.heures_nuit_100 || 0) > 0) html += `<tr><td>🌙 Heures nuit +100%</td><td class="text-danger">${(b.heures_nuit_100).toFixed(2)}h</td></tr>`;
+  html += `<tr><td>Jours fériés payés</td><td>${(b.heures_jours_feries || 0).toFixed(2)}h</td></tr>
     <tr><td>Autres absences payées</td><td>${((b.heures_absences_payees || 0) - (b.heures_jours_feries || 0)).toFixed(2)}h</td></tr>
     <tr><td>Absences non payées</td><td>${b.heures_absences_non_payees.toFixed(2)}h</td></tr>
     <tr><td>Solde précédent</td><td>${b.solde_precedent.toFixed(2)}h</td></tr>

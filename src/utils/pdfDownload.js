@@ -82,6 +82,8 @@ export const generateFicheIndividuellePDF = (data) => {
     ['Heures prévues', `${bilan.heuresPrevues}h`],
     ['Heures travaillées', `${bilan.heuresTravaillees}h`],
     ['Jours travaillés (paniers)', `${bilan.joursTravailles} j`],
+    ...(bilan.heuresNuit50 && parseFloat(bilan.heuresNuit50) > 0 ? [['Heures nuit +50%', `${bilan.heuresNuit50}h`]] : []),
+    ...(bilan.heuresNuit100 && parseFloat(bilan.heuresNuit100) > 0 ? [['Heures nuit +100%', `${bilan.heuresNuit100}h`]] : []),
     ['Jours fériés payés', `${bilan.joursFeries}h`],
     ['Autres absences payées', `${bilan.absPayees}h`],
     ['Absences non payées', `${bilan.absNonPayees}h`],

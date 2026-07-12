@@ -162,7 +162,9 @@
                     <th>Type</th>
                     <th>Chantier</th>
                     <th>Heures</th>
+                    <th>Travail</th>
                     <th>Coût/H</th>
+                    <th>Suppl.</th>
                     <th>Total</th>
                   </tr>
                 </thead>
@@ -173,8 +175,17 @@
                     <td>{{ heure.type === 'propre' ? 'Chef' : 'Collaborateur' }}</td>
                     <td>{{ getChantierName(heure.chantierId) }}</td>
                     <td>{{ heure.heures }}</td>
+                    <td>
+                      <span v-if="heure.supplementPourcentage === 50" class="badge bg-warning text-dark">Nuit +50%</span>
+                      <span v-else-if="heure.supplementPourcentage === 100" class="badge bg-danger">Nuit +100%</span>
+                      <span v-else class="text-muted">Normal</span>
+                    </td>
                     <td>{{ heure.coutHoraire }} CHF/h</td>
-                    <td>{{ (heure.heures * heure.coutHoraire).toFixed(2) }} CHF</td>
+                    <td>
+                      <span v-if="heure.supplementPourcentage > 0" class="badge bg-warning text-dark">+{{ heure.supplementPourcentage }}%</span>
+                      <span v-else class="text-muted">-</span>
+                    </td>
+                    <td>{{ (heure.heures * heure.coutHoraire * (1 + (heure.supplementPourcentage || 0) / 100)).toFixed(2) }} CHF</td>
                   </tr>
                 </tbody>
               </table>
@@ -326,7 +337,7 @@ const totalHeures = computed(() => {
 })
 
 const totalCout = computed(() => {
-  return heuresDetaillees.value.reduce((sum, h) => sum + (h.heures * h.coutHoraire), 0)
+  return heuresDetaillees.value.reduce((sum, h) => sum + (h.heures * h.coutHoraire * (1 + (h.supplementPourcentage || 0) / 100)), 0)
 })
 
 const nombreChantiers = computed(() => {
@@ -346,7 +357,7 @@ const totalHeuresChefs = computed(() => {
 const totalCoutChefs = computed(() => {
   return heuresDetaillees.value
     .filter(h => h.type === 'propre')
-    .reduce((sum, h) => sum + (h.heures * h.coutHoraire), 0)
+    .reduce((sum, h) => sum + (h.heures * h.coutHoraire * (1 + (h.supplementPourcentage || 0) / 100)), 0)
 })
 
 const totalHeuresCollaborateurs = computed(() => {
@@ -358,7 +369,7 @@ const totalHeuresCollaborateurs = computed(() => {
 const totalCoutCollaborateurs = computed(() => {
   return heuresDetaillees.value
     .filter(h => h.type === 'interim')
-    .reduce((sum, h) => sum + (h.heures * h.coutHoraire), 0)
+    .reduce((sum, h) => sum + (h.heures * h.coutHoraire * (1 + (h.supplementPourcentage || 0) / 100)), 0)
 })
 
 const availableYears = computed(() => {
@@ -427,7 +438,8 @@ const calculerBilans = async () => {
       heures: h.total_heures || h.heures_normales || h.heures || 0,
       userId,
       chantierId: h.chantier_id,
-      coutHoraire: h.tarif_utilise || getCoutHoraire(userId, type)
+      coutHoraire: h.tarif_utilise || getCoutHoraire(userId, type),
+      supplementPourcentage: h.supplement_pourcentage || 0
     }
   })
 
@@ -461,15 +473,17 @@ const calculerBilans = async () => {
     }
 
     if (h.type === 'propre') {
+      const mult = 1 + (h.supplementPourcentage || 0) / 100;
       bilans[h.chantierId].heuresChef += h.heures
-      bilans[h.chantierId].coutChef += h.heures * h.coutHoraire
+      bilans[h.chantierId].coutChef += h.heures * h.coutHoraire * mult
     } else {
+      const mult = 1 + (h.supplementPourcentage || 0) / 100;
       bilans[h.chantierId].heuresCollaborateurs += h.heures
-      bilans[h.chantierId].coutCollaborateurs += h.heures * h.coutHoraire
+      bilans[h.chantierId].coutCollaborateurs += h.heures * h.coutHoraire * mult
     }
 
     bilans[h.chantierId].totalHeures += h.heures
-    bilans[h.chantierId].totalCout += h.heures * h.coutHoraire
+    bilans[h.chantierId].totalCout += h.heures * h.coutHoraire * (1 + (h.supplementPourcentage || 0) / 100)
   })
 
   // Calculer ricavi, margine e redditività per ogni cantiere

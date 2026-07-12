@@ -164,6 +164,12 @@ const calculateSingleMonth = async (mois) => {
     const oreOuvrier = (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email).reduce((s, h) => s + (h.heures || 0), 0);
     const heuresTravaillees = oreChef + oreInterim + oreOuvrier;
 
+    // Heures nuit
+    const heuresNuit50 = (heuresChef || []).filter(h => h.chef_id === emp.email && h.supplement_pourcentage === 50).reduce((s, h) => s + (h.total_heures || 0), 0)
+      + (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email && h.supplement_pourcentage === 50).reduce((s, h) => s + (h.heures || 0), 0);
+    const heuresNuit100 = (heuresChef || []).filter(h => h.chef_id === emp.email && h.supplement_pourcentage === 100).reduce((s, h) => s + (h.total_heures || 0), 0)
+      + (heuresOuvriers || []).filter(h => h.ouvrier_id === emp.email && h.supplement_pourcentage === 100).reduce((s, h) => s + (h.heures || 0), 0);
+
     // Compter les jours effectivement travaillés
     const joursSet = new Set();
     (heuresChef || []).filter(h => h.chef_id === emp.email && (h.total_heures || h.heures_normales || 0) > 0).forEach(h => joursSet.add(h.date));
@@ -205,7 +211,7 @@ const calculateSingleMonth = async (mois) => {
 
     // Upsert solde_heures
     const { data: existing } = await supabase.from('solde_heures').select('id').eq('employee_email', emp.email).eq('mois', mois).single();
-    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, jours_travailles: joursTravailles, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
+    const record = { employee_email: emp.email, mois, heures_prevues: heuresPrevues, heures_travaillees: heuresTravaillees, jours_travailles: joursTravailles, heures_absences_payees: absPayees, heures_absences_non_payees: absNonPayees, heures_jours_feries: joursFeries, heures_nuit_50: heuresNuit50, heures_nuit_100: heuresNuit100, solde_precedent: soldePrecedent, delta_mois: delta, solde_final: soldeFinal, updated_at: new Date().toISOString() };
     if (existing) { await supabase.from('solde_heures').update(record).eq('id', existing.id); }
     else { await supabase.from('solde_heures').insert(record); }
 
@@ -338,6 +344,8 @@ const generatePDFIndividuel = async () => {
       heuresPrevues: calcHeuresPrevues.toFixed(2),
       heuresTravaillees: calcHeuresTravaillees.toFixed(2),
       joursTravailles: calcJoursTravailles,
+      heuresNuit50: (bilan.heures_nuit_50 || 0).toFixed(2),
+      heuresNuit100: (bilan.heures_nuit_100 || 0).toFixed(2),
       joursFeries: calcJoursFeries.toFixed(2),
       absPayees: (calcAbsPayees - calcJoursFeries).toFixed(2),
       absNonPayees: calcAbsNonPayees.toFixed(2),

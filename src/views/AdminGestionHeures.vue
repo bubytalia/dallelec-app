@@ -74,6 +74,8 @@
                 <th>Type</th>
                 <th>Chantier</th>
                 <th>Heures</th>
+                <th>Type</th>
+                <th>Suppl.</th>
                 <th>Tarif/h</th>
                 <th>Total</th>
                 <th>Actions</th>
@@ -111,8 +113,30 @@
                   >
                   <span v-else>{{ heure.heures }}h</span>
                 </td>
+                <td>
+                  <select
+                    v-if="editingId === `${heure.type}-${heure.id}`"
+                    v-model="editingHeure.type_travail"
+                    class="form-select form-select-sm"
+                    style="width: 130px"
+                  >
+                    <option value="Normal">Normal</option>
+                    <option value="Nuit +50%">Nuit +50%</option>
+                    <option value="Nuit +100%">Nuit +100%</option>
+                    <option value="Weekend">Weekend</option>
+                  </select>
+                  <span v-else :class="getTypeTravailBadge(heure.type_travail)">
+                    {{ heure.type_travail || 'Normal' }}
+                  </span>
+                </td>
+                <td>
+                  <span v-if="(heure.supplement_pourcentage || 0) > 0" class="badge bg-warning text-dark">
+                    +{{ heure.supplement_pourcentage }}%
+                  </span>
+                  <span v-else class="text-muted">-</span>
+                </td>
                 <td>{{ heure.tarif_utilise || '-' }} CHF</td>
-                <td>{{ ((heure.heures || 0) * (heure.tarif_utilise || 0)).toFixed(2) }} CHF</td>
+                <td>{{ getCoutEffectif(heure).toFixed(2) }} CHF</td>
                 <td>
                   <div v-if="editingId === `${heure.type}-${heure.id}`">
                     <button @click="saveEdit" class="btn btn-sm btn-success me-1">✔</button>
@@ -179,7 +203,7 @@ const chargerHeures = async () => {
   if (filterDateDebut.value) query1 = query1.gte('date', filterDateDebut.value)
   if (filterDateFin.value) query1 = query1.lte('date', filterDateFin.value)
   const { data: data1 } = await query1.order('date', { ascending: false })
-  heuresChefPropres.value = (data1 || []).map(h => ({ ...h, type: 'chef_propre', heures: h.total_heures, employe_nom: getEmployeName(h.chef_id) }))
+  heuresChefPropres.value = (data1 || []).map(h => ({ ...h, type: 'chef_propre', heures: h.total_heures, employe_nom: getEmployeName(h.chef_id), type_travail: h.type_travail || 'Normal', supplement_pourcentage: h.supplement_pourcentage || 0 }))
 
   // Carica heures_chef_interim
   let query2 = supabase.from('heures_chef_interim').select('*')
@@ -188,7 +212,7 @@ const chargerHeures = async () => {
   if (filterDateDebut.value) query2 = query2.gte('date', filterDateDebut.value)
   if (filterDateFin.value) query2 = query2.lte('date', filterDateFin.value)
   const { data: data2 } = await query2.order('date', { ascending: false })
-  heuresChefInterim.value = (data2 || []).map(h => ({ ...h, type: 'chef_interim', heures: h.total_heures, employe_nom: h.interinaire_nom || getEmployeName(h.chef_id) }))
+  heuresChefInterim.value = (data2 || []).map(h => ({ ...h, type: 'chef_interim', heures: h.total_heures, employe_nom: h.interinaire_nom || getEmployeName(h.chef_id), type_travail: h.type_travail || 'Normal', supplement_pourcentage: h.supplement_pourcentage || 0 }))
 
   // Carica heures_ouvriers
   let query3 = supabase.from('heures_ouvriers').select('*')
@@ -197,7 +221,7 @@ const chargerHeures = async () => {
   if (filterDateDebut.value) query3 = query3.gte('date', filterDateDebut.value)
   if (filterDateFin.value) query3 = query3.lte('date', filterDateFin.value)
   const { data: data3 } = await query3.order('date', { ascending: false })
-  heuresOuvriers.value = (data3 || []).map(h => ({ ...h, type: 'ouvrier', employe_nom: h.ouvrier_nom || getEmployeName(h.ouvrier_id) }))
+  heuresOuvriers.value = (data3 || []).map(h => ({ ...h, type: 'ouvrier', employe_nom: h.ouvrier_nom || getEmployeName(h.ouvrier_id), type_travail: h.type_travail || 'Normal', supplement_pourcentage: h.supplement_pourcentage || 0 }))
 }
 
 const heuresFiltrees = computed(() => {
@@ -251,13 +275,32 @@ const cancelEdit = () => {
   editingHeure.value = {}
 }
 
+const getSupplementFromType = (typeTravail) => {
+  if (typeTravail === 'Nuit +50%') return 50
+  if (typeTravail === 'Nuit +100%') return 100
+  return 0
+}
+
+const getTypeTravailBadge = (type) => {
+  if (type === 'Nuit +50%') return 'badge bg-warning text-dark'
+  if (type === 'Nuit +100%') return 'badge bg-danger'
+  return 'badge bg-secondary'
+}
+
+const getCoutEffectif = (heure) => {
+  const mult = 1 + (heure.supplement_pourcentage || 0) / 100
+  return (heure.heures || 0) * (heure.tarif_utilise || 0) * mult
+}
+
 const saveEdit = async () => {
   const tableName = editingHeure.value.type === 'chef_propre' ? 'heures_chef_propres' :
                     editingHeure.value.type === 'chef_interim' ? 'heures_chef_interim' : 'heures_ouvriers'
   
+  const suppPct = getSupplementFromType(editingHeure.value.type_travail)
+  
   const updateData = editingHeure.value.type === 'ouvrier' 
-    ? { heures: editingHeure.value.heures, chantier_id: editingHeure.value.chantier_id }
-    : { total_heures: editingHeure.value.heures, heures_normales: editingHeure.value.heures, chantier_id: editingHeure.value.chantier_id }
+    ? { heures: editingHeure.value.heures, chantier_id: editingHeure.value.chantier_id, type_travail: editingHeure.value.type_travail, supplement_pourcentage: suppPct }
+    : { total_heures: editingHeure.value.heures, heures_normales: editingHeure.value.heures, chantier_id: editingHeure.value.chantier_id, type_travail: editingHeure.value.type_travail, supplement_pourcentage: suppPct }
   
   const { error } = await supabase
     .from(tableName)
@@ -303,8 +346,8 @@ const exporterPDF = () => {
   doc.text(`Total: ${totalHeures.value.toFixed(2)}h — ${heuresFiltrees.value.length} entrées`, 15, 27)
 
   const head = exportSansPrix.value
-    ? [['Date', 'Employé', 'Type', 'Chantier', 'Heures']]
-    : [['Date', 'Employé', 'Type', 'Chantier', 'Heures', 'Tarif/h', 'Total CHF']]
+    ? [['Date', 'Employé', 'Type', 'Chantier', 'Heures', 'Travail', 'Suppl.']]
+    : [['Date', 'Employé', 'Type', 'Chantier', 'Heures', 'Travail', 'Suppl.', 'Tarif/h', 'Total CHF']]
 
   const body = heuresFiltrees.value.map(h => {
     const row = [
@@ -312,10 +355,12 @@ const exporterPDF = () => {
       h.employe_nom,
       getTypeLabel(h.type),
       getChantierName(h.chantier_id),
-      `${(h.heures || 0).toFixed(2)}`
+      `${(h.heures || 0).toFixed(2)}`,
+      h.type_travail || 'Normal',
+      (h.supplement_pourcentage || 0) > 0 ? `+${h.supplement_pourcentage}%` : '-'
     ]
     if (!exportSansPrix.value) {
-      row.push(`${h.tarif_utilise || '-'}`, `${((h.heures || 0) * (h.tarif_utilise || 0)).toFixed(2)}`)
+      row.push(`${h.tarif_utilise || '-'}`, `${getCoutEffectif(h).toFixed(2)}`)
     }
     return row
   })

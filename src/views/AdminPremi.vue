@@ -405,7 +405,21 @@ const premesCalculated = computed(() => {
 
     // Coût horaire moyen pondéré (sur heures HORS régies)
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
-    const coutTotal = (heuresChef * tarifChef) + (heuresOuvriers * tarifOuvrier) + (heuresInterim * tarifInterim);
+    
+    // Calcul coût avec suppléments nuit
+    const coutChef = heuresPropres.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+    
+    const coutInterim = heuresInterimData.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifInterim * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+    
+    const coutOuvriers = heuresOuvriersData.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.heures || 0) * tarifOuvrier * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+    
+    const coutTotal = coutChef + coutOuvriers + coutInterim;
     const costoOrarioMedio = heuresReelles > 0 ? coutTotal / heuresTotales : tarifChef;
 
     // Heures prévues et gagnées

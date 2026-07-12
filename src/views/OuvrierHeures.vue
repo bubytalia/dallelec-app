@@ -49,11 +49,17 @@
               <div class="col-md-6 mb-3">
                 <label>Type de travail:</label>
                 <select v-model="nouvelleHeure.typeTravail" class="form-control">
-                  <option value="Normal">Normal</option>
-                  <option value="Heures supplémentaires">Heures supplémentaires</option>
-                  <option value="Nuit">Travail de nuit</option>
+                  <option value="Normal">Normal (pas de supplément)</option>
+                  <option value="Nuit +50%">🌙 Nuit +50% (20h-24h)</option>
+                  <option value="Nuit +100%">🌙 Nuit +100% (00h-06h)</option>
                   <option value="Weekend">Weekend</option>
                 </select>
+                <small v-if="nouvelleHeure.typeTravail === 'Nuit +50%'" class="text-warning">
+                  Supplément 50% sur le brut (heures entre 20h et 24h)
+                </small>
+                <small v-if="nouvelleHeure.typeTravail === 'Nuit +100%'" class="text-danger">
+                  Supplément 100% sur le brut (heures entre 00h et 06h)
+                </small>
               </div>
             </div>
             <div class="mb-3">
@@ -87,6 +93,7 @@
                     <th>Chantier</th>
                     <th>Heures</th>
                     <th>Type</th>
+                    <th>Suppl.</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -95,7 +102,17 @@
                     <td>{{ formatDate(heure.date) }}</td>
                     <td>{{ getChantierName(heure.chantier_id) }}</td>
                     <td>{{ heure.heures }}h</td>
-                    <td>{{ heure.type_travail || 'Normal' }}</td>
+                    <td>
+                      <span :class="getTypeBadgeClass(heure.type_travail)">
+                        {{ heure.type_travail || 'Normal' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span v-if="heure.supplement_pourcentage > 0" class="badge bg-warning text-dark">
+                        +{{ heure.supplement_pourcentage }}%
+                      </span>
+                      <span v-else class="text-muted">-</span>
+                    </td>
                     <td>
                       <button 
                         v-if="isCurrentWeek(heure.date)"
@@ -271,6 +288,8 @@ const ajouterHeure = async () => {
     
     const tarifActuel = ouvrierData?.cout_horaire || 35; // fallback
     
+    const supplementPourcentage = getSupplementPourcentage(nouvelleHeure.value.typeTravail);
+    
     const { error } = await supabase
       .from('heures_ouvriers')
       .insert([{
@@ -278,6 +297,7 @@ const ajouterHeure = async () => {
         date: nouvelleHeure.value.date,
         heures: nouvelleHeure.value.heures,
         type_travail: nouvelleHeure.value.typeTravail,
+        supplement_pourcentage: supplementPourcentage,
         notes: nouvelleHeure.value.notes,
         ouvrier_id: userEmail,
         ouvrier_nom: userName || userEmail,
@@ -321,6 +341,18 @@ const supprimerHeure = async (id) => {
     console.error('Erreur lors de la suppression:', error);
     alert('Erreur lors de la suppression: ' + error.message);
   }
+};
+
+const getSupplementPourcentage = (typeTravail) => {
+  if (typeTravail === 'Nuit +50%') return 50;
+  if (typeTravail === 'Nuit +100%') return 100;
+  return 0;
+};
+
+const getTypeBadgeClass = (type) => {
+  if (type === 'Nuit +50%') return 'badge bg-warning text-dark';
+  if (type === 'Nuit +100%') return 'badge bg-danger';
+  return 'badge bg-secondary';
 };
 
 const getChantierName = (id) => {

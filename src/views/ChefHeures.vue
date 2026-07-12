@@ -39,6 +39,21 @@
                 </option>
               </select>
             </div>
+            <div class="mb-3">
+              <label>Type de travail:</label>
+              <select v-model="newHeure.typeTravail" class="form-control">
+                <option value="Normal">Normal (pas de supplément)</option>
+                <option value="Nuit +50%">🌙 Nuit +50% (20h-24h)</option>
+                <option value="Nuit +100%">🌙 Nuit +100% (00h-06h)</option>
+                <option value="Weekend">Weekend</option>
+              </select>
+              <small v-if="newHeure.typeTravail === 'Nuit +50%'" class="text-warning">
+                Supplément 50% sur le brut (20h-24h)
+              </small>
+              <small v-if="newHeure.typeTravail === 'Nuit +100%'" class="text-danger">
+                Supplément 100% sur le brut (00h-06h)
+              </small>
+            </div>
             <button @click="addHeurePropre" class="btn btn-primary" :disabled="!newHeure.chantierId">
               Ajouter mes heures
             </button>
@@ -84,6 +99,21 @@
                 </option>
               </select>
             </div>
+            <div class="mb-3">
+              <label>Type de travail:</label>
+              <select v-model="newHeureInterim.typeTravail" class="form-control">
+                <option value="Normal">Normal (pas de supplément)</option>
+                <option value="Nuit +50%">🌙 Nuit +50% (20h-24h)</option>
+                <option value="Nuit +100%">🌙 Nuit +100% (00h-06h)</option>
+                <option value="Weekend">Weekend</option>
+              </select>
+              <small v-if="newHeureInterim.typeTravail === 'Nuit +50%'" class="text-warning">
+                Supplément 50% sur le brut (20h-24h)
+              </small>
+              <small v-if="newHeureInterim.typeTravail === 'Nuit +100%'" class="text-danger">
+                Supplément 100% sur le brut (00h-06h)
+              </small>
+            </div>
             <button @click="addHeureInterim" class="btn btn-success" :disabled="!newHeureInterim.chantierId">
               Ajouter heures intérim
             </button>
@@ -102,6 +132,7 @@
               <th>Chantier</th>
               <th>Date</th>
               <th>Heures</th>
+              <th>Type</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -110,6 +141,11 @@
               <td>{{ getChantierName(heure.chantier_id) }}</td>
               <td>{{ formatDate(heure.date) }}</td>
               <td>{{ heure.total_heures }}</td>
+              <td>
+                <span :class="getTypeBadgeClass(heure.type_travail)">
+                  {{ heure.type_travail || 'Normal' }}
+                </span>
+              </td>
               <td>
                 <button 
                   v-if="isCurrentWeek(heure.date)"
@@ -134,6 +170,7 @@
               <th>Date</th>
               <th>Intérimaire</th>
               <th>Heures</th>
+              <th>Type</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -143,6 +180,11 @@
               <td>{{ formatDate(heure.date) }}</td>
               <td>{{ heure.interinaire_nom }}</td>
               <td>{{ heure.total_heures }}</td>
+              <td>
+                <span :class="getTypeBadgeClass(heure.type_travail)">
+                  {{ heure.type_travail || 'Normal' }}
+                </span>
+              </td>
               <td>
                 <button 
                   v-if="isCurrentWeek(heure.date)"
@@ -220,15 +262,29 @@ const generateHeuresOptions = () => {
 const newHeure = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
-  heures: ''
+  heures: '',
+  typeTravail: 'Normal'
 });
 
 const newHeureInterim = ref({
   chantierId: '',
   date: new Date().toISOString().split('T')[0],
   interimaireId: '',
-  heures: ''
+  heures: '',
+  typeTravail: 'Normal'
 });
+
+const getSupplementPourcentage = (typeTravail) => {
+  if (typeTravail === 'Nuit +50%') return 50;
+  if (typeTravail === 'Nuit +100%') return 100;
+  return 0;
+};
+
+const getTypeBadgeClass = (type) => {
+  if (type === 'Nuit +50%') return 'badge bg-warning text-dark';
+  if (type === 'Nuit +100%') return 'badge bg-danger';
+  return 'badge bg-secondary';
+};
 
 const logout = async () => {
   try {
@@ -322,6 +378,8 @@ const addHeurePropre = async () => {
         date: newHeure.value.date,
         heures_normales: newHeure.value.heures,
         total_heures: newHeure.value.heures,
+        type_travail: newHeure.value.typeTravail,
+        supplement_pourcentage: getSupplementPourcentage(newHeure.value.typeTravail),
         chef_id: userEmail,
         tarif_utilise: tarifActuel
       }]);
@@ -331,7 +389,8 @@ const addHeurePropre = async () => {
     newHeure.value = {
       chantierId: '',
       date: new Date().toISOString().split('T')[0],
-      heures: ''
+      heures: '',
+      typeTravail: 'Normal'
     };
     fetchHeuresPropres();
   } catch (error) {
@@ -366,6 +425,8 @@ const addHeureInterim = async () => {
         interinaire_nom: getInterimaireName(newHeureInterim.value.interimaireId),
         heures_normales: newHeureInterim.value.heures,
         total_heures: newHeureInterim.value.heures,
+        type_travail: newHeureInterim.value.typeTravail,
+        supplement_pourcentage: getSupplementPourcentage(newHeureInterim.value.typeTravail),
         chef_id: userEmail,
         tarif_utilise: tarifActuel
       }]);
@@ -376,7 +437,8 @@ const addHeureInterim = async () => {
       chantierId: '',
       date: new Date().toISOString().split('T')[0],
       interimaireId: '',
-      heures: ''
+      heures: '',
+      typeTravail: 'Normal'
     };
     fetchHeuresInterim();
   } catch (error) {

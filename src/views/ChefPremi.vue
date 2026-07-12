@@ -82,7 +82,7 @@
           <div class="col-md-6">
             <table class="table table-sm mb-0">
               <tr>
-                <td>Heures prévues</td>
+                <td>Heures prévues <small class="text-muted">(base normale)</small></td>
                 <td class="text-end">{{ chantier.heuresPrevues }}h</td>
               </tr>
               <tr>
@@ -327,7 +327,21 @@ const mesChantiersPrimes = computed(() => {
     const heuresReelles = heuresTotales - heuresRegies;
 
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
-    const coutTotal = (heuresChef * tarifChef) + (heuresOuvriers * tarifOuvrier) + (heuresInterim * tarifInterim);
+    
+    // Calcul coût avec suppléments nuit
+    const coutChef = heuresPropres.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+    
+    const coutInterim = heuresInterimData.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifInterim * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+    
+    const coutOuvriers = heuresOuvriersData.value
+      .filter(h => String(h.chantier_id) === String(chantier.id))
+      .reduce((sum, h) => sum + (h.heures || 0) * tarifOuvrier * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+    
+    const coutTotal = coutChef + coutOuvriers + coutInterim;
     const costoOrarioMedio = heuresTotales > 0 ? coutTotal / heuresTotales : tarifChef;
 
     const heuresPrevues = costoOrarioMedio > 0 ? budgetOreDisponibile / costoOrarioMedio : 0;
