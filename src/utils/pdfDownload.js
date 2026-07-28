@@ -159,7 +159,8 @@ export const generateFicheIndividuellePDF = (data) => {
 
     let totalBonus = 0;
     primes.forEach(p => {
-      doc.text(p.chantierNom, margin + 3, py);
+      const label = p.typePaiement === 'acconto' ? `${p.chantierNom} (Acompte)` : p.chantierNom;
+      doc.text(label, margin + 3, py);
       doc.text(`${p.eff.toFixed(2)} CHF`, margin + 80, py);
       doc.text(`${p.reg.toFixed(2)} CHF`, margin + 115, py);
       doc.setFont('helvetica', 'bold');

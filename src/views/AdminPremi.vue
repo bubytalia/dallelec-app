@@ -142,6 +142,9 @@
                   <span v-if="prime.payee" class="badge bg-success">
                     ✅ Payé {{ getMonthLabel(prime.moisPaiement) }}
                   </span>
+                  <span v-else-if="prime.hasAcconto" class="badge bg-info text-dark">
+                    💰 Acompte {{ formatCurrency(prime.montantAcconto) }} - Solde {{ formatCurrency(prime.soldeRestant) }}
+                  </span>
                   <span v-else-if="prime.primeTotale > 0" class="badge bg-warning text-dark">
                     ⏳ À payer
                   </span>
@@ -149,10 +152,10 @@
                 </td>
                 <td>
                   <button @click="voirDetail(prime)" class="btn btn-sm btn-outline-info me-1">👁</button>
-                  <button v-if="prime.primeTotale > 0 && !prime.payee" @click="ouvrirPaiement(prime)" class="btn btn-sm btn-outline-success" title="Marquer comme payé">
+                  <button v-if="prime.primeTotale > 0 && !prime.payee" @click="ouvrirPaiement(prime)" class="btn btn-sm btn-outline-success" title="Payer / Acompte">
                     💰
                   </button>
-                  <button v-if="prime.payee" @click="annulerPaiement(prime)" class="btn btn-sm btn-outline-danger" title="Annuler paiement">
+                  <button v-if="prime.payee || prime.hasAcconto" @click="annulerPaiement(prime)" class="btn btn-sm btn-outline-danger" title="Annuler paiement">
                     ↩
                   </button>
                 </td>
@@ -247,7 +250,25 @@
             <button @click="showPaiementModal = false" class="btn-close"></button>
           </div>
           <div class="modal-body">
-            <p><strong>Montant (brut):</strong> {{ formatCurrency(paiementForm.montant) }}</p>
+            <p><strong>Prime totale:</strong> {{ formatCurrency(paiementForm.montant) }}</p>
+            <div v-if="paiementForm.hasAcconto" class="alert alert-info py-2">
+              Acompte déjà payé: <strong>{{ formatCurrency(paiementForm.montantAcconto) }}</strong> — Solde restant: <strong>{{ formatCurrency(paiementForm.soldeRestant) }}</strong>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Type de paiement</label>
+              <select v-model="paiementForm.typePaiement" class="form-select">
+                <option value="acconto">Acompte (montant partiel)</option>
+                <option value="solde">Solde (paiement final)</option>
+              </select>
+            </div>
+            <div v-if="paiementForm.typePaiement === 'acconto'" class="mb-3">
+              <label class="form-label">Montant de l'acompte (CHF)</label>
+              <input type="number" v-model="paiementForm.montantAccontoInput" class="form-control" step="0.01" min="0" :max="paiementForm.montant" />
+            </div>
+            <div v-else class="mb-3">
+              <label class="form-label">Montant payé (CHF)</label>
+              <input type="number" v-model="paiementForm.montantSolde" class="form-control" step="0.01" />
+            </div>
             <div class="mb-3">
               <label class="form-label">Mois de la fiche de paie</label>
               <input type="month" v-model="paiementForm.moisPaiement" class="form-control" />
@@ -291,13 +312,13 @@ const primesPaiements = ref([]);
 const showDetail = ref(false);
 const detailPrime = ref({});
 const showPaiementModal = ref(false);
-const paiementForm = ref({ chantierId: null, capocantiere: '', montant: 0, moisPaiement: '' });
+const paiementForm = ref({ chantierId: null, capocantiere: '', montant: 0, moisPaiement: '', typePaiement: 'solde', montantAcconto: 0 });
 
 // Chargement données
 const loadData = async () => {
   try {
     const [ch, fa, me, hp, hi, ho, cdc] = await Promise.all([
-      supabase.from('chantiers').select('*').neq('type', 'interne'),
+      supabase.from('chantiers').select('*, chef_secondaire').neq('type', 'interne'),
       supabase.from('factures').select('*'),
       supabase.from('metrages').select('*'),
       supabase.from('heures_chef_propres').select('*').order('date', { ascending: false }).limit(5000),
@@ -367,9 +388,10 @@ const getRegiesData = (chantierId) => {
   return { heures, montant };
 };
 
-// Calcul primes par chantier
+// Calcul primes par chantier - génère une entrée par chef (capocantiere + chef_secondaire si présent)
 const premesCalculated = computed(() => {
-  return chantiers.value.map(chantier => {
+  const result = [];
+  chantiers.value.forEach(chantier => {
     const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id) && !f.is_acconto);
     if (facturesChantier.length === 0) return null;
 
@@ -435,39 +457,53 @@ const premesCalculated = computed(() => {
     const primaFactura = [...facturesChantier].sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
     const dateFacturation = primaFactura?.date_facture ? new Date(primaFactura.date_facture) : new Date();
 
-    // Statut paiement
-    const paiement = primesPaiements.value.find(pp => pp.chantier_id === chantier.id && pp.capocantiere === capocantiere);
+    // Chefs impliqués: capocantiere + chef_secondaire si présent
+    const chefsList = [capocantiere];
+    if (chantier.chef_secondaire) chefsList.push(chantier.chef_secondaire);
+    const diviseur = chefsList.length; // 1 ou 2
 
-    return {
-      chantierId: chantier.id,
-      chantierNom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
-      clientNom: chantier.client || 'N/A',
-      capocantiere,
-      moisFacturation: dateFacturation.getMonth() + 1,
-      anneeFacturation: dateFacturation.getFullYear(),
-      budgetDisponible: Math.round(budgetOreDisponibile * 100) / 100,
-      heuresPrevues: Math.round(heuresPrevues * 10) / 10,
-      heuresReelles: Math.round(heuresReelles * 10) / 10,
-      heuresGagnees: Math.round(heuresGagnees * 10) / 10,
-      heuresRegies: Math.round(heuresRegies * 10) / 10,
-      primeEfficacite: Math.round(primeEfficacite * 100) / 100,
-      primeRegies: Math.round(primeRegies * 100) / 100,
-      primeTotale: Math.round(primeTotale * 100) / 100,
-      enAttivo,
-      // Paiement
-      payee: !!paiement,
-      moisPaiement: paiement?.mois_paiement || '',
-      // Détails modal
-      importoFatturato: importoTotaleFatturato,
-      montantRegies: regiesData.montant,
-      fatturatHorsRegies: Math.round(fatturatHorsRegies * 100) / 100,
-      percentualeImpresa,
-      costoOrarioMedio: Math.round(costoOrarioMedio * 100) / 100,
-      heuresChef: Math.round(heuresChef * 10) / 10,
-      heuresOuvriers: Math.round(heuresOuvriers * 10) / 10,
-      heuresInterim: Math.round(heuresInterim * 10) / 10
-    };
-  }).filter(Boolean);
+    chefsList.forEach(chefEmail => {
+      // Statut paiement pour ce chef
+      const paiement = primesPaiements.value.find(pp => String(pp.chantier_id) === String(chantier.id) && pp.capocantiere === chefEmail);
+      const montantAcconto = parseFloat(paiement?.montant_acconto) || 0;
+      const primeTotaleChef = Math.round((primeTotale / diviseur) * 100) / 100;
+      const soldeRestant = Math.round((primeTotaleChef - montantAcconto) * 100) / 100;
+
+      result.push({
+        chantierId: chantier.id,
+        chantierNom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
+        clientNom: chantier.client || 'N/A',
+        capocantiere: chefEmail,
+        moisFacturation: dateFacturation.getMonth() + 1,
+        anneeFacturation: dateFacturation.getFullYear(),
+        budgetDisponible: Math.round(budgetOreDisponibile * 100) / 100,
+        heuresPrevues: Math.round(heuresPrevues * 10) / 10,
+        heuresReelles: Math.round(heuresReelles * 10) / 10,
+        heuresGagnees: Math.round(heuresGagnees * 10) / 10,
+        heuresRegies: Math.round(heuresRegies * 10) / 10,
+        primeEfficacite: Math.round((primeEfficacite / diviseur) * 100) / 100,
+        primeRegies: Math.round((primeRegies / diviseur) * 100) / 100,
+        primeTotale: primeTotaleChef,
+        enAttivo,
+        // Paiement
+        payee: !!paiement && paiement.type_paiement === 'solde',
+        moisPaiement: paiement?.mois_paiement || '',
+        montantAcconto,
+        soldeRestant,
+        hasAcconto: montantAcconto > 0,
+        // Détails modal
+        importoFatturato: importoTotaleFatturato,
+        montantRegies: regiesData.montant,
+        fatturatHorsRegies: Math.round(fatturatHorsRegies * 100) / 100,
+        percentualeImpresa,
+        costoOrarioMedio: Math.round(costoOrarioMedio * 100) / 100,
+        heuresChef: Math.round(heuresChef * 10) / 10,
+        heuresOuvriers: Math.round(heuresOuvriers * 10) / 10,
+        heuresInterim: Math.round(heuresInterim * 10) / 10
+      });
+    });
+  });
+  return result;
 });
 
 // Filtrage
@@ -548,28 +584,38 @@ const ouvrirPaiement = (prime) => {
     chantierId: prime.chantierId,
     capocantiere: prime.capocantiere,
     montant: prime.primeTotale,
-    moisPaiement: ''
+    moisPaiement: '',
+    typePaiement: prime.hasAcconto ? 'solde' : 'acconto',
+    montantAccontoInput: 0,
+    montantSolde: prime.hasAcconto ? prime.soldeRestant : prime.primeTotale,
+    montantAcconto: prime.montantAcconto,
+    soldeRestant: prime.soldeRestant,
+    hasAcconto: prime.hasAcconto
   };
   showPaiementModal.value = true;
 };
 
 const enregistrerPaiement = async () => {
-  const { chantierId, capocantiere, montant, moisPaiement } = paiementForm.value;
+  const { chantierId, capocantiere, montant, moisPaiement, typePaiement, montantAccontoInput, montantSolde, montantAcconto } = paiementForm.value;
   if (!moisPaiement) return;
 
-  // Trouver le détail de la prime pour sauvegarder efficacité et régies
   const primeDetail = premesCalculated.value.find(p => p.chantierId === chantierId && p.capocantiere === capocantiere);
+  
+  const montantPagato = typePaiement === 'acconto' ? parseFloat(montantAccontoInput) || 0 : parseFloat(montantSolde) || montant;
+  const nuovoAcconto = typePaiement === 'acconto' ? (montantAcconto + montantPagato) : 0;
+
   await supabase.from('primes_paiements').upsert({
     chantier_id: chantierId,
     capocantiere,
-    montant,
+    montant: typePaiement === 'solde' ? montantPagato : montant,
     mois_paiement: moisPaiement,
+    type_paiement: typePaiement,
+    montant_acconto: nuovoAcconto,
     prime_efficacite: primeDetail?.primeEfficacite || 0,
     prime_regies: primeDetail?.primeRegies || 0,
     chantier_nom: primeDetail?.chantierNom || ''
   }, { onConflict: 'chantier_id,capocantiere' });
 
-  // Reload paiements
   const { data } = await supabase.from('primes_paiements').select('*');
   primesPaiements.value = data || [];
   showPaiementModal.value = false;

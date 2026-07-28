@@ -1,0 +1,3 @@
+ALTER TABLE chantiers ADD COLUMN IF NOT EXISTS chef_secondaire TEXT DEFAULT NULL;
+ALTER TABLE primes_paiements ADD COLUMN IF NOT EXISTS type_paiement TEXT DEFAULT 'solde';
+ALTER TABLE primes_paiements ADD COLUMN IF NOT EXISTS montant_acconto NUMERIC DEFAULT 0;

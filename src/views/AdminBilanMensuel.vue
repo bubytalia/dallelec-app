@@ -333,7 +333,9 @@ const generatePDFIndividuel = async () => {
     chantierNom: p.chantier_nom || 'Chantier ' + p.chantier_id,
     eff: parseFloat(p.prime_efficacite) || 0,
     reg: parseFloat(p.prime_regies) || 0,
-    total: parseFloat(p.montant) || 0
+    total: parseFloat(p.montant) || 0,
+    typePaiement: p.type_paiement || 'solde',
+    montantAcconto: parseFloat(p.montant_acconto) || 0
   }));
 
   generateFicheIndividuellePDF({
