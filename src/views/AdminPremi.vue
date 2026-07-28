@@ -109,7 +109,10 @@
             </thead>
             <tbody>
               <tr v-for="prime in chef.primes" :key="prime.chantierId" :class="prime.payee ? 'table-success' : ''">
-                <td><strong>{{ prime.chantierNom }}</strong></td>
+                <td>
+                  <strong>{{ prime.chantierNom }}</strong>
+                  <button @click="ouvrirChefSec(prime)" class="btn btn-xs btn-outline-secondary ms-1" style="font-size:10px;padding:1px 4px" title="Gérer chef secondaire">👥</button>
+                </td>
                 <td>{{ prime.clientNom }}</td>
                 <td>{{ formatCurrency(prime.budgetDisponible) }}</td>
                 <td>{{ prime.heuresPrevues }}h</td>
@@ -241,6 +244,33 @@
         </div>
       </div>
     </div>
+    <!-- Modal Chef Secondaire -->
+    <div v-if="showChefSecModal" class="modal d-block" style="background: rgba(0,0,0,0.5)">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5>👥 Chef Secondaire - {{ chefSecForm.chantierNom }}</h5>
+            <button @click="showChefSecModal = false" class="btn-close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Chef secondaire (partage la prime 50/50)</label>
+              <select v-model="chefSecForm.chefSecondaire" class="form-select">
+                <option value="">— Aucun (prime 100% au chef principal) —</option>
+                <option v-for="chef in chefdechantiers" :key="chef.email" :value="chef.email">
+                  {{ chef.prenom }} {{ chef.nom }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button @click="showChefSecModal = false" class="btn btn-secondary">Annuler</button>
+            <button @click="sauvegarderChefSec" class="btn btn-primary">✅ Sauvegarder</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Paiement -->
     <div v-if="showPaiementModal" class="modal d-block" style="background: rgba(0,0,0,0.5)">
       <div class="modal-dialog">
@@ -313,6 +343,8 @@ const showDetail = ref(false);
 const detailPrime = ref({});
 const showPaiementModal = ref(false);
 const paiementForm = ref({ chantierId: null, capocantiere: '', montant: 0, moisPaiement: '', typePaiement: 'solde', montantAcconto: 0 });
+const showChefSecModal = ref(false);
+const chefSecForm = ref({ chantierId: null, chantierNom: '', chefSecondaire: '' });
 
 // Chargement données
 const loadData = async () => {
@@ -574,6 +606,27 @@ const kpis = computed(() => ({
 }));
 
 // Méthodes
+const ouvrirChefSec = (prime) => {
+  const chantier = chantiers.value.find(c => String(c.id) === String(prime.chantierId));
+  chefSecForm.value = {
+    chantierId: prime.chantierId,
+    chantierNom: prime.chantierNom,
+    chefSecondaire: chantier?.chef_secondaire || ''
+  };
+  showChefSecModal.value = true;
+};
+
+const sauvegarderChefSec = async () => {
+  const { chantierId, chefSecondaire } = chefSecForm.value;
+  await supabase.from('chantiers')
+    .update({ chef_secondaire: chefSecondaire || null })
+    .eq('id', chantierId);
+  // Aggiorna localmente
+  const idx = chantiers.value.findIndex(c => String(c.id) === String(chantierId));
+  if (idx !== -1) chantiers.value[idx].chef_secondaire = chefSecondaire || null;
+  showChefSecModal.value = false;
+};
+
 const voirDetail = (prime) => {
   detailPrime.value = prime;
   showDetail.value = true;
