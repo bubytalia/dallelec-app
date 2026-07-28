@@ -386,10 +386,10 @@ const premesCalculated = computed(() => {
     const percentualeImpresa = chantier.percentuale_impresa || 30;
     const budgetOreDisponibile = fatturatHorsRegies * (1 - percentualeImpresa / 100);
 
-    // Heures par type (TOUTES les heures travaillées)
-    const heuresChef = heuresPropres.value
-      .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + getHeures(h), 0);
+    // Heures par type - SEULEMENT les heures du capocantiere pour le calcul des primes
+    const capocantiere = chantier.capocantiere || '';
+    const hpCapo = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id) && h.chef_id === capocantiere);
+    const heuresChef = hpCapo.reduce((sum, h) => sum + getHeures(h), 0);
 
     const heuresInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -407,9 +407,8 @@ const premesCalculated = computed(() => {
     // Coût horaire moyen pondéré (sur heures HORS régies)
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     
-    // Calcul coût avec suppléments nuit
-    const coutChef = heuresPropres.value
-      .filter(h => String(h.chantier_id) === String(chantier.id))
+    // Calcul coût avec suppléments nuit - seulement heures du capocantiere
+    const coutChef = hpCapo
       .reduce((sum, h) => sum + getHeures(h) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutInterim = heuresInterimData.value
@@ -438,13 +437,13 @@ const premesCalculated = computed(() => {
     const dateFacturation = primaFactura?.date_facture ? new Date(primaFactura.date_facture) : new Date();
 
     // Statut paiement
-    const paiement = primesPaiements.value.find(pp => pp.chantier_id === chantier.id && pp.capocantiere === chantier.capocantiere);
+    const paiement = primesPaiements.value.find(pp => pp.chantier_id === chantier.id && pp.capocantiere === capocantiere);
 
     return {
       chantierId: chantier.id,
       chantierNom: chantier.numero_cantiere ? `N° ${chantier.numero_cantiere} - ${chantier.nom}` : chantier.nom,
       clientNom: chantier.client || 'N/A',
-      capocantiere: chantier.capocantiere || '',
+      capocantiere,
       moisFacturation: dateFacturation.getMonth() + 1,
       anneeFacturation: dateFacturation.getFullYear(),
       budgetDisponible: Math.round(budgetOreDisponibile * 100) / 100,

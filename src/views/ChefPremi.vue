@@ -310,9 +310,10 @@ const mesChantiersPrimes = computed(() => {
     const percentualeImpresa = chantier.percentuale_impresa || 30;
     const budgetOreDisponibile = fatturatHorsRegies * (1 - percentualeImpresa / 100);
 
-    const heuresChef = heuresPropres.value
-      .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+    // Heures: seulement celles du capocantiere (pas des autres chefs)
+    const capo = chantier.capocantiere || '';
+    const hpCapo = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id) && h.chef_id === capo);
+    const heuresChef = hpCapo.reduce((sum, h) => sum + (h.total_heures || 0), 0);
 
     const heuresInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -328,9 +329,8 @@ const mesChantiersPrimes = computed(() => {
 
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     
-    // Calcul coût avec suppléments nuit
-    const coutChef = heuresPropres.value
-      .filter(h => String(h.chantier_id) === String(chantier.id))
+    // Calcul coût avec suppléments nuit - seulement heures du capocantiere
+    const coutChef = hpCapo
       .reduce((sum, h) => sum + (h.total_heures || 0) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutInterim = heuresInterimData.value
