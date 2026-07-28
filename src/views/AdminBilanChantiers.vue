@@ -272,6 +272,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../supabase.js'
 import RetourButton from '../components/RetourButton.vue'
 import jsPDF from 'jspdf'
+import { getHeures } from '@/composables/useHeures.js'
 
 // Références réactives
 const chantiers = ref([])
@@ -435,7 +436,7 @@ const calculerBilans = async () => {
     return {
       ...h,
       type,
-      heures: h.total_heures || h.heures_normales || h.heures || 0,
+      heures: getHeures(h),
       userId,
       chantierId: h.chantier_id,
       coutHoraire: h.tarif_utilise || getCoutHoraire(userId, type),

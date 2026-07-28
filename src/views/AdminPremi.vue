@@ -269,6 +269,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
+import { getHeures } from '@/composables/useHeures.js';
 
 // Filtres
 const selectedChef = ref('');
@@ -388,11 +389,11 @@ const premesCalculated = computed(() => {
     // Heures par type (TOUTES les heures travaillées)
     const heuresChef = heuresPropres.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+      .reduce((sum, h) => sum + getHeures(h), 0);
 
     const heuresInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+      .reduce((sum, h) => sum + getHeures(h), 0);
 
     const heuresOuvriers = heuresOuvriersData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -409,11 +410,11 @@ const premesCalculated = computed(() => {
     // Calcul coût avec suppléments nuit
     const coutChef = heuresPropres.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+      .reduce((sum, h) => sum + getHeures(h) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifInterim * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+      .reduce((sum, h) => sum + getHeures(h) * tarifInterim * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutOuvriers = heuresOuvriersData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))

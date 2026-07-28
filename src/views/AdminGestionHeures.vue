@@ -162,6 +162,7 @@ import { supabase } from '../supabase.js'
 import RetourButton from '../components/RetourButton.vue'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { getHeures } from '@/composables/useHeures.js'
 
 const chantiers = ref([])
 const employes = ref([])
@@ -203,7 +204,7 @@ const chargerHeures = async () => {
   if (filterDateDebut.value) query1 = query1.gte('date', filterDateDebut.value)
   if (filterDateFin.value) query1 = query1.lte('date', filterDateFin.value)
   const { data: data1 } = await query1.order('date', { ascending: false })
-  heuresChefPropres.value = (data1 || []).map(h => ({ ...h, type: 'chef_propre', heures: h.total_heures, employe_nom: getEmployeName(h.chef_id), type_travail: h.type_travail || 'Normal', supplement_pourcentage: h.supplement_pourcentage || 0 }))
+  heuresChefPropres.value = (data1 || []).map(h => ({ ...h, type: 'chef_propre', heures: getHeures(h), employe_nom: getEmployeName(h.chef_id), type_travail: h.type_travail || 'Normal', supplement_pourcentage: h.supplement_pourcentage || 0 }))
 
   // Carica heures_chef_interim
   let query2 = supabase.from('heures_chef_interim').select('*')
@@ -212,7 +213,7 @@ const chargerHeures = async () => {
   if (filterDateDebut.value) query2 = query2.gte('date', filterDateDebut.value)
   if (filterDateFin.value) query2 = query2.lte('date', filterDateFin.value)
   const { data: data2 } = await query2.order('date', { ascending: false })
-  heuresChefInterim.value = (data2 || []).map(h => ({ ...h, type: 'chef_interim', heures: h.total_heures, employe_nom: h.interinaire_nom || getEmployeName(h.chef_id), type_travail: h.type_travail || 'Normal', supplement_pourcentage: h.supplement_pourcentage || 0 }))
+  heuresChefInterim.value = (data2 || []).map(h => ({ ...h, type: 'chef_interim', heures: getHeures(h), employe_nom: h.interinaire_nom || getEmployeName(h.chef_id), type_travail: h.type_travail || 'Normal', supplement_pourcentage: h.supplement_pourcentage || 0 }))
 
   // Carica heures_ouvriers
   let query3 = supabase.from('heures_ouvriers').select('*')
