@@ -126,15 +126,19 @@
             <!-- Enregistrements existants -->
             <div v-if="editModal.existingRecords.length > 0" class="mb-3">
               <label class="form-label fw-bold">Enregistrements existants:</label>
-              <div v-for="(rec, idx) in editModal.existingRecords" :key="rec.id" class="d-flex align-items-center gap-2 mb-2 p-2 border rounded">
-                <select v-model="rec.chantier_id" class="form-select form-select-sm" style="flex:2">
+              <div v-for="(rec, idx) in editModal.existingRecords" :key="rec.id" class="d-flex align-items-center gap-2 mb-2 p-2 border rounded flex-wrap">
+                <select v-model="rec.chantier_id" class="form-select form-select-sm" style="flex:2;min-width:120px">
                   <option value="">Sans chantier</option>
                   <option v-for="ch in chantiersOuverts" :key="ch.id" :value="ch.id">{{ ch.nom }}</option>
                 </select>
-                <select v-model="rec.heures" class="form-select form-select-sm" style="flex:1">
+                <select v-model="rec.heures" class="form-select form-select-sm" style="flex:1;min-width:70px">
                   <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
-                <span class="text-muted">h</span>
+                <select v-model="rec.supplement_pourcentage" class="form-select form-select-sm" style="flex:1;min-width:110px">
+                  <option :value="0">Normal</option>
+                  <option :value="50">Nuit +50%</option>
+                  <option :value="100">Nuit +100%</option>
+                </select>
                 <button @click="deleteRecord(rec)" class="btn btn-sm btn-outline-danger">🗑</button>
               </div>
             </div>
@@ -142,14 +146,19 @@
             <!-- Ajouter un nouveau record -->
             <div class="mb-3 p-2 border rounded bg-light">
               <label class="form-label fw-bold">Ajouter des heures:</label>
-              <div class="d-flex align-items-center gap-2">
-                <select v-model="editModal.newChantierId" class="form-select form-select-sm" style="flex:2">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <select v-model="editModal.newChantierId" class="form-select form-select-sm" style="flex:2;min-width:120px">
                   <option value="">Chantier...</option>
                   <option v-for="ch in chantiersOuverts" :key="ch.id" :value="ch.id">{{ ch.nom }}</option>
                 </select>
-                <select v-model="editModal.newHeures" class="form-select form-select-sm" style="flex:1">
+                <select v-model="editModal.newHeures" class="form-select form-select-sm" style="flex:1;min-width:70px">
                   <option value="">Heures...</option>
                   <option v-for="opt in heuresOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </select>
+                <select v-model="editModal.newSupplement" class="form-select form-select-sm" style="flex:1;min-width:110px">
+                  <option :value="0">Normal</option>
+                  <option :value="50">Nuit +50%</option>
+                  <option :value="100">Nuit +100%</option>
                 </select>
                 <button @click="addNewRecord" class="btn btn-sm btn-success" :disabled="!editModal.newHeures">+</button>
               </div>
@@ -309,6 +318,7 @@ const openEditModal = async (employe, jour) => {
     needsChantier: true,
     newChantierId: '',
     newHeures: '',
+    newSupplement: 0,
     existingRecords: [],
     saving: false
   };
@@ -325,17 +335,17 @@ const loadExistingRecords = async (email, date) => {
   
   const { data: chefRecs } = await supabase.from('heures_chef_propres').select('*').eq('chef_id', email).eq('date', date);
   (chefRecs || []).forEach(r => {
-    records.push({ id: r.id, table: 'heures_chef_propres', heures: r.total_heures || r.heures_normales, chantier_id: r.chantier_id || '' });
+    records.push({ id: r.id, table: 'heures_chef_propres', heures: r.total_heures || r.heures_normales, chantier_id: r.chantier_id || '', supplement_pourcentage: r.supplement_pourcentage || 0 });
   });
   
   const { data: interimRecs } = await supabase.from('heures_chef_interim').select('*').eq('chef_id', email).eq('date', date);
   (interimRecs || []).forEach(r => {
-    records.push({ id: r.id, table: 'heures_chef_interim', heures: r.total_heures || r.heures_normales, chantier_id: r.chantier_id || '' });
+    records.push({ id: r.id, table: 'heures_chef_interim', heures: r.total_heures || r.heures_normales, chantier_id: r.chantier_id || '', supplement_pourcentage: r.supplement_pourcentage || 0 });
   });
   
   const { data: ouvrierRecs } = await supabase.from('heures_ouvriers').select('*').eq('ouvrier_id', email).eq('date', date);
   (ouvrierRecs || []).forEach(r => {
-    records.push({ id: r.id, table: 'heures_ouvriers', heures: r.heures, chantier_id: r.chantier_id || '' });
+    records.push({ id: r.id, table: 'heures_ouvriers', heures: r.heures, chantier_id: r.chantier_id || '', supplement_pourcentage: r.supplement_pourcentage || 0 });
   });
   
   editModal.value.existingRecords = records;
@@ -348,24 +358,25 @@ const deleteRecord = async (rec) => {
 };
 
 const addNewRecord = async () => {
-  const { employeEmail, employeType, date, newHeures, newChantierId } = editModal.value;
+  const { employeEmail, employeType, date, newHeures, newChantierId, newSupplement } = editModal.value;
   if (!newHeures) return;
 
-  // Détecter la bonne table
+  const suppl = newSupplement || 0;
+  const typeTravail = suppl === 50 ? 'Nuit +50%' : suppl === 100 ? 'Nuit +100%' : 'Normal';
+
   const { data: checkOuvrier } = await supabase.from('heures_ouvriers').select('id').eq('ouvrier_id', employeEmail).limit(1);
   const { data: checkChef } = await supabase.from('heures_chef_propres').select('id').eq('chef_id', employeEmail).limit(1);
   const useOuvrierTable = (checkOuvrier && checkOuvrier.length > 0) || (!checkChef || checkChef.length === 0 && employeType === 'ouvrier');
 
   if (!useOuvrierTable) {
-    await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: newHeures, total_heures: newHeures, chantier_id: newChantierId || null });
+    await supabase.from('heures_chef_propres').insert({ chef_id: employeEmail, date, heures_normales: newHeures, total_heures: newHeures, chantier_id: newChantierId || null, supplement_pourcentage: suppl, type_travail: typeTravail });
   } else {
-    const insertData = { ouvrier_id: employeEmail, date, heures: newHeures };
-    if (newChantierId) insertData.chantier_id = newChantierId;
-    await supabase.from('heures_ouvriers').insert(insertData);
+    await supabase.from('heures_ouvriers').insert({ ouvrier_id: employeEmail, date, heures: newHeures, chantier_id: newChantierId || null, supplement_pourcentage: suppl, type_travail: typeTravail });
   }
 
   editModal.value.newHeures = '';
   editModal.value.newChantierId = '';
+  editModal.value.newSupplement = 0;
   await loadExistingRecords(employeEmail, date);
 };
 
@@ -397,12 +408,14 @@ const saveEdit = async () => {
     } else if (action === 'heures') {
       // Mettre à jour les records existants (heures + chantier modifiés inline)
       for (const rec of editModal.value.existingRecords) {
+        const suppl = rec.supplement_pourcentage || 0;
+        const typeTravail = suppl === 50 ? 'Nuit +50%' : suppl === 100 ? 'Nuit +100%' : 'Normal';
         if (rec.table === 'heures_chef_propres') {
-          await supabase.from(rec.table).update({ total_heures: rec.heures, heures_normales: rec.heures, chantier_id: rec.chantier_id || null }).eq('id', rec.id);
+          await supabase.from(rec.table).update({ total_heures: rec.heures, heures_normales: rec.heures, chantier_id: rec.chantier_id || null, supplement_pourcentage: suppl, type_travail: typeTravail }).eq('id', rec.id);
         } else if (rec.table === 'heures_chef_interim') {
-          await supabase.from(rec.table).update({ total_heures: rec.heures, chantier_id: rec.chantier_id || null }).eq('id', rec.id);
+          await supabase.from(rec.table).update({ total_heures: rec.heures, chantier_id: rec.chantier_id || null, supplement_pourcentage: suppl, type_travail: typeTravail }).eq('id', rec.id);
         } else {
-          await supabase.from(rec.table).update({ heures: rec.heures, chantier_id: rec.chantier_id || null }).eq('id', rec.id);
+          await supabase.from(rec.table).update({ heures: rec.heures, chantier_id: rec.chantier_id || null, supplement_pourcentage: suppl, type_travail: typeTravail }).eq('id', rec.id);
         }
       }
       // Supprimer absence éventuelle du jour
