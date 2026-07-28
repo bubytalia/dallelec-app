@@ -618,11 +618,11 @@ const fetchData = async () => {
     chefs.value = chefsData || []
 
     // Charger les heures propres
-    const { data: heuresPropreData } = await supabase.from('heures_chef_propres').select('*')
+    const { data: heuresPropreData } = await supabase.from('heures_chef_propres').select('*').limit(5000)
     heuresPropres.value = heuresPropreData || []
 
     // Charger les heures intérimaires  
-    const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*')
+    const { data: heuresInterimData } = await supabase.from('heures_chef_interim').select('*').limit(5000)
     heuresInterim.value = heuresInterimData || []
 
     // Charger les primes payées

@@ -172,9 +172,9 @@ const loadData = async () => {
     supabase.from('chantiers').select('*').neq('type', 'interne'),
     supabase.from('factures').select('*'),
     supabase.from('metrages').select('*'),
-    supabase.from('heures_chef_propres').select('*'),
-    supabase.from('heures_chef_interim').select('*'),
-    supabase.from('heures_ouvriers').select('*'),
+    supabase.from('heures_chef_propres').select('*').limit(5000),
+    supabase.from('heures_chef_interim').select('*').limit(5000),
+    supabase.from('heures_ouvriers').select('*').limit(5000),
     supabase.from('devis').select('id,total,produits,discount,type_pose')
   ]);
 
@@ -310,10 +310,10 @@ const mesChantiersPrimes = computed(() => {
     const percentualeImpresa = chantier.percentuale_impresa || 30;
     const budgetOreDisponibile = fatturatHorsRegies * (1 - percentualeImpresa / 100);
 
-    // Heures: seulement celles du capocantiere (pas des autres chefs)
+    // Heures: TUTTE le ore del cantiere (tutti i chef + ouvriers)
     const capo = chantier.capocantiere || '';
-    const hpCapo = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id) && h.chef_id === capo);
-    const heuresChef = hpCapo.reduce((sum, h) => sum + (h.total_heures || 0), 0);
+    const hpChantier = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id));
+    const heuresChef = hpChantier.reduce((sum, h) => sum + (h.total_heures || 0), 0);
 
     const heuresInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -329,8 +329,7 @@ const mesChantiersPrimes = computed(() => {
 
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     
-    // Calcul coût avec suppléments nuit - seulement heures du capocantiere
-    const coutChef = hpCapo
+    const coutChef = hpChantier
       .reduce((sum, h) => sum + (h.total_heures || 0) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutInterim = heuresInterimData.value

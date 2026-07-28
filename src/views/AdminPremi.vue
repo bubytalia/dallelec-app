@@ -300,9 +300,9 @@ const loadData = async () => {
       supabase.from('chantiers').select('*').neq('type', 'interne'),
       supabase.from('factures').select('*'),
       supabase.from('metrages').select('*'),
-      supabase.from('heures_chef_propres').select('*'),
-      supabase.from('heures_chef_interim').select('*'),
-      supabase.from('heures_ouvriers').select('*'),
+      supabase.from('heures_chef_propres').select('*').order('date', { ascending: false }).limit(5000),
+      supabase.from('heures_chef_interim').select('*').order('date', { ascending: false }).limit(5000),
+      supabase.from('heures_ouvriers').select('*').order('date', { ascending: false }).limit(5000),
       supabase.from('chefdechantiers').select('*')
     ]);
 
@@ -386,10 +386,10 @@ const premesCalculated = computed(() => {
     const percentualeImpresa = chantier.percentuale_impresa || 30;
     const budgetOreDisponibile = fatturatHorsRegies * (1 - percentualeImpresa / 100);
 
-    // Heures par type - SEULEMENT les heures du capocantiere pour le calcul des primes
+    // Heures par type (TOUTES les heures travaillées sur le chantier)
     const capocantiere = chantier.capocantiere || '';
-    const hpCapo = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id) && h.chef_id === capocantiere);
-    const heuresChef = hpCapo.reduce((sum, h) => sum + getHeures(h), 0);
+    const hpChantier = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id));
+    const heuresChef = hpChantier.reduce((sum, h) => sum + getHeures(h), 0);
 
     const heuresInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -404,11 +404,10 @@ const premesCalculated = computed(() => {
     const heuresTotales = heuresChef + heuresInterim + heuresOuvriers;
     const heuresReelles = heuresTotales - heuresRegies;
 
-    // Coût horaire moyen pondéré (sur heures HORS régies)
+    // Coût horaire moyen pondéré
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     
-    // Calcul coût avec suppléments nuit - seulement heures du capocantiere
-    const coutChef = hpCapo
+    const coutChef = hpChantier
       .reduce((sum, h) => sum + getHeures(h) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutInterim = heuresInterimData.value
