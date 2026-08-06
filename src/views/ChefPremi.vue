@@ -175,9 +175,9 @@ const loadData = async () => {
     supabase.from('chantiers').select('*, chef_secondaire').neq('type', 'interne'),
     supabase.from('factures').select('*'),
     supabase.from('metrages').select('*'),
-    supabase.from('heures_chef_propres').select('*').limit(5000),
-    supabase.from('heures_chef_interim').select('*').limit(5000),
-    supabase.from('heures_ouvriers').select('*').limit(5000),
+    supabase.from('heures_chef_propres').select('*').order('date', { ascending: false }).limit(10000),
+    supabase.from('heures_chef_interim').select('*').order('date', { ascending: false }).limit(10000),
+    supabase.from('heures_ouvriers').select('*').order('date', { ascending: false }).limit(10000),
     supabase.from('devis').select('id,total,produits,discount,type_pose')
   ]);
 
