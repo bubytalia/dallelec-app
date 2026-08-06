@@ -60,6 +60,8 @@
           <div>
             <strong>{{ chantier.chantierNom }}</strong>
             <small class="text-muted ms-2">{{ chantier.clientNom }}</small>
+            <span v-if="chantier.isChefSecondaire" class="badge bg-info text-dark ms-2" style="font-size:10px">50% - Chef secondaire</span>
+            <span v-else-if="chantier.diviseur === 2" class="badge bg-secondary ms-2" style="font-size:10px">50% - Chef principal</span>
           </div>
           <span class="badge" :class="chantier.primeTotale > 0 ? 'bg-success' : 'bg-secondary'">
             {{ formatCurrency(chantier.primeTotale) }}
@@ -147,6 +149,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { supabase } from '@/supabase.js';
 import RetourButton from '@/components/RetourButton.vue';
+import { getHeures } from '@/composables/useHeures.js';
 
 const selectedMonth = ref('');
 const selectedYear = ref('');
@@ -169,7 +172,7 @@ const loadData = async () => {
   currentUserEmail.value = user?.email || '';
 
   const [ch, fa, me, hp, hi, ho, dv] = await Promise.all([
-    supabase.from('chantiers').select('*').neq('type', 'interne'),
+    supabase.from('chantiers').select('*, chef_secondaire').neq('type', 'interne'),
     supabase.from('factures').select('*'),
     supabase.from('metrages').select('*'),
     supabase.from('heures_chef_propres').select('*').limit(5000),
@@ -270,7 +273,9 @@ const getDevisIndicators = (chantier) => {
 
 // Calcul primes pour les chantiers du chef connecté
 const mesChantiersPrimes = computed(() => {
-  const mesChantiers = chantiers.value.filter(c => c.capocantiere === currentUserEmail.value);
+  const mesChantiers = chantiers.value.filter(c =>
+    c.capocantiere === currentUserEmail.value || c.chef_secondaire === currentUserEmail.value
+  );
 
   return mesChantiers.map(chantier => {
     const facturesChantier = factures.value.filter(f => String(f.chantier_id) === String(chantier.id) && !f.is_acconto);
@@ -311,13 +316,12 @@ const mesChantiersPrimes = computed(() => {
     const budgetOreDisponibile = fatturatHorsRegies * (1 - percentualeImpresa / 100);
 
     // Heures: TUTTE le ore del cantiere (tutti i chef + ouvriers)
-    const capo = chantier.capocantiere || '';
     const hpChantier = heuresPropres.value.filter(h => String(h.chantier_id) === String(chantier.id));
-    const heuresChef = hpChantier.reduce((sum, h) => sum + (h.total_heures || 0), 0);
+    const heuresChef = hpChantier.reduce((sum, h) => sum + getHeures(h), 0);
 
     const heuresInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0), 0);
+      .reduce((sum, h) => sum + getHeures(h), 0);
 
     const heuresOuvriers = heuresOuvriersData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -330,11 +334,11 @@ const mesChantiersPrimes = computed(() => {
     const tarifChef = 45, tarifOuvrier = 41, tarifInterim = 47.5;
     
     const coutChef = hpChantier
-      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+      .reduce((sum, h) => sum + getHeures(h) * tarifChef * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutInterim = heuresInterimData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
-      .reduce((sum, h) => sum + (h.total_heures || 0) * tarifInterim * (1 + (h.supplement_pourcentage || 0) / 100), 0);
+      .reduce((sum, h) => sum + getHeures(h) * tarifInterim * (1 + (h.supplement_pourcentage || 0) / 100), 0);
     
     const coutOuvriers = heuresOuvriersData.value
       .filter(h => String(h.chantier_id) === String(chantier.id))
@@ -346,17 +350,28 @@ const mesChantiersPrimes = computed(() => {
     const heuresPrevues = costoOrarioMedio > 0 ? budgetOreDisponibile / costoOrarioMedio : 0;
     const heuresGagnees = heuresPrevues - heuresReelles;
 
-    const primeEfficacite = heuresGagnees > 0 ? heuresGagnees * 26 : 0;
+    const primeEfficaciteTotal = heuresGagnees > 0 ? heuresGagnees * 26 : 0;
     const enAttivo = heuresGagnees > 0;
-    const primeRegies = enAttivo ? heuresRegies * 5 : 0;
-    const primeTotale = primeEfficacite + primeRegies;
+    const primeRegiesTotal = enAttivo ? heuresRegies * 5 : 0;
+    const primeTotaleTotal = primeEfficaciteTotal + primeRegiesTotal;
+
+    // Diviseur: 2 si chef secondaire, 1 sinon
+    const diviseur = chantier.chef_secondaire ? 2 : 1;
+    const primeEfficacite = Math.round((primeEfficaciteTotal / diviseur) * 100) / 100;
+    const primeRegies = Math.round((primeRegiesTotal / diviseur) * 100) / 100;
+    const primeTotale = Math.round((primeTotaleTotal / diviseur) * 100) / 100;
 
     // Période
     const primaFactura = [...facturesChantier].sort((a, b) => new Date(a.date_facture) - new Date(b.date_facture))[0];
     const dateFacturation = primaFactura?.date_facture ? new Date(primaFactura.date_facture) : new Date();
 
-    // Paiement
-    const paiement = primesPaiements.value.find(pp => pp.chantier_id === chantier.id && pp.capocantiere === chantier.capocantiere);
+    // Paiement (cherche pour l'email du chef connecté)
+    const paiement = primesPaiements.value.find(pp =>
+      String(pp.chantier_id) === String(chantier.id) && pp.capocantiere === currentUserEmail.value
+    );
+
+    // Badge chef secondaire
+    const isChefSecondaire = chantier.chef_secondaire === currentUserEmail.value;
 
     return {
       chantierId: chantier.id,
@@ -369,12 +384,14 @@ const mesChantiersPrimes = computed(() => {
       heuresReelles: Math.round(heuresReelles * 10) / 10,
       heuresGagnees: Math.round(heuresGagnees * 10) / 10,
       heuresRegies: Math.round(heuresRegies * 10) / 10,
-      primeEfficacite: Math.round(primeEfficacite * 100) / 100,
-      primeRegies: Math.round(primeRegies * 100) / 100,
-      primeTotale: Math.round(primeTotale * 100) / 100,
+      primeEfficacite,
+      primeRegies,
+      primeTotale,
       enAttivo,
       payee: !!paiement,
       moisPaiement: paiement?.mois_paiement || '',
+      isChefSecondaire,
+      diviseur,
       metresCDC: indicators.metresCDC,
       heuresPrevuesDevis: indicators.heuresPrevuesDevis,
       metresParHeure: indicators.metresParHeure,
