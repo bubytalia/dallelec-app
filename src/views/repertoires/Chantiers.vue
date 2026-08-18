@@ -638,6 +638,13 @@ export default {
       editId.value = chantier.id;
       editChantier.value = { 
         ...chantier,
+        // Mappa snake_case DB -> camelCase form
+        numeroCantiere: chantier.numero_cantiere || '',
+        devisId: chantier.devis_id || '',
+        modalitaResoconto: chantier.modalita_resoconto || 'metrages',
+        prixRegie: chantier.prix_regie || 75,
+        percentualeImpresa: chantier.percentuale_impresa ?? 30,
+        capocantiere: chantier.capocantiere || '',
         accontoMontant: chantier.acconto_montant || 0,
         accontoPourcentage: chantier.acconto_pourcentage || 0
       };
