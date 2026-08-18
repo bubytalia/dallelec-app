@@ -72,10 +72,29 @@ const router = useRouter();
 const chantiersAutorises = ref([]);
 
 const fetchChantiersAutorises = async () => {
-  // TODO: Implementare logica per filtrare solo i cantieri autorizzati per questo chef
-  // Per ora prendiamo tutti i cantieri
-  const snapshot = await getDocs(collection(db, 'chantiers'));
-  chantiersAutorises.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const chefEmail = localStorage.getItem('userEmail');
+  if (!chefEmail) return;
+
+  const { data: chefData } = await supabase
+    .from('chefdechantiers')
+    .select('nom, prenom')
+    .eq('email', chefEmail)
+    .maybeSingle();
+
+  let orFilter = `capocantiere.eq.${chefEmail}`;
+  if (chefData) {
+    const n1 = `${chefData.nom} ${chefData.prenom}`;
+    const n2 = `${chefData.prenom} ${chefData.nom}`;
+    orFilter = `capocantiere.eq.${chefEmail},capocantiere.eq.${n1},capocantiere.eq.${n2}`;
+  }
+
+  const { data } = await supabase
+    .from('chantiers')
+    .select('*')
+    .neq('type', 'interne')
+    .or(orFilter);
+
+  chantiersAutorises.value = data || [];
 };
 
 const getStatusClass = (statut) => {

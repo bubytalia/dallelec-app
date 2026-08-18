@@ -50,18 +50,33 @@ const router = useRouter();
 const chantiers = ref([]);
 
 const fetchChantiers = async () => {
-  const chefEmail = localStorage.getItem('userEmail');
+  let chefEmail = localStorage.getItem('userEmail');
   if (!chefEmail) {
-    console.warn('Utente non autenticato');
-    return;
+    const { data: { user } } = await supabase.auth.getUser();
+    chefEmail = user?.email || '';
+    if (chefEmail) localStorage.setItem('userEmail', chefEmail);
   }
+  if (!chefEmail) return;
   
   try {
+    const { data: chefData } = await supabase
+      .from('chefdechantiers')
+      .select('nom, prenom')
+      .eq('email', chefEmail)
+      .maybeSingle();
+    
+    let orFilter = `capocantiere.eq.${chefEmail}`;
+    if (chefData) {
+      const n1 = `${chefData.nom} ${chefData.prenom}`;
+      const n2 = `${chefData.prenom} ${chefData.nom}`;
+      orFilter = `capocantiere.eq.${chefEmail},capocantiere.eq.${n1},capocantiere.eq.${n2}`;
+    }
+    
     const { data, error } = await supabase
       .from('chantiers')
       .select('*')
       .neq('type', 'interne')
-      .eq('capocantiere', chefEmail);
+      .or(orFilter);
     
     if (error) throw error;
     chantiers.value = data || [];

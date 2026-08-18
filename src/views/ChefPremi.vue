@@ -167,9 +167,9 @@ const heuresInterimData = ref([]);
 const heuresOuvriersData = ref([]);
 
 const loadData = async () => {
-  // Get current user
+  // Get current user - usa localStorage come fonte primaria (più affidabile)
   const { data: { user } } = await supabase.auth.getUser();
-  currentUserEmail.value = user?.email || '';
+  currentUserEmail.value = user?.email || localStorage.getItem('userEmail') || '';
 
   const [ch, fa, me, hp, hi, ho, dv] = await Promise.all([
     supabase.from('chantiers').select('*, chef_secondaire').neq('type', 'interne'),
