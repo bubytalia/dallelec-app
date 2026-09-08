@@ -109,10 +109,7 @@
             </thead>
             <tbody>
               <tr v-for="prime in chef.primes" :key="prime.chantierId" :class="prime.payee ? 'table-success' : ''">
-                <td>
-                  <strong>{{ prime.chantierNom }}</strong>
-                  <button @click="ouvrirChefSec(prime)" class="btn btn-xs btn-outline-secondary ms-1" style="font-size:10px;padding:1px 4px" title="Gérer chef secondaire">👥</button>
-                </td>
+                <td><strong>{{ prime.chantierNom }}</strong></td>
                 <td>{{ prime.clientNom }}</td>
                 <td>{{ formatCurrency(prime.budgetDisponible) }}</td>
                 <td>{{ prime.heuresPrevues }}h</td>
@@ -154,13 +151,10 @@
                   <span v-else class="badge bg-secondary">-</span>
                 </td>
                 <td>
-                  <button @click="voirDetail(prime)" class="btn btn-sm btn-outline-info me-1">👁</button>
-                  <button v-if="prime.primeTotale > 0 && !prime.payee" @click="ouvrirPaiement(prime)" class="btn btn-sm btn-outline-success" title="Payer / Acompte">
-                    💰
-                  </button>
-                  <button v-if="prime.payee || prime.hasAcconto" @click="annulerPaiement(prime)" class="btn btn-sm btn-outline-danger" title="Annuler paiement">
-                    ↩
-                  </button>
+                  <button @click="voirDetail(prime)" class="btn btn-sm btn-outline-info me-1" title="Détail">👁</button>
+                  <button @click="ouvrirChefSec(prime)" class="btn btn-sm btn-outline-secondary me-1" title="Chef secondaire (partage 50/50)">👥</button>
+                  <button v-if="prime.primeTotale > 0 && !prime.payee" @click="ouvrirPaiement(prime)" class="btn btn-sm btn-outline-success" title="Payer / Acompte">💰</button>
+                  <button v-if="prime.payee || prime.hasAcconto" @click="annulerPaiement(prime)" class="btn btn-sm btn-outline-danger" title="Annuler paiement">↩</button>
                 </td>
               </tr>
             </tbody>

@@ -28,6 +28,9 @@
         <router-link to="/chef/chantiers" class="btn btn-outline-success w-100">Chantiers</router-link>
       </div>
       <div class="col-md-3 m-2">
+        <router-link to="/chef/chantiers/metrages" class="btn btn-outline-secondary w-100">📏 Métrages</router-link>
+      </div>
+      <div class="col-md-3 m-2">
         <router-link to="/chef/absences" class="btn btn-outline-warning w-100">Absences</router-link>
       </div>
       <div class="col-md-3 m-2">

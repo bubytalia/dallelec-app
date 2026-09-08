@@ -169,8 +169,13 @@ const routes = [
   { path: '/chef/heures', name: 'ChefHeures', component: ChefHeures, beforeEnter: requireRole(['chef']) },
   { path: '/chef/chantiers', name: 'ChefChantiers', component: ChefChantiers, beforeEnter: requireRole(['chef']) },
   { path: '/chef/absences', name: 'ChefAbsences', component: ChefAbsences, beforeEnter: requireRole(['chef']) },
-  { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan },
   { path: '/chef/premi', name: 'ChefPremi', component: ChefPremi },
+  { path: '/chef/chantiers/bilan', name: 'ChefBilan', component: ChefBilan },
+  { path: '/chef/chantiers/metrages', name: 'ChefSelectionCantiere', component: () => import('@/views/ChefSelectionCantiere.vue'), beforeEnter: requireRole(['chef']) },
+  { path: '/chef/chantiers/metrages-detail', name: 'ChefMetrages', component: () => import('@/views/ChefMetrages.vue'), beforeEnter: requireRole(['chef']) },
+  { path: '/chef/chantiers/resoconto-percentuale', name: 'ChefResocontoPercentuale', component: () => import('@/views/ChefResocontoPercentuale.vue'), beforeEnter: requireRole(['chef']) },
+  { path: '/chef/chantiers/resoconto-finale', name: 'ChefResocontoFinale', component: () => import('@/views/ChefResocontoFinale.vue'), beforeEnter: requireRole(['chef']) },
+  { path: '/chef/chantiers/metrages-historique', name: 'ChefMetragesHistorique', component: () => import('@/views/ChefMetragesHistorique.vue'), beforeEnter: requireRole(['chef']) },
   { path: '/chef/chantiers/:id', name: 'ChefChantierDetail', component: ChefChantiers },
 
   // Comptable routes

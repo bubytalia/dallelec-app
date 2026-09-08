@@ -73,11 +73,11 @@
         </div>
       </div>
       <div class="col-md-3">
-        <div class="card bg-success text-white text-center">
+        <div class="card bg-dark text-white text-center">
           <div class="card-body py-2">
-            <h6 class="mb-1">Payées</h6>
-            <h5 class="mb-1">{{ facturesPayees.length }}</h5>
-            <small>{{ formatCurrency(totalPayees) }}</small>
+            <h6 class="mb-1">Total à payer</h6>
+            <h5 class="mb-1">{{ facturesNonPayees.length }}</h5>
+            <small>{{ formatCurrency(totalDaPagare) }}</small>
           </div>
         </div>
       </div>
@@ -234,6 +234,10 @@ const totalProssimi30 = computed(() => {
 
 const totalPayees = computed(() => {
   return facturesPayees.value.reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
+});
+
+const totalDaPagare = computed(() => {
+  return facturesNonPayees.value.reduce((sum, f) => sum + calculateSoldeFinale(f), 0);
 });
 
 const facturesFiltrate = computed(() => {
